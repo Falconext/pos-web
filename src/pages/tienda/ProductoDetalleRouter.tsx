@@ -27,6 +27,11 @@ import ModaMinimalProductoDetalle from './ModaMinimalProductoDetalle';
 import CrispyProductoDetalle from './CrispyProductoDetalle';
 import FarmaciaProductoDetalle from './FarmaciaProductoDetalle';
 import StrideProductoDetalle from './StrideProductoDetalle';
+import NordicaProductoDetalle from './NordicaProductoDetalle';
+import PatitasProductoDetalle from './PatitasProductoDetalle';
+import BlushProductoDetalle from './BlushProductoDetalle';
+import ElanProductoDetalle from './ElanProductoDetalle';
+import RoseProductoDetalle from './RoseProductoDetalle';
 
 import UrbanoProductoDetalle from './UrbanoProductoDetalle';
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -60,6 +65,11 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   farmacia: FarmaciaProductoDetalle,
   salud: FarmaciaProductoDetalle,
   zapatos: StrideProductoDetalle,
+  muebleria: NordicaProductoDetalle,
+  mascotas: PatitasProductoDetalle,
+  maquillaje: BlushProductoDetalle,
+  'moda-elegante': ElanProductoDetalle,
+  bolsos: RoseProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {

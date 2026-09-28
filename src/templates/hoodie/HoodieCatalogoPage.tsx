@@ -1,271 +1,298 @@
-import { type ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
-import { HD, HdCartModal, HdFooter, HdHeader, HdProductCard, HdWhatsAppFab, hdFont, hdPrimary } from './HoodieParts';
-import { hdCard, hdPage, hdSection, hdStagger, hdViewport } from './motion';
+import { useFavoritosStore } from '@/zustand/favoritos';
+import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
+import TiendaCompareBar from '@/components/tienda/TiendaCompareBar';
+import { HdHeader, HdFooter, HdCartModal, HdProductCard, hdTheme, useHdFont, editable, hdMoney, btnCls, display, type Theme } from './HoodieParts';
+import { PageHero, GridSkeleton, getName, categoryIcon } from './HoodieSections';
+import { mix, hdCardIn, hdEase } from './motion';
 
-function getName(item: any) {
-  return typeof item === 'string' ? item : item?.nombre;
-}
+// Valores que entiende Catalogo.tsx (el ordenamiento se hace allí).
+const SORTS = [
+  { value: 'relevance', label: 'Relevancia' },
+  { value: 'price-asc', label: 'Precio: menor a mayor' },
+  { value: 'price-desc', label: 'Precio: mayor a menor' },
+  { value: 'name-asc', label: 'Nombre A–Z' },
+];
 
-function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
-  return products.filter((product) => {
-    const value = product?.[key];
-    const current = typeof value === 'object' ? value?.nombre : value;
-    return String(current || '').toLowerCase() === String(name || '').toLowerCase();
-  }).length;
-}
+export default function HoodieCatalogoPage(props: TemplateCatalogoPageProps) {
+  const {
+    tienda, slug, diseno, navigate, sortedProductos, loading, total, page, cargarProductos,
+    allCategorías, allMarcas, filteredMarcas, selectedCategorías, setSelectedCategorías, selectedMarcas, setSelectedMarcas,
+    priceRange, setPriceRange, minPrice, maxPrice, sortBy, setSortBy, hasActiveFilters, toggleCategory, toggleBrand,
+    search, setSearch, carrito, setCarrito, mostrarCarrito, setMostrarCarrito, actualizarCantidad, irACheckout,
+    handleAgregarProducto, agregarAlCarritoDirecto, showMobileFilters, setShowMobileFilters,
+    showPersonalizarModal, setShowPersonalizarModal, productoAPersonalizar, setProductoAPersonalizar, modificadoresProducto,
+  } = props as any;
 
-function SidebarBox({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <motion.div variants={hdCard} initial="hidden" whileInView="show" viewport={hdViewport} className="rounded-[22px] border p-6" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-      <h3 className="mb-5 border-b pb-4 text-[12px] font-bold uppercase tracking-[0.16em]" style={{ color: HD.ink, borderColor: HD.line }}>{title}</h3>
-      {children}
-    </motion.div>
+  useHdFont();
+  const t = hdTheme(diseno);
+  const [showFav, setShowFav] = useState(false);
+  const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
+  const favoritos = getFavoritosBySlug(slug);
+
+  const categories: string[] = useMemo(() => (allCategorías || []).map(getName).filter(Boolean), [allCategorías]);
+  const marcas: string[] = useMemo(() => (filteredMarcas || allMarcas || []).map(getName).filter(Boolean), [filteredMarcas, allMarcas]);
+  const products: any[] = Array.isArray(sortedProductos) ? sortedProductos : [];
+  const shown = products.length;
+  const totalCount = Math.max(Number(total) || 0, shown);
+  const selCats: string[] = selectedCategorías || [];
+  const selBrands: string[] = selectedMarcas || [];
+  const priceActive = Array.isArray(priceRange) && (priceRange[0] > minPrice || priceRange[1] < maxPrice);
+
+  const cartCount = (carrito || []).reduce((s: number, i: any) => s + Number(i?.cantidad || 1), 0);
+  const goProduct = (p: any) => navigate(`/tienda/${slug}/producto/${p.id}`);
+  const clearFilters = () => { setSelectedCategorías([]); setSelectedMarcas([]); setPriceRange([minPrice, maxPrice]); setSearch(''); };
+  const pickCategory = (c: string | null) => setSelectedCategorías(c ? [c] : []);
+  // Al cambiar filtros/orden, la grilla vuelve a entrar escalonada.
+  const gridKey = [selCats.join('|'), selBrands.join('|'), search, sortBy, (priceRange || []).join('-')].join('#');
+
+  const activeChips: { key: string; label: string; onRemove: () => void }[] = [
+    ...(search ? [{ key: 's', label: `“${search}”`, onRemove: () => setSearch('') }] : []),
+    ...selCats.map((c) => ({ key: `c-${c}`, label: c, onRemove: () => toggleCategory(c) })),
+    ...selBrands.map((m) => ({ key: `m-${m}`, label: m, onRemove: () => toggleBrand(m) })),
+    ...(priceActive ? [{ key: 'p', label: `${hdMoney(priceRange[0])} – ${hdMoney(priceRange[1])}`, onRemove: () => setPriceRange([minPrice, maxPrice]) }] : []),
+  ];
+
+  const filters = (
+    <FilterPanel t={t} categories={categories} marcas={marcas} selCats={selCats} selBrands={selBrands} toggleCategory={toggleCategory} toggleBrand={toggleBrand} priceRange={priceRange} setPriceRange={setPriceRange} minPrice={minPrice} maxPrice={maxPrice} hasActiveFilters={hasActiveFilters} clear={clearFilters} />
   );
-}
-
-export default function HoodieCatalogoPage({
-  tienda,
-  slug,
-  diseno,
-  cp,
-  navigate,
-  productos,
-  sortedProductos,
-  loading,
-  total,
-  page,
-  cargarProductos,
-  allCategorías,
-  filteredMarcas,
-  selectedCategorías,
-  setSelectedCategorías,
-  selectedMarcas,
-  setSelectedMarcas,
-  priceRange,
-  setPriceRange,
-  minPrice,
-  maxPrice,
-  sortBy,
-  setSortBy,
-  hasActiveFilters,
-  toggleCategory,
-  toggleBrand,
-  search,
-  setSearch,
-  carrito,
-  setCarrito,
-  mostrarCarrito,
-  setMostrarCarrito,
-  actualizarCantidad,
-  irACheckout,
-  handleAgregarProducto,
-  agregarAlCarritoDirecto,
-  showPersonalizarModal,
-  setShowPersonalizarModal,
-  productoAPersonalizar,
-  setProductoAPersonalizar,
-  modificadoresProducto,
-}: TemplateCatalogoPageProps) {
-  const primary = hdPrimary(cp);
-  const font = hdFont(diseno);
-
-  const clearFilters = () => {
-    setSelectedCategorías([]);
-    setSelectedMarcas([]);
-    setPriceRange([minPrice, maxPrice]);
-    setSearch('');
-  };
-
-  const categoryList = allCategorías.filter(getName);
-  const brandList = filteredMarcas.filter(getName);
-  const totalLabel = total || sortedProductos.length;
 
   return (
-    <motion.div initial="hidden" animate="show" variants={hdPage} className="min-h-screen" style={{ backgroundColor: HD.cream, fontFamily: font }}>
-      <HdHeader
-        tienda={tienda}
-        slug={slug}
-        cp={primary}
-        diseno={diseno}
-        carritoSize={carrito.reduce((sum, item) => sum + Number(item.cantidad || 1), 0)}
-        onOpenCart={() => setMostrarCarrito(true)}
-        searchQuery={search}
-        setSearchQuery={setSearch}
-        allCategories={allCategorías}
-        onSearchSubmit={(event, value) => {
-          event.preventDefault();
-          setSearch(value || '');
-          setSelectedCategorías([]);
-          setSelectedMarcas([]);
-        }}
-      />
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, fontFamily: t.font }}>
+        <HdHeader tienda={tienda || {}} slug={slug} diseno={diseno} categories={categories} t={t} cartCount={cartCount} favCount={favoritos.length} onOpenCart={() => setMostrarCarrito(true)} onOpenFav={() => setShowFav(true)} navigate={navigate} />
 
-      <section className="relative overflow-hidden border-b" style={{ borderColor: HD.line, background: `linear-gradient(120% 120% at 80% 0%, ${HD.sand}, ${HD.cream} 62%)` }}>
-        <div className="mx-auto max-w-[1240px] px-6 py-12 text-center md:py-16">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-            <button type="button" onClick={() => navigate(`/tienda/${slug}`)} className="hover:text-neutral-900">Inicio</button>
-            <span className="mx-2">/</span>
-            <span className="text-neutral-700">Tienda</span>
+        <PageHero
+          t={t}
+          image={diseno?.hoodieShopImage || 'https://images.unsplash.com/photo-1560243563-062bfc001d68?auto=format&fit=crop&w=1400&q=80'}
+          crumbs={[{ label: 'Inicio', onClick: () => navigate(`/tienda/${slug}`) }, { label: 'Catálogo' }]}
+          eyebrow={selCats.length === 1 ? 'Categoría' : editable(diseno?.hoodieShopEyebrow, 'Catálogo')}
+          title={selCats.length === 1 ? selCats[0] : editable(diseno?.hoodieShopTitle, 'La colección')}
+          subtitle={loading && !shown ? 'Cargando productos…' : <><strong style={{ color: 'inherit' }}>{totalCount}</strong> {totalCount === 1 ? 'producto disponible' : 'productos disponibles'}</>}
+        >
+          <CatalogSearch t={t} value={search || ''} onSubmit={setSearch} placeholder={editable(diseno?.hoodieSearchPlaceholder, 'Buscar hoodies, polos, casacas…')} />
+        </PageHero>
+
+        {categories.length > 0 && (
+          <div className="sticky top-[112px] z-20 mt-4 backdrop-blur-md" style={{ background: mix(t.bg, 88, 'transparent') }}>
+            <div className="mx-auto flex max-w-[1320px] gap-2 overflow-x-auto px-4 py-2 [scrollbar-width:none] lg:px-8 [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Categorías">
+              {[null, ...categories].map((c) => {
+                const active = c === null ? selCats.length === 0 : selCats.length === 1 && selCats[0] === c;
+                return (
+                  <button key={c ?? '__all'} type="button" role="tab" aria-selected={active} onClick={() => pickCategory(c)} className="relative inline-flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-none px-4 text-[12.5px] font-semibold transition-colors duration-300" style={{ color: active ? t.onPrimary : t.ink }}>
+                    {active ? <motion.span layoutId="hd-cat-pill" className="absolute inset-0 rounded-none" style={{ background: t.primary }} transition={{ type: 'spring', stiffness: 380, damping: 32 }} />
+                      : <span className="absolute inset-0 rounded-none border bg-white" style={{ borderColor: t.hair }} />}
+                    <Icon icon={c ? categoryIcon(c) : 'solar:widget-4-linear'} width={16} className="relative" style={{ color: active ? t.onPrimary : t.primaryInk }} />
+                    <span className="relative">{c ?? 'Todos'}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-          <h1 className="mt-3 text-4xl uppercase tracking-[-0.02em] md:text-6xl" style={{ fontFamily: HD.display, fontWeight: 900, color: HD.ink }}>{diseno?.hoodieShopTitle || 'La colección'}</h1>
-        </div>
-      </section>
+        )}
 
-      {categoryList.length > 0 && (
-        <div className="mx-auto max-w-[1240px] px-6 pt-8">
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setSelectedCategorías([])}
-              className="rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition-colors"
-              style={selectedCategorías.length === 0 ? { backgroundColor: HD.ink, color: '#fff' } : { backgroundColor: HD.panel, color: HD.ink, border: `1px solid ${HD.line}` }}
-            >
-              Todo
-            </button>
-            {categoryList.slice(0, 10).map((cat: any, index: number) => {
-              const name = getName(cat);
-              const active = selectedCategorías.includes(name);
-              return (
-                <button
-                  key={`${name}-${index}`}
-                  type="button"
-                  onClick={() => toggleCategory(name)}
-                  className="rounded-full px-4 py-2 text-xs font-bold uppercase tracking-[0.1em] transition-colors"
-                  style={active ? { backgroundColor: HD.ink, color: '#fff' } : { backgroundColor: HD.panel, color: HD.ink, border: `1px solid ${HD.line}` }}
-                >
-                  {name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <motion.main variants={hdSection} className="mx-auto max-w-[1240px] px-6 py-10">
-        <div className="grid gap-8 lg:grid-cols-[280px_1fr]">
-          <aside className="space-y-6 lg:sticky lg:top-28 lg:h-fit">
-            {brandList.length > 0 && (
-              <SidebarBox title="Marcas">
-                <div className="space-y-4">
-                  {brandList.slice(0, 10).map((brand: any, index: number) => {
-                    const name = getName(brand);
-                    const checked = selectedMarcas.includes(name);
-                    const count = Number(brand?.productosCount || brand?.count || filterCount(productos, 'marca', name));
-                    return (
-                      <label key={`${name}-${index}`} className="flex cursor-pointer items-center gap-3 text-sm text-neutral-600">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-md border bg-white" style={checked ? { backgroundColor: HD.ink, borderColor: HD.ink } : { borderColor: HD.lineStrong }}>
-                          {checked && <Icon icon="mdi:check" width={13} className="text-white" />}
-                        </span>
-                        <input type="checkbox" checked={checked} onChange={() => toggleBrand(name)} className="hidden" />
-                        <span>{name}{count > 0 ? ` (${count})` : ''}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              </SidebarBox>
-            )}
-
-            <SidebarBox title="Precio">
-              <div className="mb-3 flex items-center justify-between text-xs font-semibold text-neutral-500">
-                <span>S/ {priceRange[0]}</span>
-                <span>S/ {maxPrice}</span>
-              </div>
-              <input
-                type="range"
-                min={minPrice}
-                max={maxPrice}
-                value={priceRange[0]}
-                onChange={(event) => setPriceRange([Number(event.target.value), priceRange[1]])}
-                className="w-full"
-                style={{ accentColor: HD.ink }}
-              />
-              {hasActiveFilters && (
-                <button type="button" onClick={clearFilters} className="mt-5 rounded-full px-5 py-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-white" style={{ backgroundColor: HD.ink }}>
-                  Limpiar filtros
-                </button>
-              )}
-            </SidebarBox>
+        <main className="mx-auto flex max-w-[1320px] gap-8 px-4 py-8 lg:px-8">
+          <aside className="hidden w-[260px] shrink-0 lg:block">
+            <div className="sticky top-[140px] rounded-none border bg-white p-6" style={{ borderColor: t.hair }}>{filters}</div>
           </aside>
 
-          <section className="min-w-0">
-            <div className="mb-8 flex flex-col justify-between gap-4 rounded-[22px] border p-4 md:flex-row md:items-center" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-              <p className="px-2 text-sm text-neutral-500">
-                <span className="font-bold" style={{ color: HD.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: HD.ink }}>{totalLabel}</span> prendas
+          <section className="min-w-0 flex-1">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-[13px]" style={{ color: t.muted }}>
+                {loading && !shown ? 'Buscando…' : <>Mostrando <strong style={{ color: t.ink }}>{shown}</strong> de <strong style={{ color: 'inherit' }}>{totalCount}</strong></>}
               </p>
-              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 min-w-[210px] rounded-full border bg-white px-5 text-sm font-medium text-neutral-600 outline-none" style={{ borderColor: HD.line }}>
-                <option value="relevance">Orden recomendado</option>
-                <option value="price-asc">Precio: menor a mayor</option>
-                <option value="price-desc">Precio: mayor a menor</option>
-                <option value="name-asc">Nombre A-Z</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={() => setShowMobileFilters(true)} className="inline-flex h-11 items-center gap-2 rounded-none border bg-white px-4 text-[12.5px] font-semibold lg:hidden" style={{ borderColor: t.hair, color: t.ink }}>
+                  <Icon icon="solar:tuning-2-linear" width={17} style={{ color: t.primaryInk }} /> Filtros
+                  {activeChips.length > 0 && <span className="flex h-5 min-w-[20px] items-center justify-center rounded-none px-1 text-[10px] font-bold" style={{ background: t.primary, color: t.onPrimary }}>{activeChips.length}</span>}
+                </button>
+                <label className="relative inline-flex h-11 items-center rounded-none border bg-white pl-4 pr-10" style={{ borderColor: t.hair }}>
+                  <Icon icon="solar:sort-vertical-linear" width={16} className="mr-2" style={{ color: t.primaryInk }} />
+                  <select aria-label="Ordenar" value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="appearance-none border-0 bg-transparent bg-none py-0 pl-0 pr-1 text-[12.5px] font-semibold outline-none focus:ring-0" style={{ color: t.ink }}>
+                    {SORTS.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+                  </select>
+                  <Icon icon="solar:alt-arrow-down-linear" width={15} className="pointer-events-none absolute right-4" style={{ color: t.muted }} />
+                </label>
+              </div>
             </div>
 
-            {loading ? (
-              <div className="grid grid-cols-2 gap-5 xl:grid-cols-3">
-                {Array.from({ length: 9 }).map((_, index) => <div key={index} className="aspect-[3/4] animate-pulse rounded-[22px] bg-black/[0.05]" />)}
-              </div>
-            ) : sortedProductos.length === 0 ? (
-              <motion.div variants={hdCard} initial="hidden" animate="show" className="rounded-[22px] border p-16 text-center" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-                <Icon icon="solar:hanger-2-linear" className="mx-auto mb-4 text-6xl" style={{ color: HD.taupe }} />
-                <h3 className="text-xl uppercase tracking-[-0.01em]" style={{ fontFamily: HD.display, fontWeight: 900, color: HD.ink }}>No encontramos esa prenda</h3>
-                <p className="mt-2 text-sm text-neutral-500">Prueba con otra categoría o limpia los filtros.</p>
-                <button type="button" onClick={clearFilters} className="mt-6 rounded-full px-6 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white" style={{ backgroundColor: HD.ink }}>Limpiar filtros</button>
-              </motion.div>
+            <AnimatePresence initial={false}>
+              {activeChips.length > 0 && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: hdEase }} className="overflow-hidden">
+                  <div className="mb-5 flex flex-wrap items-center gap-2">
+                    {activeChips.map((c) => (
+                      <button key={c.key} type="button" onClick={c.onRemove} className="group inline-flex items-center gap-1.5 rounded-none py-1.5 pl-3.5 pr-2 text-[12px] font-semibold" style={{ background: mix(t.primary, 12, '#fff'), color: t.primaryInk }}>
+                        {c.label}<Icon icon="solar:close-circle-linear" width={15} />
+                      </button>
+                    ))}
+                    <button type="button" onClick={clearFilters} className="ml-1 text-[12px] font-semibold underline-offset-4 hover:underline" style={{ color: t.muted }}>Limpiar todo</button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {loading && shown === 0 ? (
+              <GridSkeleton t={t} count={6} cols="xl:grid-cols-3" />
+            ) : shown === 0 ? (
+              <EmptyState t={t} search={search} onClear={clearFilters} />
             ) : (
               <>
-                <AnimatePresence mode="wait">
-                  <motion.div key="grid" variants={hdStagger} initial="hidden" animate="show" exit={{ opacity: 0, y: 12, transition: { duration: 0.18 } }} className="grid grid-cols-2 gap-5 xl:grid-cols-3">
-                    {sortedProductos.map((producto) => (
-                      <HdProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={handleAgregarProducto} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-                {productos.length < total && (
-                  <div className="mt-12 flex justify-center">
-                    <button type="button" onClick={() => cargarProductos(page + 1)} className="rounded-full px-8 py-4 text-[11px] font-bold uppercase tracking-[0.16em] text-white shadow-lg" style={{ backgroundColor: HD.ink }}>
-                      Cargar más
-                    </button>
+                <motion.div key={gridKey} initial="hidden" animate="show" className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
+                  {products.map((p, i) => (
+                    <motion.div key={p.id ?? i} custom={i} variants={hdCardIn} className="h-full">
+                      <HdProductCard producto={p} slug={slug} t={t} onOpen={() => goProduct(p)} onAdd={(q: number) => handleAgregarProducto({ ...p, __cantidad: q })} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+
+                {totalCount > shown && (
+                  <div className="mx-auto mt-12 flex max-w-xs flex-col items-center text-center">
+                    <p className="text-[12.5px]" style={{ color: t.muted }}>Has visto {shown} de {totalCount} productos</p>
+                    <div className="mt-3 h-1 w-full overflow-hidden rounded-none" style={{ background: t.hair }}>
+                      <motion.div className="h-full origin-left rounded-none" style={{ background: t.primary }} initial={false} animate={{ scaleX: Math.min(1, shown / totalCount) }} transition={{ duration: 0.6, ease: hdEase }} />
+                    </div>
+                    <motion.button type="button" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} disabled={loading} onClick={() => cargarProductos(page + 1)} className="mt-5 inline-flex h-12 items-center gap-2 rounded-none px-7 text-[13.5px] font-bold disabled:opacity-60" style={{ background: t.primary, color: t.onPrimary }}>
+                      {loading ? <><Icon icon="solar:refresh-linear" className="animate-spin" width={17} /> Cargando…</> : <>Cargar más <Icon icon="solar:alt-arrow-down-linear" width={17} /></>}
+                    </motion.button>
                   </div>
                 )}
               </>
             )}
           </section>
-        </div>
-      </motion.main>
+        </main>
 
-      <HdFooter tienda={tienda} slug={slug} diseno={diseno} cp={primary} categories={allCategorías} />
-      <HdWhatsAppFab tienda={tienda} />
+        <AnimatePresence>
+          {showMobileFilters && (
+            <>
+              <motion.button type="button" aria-label="Cerrar filtros" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowMobileFilters(false)} className="fixed inset-0 z-50 bg-stone-900/40 backdrop-blur-[2px] lg:hidden" />
+              <motion.div initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }} transition={{ type: 'spring', damping: 30, stiffness: 260 }} className="fixed inset-y-0 left-0 z-50 flex w-[88%] max-w-sm flex-col lg:hidden" style={{ background: t.bg, fontFamily: t.font }}>
+                <div className="flex items-center justify-between border-b px-6 py-5" style={{ borderColor: t.hair }}>
+                  <h3 className="text-[16px] tracking-[-0.01em]" style={display(t, { color: t.ink })}>Filtros</h3>
+                  <button type="button" aria-label="Cerrar" onClick={() => setShowMobileFilters(false)} className="flex h-10 w-10 items-center justify-center rounded-none border bg-white" style={{ borderColor: t.hair, color: t.ink }}><Icon icon="solar:close-circle-linear" width={21} /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto px-6 py-6">{filters}</div>
+                <div className="border-t p-5" style={{ borderColor: t.hair }}>
+                  <button type="button" onClick={() => setShowMobileFilters(false)} className="h-12 w-full rounded-none text-[13.5px] font-bold" style={{ background: t.primary, color: t.onPrimary }}>Ver {shown} resultados</button>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
 
-      <HdCartModal
-        isOpen={mostrarCarrito}
-        onClose={() => setMostrarCarrito(false)}
-        carrito={carrito}
-        setCarrito={setCarrito}
-        actualizarCantidad={actualizarCantidad}
-        onCheckout={irACheckout}
-        cp={primary}
-        tienda={tienda}
-      />
-      {showPersonalizarModal && productoAPersonalizar && (
-        <ProductCustomizationModal
-          isOpen={showPersonalizarModal}
-          onClose={() => {
-            setShowPersonalizarModal(false);
-            setProductoAPersonalizar(null);
-          }}
-          product={productoAPersonalizar}
-          modifiers={modificadoresProducto}
-          onConfirm={(producto, mods) => {
-            agregarAlCarritoDirecto(producto, mods);
-            setShowPersonalizarModal(false);
-            setProductoAPersonalizar(null);
-          }}
-        />
+        <HdFooter tienda={tienda} slug={slug} diseno={diseno} t={t} categories={categories} navigate={navigate} />
+
+        <HdCartModal isOpen={mostrarCarrito} onClose={() => setMostrarCarrito(false)} carrito={carrito} setCarrito={setCarrito} actualizarCantidad={actualizarCantidad} onCheckout={irACheckout} t={t} tienda={tienda} diseno={diseno} />
+        <FavoritesDrawer open={showFav} slug={slug} cp={t.primary} favoritos={favoritos} onClose={() => setShowFav(false)} onProduct={(item: any) => { setShowFav(false); goProduct(item); }} onRemove={(id: any, s: string) => removeFavorito(id, s)} />
+        <TiendaCompareBar slug={slug} cp={t.primary} onGoProduct={(item: any) => goProduct(item)} />
+
+        {showPersonalizarModal && productoAPersonalizar && (
+          <ProductCustomizationModal
+            isOpen={showPersonalizarModal}
+            onClose={() => { setShowPersonalizarModal(false); setProductoAPersonalizar(null); }}
+            product={productoAPersonalizar}
+            modifiers={modificadoresProducto}
+            onConfirm={(producto: any, mods: any[]) => { agregarAlCarritoDirecto(producto, mods); setShowPersonalizarModal(false); setProductoAPersonalizar(null); }}
+          />
+        )}
+      </div>
+    </MotionConfig>
+  );
+}
+
+// ─────────────────────────────────────────────────────────── piezas ──
+/** Buscador del hero con estado local: aplica al enviar, no en cada tecla. */
+function CatalogSearch({ t, value, onSubmit, placeholder }: { t: Theme; value: string; onSubmit: (v: string) => void; placeholder: string }) {
+  const [q, setQ] = useState(value);
+  useEffect(() => setQ(value), [value]);
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(q.trim()); }} className="mt-6 flex h-[52px] max-w-xl items-center rounded-none border bg-white pl-5 pr-1.5" style={{ borderColor: t.hair }} role="search">
+      <Icon icon="solar:magnifer-linear" width={18} style={{ color: t.muted }} />
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={placeholder} aria-label="Buscar productos" className="min-w-0 flex-1 border-0 bg-transparent bg-none px-3 text-[14px] outline-none placeholder:text-stone-400 focus:ring-0" style={{ color: t.ink }} />
+      {q && <button type="button" aria-label="Borrar búsqueda" onClick={() => { setQ(''); onSubmit(''); }} className="mr-1 flex h-8 w-8 items-center justify-center rounded-none hover:bg-stone-100" style={{ color: t.muted }}><Icon icon="solar:close-circle-linear" width={18} /></button>}
+      <button type="submit" className="h-10 rounded-none px-5 text-[13px] font-bold" style={{ background: t.primary, color: t.onPrimary }}>Buscar</button>
+    </form>
+  );
+}
+
+function FilterGroup({ t, title, children, defaultOpen = true }: { t: Theme; title: string; children: ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-b pb-5 last:border-b-0 last:pb-0" style={{ borderColor: t.hair }}>
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="flex w-full items-center justify-between py-1 text-left">
+        <span className="text-[11.5px] font-medium tracking-[-0.01em] tracking-[0.06em]" style={{ color: t.ink }}>{title}</span>
+        <motion.span animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.25 }} style={{ color: t.muted }}><Icon icon="solar:alt-arrow-down-linear" width={17} /></motion.span>
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: hdEase }} className="overflow-hidden">
+            <div className="pt-3">{children}</div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function CheckRow({ t, label, checked, onChange }: { t: Theme; label: string; checked: boolean; onChange: () => void }) {
+  return (
+    <button type="button" role="checkbox" aria-checked={checked} onClick={onChange} className="flex w-full items-center gap-3 rounded-none px-2 py-2 text-left text-[13px] font-medium transition-colors hover:bg-stone-50" style={{ color: t.ink }}>
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-none border-2 transition-colors duration-200" style={checked ? { background: t.primary, borderColor: t.primary, color: t.onPrimary } : { borderColor: t.hair }}>
+        {checked && <Icon icon="solar:check-read-linear" width={14} />}
+      </span>
+      <span className="leading-snug">{label}</span>
+    </button>
+  );
+}
+
+function FilterPanel({ t, categories, marcas, selCats, selBrands, toggleCategory, toggleBrand, priceRange, setPriceRange, minPrice, maxPrice, hasActiveFilters, clear }: any) {
+  const max = Number(priceRange?.[1] ?? maxPrice);
+  const pct = maxPrice > minPrice ? ((max - minPrice) / (maxPrice - minPrice)) * 100 : 100;
+  return (
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <p className="flex items-center gap-2 text-[14px] font-medium tracking-[-0.01em]" style={{ color: t.ink }}><Icon icon="solar:tuning-2-linear" width={18} style={{ color: t.primaryInk }} /> Filtrar</p>
+        {hasActiveFilters && <button type="button" onClick={clear} className="text-[12px] font-semibold" style={{ color: t.accent }}>Limpiar</button>}
+      </div>
+      <FilterGroup t={t} title="Categorías">
+        {categories.length === 0 ? <p className="px-2 text-[12px]" style={{ color: t.muted }}>Sin categorías</p> : (
+          <div className="max-h-72 space-y-0.5 overflow-y-auto pr-1">
+            {categories.map((c: string) => <CheckRow key={c} t={t} label={c} checked={selCats.includes(c)} onChange={() => toggleCategory(c)} />)}
+          </div>
+        )}
+      </FilterGroup>
+      {marcas.length > 0 && (
+        <FilterGroup t={t} title="Marcas" defaultOpen={marcas.length <= 8}>
+          <div className="max-h-60 space-y-0.5 overflow-y-auto pr-1">
+            {marcas.map((m: string) => <CheckRow key={m} t={t} label={m} checked={selBrands.includes(m)} onChange={() => toggleBrand(m)} />)}
+          </div>
+        </FilterGroup>
       )}
+      {maxPrice > minPrice && (
+        <FilterGroup t={t} title="Precio">
+          <div className="px-1">
+            <div className="flex items-center justify-between text-[12.5px] font-semibold" style={{ color: t.ink }}>
+              <span className="rounded-none px-2.5 py-1" style={{ background: t.soft }}>{hdMoney(minPrice)}</span>
+              <span className="rounded-none px-2.5 py-1" style={{ background: t.soft }}>{hdMoney(max)}</span>
+            </div>
+            <input type="range" aria-label="Precio máximo" min={minPrice} max={maxPrice} step="0.1" value={max} onChange={(e) => setPriceRange([minPrice, Number(e.target.value)])} className="mt-4 h-1.5 w-full cursor-pointer appearance-none rounded-none border-0 focus:ring-0" style={{ accentColor: t.primary, background: `linear-gradient(90deg, ${t.primary} ${pct}%, ${t.hair} ${pct}%)` }} />
+          </div>
+        </FilterGroup>
+      )}
+    </div>
+  );
+}
+
+function EmptyState({ t, search, onClear }: { t: Theme; search?: string; onClear: () => void }) {
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: hdEase }} className="flex flex-col items-center justify-center rounded-none border border-dashed bg-white/60 px-6 py-20 text-center" style={{ borderColor: t.hair }}>
+      <span className="flex h-20 w-20 items-center justify-center rounded-none bg-white" style={{ color: t.primaryInk }}><Icon icon="ph:t-shirt-thin" width={40} /></span>
+      <h3 className="mt-6 text-[18px] tracking-[-0.01em]" style={display(t, { color: t.ink })}>{search ? `Sin resultados para “${search}”` : 'No encontramos productos'}</h3>
+      <p className="mt-2 max-w-sm text-[13.5px]" style={{ color: t.muted }}>Prueba con otro nombre o quita algunos filtros.</p>
+      <motion.button type="button" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={onClear} className="mt-7 h-12 rounded-none px-7 text-[13.5px] font-bold" style={{ background: t.primary, color: t.onPrimary }}>Ver todo el catálogo</motion.button>
     </motion.div>
   );
 }

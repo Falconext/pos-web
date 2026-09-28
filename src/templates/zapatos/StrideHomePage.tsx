@@ -106,7 +106,7 @@ export default function StrideHomePage(props: TemplateHomePageProps) {
 
         {tiles.length > 0 && <CategoryTiles t={t} tiles={tiles} diseno={diseno} countByCat={countByCat} onPick={goCategory} />}
 
-        {offers.length > 0 && <OffersBand t={t} title={editable(diseno?.zapatosOffersTitle, 'En oferta')} offers={offers} endsAt={offerEndsAt} slug={slug} onOpen={goProduct} onAdd={add} onMore={goCatalog} />}
+        {offers.length > 0 && <OffersBand t={t} title={editable(diseno?.zapatosOffersTitle, 'En oferta')} diseno={diseno} offers={offers} endsAt={offerEndsAt} slug={slug} onOpen={goProduct} onAdd={add} onMore={goCatalog} />}
 
         <Guide t={t} diseno={diseno} />
 
@@ -289,7 +289,7 @@ function CategoryTiles({ t, tiles, diseno, countByCat, onPick }: { t: Theme; til
 
 // ═════════════════════════════════════════════════════════════ OFERTAS ══
 /** Banda de ofertas REALES: panel de marca + hasta 3 tarjetas (sin huecos aunque haya 1 o 2). */
-function OffersBand({ t, title, offers, endsAt, slug, onOpen, onAdd, onMore }: { t: Theme; title: string; offers: any[]; endsAt: number | null; slug: string; onOpen: OpenFn; onAdd: AddFn; onMore: () => void }) {
+function OffersBand({ t, title, diseno, offers, endsAt, slug, onOpen, onAdd, onMore }: { t: Theme; title: string; diseno: any; offers: any[]; endsAt: number | null; slug: string; onOpen: OpenFn; onAdd: AddFn; onMore: () => void }) {
   const items = offers.slice(0, 3);
   const maxOff = Math.max(...offers.map((p) => getProductPricing(p).porcentajeDescuento));
   return (
@@ -298,7 +298,7 @@ function OffersBand({ t, title, offers, endsAt, slug, onOpen, onAdd, onMore }: {
         <div className="relative flex min-h-[260px] flex-1 flex-col justify-between overflow-hidden rounded-[26px] p-7 sm:p-9" style={{ background: `linear-gradient(140deg, ${t.primary} 0%, ${mix(t.primary, 72, '#111')} 100%)`, color: t.onPrimary }}>
           <div aria-hidden className="pointer-events-none absolute -bottom-20 -right-16 h-64 w-64 rounded-full bg-white/10" />
           <div className="relative">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-75">Precios especiales</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] opacity-75">{editable(diseno?.zapatosOffersEyebrow, 'Precios especiales')}</p>
             <h2 className="mt-3 text-[30px] font-extrabold uppercase leading-none sm:text-[38px]" style={displayStyle(t)}>{title}</h2>
             <p className="mt-3 text-[13.5px] opacity-80">{offers.length} {offers.length === 1 ? 'modelo' : 'modelos'} con hasta {maxOff}% de descuento.</p>
           </div>

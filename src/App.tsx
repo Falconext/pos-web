@@ -348,6 +348,9 @@ function App() {
         <Route path="/diseno-preview" element={<StorePreviewPage />} />
         <Route path="/tienda/home" element={<TiendaHome />} />
         <Route path="/tienda/preview/:previewPage" element={<StorePreviewPage />} />
+        {/* Ficha dentro del preview de plantillas: debe ir ANTES de /tienda/:slug/producto/:id,
+            si no cae en la tienda pública con slug "preview" y muestra "Producto no encontrado". */}
+        <Route path="/tienda/preview/producto/:previewProductId" element={<StorePreviewPage />} />
         {/* Rutas públicas de tienda para clientes finales */}
         <Route path="/tienda/:slug" element={<TiendaPublica />} />
         <Route path="/tienda/:slug/catalogo" element={<Catalogo />} />

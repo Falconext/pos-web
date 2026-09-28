@@ -133,6 +133,30 @@ import StrideHomePage from './zapatos/StrideHomePage';
 import StrideCatalogoPage from './zapatos/StrideCatalogoPage';
 import StrideCheckoutPage from './zapatos/StrideCheckoutPage';
 
+// Mueblería (Nórdica — muebles / decoración / hogar, escandinavo cálido)
+import NordicaHomePage from './muebleria/NordicaHomePage';
+import NordicaCatalogoPage from './muebleria/NordicaCatalogoPage';
+import NordicaCheckoutPage from './muebleria/NordicaCheckoutPage';
+
+// Mascotas (Patitas — veterinaria / pet shop, cálido y juguetón)
+import PatitasHomePage from './mascotas/PatitasHomePage';
+import PatitasCatalogoPage from './mascotas/PatitasCatalogoPage';
+import PatitasCheckoutPage from './mascotas/PatitasCheckoutPage';
+
+// Maquillaje (Blush — maquillaje / cosméticos / skincare, rosa nude premium)
+import BlushHomePage from './maquillaje/BlushHomePage';
+import BlushCatalogoPage from './maquillaje/BlushCatalogoPage';
+import BlushCheckoutPage from './maquillaje/BlushCheckoutPage';
+// Bolsos (Rosé — carteras / bolsos / marroquinería, rosa y vino con serif de lujo)
+import RoseHomePage from './bolsos/RoseHomePage';
+import RoseCatalogoPage from './bolsos/RoseCatalogoPage';
+import RoseCheckoutPage from './bolsos/RoseCheckoutPage';
+
+// Moda Elegante (Élan — moda femenina, ropa y calzado, lujo minimal editorial)
+import ElanHomePage from './moda-elegante/ElanHomePage';
+import ElanCatalogoPage from './moda-elegante/ElanCatalogoPage';
+import ElanCheckoutPage from './moda-elegante/ElanCheckoutPage';
+
 export interface TemplateConfig {
   id: string;
   HomePage: React.ComponentType<TemplateHomePageProps>;
@@ -301,5 +325,35 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: StrideHomePage,
     CatalogoPage: StrideCatalogoPage,
     CheckoutPage: StrideCheckoutPage,
+  },
+  muebleria: {
+    id: 'muebleria',
+    HomePage: NordicaHomePage,
+    CatalogoPage: NordicaCatalogoPage,
+    CheckoutPage: NordicaCheckoutPage,
+  },
+  mascotas: {
+    id: 'mascotas',
+    HomePage: PatitasHomePage,
+    CatalogoPage: PatitasCatalogoPage,
+    CheckoutPage: PatitasCheckoutPage,
+  },
+  'moda-elegante': {
+    id: 'moda-elegante',
+    HomePage: ElanHomePage,
+    CatalogoPage: ElanCatalogoPage,
+    CheckoutPage: ElanCheckoutPage,
+  },
+  maquillaje: {
+    id: 'maquillaje',
+    HomePage: BlushHomePage,
+    CatalogoPage: BlushCatalogoPage,
+    CheckoutPage: BlushCheckoutPage,
+  },
+  bolsos: {
+    id: 'bolsos',
+    HomePage: RoseHomePage,
+    CatalogoPage: RoseCatalogoPage,
+    CheckoutPage: RoseCheckoutPage,
   },
 };

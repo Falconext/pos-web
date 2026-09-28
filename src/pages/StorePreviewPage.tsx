@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, type ComponentType } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import ProductCardXtra from '@/components/tienda/ProductCardXtra';
 import ProductCardCatalog from '@/components/tienda/ProductCardCatalog';
@@ -128,6 +129,31 @@ import StrideCatalogoPage from '@/templates/zapatos/StrideCatalogoPage';
 import StrideCheckoutPage from '@/templates/zapatos/StrideCheckoutPage';
 import StrideContactPage from '@/templates/zapatos/StrideContactPage';
 import { StrideProductoDetalleView } from '@/pages/tienda/StrideProductoDetalle';
+import NordicaHomePage from '@/templates/muebleria/NordicaHomePage';
+import NordicaCatalogoPage from '@/templates/muebleria/NordicaCatalogoPage';
+import NordicaCheckoutPage from '@/templates/muebleria/NordicaCheckoutPage';
+import NordicaContactPage from '@/templates/muebleria/NordicaContactPage';
+import { NordicaProductoDetalleView } from '@/pages/tienda/NordicaProductoDetalle';
+import PatitasHomePage from '@/templates/mascotas/PatitasHomePage';
+import PatitasCatalogoPage from '@/templates/mascotas/PatitasCatalogoPage';
+import PatitasCheckoutPage from '@/templates/mascotas/PatitasCheckoutPage';
+import PatitasContactPage from '@/templates/mascotas/PatitasContactPage';
+import { PatitasProductoDetalleView } from '@/pages/tienda/PatitasProductoDetalle';
+import BlushHomePage from '@/templates/maquillaje/BlushHomePage';
+import BlushCatalogoPage from '@/templates/maquillaje/BlushCatalogoPage';
+import BlushCheckoutPage from '@/templates/maquillaje/BlushCheckoutPage';
+import BlushContactPage from '@/templates/maquillaje/BlushContactPage';
+import { BlushProductoDetalleView } from '@/pages/tienda/BlushProductoDetalle';
+import RoseHomePage from '@/templates/bolsos/RoseHomePage';
+import RoseCatalogoPage from '@/templates/bolsos/RoseCatalogoPage';
+import RoseCheckoutPage from '@/templates/bolsos/RoseCheckoutPage';
+import RoseContactPage from '@/templates/bolsos/RoseContactPage';
+import { RoseProductoDetalleView } from '@/pages/tienda/RoseProductoDetalle';
+import ElanHomePage from '@/templates/moda-elegante/ElanHomePage';
+import ElanCatalogoPage from '@/templates/moda-elegante/ElanCatalogoPage';
+import ElanCheckoutPage from '@/templates/moda-elegante/ElanCheckoutPage';
+import ElanContactPage from '@/templates/moda-elegante/ElanContactPage';
+import { ElanProductoDetalleView } from '@/pages/tienda/ElanProductoDetalle';
 import { deriveAtributoFacets } from '@/lib/catalogFacets';
 import { getRubroDemo, type DemoProduct, type RubroDemo } from '@/data/rubroDemo';
 import ProductCardPio from '@/components/tienda/ProductCardPio';
@@ -163,6 +189,16 @@ const getPreviewPageFromPath = (): PreviewPage | null => {
   const segments = window.location.pathname.split('/').filter(Boolean);
   const value = segments[segments.length - 1] ?? null;
   return isPreviewPage(value) ? value : null;
+};
+
+/**
+ * Id del producto cuando la ruta es /tienda/preview/producto/<id>.
+ * Las plantillas navegan con el router real (useNavigate) a esa URL, así que el
+ * preview la reconoce aquí en vez de que cada plantilla reciba un navigate propio.
+ */
+const getPreviewProductIdFromPath = (): string | null => {
+  const m = window.location.pathname.match(/^\/tienda\/preview\/producto\/([^/?#]+)/);
+  return m ? decodeURIComponent(m[1]) : null;
 };
 
 const URBANO_PREVIEW_ASSETS = [
@@ -1235,6 +1271,7 @@ export default function StorePreviewPage() {
   const [config, setConfig] = useState<PreviewConfig>({});
   const [demo, setDemo] = useState<RubroDemo>(getRubroDemo(''));
   const [page, setPage] = useState<PreviewPage>('home');
+  const previewPathname = useLocation().pathname;
   const [selectedProduct, setSelectedProduct] = useState<DemoProduct | null>(null);
   const [carrito, setCarrito] = useState<any[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -1316,6 +1353,24 @@ export default function StorePreviewPage() {
       setSelectedProduct(demo.products[0]);
     }
   }, [demo.products, page, selectedProduct]);
+
+  /**
+   * Las plantillas abren la ficha con el router real (`/tienda/preview/producto/<id>`).
+   * Entre esa ruta y las demás del preview React Router REUTILIZA este componente, así que
+   * el efecto de montaje no se repite: hay que escuchar el cambio de URL.
+   */
+  useEffect(() => {
+    const id = getPreviewProductIdFromPath();
+    if (!id) return;
+    // El toolbar guarda la página en `?page=` conservando el path: si pide otra, manda esa.
+    const explicitPage = new URLSearchParams(window.location.search).get('page');
+    if (explicitPage && explicitPage !== 'producto') return;
+    const found = demo.products.find((item) => String(item.id) === id);
+    if (!found) return;
+    setSelectedProduct(found);
+    setPage('producto');
+    window.scrollTo({ top: 0 });
+  }, [demo.products, previewPathname]);
 
   const cp = config.colorPrimario ?? demo.colorDefault ?? '#6A6CFF';
   const cs = config.colorSecundario ?? '#ffffff';
@@ -1406,7 +1461,12 @@ export default function StorePreviewPage() {
     config.plantillaId === 'comida-app' ||
     config.plantillaId === 'farmacia' ||
     config.plantillaId === 'salud' ||
-    config.plantillaId === 'zapatos';
+    config.plantillaId === 'zapatos' ||
+    config.plantillaId === 'muebleria' ||
+    config.plantillaId === 'mascotas' ||
+    config.plantillaId === 'moda-elegante' ||
+    config.plantillaId === 'maquillaje' ||
+    config.plantillaId === 'bolsos';
   const previewStore = {
     nombre: demo.storeName,
     nombreComercial: demo.storeName,
@@ -1678,7 +1738,7 @@ export default function StorePreviewPage() {
         )}
 
         {isCartOpen && (
-          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || config.plantillaId === 'apicultura' || config.plantillaId === 'construccion' || config.plantillaId === 'falcon' || config.plantillaId === 'spa' || config.plantillaId === 'carteras' || config.plantillaId === 'joyeria' || config.plantillaId === 'abarrotes' || config.plantillaId === 'supermercado' || config.plantillaId === 'ropa-hombre' || config.plantillaId === 'bicicletas' || config.plantillaId === 'motos' || config.plantillaId === 'hoodie' || config.plantillaId === 'tones' || config.plantillaId === 'moda-minimal' || config.plantillaId === 'comida-app' || config.plantillaId === 'zapatos' || (config.plantillaId === 'urbano' && page === 'home') ? (
+          config.plantillaId === 'tecnologia' || config.plantillaId === 'maye' || config.plantillaId === 'apicultura' || config.plantillaId === 'construccion' || config.plantillaId === 'falcon' || config.plantillaId === 'spa' || config.plantillaId === 'carteras' || config.plantillaId === 'joyeria' || config.plantillaId === 'abarrotes' || config.plantillaId === 'supermercado' || config.plantillaId === 'ropa-hombre' || config.plantillaId === 'bicicletas' || config.plantillaId === 'motos' || config.plantillaId === 'hoodie' || config.plantillaId === 'tones' || config.plantillaId === 'moda-minimal' || config.plantillaId === 'comida-app' || config.plantillaId === 'zapatos' || config.plantillaId === 'muebleria' || config.plantillaId === 'mascotas' || config.plantillaId === 'moda-elegante' || config.plantillaId === 'maquillaje' || config.plantillaId === 'bolsos' || (config.plantillaId === 'urbano' && page === 'home') ? (
             null
           ) : config.plantillaId === 'moda' ? (
             <ModaCartModal
@@ -2076,6 +2136,86 @@ export default function StorePreviewPage() {
           />
         ) : page === 'home' && config.plantillaId === 'construccion' ? (
           <ConstruccionHomePage
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'moda-elegante' ? (
+          <ElanHomePage
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'maquillaje' ? (
+          <BlushHomePage
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'bolsos' ? (
+          <RoseHomePage
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'mascotas' ? (
+          <PatitasHomePage
+            tienda={previewStore}
+            slug="preview"
+            productos={demo.products}
+            allCategories={previewCategories}
+            cp={cp}
+            diseno={diseno}
+            carrito={carrito}
+            setCarrito={setCarrito}
+            mostrarCarrito={isCartOpen}
+            setMostrarCarrito={setIsCartOpen}
+            agregarAlCarrito={addToCart}
+            actualizarCantidad={actualizarCantidad}
+            loading={false}
+          />
+        ) : page === 'home' && config.plantillaId === 'muebleria' ? (
+          <NordicaHomePage
             tienda={previewStore}
             slug="preview"
             productos={demo.products}
@@ -2688,6 +2828,241 @@ export default function StorePreviewPage() {
             />
           ) : config.plantillaId === 'tones' ? (
             <TonesCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
+          ) : config.plantillaId === 'moda-elegante' ? (
+            <ElanCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
+          ) : config.plantillaId === 'maquillaje' ? (
+            <BlushCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
+          ) : config.plantillaId === 'bolsos' ? (
+            <RoseCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
+          ) : config.plantillaId === 'mascotas' ? (
+            <PatitasCatalogoPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              navigate={previewNavigate}
+              productos={demo.products}
+              sortedProductos={catalogSortedProducts}
+              loading={false}
+              total={demo.products.length}
+              page={1}
+              cargarProductos={() => { }}
+              allCategorías={previewCategories}
+              allMarcas={catalogBrands}
+              filteredMarcas={catalogBrands}
+              selectedCategorías={catalogSelectedCategories}
+              setSelectedCategorías={setCatalogSelectedCategories}
+              selectedMarcas={catalogSelectedBrands}
+              setSelectedMarcas={setCatalogSelectedBrands}
+              priceRange={catalogPriceRange}
+              setPriceRange={setCatalogPriceRange}
+              minPrice={0}
+              maxPrice={catalogMaxPrice}
+              sortBy={catalogSortBy}
+              setSortBy={setCatalogSortBy}
+              hasActiveFilters={hasCatalogFilters}
+              toggleCategory={toggleCatalogCategory}
+              toggleBrand={toggleCatalogBrand}
+              search={catalogSearch}
+              setSearch={setCatalogSearch}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              irACheckout={goToPreviewCheckout}
+              handleAgregarProducto={addToCart}
+              agregarAlCarritoDirecto={(producto) => addToCart(producto)}
+              showMobileFilters={showMobileFilters}
+              setShowMobileFilters={setShowMobileFilters}
+              showPersonalizarModal={showPersonalizarModal}
+              setShowPersonalizarModal={setShowPersonalizarModal}
+              productoAPersonalizar={productoAPersonalizar}
+              setProductoAPersonalizar={setProductoAPersonalizar}
+              modificadoresProducto={[]}
+            />
+          ) : config.plantillaId === 'muebleria' ? (
+            <NordicaCatalogoPage
               tienda={previewStore}
               slug="preview"
               diseno={diseno}
@@ -3391,6 +3766,76 @@ export default function StorePreviewPage() {
               actualizarCantidad={actualizarCantidad}
               onNavigate={goToPage}
             />
+          ) : config.plantillaId === 'moda-elegante' ? (
+            <ElanContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
+          ) : config.plantillaId === 'maquillaje' ? (
+            <BlushContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
+          ) : config.plantillaId === 'bolsos' ? (
+            <RoseContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
+          ) : config.plantillaId === 'mascotas' ? (
+            <PatitasContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
+          ) : config.plantillaId === 'muebleria' ? (
+            <NordicaContactPage
+              tienda={previewStore}
+              slug="preview"
+              diseno={diseno}
+              cp={cp}
+              allCategories={previewCategories}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+            />
           ) : config.plantillaId === 'zapatos' ? (
             <StrideContactPage
               tienda={previewStore}
@@ -3672,6 +4117,86 @@ export default function StorePreviewPage() {
               slug="preview"
               producto={selectedProduct}
               related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 4)}
+              allCategories={previewCategories}
+              cp={cp}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'moda-elegante' ? (
+            <ElanProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 8)}
+              allCategories={previewCategories}
+              cp={cp}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'maquillaje' ? (
+            <BlushProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 8)}
+              allCategories={previewCategories}
+              cp={cp}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'bolsos' ? (
+            <RoseProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 8)}
+              allCategories={previewCategories}
+              cp={cp}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'mascotas' ? (
+            <PatitasProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 8)}
+              allCategories={previewCategories}
+              cp={cp}
+              carrito={carrito}
+              setCarrito={setCarrito}
+              mostrarCarrito={isCartOpen}
+              setMostrarCarrito={setIsCartOpen}
+              actualizarCantidad={actualizarCantidad}
+              onNavigate={goToPage}
+              onAddToCart={addToCart}
+            />
+          ) : config.plantillaId === 'muebleria' ? (
+            <NordicaProductoDetalleView
+              tienda={previewStore}
+              slug="preview"
+              producto={selectedProduct}
+              related={demo.products.filter((item) => item.id !== selectedProduct.id).slice(0, 8)}
               allCategories={previewCategories}
               cp={cp}
               carrito={carrito}
@@ -4220,6 +4745,181 @@ export default function StorePreviewPage() {
             />
           ) : config.plantillaId === 'tones' ? (
             <TonesCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'moda-elegante' ? (
+            <ElanCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'maquillaje' ? (
+            <BlushCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'bolsos' ? (
+            <RoseCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'mascotas' ? (
+            <PatitasCheckoutPage
+              slug="preview"
+              tienda={previewStore}
+              diseno={diseno}
+              cp={cp}
+              pedidoCreado={null}
+              carritoState={carrito}
+              setCarritoState={setCarrito}
+              formData={{}}
+              erroresForm={{}}
+              handleChange={() => { }}
+              configPago={{ aceptaEfectivo: true, aceptaTarjeta: true, aceptaYape: true, aceptaPlin: true, culqiPublicKey: 'pk_test' }}
+              configEnvio={{ aceptaEnvio: true, aceptaRecojo: true, costoEnvio: 15 }}
+              enviando={false}
+              search=""
+              setSearch={() => { }}
+              searchResults={[]}
+              suggestedProducts={demo.products.slice(0, 4)}
+              updateQuantity={actualizarCantidad}
+              removeItem={(id) => actualizarCantidad(id, 0)}
+              calcularSubtotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0)}
+              calcularCostoEnvio={() => 15}
+              calcularTotal={() => carrito.reduce((sum, item) => sum + item.precioUnitario * item.cantidad, 0) + 15}
+              onSubmit={() => alert('¡Compra completada en modo demo!')}
+              onAddToCart={addToCart}
+              freeDeliveryThreshold={0}
+              freeDeliveryRemaining={0}
+              freeDeliveryProgress={0}
+              showConfirmModal={false}
+              setShowConfirmModal={() => { }}
+              showPaymentModal={false}
+              setShowPaymentModal={() => { }}
+              enviarPedido={async () => { alert('Pedido Enviado Demo'); }}
+            />
+          ) : config.plantillaId === 'muebleria' ? (
+            <NordicaCheckoutPage
               slug="preview"
               tienda={previewStore}
               diseno={diseno}

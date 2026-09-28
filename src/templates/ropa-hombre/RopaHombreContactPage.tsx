@@ -1,181 +1,240 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
-import { URB, UrbCartModal, UrbFooter, UrbHeader, UrbWhatsAppFab, urbFont, urbPrimary, waLink, withAlpha } from './RopaHombreParts';
-import { urbCard, urbPage, urbSection, urbStagger, urbTap, urbViewport } from './motion';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
+import { useFavoritosStore } from '@/zustand/favoritos';
+import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
+import TiendaCompareBar from '@/components/tienda/TiendaCompareBar';
+import { UrbHeader, UrbFooter, UrbCartModal, buildServices, urbTheme, useUrbFont, editable, urMoney, storeNameOf, btnCls, serif, type Theme } from './RopaHombreParts';
+import { PageHero, SectionHeader, storeChannels, getName, type Channels } from './RopaHombreSections';
+import { mix, urEase, urItem, urReveal, urStagger, urViewport } from './motion';
 
-function pickContact(tienda: any, diseno: any) {
-  return {
-    address: diseno?.ropaHombreContactAddress || tienda?.direccionTienda || tienda?.direccionFiscal || tienda?.direccion || '',
-    phone: diseno?.ropaHombreContactPhone || tienda?.whatsappTienda || tienda?.telefono || tienda?.celular || '',
-    email: diseno?.ropaHombreContactEmail || tienda?.email || tienda?.correo || '',
-    hours: diseno?.ropaHombreContactHours || tienda?.horarioAtencion || '',
+type Channel = { key: string; icon: string; title: string; value: string; action?: { label: string; href: string; external?: boolean } };
+
+export default function RopaHombreContactPage({ tienda, slug, diseno: disenoProp, allCategories, carrito, setCarrito, mostrarCarrito, setMostrarCarrito, actualizarCantidad, onNavigate }: any) {
+  useUrbFont();
+  const navigate = useNavigate();
+  const diseno = disenoProp || tienda?.diseno || {};
+  const t = urbTheme(diseno);
+  const ch = storeChannels(tienda, diseno);
+  const [showFav, setShowFav] = useState(false);
+  const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
+  const favoritos = getFavoritosBySlug(slug);
+  const categories: string[] = (allCategories || []).map(getName).filter(Boolean);
+  const cartCount = (carrito || []).reduce((s: number, i: any) => s + Number(i?.cantidad || 1), 0);
+  const storeName = storeNameOf(tienda, 'nuestra tienda');
+  const go = (url: string, page?: string) => { if (onNavigate && page) onNavigate(page); else navigate(url); };
+  const nav = (url: string) => {
+    const page = url.includes('/catalogo') ? 'catalogo' : url.includes('/checkout') ? 'checkout' : url.endsWith(`/${slug}`) ? 'home' : undefined;
+    go(url, page);
   };
-}
+  const goProduct = (p: any) => go(`/tienda/${slug}/producto/${p.id}`, 'producto');
 
-export default function RopaHombreContactPage({
-  tienda,
-  slug,
-  diseno,
-  cp,
-  allCategories = [],
-  carrito = [],
-  setCarrito,
-  mostrarCarrito = false,
-  setMostrarCarrito,
-  actualizarCantidad,
-  onNavigate,
-}: {
-  tienda: any;
-  slug: string;
-  diseno: any;
-  cp: string;
-  allCategories?: any[];
-  carrito?: any[];
-  setCarrito?: (items: any[]) => void;
-  mostrarCarrito?: boolean;
-  setMostrarCarrito?: (value: boolean) => void;
-  actualizarCantidad?: (id: any, cantidad: number) => void;
-  onNavigate?: (page: 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto') => void;
-}) {
-  const primary = urbPrimary(cp);
-  const font = urbFont(diseno);
-  const [sent, setSent] = useState(false);
-  const contact = pickContact(tienda, diseno);
-  const mapQuery = encodeURIComponent(contact.address || tienda?.nombreComercial || tienda?.razonSocial || 'Peru');
-  const displayAddress = contact.address || 'Dirección no configurada';
-  const displayPhone = contact.phone || 'Teléfono no configurado';
-  const displayEmail = contact.email || 'Correo no configurado';
-  const displayHours = contact.hours || 'Lun a Sáb · 10:00 – 20:00';
+  // Enlace "Preguntas frecuentes" del footer (/contacto#faq): baja a esa sección al cargar.
+  useEffect(() => {
+    if (window.location.hash !== '#faq') return;
+    const id = window.setTimeout(() => document.getElementById('faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 350);
+    return () => window.clearTimeout(id);
+  }, []);
 
-  const go = (page: 'home' | 'catalogo' | 'checkout' | 'contacto') => {
-    if (onNavigate) { onNavigate(page); return; }
-    window.location.href = page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`;
-  };
-
-  const inputCls = 'mt-2 h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--urb-cp)]';
+  // Solo canales reales, en orden de rapidez de respuesta.
+  const channels: Channel[] = [];
+  if (ch.hasWhatsapp) channels.push({ key: 'wa', icon: 'ic:baseline-whatsapp', title: 'WhatsApp', value: ch.whatsappLabel || 'Escríbenos', action: { label: 'Escribir ahora', href: ch.wa('Hola, tengo una consulta.') || '#', external: true } });
+  if (ch.phoneHref) channels.push({ key: 'tel', icon: 'solar:phone-calling-linear', title: 'Teléfono', value: ch.phoneLabel || '', action: { label: 'Llamar', href: ch.phoneHref } });
+  if (ch.email) channels.push({ key: 'mail', icon: 'solar:letter-linear', title: 'Correo', value: ch.email, action: { label: 'Enviar correo', href: `mailto:${ch.email}` } });
+  if (ch.address) channels.push({ key: 'map', icon: 'solar:map-point-linear', title: 'Tienda', value: ch.address, action: ch.mapsUrl ? { label: 'Cómo llegar', href: ch.mapsUrl, external: true } : undefined });
+  if (ch.horario) channels.push({ key: 'time', icon: 'solar:clock-circle-linear', title: 'Horario', value: ch.horario });
+  const cols: Record<number, string> = { 1: 'lg:grid-cols-1', 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4', 5: 'lg:grid-cols-5' };
+  const canMessage = ch.hasWhatsapp || Boolean(ch.email);
 
   return (
-    <motion.div initial="hidden" animate="show" variants={urbPage} className="min-h-screen" style={{ backgroundColor: URB.cream, fontFamily: font, ['--urb-cp' as any]: URB.ink }}>
-      <UrbHeader
-        tienda={tienda}
-        slug={slug}
-        cp={primary}
-        diseno={diseno}
-        carritoSize={carrito.reduce((sum, item) => sum + Number(item.cantidad || 1), 0)}
-        onOpenCart={() => setMostrarCarrito?.(true)}
-        allCategories={allCategories}
-        onSearchSubmit={(event, value) => {
-          event.preventDefault();
-          const term = value?.trim();
-          if (term) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(term)}`;
-        }}
-      />
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, fontFamily: t.font }}>
+        <UrbHeader tienda={tienda} slug={slug} diseno={diseno} categories={categories} t={t} cartCount={cartCount} favCount={favoritos.length} onOpenCart={() => setMostrarCarrito(true)} onOpenFav={() => setShowFav(true)} navigate={nav} />
 
-      <section className="relative overflow-hidden border-b" style={{ borderColor: URB.line, background: `linear-gradient(120% 120% at 80% 0%, ${URB.nude}, ${URB.cream} 60%)` }}>
-        <div className="mx-auto max-w-7xl px-6 py-12 text-center md:py-16">
-          <div className="text-xs font-medium uppercase tracking-[0.2em] text-neutral-400">
-            <button type="button" onClick={() => go('home')} className="hover:text-neutral-900">Inicio</button>
-            <span className="mx-2">/</span>
-            <span className="text-neutral-700">Contacto</span>
-          </div>
-          <h1 className="mt-3 text-4xl uppercase tracking-[0.1em] md:text-5xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{diseno?.ropaHombreContactHeading || 'Hablemos'}</h1>
-          <p className="mx-auto mt-3 max-w-md text-sm text-neutral-500">{diseno?.ropaHombreContactSubheading || '¿Buscas tu talla ideal o tienes una consulta? Nuestro equipo te asesora con gusto.'}</p>
-        </div>
-      </section>
-
-      <motion.main variants={urbSection} className="mx-auto max-w-7xl px-6 py-14">
-        <div className="grid gap-8 lg:grid-cols-[1.4fr_0.9fr]">
-          <motion.div variants={urbCard} className="min-h-[420px] overflow-hidden rounded-2xl border md:min-h-[560px]" style={{ borderColor: URB.line }}>
-            <iframe
-              title="Mapa de contacto"
-              src={`https://www.google.com/maps?q=${mapQuery}&output=embed`}
-              className="h-full min-h-[420px] w-full border-0 md:min-h-[560px]"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          </motion.div>
-
-          <motion.form
-            variants={urbCard}
-            className="rounded-2xl border bg-white p-7 md:p-9"
-            style={{ borderColor: URB.line }}
-            onSubmit={(event) => { event.preventDefault(); setSent(true); }}
-          >
-            <h2 className="text-2xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{diseno?.ropaHombreContactTitle || 'Escríbenos'}</h2>
-            <p className="mt-2 text-sm text-neutral-500">Completa el formulario o contáctanos por WhatsApp.</p>
-
-            <label className="mt-6 block text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-              Tu nombre
-              <input required className={inputCls} />
-            </label>
-            <label className="mt-5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-              Tu correo
-              <input required type="email" className={inputCls} />
-            </label>
-            <label className="mt-5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-              Tu mensaje
-              <textarea rows={5} className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--urb-cp)]" />
-            </label>
-            {sent && (
-              <p className="mt-4 rounded-xl px-4 py-3 text-sm font-medium" style={{ backgroundColor: withAlpha(primary, '14'), color: primary }}>
-                ¡Gracias! Mensaje registrado en esta vista. Configura el canal de contacto de la tienda para recibirlo.
-              </p>
-            )}
-            <motion.button
-              type="submit"
-              className="mt-6 w-full rounded-full py-4 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-lg"
-              style={{ backgroundColor: URB.ink }}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={urbTap}
-            >
-              {diseno?.ropaHombreContactSubmitLabel || 'Enviar mensaje'}
-            </motion.button>
-            <a
-              href={waLink(tienda, 'Hola, quiero hacer una consulta')}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border py-3.5 text-xs font-semibold uppercase tracking-[0.14em] transition-colors"
-              style={{ borderColor: URB.tan, color: URB.ink }}
-            >
-              <Icon icon="mdi:whatsapp" width={18} /> Escríbenos por WhatsApp
-            </a>
-          </motion.form>
-        </div>
-
-        <motion.section initial="hidden" whileInView="show" viewport={urbViewport} variants={urbStagger} className="mt-10 grid gap-4 md:grid-cols-4">
-          {[
-            ['solar:map-point-linear', 'Dirección', displayAddress],
-            ['solar:phone-linear', 'Teléfono', displayPhone],
-            ['solar:letter-linear', 'Correo', displayEmail],
-            ['solar:clock-circle-linear', 'Horario', displayHours],
-          ].map(([icon, label, text], index) => (
-            <motion.div key={`${label}-${index}`} variants={urbCard} className="rounded-2xl border bg-white p-6" style={{ borderColor: URB.line }}>
-              <span className="flex h-11 w-11 items-center justify-center rounded-full text-white" style={{ background: `linear-gradient(135deg, ${URB.charcoal}, ${URB.ink})` }}>
-                <Icon icon={icon} width={20} />
-              </span>
-              <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: URB.gold }}>{label}</p>
-              <p className="mt-1 text-sm leading-6 text-neutral-700">{text}</p>
-            </motion.div>
-          ))}
-        </motion.section>
-      </motion.main>
-
-      <UrbFooter tienda={tienda} slug={slug} diseno={diseno} cp={primary} categories={allCategories} />
-      <UrbWhatsAppFab tienda={tienda} />
-
-      {setCarrito && actualizarCantidad && (
-        <UrbCartModal
-          isOpen={mostrarCarrito}
-          onClose={() => setMostrarCarrito?.(false)}
-          carrito={carrito}
-          setCarrito={setCarrito}
-          actualizarCantidad={actualizarCantidad}
-          onCheckout={() => go('checkout')}
-          cp={primary}
-          tienda={tienda}
+        <PageHero
+          t={t}
+          crumbs={[{ label: 'Inicio', onClick: () => go(`/tienda/${slug}`, 'home') }, { label: 'Contacto' }]}
+          eyebrow="Contacto"
+          title={editable(diseno?.ropaHombreContactTitle, 'Estamos para atenderte')}
+          subtitle={editable(diseno?.ropaHombreContactSubtitle, `Resolvemos tus dudas sobre tallas, prendas, pedidos y entregas en ${storeName}.`)}
         />
+
+        {channels.length > 0 && (
+          <section className="mx-auto max-w-[1320px] px-4 pt-8 lg:px-8">
+            <motion.div variants={urStagger} initial="hidden" animate="show" className={`grid gap-3 sm:grid-cols-2 ${cols[channels.length] || 'lg:grid-cols-4'}`}>
+              {channels.map((c) => (
+                <motion.div key={c.key} variants={urItem} className="flex flex-col rounded-none border bg-white p-6" style={{ borderColor: t.line }}>
+                  <span className="flex h-12 w-12 items-center justify-center rounded-none" style={{ background: c.key === 'wa' ? '#E7F8EE' : mix(t.primary, 9, '#fff'), color: c.key === 'wa' ? '#1FA855' : t.primaryInk }}><Icon icon={c.icon} width={24} /></span>
+                  <p className="mt-5 text-[10.5px] font-bold uppercase tracking-[0.16em]" style={{ color: t.muted }}>{c.title}</p>
+                  <p className="mt-1.5 break-words text-[14.5px] font-bold leading-snug" style={{ color: t.ink }}>{c.value}</p>
+                  {c.action && (
+                    <a href={c.action.href} target={c.action.external ? '_blank' : undefined} rel={c.action.external ? 'noopener noreferrer' : undefined} className="group mt-auto inline-flex items-center gap-1.5 pt-5 text-[13px] font-bold" style={{ color: t.ink }}>
+                      {c.action.label}<Icon icon="solar:arrow-right-linear" width={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+                    </a>
+                  )}
+                </motion.div>
+              ))}
+            </motion.div>
+          </section>
+        )}
+
+        <section className="mx-auto grid max-w-[1320px] gap-4 px-4 py-10 lg:grid-cols-[1.35fr_1fr] lg:px-8">
+          {ch.mapsEmbed ? (
+            <motion.div variants={urReveal} initial="hidden" whileInView="show" viewport={urViewport} className="relative min-h-[380px] overflow-hidden rounded-none border bg-white" style={{ borderColor: t.line }}>
+              <iframe title={`Ubicación de ${storeName}`} src={ch.mapsEmbed} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="absolute inset-0 h-full w-full border-0" style={{ filter: 'grayscale(0.35) contrast(1.02)' }} />
+              <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex sm:right-auto">
+                <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/70 bg-white/95 py-2 pl-2 pr-4 shadow-[0_20px_40px_-24px_rgba(28,25,23,0.5)] backdrop-blur">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full" style={{ background: t.primary, color: t.onPrimary }}><Icon icon="solar:map-point-bold" width={20} /></span>
+                  <div className="min-w-0"><p className="truncate text-[13px] font-bold" style={{ color: t.ink }}>{storeName}</p><p className="truncate text-[11.5px]" style={{ color: t.muted }}>{ch.address}</p></div>
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div variants={urReveal} initial="hidden" whileInView="show" viewport={urViewport} className="flex min-h-[300px] flex-col items-center justify-center rounded-none border border-dashed bg-white/60 px-8 text-center" style={{ borderColor: t.line }}>
+              <Icon icon="solar:delivery-linear" width={48} style={{ color: t.primaryInk }} />
+              <p className="mt-4 text-[15px] font-medium tracking-[-0.01em]" style={{ color: t.ink }}>Tienda 100% en línea</p>
+              <p className="mt-1 max-w-xs text-[13px]" style={{ color: t.muted }}>Haz tu pedido desde la web y te lo hacemos llegar.</p>
+            </motion.div>
+          )}
+          <StoreCard t={t} tienda={tienda} ch={ch} storeName={storeName} onCatalog={() => go(`/tienda/${slug}/catalogo`, 'catalogo')} />
+        </section>
+
+        {canMessage && <MessageForm t={t} ch={ch} diseno={diseno} />}
+        <Faq t={t} tienda={tienda} ch={ch} diseno={diseno} />
+
+        <UrbFooter tienda={tienda} slug={slug} diseno={diseno} t={t} categories={categories} navigate={nav} />
+
+        <UrbCartModal isOpen={mostrarCarrito} onClose={() => setMostrarCarrito(false)} carrito={carrito} setCarrito={setCarrito} actualizarCantidad={actualizarCantidad} onCheckout={() => go(`/tienda/${slug}/checkout`, 'checkout')} t={t} tienda={tienda} diseno={diseno} />
+        <FavoritesDrawer open={showFav} slug={slug} cp={t.primary} favoritos={favoritos} onClose={() => setShowFav(false)} onProduct={(item: any) => { setShowFav(false); goProduct(item); }} onRemove={(id: any, s: string) => removeFavorito(id, s)} />
+        <TiendaCompareBar slug={slug} cp={t.primary} onGoProduct={(item: any) => goProduct(item)} />
+      </div>
+    </MotionConfig>
+  );
+}
+
+// ────────────────────────────────────────────────────────────── piezas ──
+function StoreCard({ t, tienda, ch, storeName, onCatalog }: { t: Theme; tienda: any; ch: Channels; storeName: string; onCatalog: () => void }) {
+  const services = buildServices(tienda, ch.hasWhatsapp);
+  return (
+    <motion.div variants={urReveal} initial="hidden" whileInView="show" viewport={urViewport} className="relative flex flex-col overflow-hidden rounded-none p-7 sm:p-8" style={{ background: `linear-gradient(150deg, ${t.primary} 0%, ${mix(t.primary, 70, '#111')} 100%)`, color: t.onPrimary }}>
+      <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" />
+      <h3 className="relative mt-4 text-[24px] tracking-[-0.01em] leading-tight" style={serif(t)}>{storeName}</h3>
+      {tienda?.descripcionTienda && <p className="relative mt-2 whitespace-pre-line text-[13.5px] leading-relaxed opacity-85">{tienda.descripcionTienda}</p>}
+      <ul className="relative mt-6 space-y-2.5">
+        {services.map((s) => (
+          <li key={s.label} className="flex items-center gap-3 rounded-none bg-white/10 px-4 py-3">
+            <Icon icon={s.icon} width={20} className="shrink-0" />
+            <p className="text-[13px]"><span className="font-bold">{s.label}</span> <span className="opacity-75">· {s.sub}</span></p>
+          </li>
+        ))}
+      </ul>
+      {ch.socials.length > 0 && (
+        <div className="relative mt-6 flex items-center gap-2">
+          {ch.socials.map((s) => <a key={s.label} href={s.url} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 transition-colors hover:bg-white/25"><Icon icon={s.icon} width={19} /></a>)}
+        </div>
       )}
+      <div className="relative mt-auto pt-7">
+        <motion.button type="button" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} onClick={onCatalog} className="inline-flex h-12 items-center gap-2 rounded-none bg-white px-6 text-[13.5px] font-bold" style={{ color: t.ink }}>Ver catálogo <Icon icon="solar:arrow-right-linear" width={17} /></motion.button>
+      </div>
     </motion.div>
+  );
+}
+
+const MOTIVOS = ['Consulta de talla', 'Disponibilidad de una prenda', 'Estado de mi pedido', 'Cambios', 'Otro'];
+
+/** Formulario honesto: arma el mensaje y lo abre en WhatsApp (o correo). Nunca simula un "enviado". */
+function MessageForm({ t, ch, diseno }: { t: Theme; ch: Channels; diseno: any }) {
+  const [nombre, setNombre] = useState('');
+  const [motivo, setMotivo] = useState(MOTIVOS[0]);
+  const [mensaje, setMensaje] = useState('');
+  const [errors, setErrors] = useState<{ nombre?: string; mensaje?: string }>({});
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const next: typeof errors = {};
+    if (nombre.trim().length < 2) next.nombre = 'Ingresa tu nombre.';
+    if (mensaje.trim().length < 5) next.mensaje = 'Cuéntanos brevemente en qué te ayudamos.';
+    setErrors(next);
+    if (Object.keys(next).length) return;
+    const body = `Hola, soy ${nombre.trim()}.\nMotivo: ${motivo}\n\n${mensaje.trim()}`;
+    if (ch.hasWhatsapp) { const url = ch.wa(body); if (url) window.open(url, '_blank', 'noopener,noreferrer'); }
+    else if (ch.email) window.location.href = `mailto:${ch.email}?subject=${encodeURIComponent(motivo)}&body=${encodeURIComponent(body)}`;
+  };
+  const box = (err?: string) => ({ boxShadow: `inset 0 0 0 1px ${err ? '#F43F5E' : t.line}` });
+  const base = 'w-full appearance-none rounded-2xl border-0 bg-white bg-none px-4 text-[14px] font-medium text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0';
+
+  return (
+    <section className="mx-auto max-w-[1320px] px-4 pb-10 lg:px-8">
+      <motion.div variants={urReveal} initial="hidden" whileInView="show" viewport={urViewport} className="grid gap-8 rounded-none border p-7 sm:p-10 lg:grid-cols-[1fr_1.3fr]" style={{ borderColor: t.line, background: mix(t.primary, 4, '#fff') }}>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: t.primaryInk }}>{editable(diseno?.ropaHombreFormEyebrow, 'Escríbenos')}</p>
+          <h2 className="mt-2 text-[24px] tracking-[-0.01em] leading-tight" style={serif(t, { color: t.ink })}>{editable(diseno?.ropaHombreFormTitle, '¿En qué te ayudamos?')}</h2>
+          <p className="mt-3 text-[13.5px] leading-relaxed" style={{ color: t.muted }}>Completa el formulario y se abrirá {ch.hasWhatsapp ? 'WhatsApp' : 'tu correo'} con el mensaje listo para enviar. Si es sobre tallas, cuéntanos tu talla habitual, altura y cómo te gusta el calce.</p>
+        </div>
+        <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
+          <label>
+            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: t.muted }}>Nombre *</span>
+            <input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Tu nombre" className={`${base} h-12`} style={box(errors.nombre)} aria-invalid={Boolean(errors.nombre)} />
+            {errors.nombre && <span className="mt-1 block text-[12px] text-rose-500">{errors.nombre}</span>}
+          </label>
+          <label>
+            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: t.muted }}>Motivo</span>
+            <div className="relative">
+              <select value={motivo} onChange={(e) => setMotivo(e.target.value)} className={`${base} h-12 pr-10`} style={box()}>
+                {MOTIVOS.map((m) => <option key={m}>{m}</option>)}
+              </select>
+              <Icon icon="solar:alt-arrow-down-linear" width={16} className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" style={{ color: t.muted }} />
+            </div>
+          </label>
+          <label className="sm:col-span-2">
+            <span className="mb-1.5 block text-[12px] font-semibold" style={{ color: t.muted }}>Mensaje *</span>
+            <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} rows={5} placeholder="Escribe tu consulta…" className={`${base} resize-none py-3`} style={box(errors.mensaje)} aria-invalid={Boolean(errors.mensaje)} />
+            {errors.mensaje && <span className="mt-1 block text-[12px] text-rose-500">{errors.mensaje}</span>}
+          </label>
+          <motion.button type="submit" whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }} className="inline-flex h-[52px] items-center justify-center gap-2 rounded-none px-8 text-[14px] font-bold sm:col-span-2 sm:w-max" style={ch.hasWhatsapp ? { background: '#1FA855', color: '#fff' } : { background: t.primary, color: t.onPrimary }}>
+            <Icon icon={ch.hasWhatsapp ? 'ic:baseline-whatsapp' : 'solar:letter-linear'} width={20} /> Enviar por {ch.hasWhatsapp ? 'WhatsApp' : 'correo'}
+          </motion.button>
+        </form>
+      </motion.div>
+    </section>
+  );
+}
+
+/** Preguntas frecuentes con respuestas derivadas de la configuración real de la tienda. */
+function Faq({ t, tienda, ch, diseno }: { t: Theme; tienda: any; ch: Channels; diseno: any }) {
+  const envio = Number(tienda?.costoEnvioFijo || 0);
+  const minPrep = Number(tienda?.tiempoPreparacionMin || 0);
+  const items = [
+    { q: '¿Cómo elijo mi talla?', a: `Cada prenda muestra las tallas disponibles en su ficha. ${ch.hasWhatsapp ? 'Si dudas entre dos, escríbenos por WhatsApp con tu talla habitual y te ayudamos.' : 'Si dudas entre dos, te recomendamos la mayor.'}` },
+    { q: '¿Hacen envíos?', a: tienda?.aceptaEnvio === false ? 'Por ahora solo atendemos con recojo en tienda.' : `Sí, llevamos tu pedido a domicilio. ${envio > 0 ? `El envío cuesta desde ${urMoney(envio)}.` : 'El costo de envío se muestra al finalizar tu compra.'}` },
+    { q: '¿Puedo recoger mi pedido?', a: tienda?.aceptaRecojo ? `Sí. Estará listo ${minPrep > 0 ? `en aproximadamente ${minPrep} minutos` : 'en poco tiempo'}${ch.pickupAddress ? ` en ${ch.pickupAddress}` : ''}.` : 'Por ahora solo realizamos envíos a domicilio.' },
+    { q: '¿Qué medios de pago aceptan?', a: 'Verás todos los medios de pago disponibles en el último paso de tu compra, antes de confirmar el pedido.' },
+    { q: '¿Cómo sigo mi pedido?', a: 'Al confirmar tu compra recibirás un código de seguimiento para consultar el estado de tu pedido en cualquier momento.' },
+  ];
+  const [open, setOpen] = useState<number | null>(0);
+  return (
+    <section id="faq" className="mx-auto max-w-4xl scroll-mt-24 px-4 pb-16 lg:px-8">
+      <SectionHeader t={t} eyebrow="Ayuda" title={editable(diseno?.ropaHombreFaqTitle, 'Preguntas frecuentes')} />
+      <div className="space-y-2.5">
+        {items.map((it, i) => {
+          const isOpen = open === i;
+          return (
+            <div key={it.q} className="overflow-hidden rounded-none border bg-white" style={{ borderColor: isOpen ? mix(t.primary, 35, '#fff') : t.line }}>
+              <button type="button" aria-expanded={isOpen} onClick={() => setOpen(isOpen ? null : i)} className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left">
+                <span className="text-[14.5px] font-bold" style={{ color: t.ink }}>{it.q}</span>
+                <motion.span animate={{ rotate: isOpen ? 45 : 0 }} transition={{ duration: 0.25, ease: urEase }} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full" style={{ background: isOpen ? t.primary : t.soft, color: isOpen ? t.onPrimary : t.ink }}><Icon icon="solar:add-circle-linear" width={19} /></motion.span>
+              </button>
+              <AnimatePresence initial={false}>
+                {isOpen && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: urEase }}>
+                    <p className="px-6 pb-6 text-[13.5px] leading-relaxed" style={{ color: t.muted }}>{it.a}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

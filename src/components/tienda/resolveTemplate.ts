@@ -31,7 +31,12 @@ export type PlantillaId =
   | 'moda-minimal'
   | 'comida-app'
   | 'farmacia'
-  | 'zapatos';
+  | 'zapatos'
+  | 'muebleria'
+  | 'mascotas'
+  | 'moda-elegante'
+  | 'maquillaje'
+  | 'bolsos';
 
 export interface BannerSlotDef {
   orden: number;
@@ -671,6 +676,91 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#4B5237',
     icon: 'mdi:shoe-sneaker',
     rubrosPermitidos: ['Calzado', 'Zapatería', 'Zapateria', 'Zapatillas', 'Moda, ropa y calzado', 'Moda, Ropa Y Calzado', 'Moda', 'Deportes y recreación'],
+  },
+  muebleria: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-[4/3]',
+    label: 'Mueblería (Nórdica)',
+    description: 'Mueblería / decoración / hogar de estilo escandinavo cálido: fondo lino, botones nogal y acento verde bosque, titulares en peso medio y notas manuscritas. Hero slider de 3 slides con estadísticas reales, barra de beneficios reales, círculos por ambiente con fotos reales, dos banners de colección, favoritos, ofertas con contador real, bloque de historia con panel de valores, inspiración, testimonios con reseñas reales aprobadas, galería (enlace a Instagram si existe) y comunidad por WhatsApp. Ficha con variantes reales, galería por color, zoom y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#7A5A40',
+    icon: 'solar:sofa-2-bold',
+    rubrosPermitidos: ['Mueblería', 'Muebleria', 'Muebles', 'Decoración', 'Decoracion', 'Artesanía y decoración', 'Hogar', 'Carpintería', 'Carpinteria', 'Colchones'],
+  },
+  mascotas: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: true,
+    showSidebar: true,
+    imageAspect: 'aspect-[4/3]',
+    label: 'Mascotas (Patitas)',
+    description: 'Veterinaria / pet shop cálido y juguetón: fondo crema, verde salvia y naranja, tipografía Nunito redondeada. Hero slider de 3 slides con palabra destacada y beneficios reales, tarjeta de categorías con círculos de color, recomendados en carrusel, combos reales con ahorro calculado del precio real, guías de cuidado editables, testimonios con reseñas reales aprobadas y footer verde con comunidad por WhatsApp. Ficha con variantes reales (talla, sabor, peso), zoom y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#5E7E4F',
+    icon: 'ph:paw-print-fill',
+    rubrosPermitidos: ['Veterinaria', 'Farmacia Veterinaria', 'Pet shop', 'Petshop', 'Mascotas', 'Clínica veterinaria', 'Agroveterinaria'],
+  },
+  'moda-elegante': {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Élan',
+    description: 'Moda femenina, ropa y calzado con estética de lujo minimal editorial: blanco, negro y arena, títulos serif (Playfair Display) y etiquetas en mayúsculas. Barra de anuncios rotativa, menú lateral, buscador de ancho completo, hero slider de 3 slides, círculos de categoría con "Novedades", colecciones editoriales, selección destacada en 6 columnas con segunda foto al pasar el mouse, banda de ofertas con el descuento real (y reloj solo si la oferta tiene fecha de fin), beneficios reales, inspiración de estilo enlazada a tu Instagram y newsletter por WhatsApp. Ficha con tallas/colores reales y zoom. Colores personalizables; todo editable en vivo.',
+    accentColor: '#161412',
+    icon: 'solar:hanger-2-bold',
+    rubrosPermitidos: ['Moda', 'Ropa', 'Calzado', 'Moda, Ropa Y Calzado', 'Moda femenina', 'Ropa de mujer', 'Boutique', 'Textil y confección', 'Textil y confecciones', 'Zapatería', 'Zapateria', 'Accesorios de moda'],
+  },
+  maquillaje: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Maquillaje (Blush)',
+    description: 'Maquillaje / cosméticos / skincare de lujo sereno: rosa empolvado + botones tinta, títulos en mayúsculas espaciadas (Jost) y logotipo en serif (Playfair). Barra de anuncio con tus formas de entrega reales, hero slider de 3 slides con foto y texto sobre degradado rosado (solo-imagen o con textos, cada uno enlazable), barra de beneficios reales, destacados en carrusel de 5, dos banners de colección, ofertas con contador real, categorías populares, comunidad de Instagram (solo si existe) y club por WhatsApp. Tarjetas con tonos reales, cantidad, favoritos, comparador y zoom. Ficha con selector de tono/tamaño real, galería por color y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#C98B86',
+    icon: 'mdi:lipstick',
+    rubrosPermitidos: ['Maquillaje', 'Cosméticos', 'Cosmeticos', 'Cosmética', 'Cosmetica', 'Belleza', 'Belleza y cuidado personal', 'Skincare', 'Perfumería', 'Perfumeria', 'Bazar, Perfumería y accesorios', 'Salon & Spa', 'Salón & Spa', 'Salón de belleza'],
+  },
+  bolsos: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Carteras (Rosé)',
+    description: 'Tienda de carteras, bolsos y accesorios con estética de boutique: rosa y vino sobre blanco cálido, títulos serif en mayúsculas y un toque caligráfico. Barra de beneficios reales, hero slider de 3 slides con sello del descuento REAL máximo, fila de valores de marca, compra por categoría en círculos, productos destacados en 6 columnas, 3 banners promocionales, ofertas con reloj solo si la oferta tiene fecha de fin, beneficios, galería enlazada a tu Instagram, comunidad por WhatsApp y footer con tus medios de pago reales. Ficha con colores/medidas reales, zoom y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#6B1D38',
+    icon: 'ph:handbag-fill',
+    rubrosPermitidos: ['Carteras', 'Bolsos', 'Carteras y bolsos', 'Carteras y accesorios', 'Accesorios', 'Accesorios de moda', 'Marroquinería', 'Marroquineria', 'Mochilas', 'Maletas', 'Moda', 'Moda, ropa y calzado', 'Moda, Ropa Y Calzado', 'Boutique'],
   },
 };
 

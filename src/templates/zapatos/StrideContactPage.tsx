@@ -100,8 +100,8 @@ export default function StrideContactPage({ tienda, slug, diseno: disenoProp, al
           <StoreCard t={t} tienda={tienda} ch={ch} storeName={storeName} onCatalog={() => go(`/tienda/${slug}/catalogo`, 'catalogo')} />
         </section>
 
-        {canMessage && <MessageForm t={t} ch={ch} />}
-        <Faq t={t} tienda={tienda} ch={ch} />
+        {canMessage && <MessageForm t={t} ch={ch} diseno={diseno} />}
+        <Faq t={t} tienda={tienda} ch={ch} diseno={diseno} />
 
         <StrideFooter tienda={tienda} slug={slug} diseno={diseno} t={t} categories={categories} navigate={nav} />
 
@@ -145,7 +145,7 @@ function StoreCard({ t, tienda, ch, storeName, onCatalog }: { t: Theme; tienda: 
 const MOTIVOS = ['Consulta de talla', 'Disponibilidad de un modelo', 'Estado de mi pedido', 'Cambios', 'Otro'];
 
 /** Formulario honesto: arma el mensaje y lo abre en WhatsApp (o correo). Nunca simula un "enviado". */
-function MessageForm({ t, ch }: { t: Theme; ch: Channels }) {
+function MessageForm({ t, ch, diseno }: { t: Theme; ch: Channels; diseno: any }) {
   const [nombre, setNombre] = useState('');
   const [motivo, setMotivo] = useState(MOTIVOS[0]);
   const [mensaje, setMensaje] = useState('');
@@ -168,8 +168,8 @@ function MessageForm({ t, ch }: { t: Theme; ch: Channels }) {
     <section className="mx-auto max-w-[1320px] px-4 pb-10 lg:px-8">
       <motion.div variants={stReveal} initial="hidden" whileInView="show" viewport={stViewport} className="grid gap-8 rounded-[28px] border p-7 sm:p-10 lg:grid-cols-[1fr_1.3fr]" style={{ borderColor: t.line, background: mix(t.primary, 4, '#fff') }}>
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: t.primaryInk }}>Escríbenos</p>
-          <h2 className="mt-2 text-[24px] font-extrabold uppercase leading-tight" style={displayStyle(t, { color: t.ink })}>¿En qué te ayudamos?</h2>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: t.primaryInk }}>{editable(diseno?.zapatosFormEyebrow, 'Escríbenos')}</p>
+          <h2 className="mt-2 text-[24px] font-extrabold uppercase leading-tight" style={displayStyle(t, { color: t.ink })}>{editable(diseno?.zapatosFormTitle, '¿En qué te ayudamos?')}</h2>
           <p className="mt-3 text-[13.5px] leading-relaxed" style={{ color: t.muted }}>Completa el formulario y se abrirá {ch.hasWhatsapp ? 'WhatsApp' : 'tu correo'} con el mensaje listo para enviar. Si es sobre tallas, cuéntanos cuánto mide tu pie o qué número usas normalmente.</p>
         </div>
         <form onSubmit={submit} noValidate className="grid gap-4 sm:grid-cols-2">
@@ -202,7 +202,7 @@ function MessageForm({ t, ch }: { t: Theme; ch: Channels }) {
 }
 
 /** Preguntas frecuentes con respuestas derivadas de la configuración real de la tienda. */
-function Faq({ t, tienda, ch }: { t: Theme; tienda: any; ch: Channels }) {
+function Faq({ t, tienda, ch, diseno }: { t: Theme; tienda: any; ch: Channels; diseno: any }) {
   const envio = Number(tienda?.costoEnvioFijo || 0);
   const minPrep = Number(tienda?.tiempoPreparacionMin || 0);
   const items = [
@@ -215,7 +215,7 @@ function Faq({ t, tienda, ch }: { t: Theme; tienda: any; ch: Channels }) {
   const [open, setOpen] = useState<number | null>(0);
   return (
     <section id="faq" className="mx-auto max-w-4xl scroll-mt-24 px-4 pb-16 lg:px-8">
-      <SectionHeader t={t} eyebrow="Ayuda" title="Preguntas frecuentes" />
+      <SectionHeader t={t} eyebrow="Ayuda" title={editable(diseno?.zapatosFaqTitle, 'Preguntas frecuentes')} />
       <div className="space-y-2.5">
         {items.map((it, i) => {
           const isOpen = open === i;

@@ -8,6 +8,9 @@ export interface DemoProduct {
   categoria: { nombre: string };
   marca: { nombre: string };
   precioOferta?: number;
+  /** Opcional: fin real de la oferta (para plantillas con reloj). */
+  fechaFinOferta?: string;
+  destacado?: boolean;
   /** Opcional: tallas/colores reales para plantillas de moda y calzado. */
   opcionesAtributos?: { nombre: string; valores: string[] }[];
   variantes?: any[];
@@ -112,23 +115,37 @@ const restauranteDemo: RubroDemo = {
 };
 
 // ─── Ropa / Moda / Boutique ───────────────────────────────────────────────────
+const uw = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&h=1000&q=80`;
+/** Tallas S–XL (y color opcional) con stock variable, para que las fichas muestren variantes reales. */
+const ropaVariants = (id: number, price: number, colors: string[] = [], out: string[] = []) => {
+  const sizes = ['S', 'M', 'L', 'XL'];
+  const combos = colors.length ? colors.flatMap((c) => sizes.map((t) => ({ Color: c, Talla: t }))) : sizes.map((t) => ({ Talla: t }));
+  return {
+    opcionesAtributos: [...(colors.length ? [{ nombre: 'Color', valores: colors }] : []), { nombre: 'Talla', valores: sizes }],
+    variantes: combos.map((v, i) => ({ id: id * 100 + i, precioUnitario: price, stock: out.includes(v.Talla) ? 0 : 2 + ((i * 5) % 7), valoresAtributos: v })),
+  };
+};
 const ropaDemo: RubroDemo = {
   storeName: 'KREZKA',
   slogan: 'Moda que te define',
   heroKeyword: 'La Mejor Moda',
-  heroDesc: 'Las últimas tendencias en ropa y accesorios. Colecciones exclusivas para cada estilo, con envío gratis en pedidos mayores a S/150.',
-  categories: ['Todos', 'Camisas', 'Pantalones', 'Vestidos', 'Calzado', 'Accesorios'],
+  heroDesc: 'Las últimas tendencias en ropa y accesorios. Colecciones exclusivas para cada estilo.',
+  categories: ['Todos', 'Casacas', 'Camisas', 'Polos', 'Pantalones', 'Accesorios'],
   plantillaDefault: 'elegante',
   colorDefault: '#7C3AED',
   products: [
-    { id: 1, descripcion: 'Camisa Oxford Slim Fit Azul', precioUnitario: 89.90, precioOriginal: 120.00, imagenUrl: img(400,500,'EFF6FF','1E3A8A','Camisa'), stock: 15, categoria: { nombre: 'Camisas' }, marca: { nombre: 'Tommy' } },
-    { id: 2, descripcion: 'Vestido Floral Midi', precioUnitario: 129.00, precioOriginal: 0, imagenUrl: img(400,500,'FDF2F8','BE185D','Vestido'), stock: 8, categoria: { nombre: 'Vestidos' }, marca: { nombre: 'Zara' } },
-    { id: 3, descripcion: 'Jean Skinny Negro Tiro Alto', precioUnitario: 99.90, precioOriginal: 140.00, imagenUrl: img(400,500,'1C1917','F5F5F4','Jean Negro'), stock: 20, categoria: { nombre: 'Pantalones' }, marca: { nombre: 'Levis' } },
-    { id: 4, descripcion: 'Zapatillas Blancas Urban', precioUnitario: 159.00, precioOriginal: 0, imagenUrl: img(400,500,'F9FAFB','6B7280','Zapatillas'), stock: 12, categoria: { nombre: 'Calzado' }, marca: { nombre: 'Nike' } },
-    { id: 5, descripcion: 'Blusa Satinada Champagne', precioUnitario: 75.00, precioOriginal: 95.00, imagenUrl: img(400,500,'FEF3C7','92400E','Blusa'), stock: 10, categoria: { nombre: 'Camisas' }, marca: { nombre: 'Mango' } },
-    { id: 6, descripcion: 'Cartera Cuero Marrón', precioUnitario: 189.00, precioOriginal: 240.00, imagenUrl: img(400,500,'FEF2F2','991B1B','Cartera'), stock: 6, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Coach' } },
-    { id: 7, descripcion: 'Pantalón Chino Beige', precioUnitario: 119.00, precioOriginal: 0, imagenUrl: img(400,500,'FEF9C3','854D0E','Chino'), stock: 14, categoria: { nombre: 'Pantalones' }, marca: { nombre: 'H&M' } },
-    { id: 8, descripcion: 'Vestido Noche Lentejuelas', precioUnitario: 249.00, precioOriginal: 320.00, imagenUrl: img(400,500,'1E1B4B','E0E7FF','Vestido Noche'), stock: 4, categoria: { nombre: 'Vestidos' }, marca: { nombre: 'Zara' } },
+    { id: 1, descripcion: 'Camisa Oxford de algodón', precioUnitario: 139.00, imagenUrl: uw('1596755094514-f87e34085b2c'), stock: 20, categoria: { nombre: 'Camisas' }, marca: { nombre: 'Atelier' }, ...ropaVariants(1, 139, [], ['XL']) },
+    { id: 2, descripcion: 'Polo oversize negro', precioUnitario: 69.90, imagenUrl: uw('1618354691373-d851c5c3a990'), stock: 30, categoria: { nombre: 'Polos' }, marca: { nombre: 'Street Co' }, ...ropaVariants(2, 69.9) },
+    { id: 3, descripcion: 'Casaca bomber terracota', precioUnitario: 259.00, precioOferta: 219.00, imagenUrl: uw('1591047139829-d91aecb6caea'), stock: 8, categoria: { nombre: 'Casacas' }, marca: { nombre: 'Atelier' }, ...ropaVariants(3, 219) },
+    { id: 4, descripcion: 'Polo estampado Original', precioUnitario: 79.90, imagenUrl: uw('1576566588028-4147f3842f27'), stock: 25, categoria: { nombre: 'Polos' }, marca: { nombre: 'Street Co' }, ...ropaVariants(4, 79.9, [], ['S']) },
+    { id: 5, descripcion: 'Casaca de cuero clásica', precioUnitario: 489.00, imagenUrl: uw('1551028719-00167b16eac5'), stock: 5, categoria: { nombre: 'Casacas' }, marca: { nombre: 'Atelier' }, ...ropaVariants(5, 489) },
+    { id: 6, descripcion: 'Jean negro slim', precioUnitario: 159.00, imagenUrl: uw('1542272604-787c3835535d'), stock: 18, categoria: { nombre: 'Pantalones' }, marca: { nombre: 'Denim Lab' }, ...ropaVariants(6, 159) },
+    { id: 7, descripcion: 'Camisa denim lavada', precioUnitario: 149.00, precioOferta: 119.00, imagenUrl: uw('1602810318383-e386cc2a3ccf'), stock: 12, categoria: { nombre: 'Camisas' }, marca: { nombre: 'Denim Lab' }, ...ropaVariants(7, 119) },
+    { id: 8, descripcion: 'Polerón crudo de felpa', precioUnitario: 129.00, imagenUrl: uw('1620799140408-edc6dcb6d633'), stock: 15, categoria: { nombre: 'Polos' }, marca: { nombre: 'Street Co' }, ...ropaVariants(8, 129) },
+    { id: 9, descripcion: 'Pantalón chino caqui', precioUnitario: 139.00, imagenUrl: uw('1473966968600-fa801b869a1a'), stock: 22, categoria: { nombre: 'Pantalones' }, marca: { nombre: 'Atelier' }, ...ropaVariants(9, 139) },
+    { id: 10, descripcion: 'Casaca denim de trabajo', precioUnitario: 219.00, imagenUrl: uw('1611312449408-fcece27cdbb7'), stock: 3, categoria: { nombre: 'Casacas' }, marca: { nombre: 'Denim Lab' }, ...ropaVariants(10, 219) },
+    { id: 11, descripcion: 'Polo gris esencial', precioUnitario: 59.90, imagenUrl: uw('1564584217132-2271feaeb3c5'), stock: 40, categoria: { nombre: 'Polos' }, marca: { nombre: 'Atelier' }, ...ropaVariants(11, 59.9) },
+    { id: 12, descripcion: 'Reloj de acero clásico', precioUnitario: 349.00, imagenUrl: uw('1491336477066-31156b5e4f35'), stock: 6, categoria: { nombre: 'Accesorios' }, marca: { nombre: 'Atelier' } },
   ],
 };
 
@@ -161,6 +178,106 @@ const calzadoDemo: RubroDemo = {
     { id: 8, descripcion: 'Taco Aguja Nude', precioUnitario: 219.00, imagenUrl: u('1543163521-1bf539c55dd2'), stock: 9, categoria: { nombre: 'Mujer' }, marca: { nombre: 'Stride' }, ...shoeVariants(8, 219, ['35', '36', '37', '38', '39']) },
     { id: 9, descripcion: 'Zapatilla Minimal Knit', precioUnitario: 199.90, imagenUrl: u('1560769629-975ec94e6a86'), stock: 30, categoria: { nombre: 'Training' }, marca: { nombre: 'Puma' }, ...shoeVariants(9, 199.9, ['38', '39', '40', '41']) },
     { id: 10, descripcion: 'Zapatilla Retro High Top', precioUnitario: 369.00, imagenUrl: u('1600269452121-4f2416e55c28'), stock: 14, categoria: { nombre: 'Urbanas' }, marca: { nombre: 'Adidas' }, ...shoeVariants(10, 369, ['39', '40', '41', '42', '43', '44']) },
+  ],
+};
+
+// ─── Mueblería / Decoración ───────────────────────────────────────────────────
+const uf = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=800&q=80`;
+const muebleriaDemo: RubroDemo = {
+  storeName: 'Nórdica Home',
+  slogan: 'Muebles para un hogar más sereno',
+  heroKeyword: 'Muebles para cada espacio',
+  heroDesc: 'Sofás, mesas, sillas e iluminación de estilo nórdico para renovar tu casa.',
+  categories: ['Todos', 'Sala', 'Dormitorio', 'Comedor', 'Oficina', 'Almacenaje', 'Iluminación', 'Decoración'],
+  plantillaDefault: 'muebleria',
+  colorDefault: '#7A5A40',
+  products: [
+    { id: 1, descripcion: 'Sofá Luna 3 cuerpos', precioUnitario: 2899.00, imagenUrl: uf('1540574163026-643ea20ade25'), stock: 6, categoria: { nombre: 'Sala' }, marca: { nombre: 'Nórdica' } },
+    { id: 2, descripcion: 'Sillón Capitoné Marfil', precioUnitario: 1190.00, imagenUrl: uf('1567538096630-e0c55bd6374c'), stock: 4, categoria: { nombre: 'Sala' }, marca: { nombre: 'Nórdica' } },
+    { id: 3, descripcion: 'Mesa auxiliar de madera', precioUnitario: 349.00, precioOferta: 299.00, imagenUrl: uf('1611486212557-88be5ff6f941'), stock: 12, categoria: { nombre: 'Decoración' }, marca: { nombre: 'Roble & Co' } },
+    { id: 4, descripcion: 'Silla Oslo tapizada', precioUnitario: 459.00, imagenUrl: uf('1598300042247-d088f8ab3a91'), stock: 18, categoria: { nombre: 'Comedor' }, marca: { nombre: 'Nórdica' } },
+    { id: 5, descripcion: 'Sofá Verde Bosque 2 cuerpos', precioUnitario: 2390.00, imagenUrl: uf('1555041469-a586c61ea9bc'), stock: 3, categoria: { nombre: 'Sala' }, marca: { nombre: 'Nórdica' } },
+    { id: 6, descripcion: 'Lámpara de pie Arco', precioUnitario: 399.00, imagenUrl: uf('1507473885765-e6ed057f782c'), stock: 9, categoria: { nombre: 'Iluminación' }, marca: { nombre: 'Luz Norte' } },
+    { id: 7, descripcion: 'Taburete alto Eames', precioUnitario: 289.00, imagenUrl: uf('1581539250439-c96689b516dd'), stock: 14, categoria: { nombre: 'Comedor' }, marca: { nombre: 'Roble & Co' } },
+    { id: 8, descripcion: 'Estante modular de madera', precioUnitario: 890.00, precioOferta: 749.00, imagenUrl: uf('1595428774223-ef52624120d2'), stock: 5, categoria: { nombre: 'Almacenaje' }, marca: { nombre: 'Nórdica' } },
+    { id: 9, descripcion: 'Mesa redonda Tulip', precioUnitario: 1290.00, imagenUrl: uf('1533090481720-856c6e3c1fdc'), stock: 7, categoria: { nombre: 'Comedor' }, marca: { nombre: 'Nórdica' } },
+    { id: 10, descripcion: 'Cama queen con cabecera', precioUnitario: 2190.00, imagenUrl: uf('1505693416388-ac5ce068fe85'), stock: 4, categoria: { nombre: 'Dormitorio' }, marca: { nombre: 'Nórdica' } },
+    { id: 11, descripcion: 'Escritorio Estudio Roble', precioUnitario: 990.00, imagenUrl: uf('1524758631624-e2822e304c36'), stock: 8, categoria: { nombre: 'Oficina' }, marca: { nombre: 'Roble & Co' } },
+    { id: 12, descripcion: 'Lámpara colgante Fiordo', precioUnitario: 259.00, imagenUrl: uf('1513506003901-1e6a229e2d15'), stock: 20, categoria: { nombre: 'Iluminación' }, marca: { nombre: 'Luz Norte' } },
+  ],
+};
+
+// ─── Mascotas / Veterinaria ───────────────────────────────────────────────────
+const up = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
+const mascotasDemo: RubroDemo = {
+  storeName: 'Patitas',
+  slogan: 'Mejores cuidados, mascotas más felices',
+  heroKeyword: 'Todo para tu mascota',
+  heroDesc: 'Alimento, accesorios, juguetes y cuidado para perros y gatos.',
+  categories: ['Todos', 'Paseo', 'Alimento', 'Descanso', 'Juguetes', 'Higiene', 'Salud'],
+  plantillaDefault: 'mascotas',
+  colorDefault: '#5E7E4F',
+  products: [
+    { id: 1, descripcion: 'Juguete de peluche para perro', precioUnitario: 29.90, imagenUrl: up('1591946614720-90a587da4a36'), stock: 25, categoria: { nombre: 'Juguetes' }, marca: { nombre: 'Patitas' } },
+    { id: 2, descripcion: 'Comedero con croquetas premium 2 kg', precioUnitario: 64.90, precioOferta: 54.90, imagenUrl: up('1589924691995-400dc9ecc119'), stock: 18, categoria: { nombre: 'Alimento' }, marca: { nombre: 'NutriPet' } },
+    { id: 3, descripcion: 'Galletas de hueso para perro 500 g', precioUnitario: 19.90, imagenUrl: up('1568640347023-a616a30bc3bd'), stock: 40, categoria: { nombre: 'Alimento' }, marca: { nombre: 'NutriPet' } },
+    { id: 4, descripcion: 'Collar ajustable acolchado', precioUnitario: 34.90, imagenUrl: up('1586671267731-da2cf3ceeb80'), stock: 30, categoria: { nombre: 'Paseo' }, marca: { nombre: 'Patitas' } },
+    { id: 5, descripcion: 'Polo abrigador para perro', precioUnitario: 39.90, imagenUrl: up('1583337130417-3346a1be7dee'), stock: 4, categoria: { nombre: 'Paseo' }, marca: { nombre: 'Patitas' } },
+    { id: 6, descripcion: 'Cama suave antideslizante', precioUnitario: 119.00, imagenUrl: up('1450778869180-41d0601e046e'), stock: 9, categoria: { nombre: 'Descanso' }, marca: { nombre: 'Patitas' } },
+    { id: 7, descripcion: 'Shampoo hipoalergénico 500 ml', precioUnitario: 32.90, imagenUrl: up('1604848698030-c434ba08ece1'), stock: 22, categoria: { nombre: 'Higiene' }, marca: { nombre: 'PetCare' } },
+    { id: 8, descripcion: 'Pipeta antipulgas perro mediano', precioUnitario: 45.00, imagenUrl: up('1516734212186-a967f81ad0d7'), stock: 15, categoria: { nombre: 'Salud' }, marca: { nombre: 'PetCare' } },
+    { id: 9, descripcion: 'Plato doble para cachorro', precioUnitario: 24.90, imagenUrl: up('1507146426996-ef05306b995a'), stock: 3, categoria: { nombre: 'Alimento' }, marca: { nombre: 'Patitas' } },
+    { id: 10, descripcion: 'Snack natural para gato', precioUnitario: 15.90, imagenUrl: up('1573865526739-10659fec78a5'), stock: 35, categoria: { nombre: 'Alimento' }, marca: { nombre: 'NutriPet' } },
+  ],
+};
+
+// ─── Carteras / Bolsos ────────────────────────────────────────────────────────
+const uc = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
+const carterasDemo: RubroDemo = {
+  storeName: 'Rosé',
+  slogan: 'Carteras que te definen',
+  heroKeyword: 'Carteras con estilo',
+  heroDesc: 'Carteras, bandoleras, mochilas y billeteras para cada ocasión.',
+  categories: ['Todos', 'Carteras de mano', 'Bandoleras', 'Tote bags', 'Mochilas', 'Billeteras', 'Clutch', 'Satchel'],
+  plantillaDefault: 'bolsos',
+  colorDefault: '#6B1D38',
+  products: [
+    { id: 1, descripcion: 'Cartera de mano Aurora', precioUnitario: 189.00, imagenUrl: uc('1606522754091-a3bbf9ad4cb3'), stock: 12, destacado: true, categoria: { nombre: 'Carteras de mano' }, marca: { nombre: 'Rosé' } },
+    { id: 2, descripcion: 'Bandolera Chevron rosa', precioUnitario: 159.00, precioOferta: 129.00, fechaFinOferta: new Date(Date.now() + 3 * 86400000).toISOString(), imagenUrl: uc('1566150905458-1bf1fc113f0d'), stock: 8, categoria: { nombre: 'Bandoleras' }, marca: { nombre: 'Rosé' } },
+    { id: 3, descripcion: 'Tote de cuero negro', precioUnitario: 249.00, imagenUrl: uc('1614179689702-355944cd0918'), stock: 6, destacado: true, categoria: { nombre: 'Tote bags' }, marca: { nombre: 'Rosé' } },
+    { id: 4, descripcion: 'Mochila urbana terracota', precioUnitario: 199.00, precioOferta: 169.00, imagenUrl: uc('1622560480605-d83c853bc5c3'), stock: 10, categoria: { nombre: 'Mochilas' }, marca: { nombre: 'Rosé' } },
+    { id: 5, descripcion: 'Billetera de cuero camel', precioUnitario: 89.00, imagenUrl: uc('1627123424574-724758594e93'), stock: 20, categoria: { nombre: 'Billeteras' }, marca: { nombre: 'Rosé' } },
+    { id: 6, descripcion: 'Mini bolso croco vino', precioUnitario: 179.00, imagenUrl: uc('1575032617751-6ddec2089882'), stock: 4, categoria: { nombre: 'Clutch' }, marca: { nombre: 'Rosé' } },
+    { id: 7, descripcion: 'Satchel gris perla', precioUnitario: 229.00, imagenUrl: uc('1605733513597-a8f8341084e6'), stock: 7, categoria: { nombre: 'Satchel' }, marca: { nombre: 'Rosé' } },
+    { id: 8, descripcion: 'Bandolera camel clásica', precioUnitario: 169.00, imagenUrl: uc('1600857062241-98e5dba7f214'), stock: 9, categoria: { nombre: 'Bandoleras' }, marca: { nombre: 'Rosé' } },
+    { id: 9, descripcion: 'Cartera turquesa con asa', precioUnitario: 209.00, imagenUrl: uc('1594223274512-ad4803739b7c'), stock: 5, categoria: { nombre: 'Carteras de mano' }, marca: { nombre: 'Rosé' } },
+    { id: 10, descripcion: 'Mochila minimal azul noche', precioUnitario: 159.00, imagenUrl: uc('1553062407-98eeb64c6a62'), stock: 11, categoria: { nombre: 'Mochilas' }, marca: { nombre: 'Rosé' } },
+    { id: 11, descripcion: 'Cartera floral de verano', precioUnitario: 219.00, precioOferta: 175.00, imagenUrl: uc('1591561954557-26941169b49e'), stock: 3, categoria: { nombre: 'Tote bags' }, marca: { nombre: 'Rosé' } },
+    { id: 12, descripcion: 'Bolso mostaza de solapa', precioUnitario: 199.00, imagenUrl: uc('1612902456551-333ac5afa26e'), stock: 0, categoria: { nombre: 'Satchel' }, marca: { nombre: 'Rosé' } },
+  ],
+};
+
+// ─── Maquillaje / Cosméticos ─────────────────────────────────────────────────
+const ub = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
+const maquillajeDemo: RubroDemo = {
+  storeName: 'Blush',
+  slogan: 'Belleza simple, luminosa y tuya',
+  heroKeyword: 'Brilla a tu manera',
+  heroDesc: 'Maquillaje, skincare y accesorios de belleza.',
+  categories: ['Todos', 'Labios', 'Rostro', 'Ojos', 'Skincare'],
+  plantillaDefault: 'maquillaje',
+  colorDefault: '#C98B86',
+  products: [
+    { id: 1, descripcion: 'Labial satinado Rosé', precioUnitario: 39.90, imagenUrl: ub('1625093742435-6fa192b6fb10'), stock: 24, categoria: { nombre: 'Labios' }, marca: { nombre: 'Blush' } },
+    { id: 2, descripcion: 'Sérum iluminador 30 ml', precioUnitario: 89.90, precioOferta: 74.90, imagenUrl: ub('1617897903246-719242758050'), stock: 12, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Blush' } },
+    { id: 3, descripcion: 'Polvo compacto translúcido', precioUnitario: 59.90, imagenUrl: ub('1503236823255-94609f598e71'), stock: 18, categoria: { nombre: 'Rostro' }, marca: { nombre: 'Blush' } },
+    { id: 4, descripcion: 'Máscara de pestañas volumen', precioUnitario: 45.00, imagenUrl: ub('1631214540553-ff044a3ff1d4'), stock: 30, categoria: { nombre: 'Ojos' }, marca: { nombre: 'Blush' } },
+    { id: 5, descripcion: 'Paleta de sombras Nude', precioUnitario: 119.00, imagenUrl: ub('1583241800698-e8ab01830a07'), stock: 4, categoria: { nombre: 'Ojos' }, marca: { nombre: 'Blush' } },
+    { id: 6, descripcion: 'Crema hidratante facial 50 ml', precioUnitario: 79.00, imagenUrl: ub('1620916566398-39f1143ab7be'), stock: 9, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Blush' } },
+    { id: 7, descripcion: 'Aceite facial de noche', precioUnitario: 95.00, imagenUrl: ub('1600428877878-1a0fd85beda8'), stock: 15, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Blush' } },
+    { id: 8, descripcion: 'Set de brochas esenciales', precioUnitario: 129.00, imagenUrl: ub('1526045478516-99145907023c'), stock: 7, categoria: { nombre: 'Rostro' }, marca: { nombre: 'Blush' } },
+    { id: 9, descripcion: 'Bálsamo hidratante de manos', precioUnitario: 32.90, imagenUrl: ub('1619451334792-150fd785ee74'), stock: 3, categoria: { nombre: 'Skincare' }, marca: { nombre: 'Blush' } },
+    { id: 10, descripcion: 'Rubor en polvo Peach', precioUnitario: 49.90, imagenUrl: ub('1596462502278-27bfdc403348'), stock: 20, categoria: { nombre: 'Rostro' }, marca: { nombre: 'Blush' } },
   ],
 };
 
@@ -338,10 +455,18 @@ export function getRubroDemo(rubroNombre: string = ''): RubroDemo {
 
   if (n.includes('ferret') || n.includes('herrami') || n.includes('construcc') || n.includes('material'))
     return ferreteriaDemo;
+  if (n.includes('mascot') || n.includes('pet shop') || n.includes('petshop') || (n.includes('veterin') && !n.includes('farmac')))
+    return mascotasDemo;
+  if (n.includes('carter') || n.includes('bolso') || n.includes('marroq') || n.includes('mochil'))
+    return carterasDemo;
+  if (n.includes('maquill') || n.includes('cosmet') || n.includes('makeup') || n.includes('skincare'))
+    return maquillajeDemo;
   if (n.includes('botic') || n.includes('farmac') || n.includes('drogue') || n.includes('salud med'))
     return farmaciaDemo;
   if (n.includes('restaur') || n.includes('cafet') || n.includes('cevich') || n.includes('comida'))
     return restauranteDemo;
+  if (n.includes('mueble') || n.includes('carpint') || n.includes('colchon'))
+    return muebleriaDemo;
   if (n.includes('calzad') || n.includes('zapat'))
     return calzadoDemo;
   if (n.includes('ropa') || n.includes('moda') || n.includes('boutique') || n.includes('vestim') || n.includes('textil') || n.includes('confec'))

@@ -1,38 +1,43 @@
 import type { Variants } from 'framer-motion';
 
 /**
- * Variantes de movimiento para la plantilla "Urbanic" (ropa de hombre / moda urbana premium).
- * Transiciones editoriales y elegantes (400-800ms, easing suave) pensadas para transmitir
- * carácter y sofisticación masculina sin distraer. Framer Motion desactiva la animación
- * automáticamente cuando el usuario tiene prefers-reduced-motion activo.
+ * Sistema de movimiento de la plantilla Ropa hombre (Urbanic · Atelier).
+ * Lujo silencioso: entradas lentas y largas (ease-out expo), nada de rebotes.
+ * Solo anima transform/opacity. Cada página envuelve en <MotionConfig reducedMotion="user">.
  */
-export const urbEase = [0.22, 0.61, 0.36, 1] as const;
+export const urEase = [0.22, 1, 0.36, 1] as const;
 
-export const urbPage: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.5, ease: urbEase, staggerChildren: 0.06 } },
-};
-
-export const urbSection: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: urbEase } },
-};
-
-export const urbStagger: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
-};
-
-export const urbCard: Variants = {
+/** Bloque de sección que aparece al hacer scroll. */
+export const urReveal: Variants = {
   hidden: { opacity: 0, y: 26 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: urbEase } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: urEase } },
 };
 
-export const urbFade: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.9, ease: urbEase } },
+/** Contenedor que escalona a sus hijos. */
+export const urStagger: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06, delayChildren: 0.04 } },
 };
 
-export const urbViewport = { once: true, amount: 0.2 } as const;
-export const urbHover = { y: -6 };
-export const urbTap = { scale: 0.98 };
+/** Ítem de grilla (cards, tiles). */
+export const urItem: Variants = {
+  hidden: { opacity: 0, y: 18 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: urEase } },
+};
+
+/** Texto del hero, entra por líneas. */
+export const urHeroText: Variants = {
+  hidden: { opacity: 0, y: 22 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.75, ease: urEase } },
+};
+
+/** Ítem con escalonado propio y tope (grillas largas terminan de entrar en <0.6s). */
+export const urCardIn: Variants = {
+  hidden: { opacity: 0, y: 16 },
+  show: (i: number) => ({ opacity: 1, y: 0, transition: { duration: 0.45, ease: urEase, delay: Math.min(i, 12) * 0.035 } }),
+};
+
+export const urViewport = { once: true, amount: 0.15 } as const;
+
+/** Mezcla de un color de marca con otro (funciona con hex, rgb o nombres). */
+export const mix = (color: string, pct: number, base = 'white') => `color-mix(in srgb, ${color} ${pct}%, ${base})`;

@@ -242,10 +242,13 @@ export default function Catalogo() {
     const agregarAlCarritoDirecto = (producto: any, modificadores?: any[]) => {
         const itemId = modificadores?.length ? `${producto.id}-${Date.now()}` : producto.id;
         const precioExtra = modificadores?.reduce((sum, mod) => sum + Number(mod.precioExtra || 0), 0) || 0;
-        const nuevoItem = { ...producto, id: itemId, productoId: producto.id, cantidad: 1, precioBase: producto.precioUnitario, precioUnitario: Number(producto.precioUnitario) + precioExtra, modificadores: modificadores || [] };
+        // Cantidad elegida en la tarjeta (las plantillas la envían como __cantidad).
+        const qty = Math.max(1, Number(producto?.__cantidad) || 1);
+        const { __cantidad: _omit, ...limpio } = producto;
+        const nuevoItem = { ...limpio, id: itemId, productoId: producto.id, cantidad: qty, precioBase: producto.precioUnitario, precioUnitario: Number(producto.precioUnitario) + precioExtra, modificadores: modificadores || [] };
         if (!modificadores?.length) {
             const existe = carrito.find(item => item.id === producto.id && !item.modificadores?.length);
-            if (existe) { setCarrito(carrito.map(item => item.id === producto.id && !item.modificadores?.length ? { ...item, cantidad: item.cantidad + 1 } : item)); return; }
+            if (existe) { setCarrito(carrito.map(item => item.id === producto.id && !item.modificadores?.length ? { ...item, cantidad: item.cantidad + qty } : item)); return; }
         }
         setCarrito([...carrito, nuevoItem]);
     };

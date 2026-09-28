@@ -98,6 +98,31 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides con beneficios reales de la tienda en vidrio (solo-imagen o con textos y botón, cada uno enlazable)', 'Buscador + chips de categorías con íconos, destacados en carrusel y 4 bloques grandes de categoría', 'Tarjetas con rango real de tallas, colores y rating real o "Nuevo"', 'Ficha con selector de talla y color real, galería por color, zoom y barra de compra fija', 'Guía "Encuentra tu par ideal", comunidad por WhatsApp y personalización en vivo de textos, imágenes y enlaces'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  muebleria: {
+    headline: 'Tienda premium para mueblerías, decoración y hogar (estilo escandinavo): fondo lino cálido, botones nogal, acento verde bosque y notas manuscritas.',
+    features: ['Hero slider de 3 slides con estadísticas reales de tu catálogo (solo-imagen o con textos y botón, cada uno enlazable)', 'Círculos por ambiente con fotos reales, dos banners de colección y favoritos con rating real o "Nuevo"', 'Bloque de historia con panel de valores, fila de valores e inspiración con collage', 'Testimonios con reseñas reales aprobadas, galería con enlace a Instagram y comunidad por WhatsApp', 'Ficha con variantes reales, galería por color, zoom y barra de compra fija; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  'moda-elegante': {
+    headline: 'Boutique de moda con estética de lujo minimal editorial: blanco, negro y arena, títulos serif y etiquetas en mayúsculas.',
+    features: ['Barra de anuncios rotativa, menú lateral y buscador de ancho completo', 'Hero slider de 3 slides + círculos de categoría con "Novedades" y colecciones editoriales', 'Selección destacada en 6 columnas con segunda foto al pasar el mouse y agregar rápido con cantidad', 'Banda de ofertas con el % real (reloj solo si la oferta tiene fecha de fin), inspiración enlazada a tu Instagram y newsletter por WhatsApp', 'Ficha con tallas y colores reales, zoom y barra de compra fija; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Bolsa lateral'],
+  },
+  bolsos: {
+    headline: 'Boutique de carteras, bolsos y accesorios: rosa y vino sobre blanco cálido, títulos serif en mayúsculas y un toque caligráfico.',
+    features: ['Hero slider de 3 slides con sello del descuento real máximo (solo si tienes ofertas) y fila de valores de marca', 'Compra por categoría en círculos con fotos reales y productos destacados en 6 columnas', 'Tres banners promocionales editables, ofertas con reloj solo si la oferta tiene fecha de fin y franja de beneficios reales', 'Galería enlazada a tu Instagram, comunidad por WhatsApp y footer con tus medios de pago reales', 'Ficha con colores y medidas reales, zoom y barra de compra fija; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  mascotas: {
+    headline: 'Tienda cálida y juguetona para veterinarias y pet shops: fondo crema, verde salvia y naranja, tipografía redondeada.',
+    features: ['Hero slider de 3 slides con palabra destacada y beneficios reales de tu tienda', 'Tarjeta de categorías con círculos de color y fotos reales de tus productos', 'Recomendados en carrusel con rating real o "Nuevo", cantidad, favoritos y comparador', 'Combos reales con el ahorro calculado de tus precios, guías de cuidado editables y testimonios con reseñas reales', 'Ficha con variantes reales (talla, sabor, peso), zoom y barra de compra fija; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  maquillaje: {
+    headline: 'Tienda de lujo sereno para maquillaje, cosméticos y skincare: rosa empolvado, botones tinta, títulos en mayúsculas espaciadas y logotipo en serif.',
+    features: ['Hero slider de 3 slides con foto + texto sobre degradado rosado (solo-imagen o con textos y botón, cada uno enlazable)', 'Barra de beneficios reales, destacados en carrusel, dos banners de colección y categorías populares', 'Tarjetas con tonos reales, cantidad, favoritos y comparador; ofertas con contador de la fecha fin real', 'Comunidad de Instagram y club por WhatsApp (solo si la tienda los tiene)', 'Ficha con selector de tono y tamaño real, galería por color, zoom y barra de compra fija; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
   'comida-app': {
     headline: 'Experiencia tipo app de delivery para comida: interfaz mobile-first centrada que se ve igual en web y en celular, fondo crema con acentos rojo/naranja.',
     features: ['Hero slider de 3 slides (solo-imagen o con textos y botón, cada uno enlazable)', 'Círculos de categoría, combos con badges/rating/precio y botón "+"', 'Banner de ofertas y barra inferior de pestañas tipo app', 'Detalle con barra de acción fija (cantidad + agregar) y carrito bottom-sheet', 'Personalización en vivo de textos, imágenes y enlaces'],

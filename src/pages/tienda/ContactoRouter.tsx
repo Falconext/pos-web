@@ -22,6 +22,11 @@ import ModaMinimalContactPage from '@/templates/moda-minimal/ModaMinimalContactP
 import CrispyContactPage from '@/templates/comida-app/CrispyContactPage';
 import FarmaciaContactPage from '@/templates/farmacia/FarmaciaContactPage';
 import StrideContactPage from '@/templates/zapatos/StrideContactPage';
+import NordicaContactPage from '@/templates/muebleria/NordicaContactPage';
+import PatitasContactPage from '@/templates/mascotas/PatitasContactPage';
+import RoseContactPage from '@/templates/bolsos/RoseContactPage';
+import BlushContactPage from '@/templates/maquillaje/BlushContactPage';
+import ElanContactPage from '@/templates/moda-elegante/ElanContactPage';
 import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
@@ -281,6 +286,71 @@ export default function ContactoRouter() {
         />
       ) : templateId === 'zapatos' ? (
         <StrideContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'muebleria' ? (
+        <NordicaContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'moda-elegante' ? (
+        <ElanContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'maquillaje' ? (
+        <BlushContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'bolsos' ? (
+        <RoseContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'mascotas' ? (
+        <PatitasContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}

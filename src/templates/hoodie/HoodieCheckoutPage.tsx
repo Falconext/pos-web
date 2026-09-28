@@ -1,325 +1,218 @@
-import { motion } from 'framer-motion';
+import type { ReactNode } from 'react';
 import { Icon } from '@iconify/react';
-import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
+import { useNavigate } from 'react-router-dom';
+import { MotionConfig, motion } from 'framer-motion';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
-import { HD, HdFooter, HdHeader, HdProductImage, HdWhatsAppFab, hdFont, hdPrimary } from './HoodieParts';
-import { hdCard, hdPage, hdSection, hdStagger, hdTap, hdViewport } from './motion';
+import { BancoLogo } from '@/components/shared/BancoLogo';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
+import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
+import { hdTheme, useHdFont, editable, hdMoney, storeNameOf, btnCls, display, isOn, type Theme } from './HoodieParts';
+import { mix, hdEase, hdItem, hdStagger } from './motion';
 
-function money(value: number) {
-  return `S/ ${Number(value || 0).toFixed(2)}`;
+/** Campo sin bordes globales (border-0 + bg-none + focus:ring-0); el contorno es un box-shadow propio. */
+function Field({ t, error, className = '', children }: { t: Theme; error?: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={className}>
+      <div className="rounded-none bg-white transition-shadow focus-within:shadow-[inset_0_0_0_1.5px_var(--st-focus)]" style={{ boxShadow: `inset 0 0 0 1px ${error ? '#F43F5E' : t.hair}`, ['--st-focus' as any]: t.primaryInk }}>
+        {children}
+      </div>
+      {error && <p className="mt-1.5 pl-2 text-[12px] font-medium text-rose-500">{error}</p>}
+    </div>
+  );
 }
+const inputCls = 'h-12 w-full appearance-none rounded-none border-0 bg-transparent bg-none px-4 text-[14px] font-medium text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0';
 
-function inputClass(hasError?: boolean) {
-  return `mt-2 h-[52px] w-full rounded-xl border bg-white px-4 text-sm text-neutral-900 outline-none transition-colors ${
-    hasError ? 'border-red-400' : 'border-neutral-200 focus:border-[var(--hd-cp)]'
-  }`;
+function Block({ t, icon, title, children }: { t: Theme; icon: string; title: string; children: ReactNode }) {
+  return (
+    <motion.section variants={hdItem} className="rounded-none border bg-white p-5 sm:p-6" style={{ borderColor: t.hair }}>
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-none" style={{ background: t.soft, color: t.primaryInk }}><Icon icon={icon} width={20} /></span>
+        <h2 className="text-[14px] tracking-[-0.01em]" style={display(t, { color: t.ink })}>{title}</h2>
+      </div>
+      {children}
+    </motion.section>
+  );
 }
 
 export default function HoodieCheckoutPage(props: TemplateCheckoutPageProps) {
   const {
-    slug,
-    tienda,
-    diseno,
-    cp,
-    carritoState,
-    updateQuantity,
-    removeItem,
-    formData,
-    erroresForm,
-    handleChange,
-    configPago,
-    configEnvio,
-    enviando,
-    suggestedProducts,
-    search,
-    setSearch,
-    calcularSubtotal,
-    calcularCostoEnvio,
-    calcularTotal,
-    onSubmit,
-    onAddToCart,
-    freeDeliveryRemaining,
-    showConfirmModal,
-    setShowConfirmModal,
-    showPaymentModal,
-    setShowPaymentModal,
-    pedidoCreado,
-    enviarPedido,
-  } = props;
+    slug, tienda, diseno, carritoState, updateQuantity, removeItem, formData, erroresForm, handleChange,
+    configPago, configEnvio, enviando, calcularSubtotal, calcularCostoEnvio, calcularTotal,
+    freeDeliveryThreshold, freeDeliveryRemaining, freeDeliveryProgress, onSubmit,
+  } = props as any;
 
-  const primary = hdPrimary(cp);
-  const font = hdFont(diseno);
-  const cartCount = carritoState.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
-  const canSubmit = !enviando && carritoState.length > 0;
-  const deliveryType = formData.tipoEntrega || 'RECOJO';
-  const ocultarEnvio = Boolean(diseno?.hoodieOcultarEnvio);
+  useHdFont();
+  const navigate = useNavigate();
+  const t = hdTheme(diseno);
+  const storeName = editable(diseno?.hoodieLogoText, storeNameOf(tienda));
+  const items: any[] = carritoState || [];
+  const errs = erroresForm || {};
+  const form = formData || {};
+  const subtotal = calcularSubtotal();
+  const envio = calcularCostoEnvio();
+  // "Ocultar costo de envío": el envío se coordina aparte, así que no se muestra ni se suma.
+  const ocultarEnvio = isOn(diseno?.hoodieOcultarEnvio);
+  const total = ocultarEnvio ? subtotal : calcularTotal();
+
+  const deliveryOption = (value: 'ENVIO' | 'RECOJO', icon: string, label: string, extra?: string) => {
+    const active = form.tipoEntrega === value;
+    return (
+      <label className="flex cursor-pointer items-center gap-3 rounded-none px-4 py-4 text-[13.5px] font-semibold transition-shadow" style={{ boxShadow: `inset 0 0 0 ${active ? 2 : 1}px ${active ? t.primary : t.hair}`, background: active ? mix(t.primary, 6, '#fff') : '#fff', color: t.ink }}>
+        <input type="radio" className="sr-only" name="tipoEntrega" value={value} checked={active} onChange={handleChange} />
+        <Icon icon={icon} width={21} style={{ color: t.primaryInk }} /> {label}
+        {extra && <span className="ml-auto text-[12px]" style={{ color: t.muted }}>{extra}</span>}
+      </label>
+    );
+  };
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="show"
-      variants={hdPage}
-      className="min-h-screen"
-      style={{ backgroundColor: HD.cream, fontFamily: font, ['--hd-cp' as any]: HD.ink }}
-    >
-      <HdHeader
-        tienda={tienda}
-        slug={slug}
-        cp={primary}
-        diseno={diseno}
-        carritoSize={cartCount}
-        onOpenCart={() => (window.location.href = `/tienda/${slug}/catalogo`)}
-        searchQuery={search}
-        setSearchQuery={setSearch}
-        allCategories={[]}
-        onSearchSubmit={(event, value) => {
-          event.preventDefault();
-          if (value?.trim()) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`;
-        }}
-      />
-
-      <section className="relative overflow-hidden border-b" style={{ borderColor: HD.line, background: `linear-gradient(120% 120% at 80% 0%, ${HD.sand}, ${HD.cream} 62%)` }}>
-        <div className="mx-auto max-w-[1240px] px-6 py-12 text-center md:py-14">
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-neutral-400">
-            <a href={`/tienda/${slug}`} className="hover:text-neutral-900">Inicio</a>
-            <span className="mx-2">/</span>
-            <span className="text-neutral-700">Finalizar compra</span>
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, fontFamily: t.font }}>
+        <header className="border-b" style={{ borderColor: t.hair }}>
+          <div className="mx-auto flex h-[72px] max-w-[1320px] items-center justify-between px-4 lg:px-8">
+            <button type="button" onClick={() => navigate(`/tienda/${slug}`)} className="flex items-center gap-2.5">
+              {tienda?.logo ? <img src={tienda.logo} alt={storeName} className="h-10 w-auto max-w-[160px] object-contain" /> : <>
+                <span className="text-[22px] font-medium uppercase tracking-[0.28em]" style={display(t, { color: t.ink })}>{storeName}</span>
+              </>}
+            </button>
+            <div className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: t.muted }}><Icon icon="solar:shield-check-linear" width={19} style={{ color: t.primaryInk }} /> <span className="hidden sm:inline">Compra segura</span></div>
           </div>
-          <h1 className="mt-3 text-4xl uppercase tracking-[-0.02em] md:text-6xl" style={{ fontFamily: HD.display, fontWeight: 900, color: HD.ink }}>Finaliza tu pedido</h1>
-        </div>
-      </section>
+        </header>
 
-      <motion.main variants={hdSection} className="mx-auto max-w-[1240px] px-6 py-12">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_430px]">
-          <section className="space-y-8">
-            {/* Paso 1 — datos */}
-            <motion.div initial="hidden" whileInView="show" viewport={hdViewport} variants={hdCard} className="rounded-[22px] border p-6 md:p-8" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-              <div className="mb-7 flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full text-white" style={{ backgroundColor: HD.ink }}>
-                  <Icon icon="solar:user-rounded-linear" width={22} />
-                </span>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-400">Paso 1</p>
-                  <h2 className="text-2xl uppercase tracking-[-0.01em]" style={{ fontFamily: HD.display, fontWeight: 900, color: HD.ink }}>Tus datos</h2>
-                </div>
-              </div>
-              <div className="grid gap-5 md:grid-cols-2">
-                <label className="block">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-500">Nombre completo</span>
-                  <input name="clienteNombre" value={formData.clienteNombre || ''} onChange={handleChange} className={inputClass(erroresForm.clienteNombre)} />
-                  {erroresForm.clienteNombre && <p className="mt-2 text-xs font-medium text-red-500">{erroresForm.clienteNombre}</p>}
-                </label>
-                <label className="block">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-500">Celular</span>
-                  <input name="clienteTelefono" value={formData.clienteTelefono || ''} onChange={handleChange} className={inputClass(erroresForm.clienteTelefono)} />
-                  {erroresForm.clienteTelefono && <p className="mt-2 text-xs font-medium text-red-500">{erroresForm.clienteTelefono}</p>}
-                </label>
-                <label className="block md:col-span-2">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-500">Correo</span>
-                  <input name="clienteEmail" type="email" value={formData.clienteEmail || ''} onChange={handleChange} className={inputClass(erroresForm.clienteEmail)} />
-                  {erroresForm.clienteEmail && <p className="mt-2 text-xs font-medium text-red-500">{erroresForm.clienteEmail}</p>}
-                </label>
-              </div>
-            </motion.div>
+        <main className="mx-auto max-w-[1320px] px-4 py-8 lg:px-8">
+          <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mb-5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: t.muted }}><Icon icon="solar:arrow-left-linear" width={16} /> Seguir comprando</button>
+          <h1 className="text-[28px] tracking-[-0.01em] leading-none sm:text-[36px]" style={display(t, { color: t.ink })}>{editable(diseno?.hoodieCheckoutTitle, 'Finalizar compra')}</h1>
 
-            {/* Paso 2 — entrega y pago */}
-            <motion.div initial="hidden" whileInView="show" viewport={hdViewport} variants={hdCard} className="rounded-[22px] border p-6 md:p-8" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-              <div className="mb-7 flex items-center gap-3">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full text-white" style={{ backgroundColor: HD.charcoal }}>
-                  <Icon icon="solar:delivery-linear" width={22} style={{ color: HD.nude }} />
-                </span>
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-400">Paso 2</p>
-                  <h2 className="text-2xl uppercase tracking-[-0.01em]" style={{ fontFamily: HD.display, fontWeight: 900, color: HD.ink }}>Entrega y pago</h2>
-                </div>
-              </div>
-              <div className="grid gap-5 md:grid-cols-2">
-                <label className="block">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-500">Tipo de entrega</span>
-                  <select name="tipoEntrega" value={deliveryType} onChange={handleChange} className={inputClass(erroresForm.tipoEntrega)}>
-                    {configEnvio?.aceptaRecojo !== false && <option value="RECOJO">Recojo en tienda</option>}
-                    {configEnvio?.aceptaEnvio !== false && <option value="ENVIO">Envío a domicilio</option>}
-                  </select>
-                  {erroresForm.tipoEntrega && <p className="mt-2 text-xs font-medium text-red-500">{erroresForm.tipoEntrega}</p>}
-                </label>
-                <div className="block md:col-span-2">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-500">Medio de pago</span>
-                  <MedioPagoSelector configPago={configPago} value={formData.medioPago} onChange={handleChange} accent={primary} radius="12px" className="mt-2" />
-                </div>
-                <label className="block md:col-span-2">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-500">Dirección de entrega</span>
-                  <input name="clienteDireccion" value={formData.clienteDireccion || ''} onChange={handleChange} className={inputClass(erroresForm.clienteDireccion)} />
-                  {erroresForm.clienteDireccion && <p className="mt-2 text-xs font-medium text-red-500">{erroresForm.clienteDireccion}</p>}
-                </label>
-                <label className="block md:col-span-2">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-500">Nota del pedido (opcional)</span>
-                  <textarea name="observaciones" value={formData.observaciones || ''} onChange={handleChange} rows={3} className="mt-2 w-full resize-none rounded-xl border border-neutral-200 bg-white px-4 py-4 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--hd-cp)]" placeholder="¿Talla, color o referencia? Cuéntanos aquí..." />
-                </label>
-              </div>
-            </motion.div>
-
-            <motion.div initial="hidden" whileInView="show" viewport={hdViewport} variants={hdStagger} className="grid gap-4 md:grid-cols-3">
-              {[
-                ['solar:medal-ribbon-star-linear', 'Calidad premium', 'Telas seleccionadas a mano.'],
-                ['solar:box-minimalistic-linear', 'Envío cuidado', 'Empaque protegido sin costo.'],
-                ['solar:chat-round-dots-linear', 'Asesoría', 'Te acompañamos por WhatsApp.'],
-              ].map(([icon, title, text]) => (
-                <motion.div key={title} variants={hdCard} className="rounded-[22px] border p-6" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-                  <Icon icon={icon} width={26} style={{ color: HD.ink }} />
-                  <p className="mt-4 text-sm font-bold" style={{ color: HD.ink }}>{title}</p>
-                  <p className="mt-1.5 text-xs leading-5 text-neutral-500">{text}</p>
+          <div className="mt-8 flex flex-col gap-6 md:flex-row md:items-start">
+            <motion.div variants={hdStagger} initial="hidden" animate="show" className="min-w-0 flex-1 space-y-5">
+              {items.length === 0 ? (
+                <motion.div variants={hdItem} className="rounded-none border border-dashed bg-white/60 px-8 py-16 text-center" style={{ borderColor: t.hair }}>
+                  <Icon icon="ph:t-shirt-thin" width={64} className="mx-auto" style={{ color: t.muted }} />
+                  <h2 className="mt-5 text-[18px] tracking-[-0.01em]" style={display(t, { color: t.ink })}>Tu carrito está vacío</h2>
+                  <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 rounded-none px-6 py-3 text-[13.5px] font-bold" style={{ background: t.primary, color: t.onPrimary }}>Ver catálogo</button>
                 </motion.div>
-              ))}
+              ) : (
+                <>
+                  <Block t={t} icon="solar:bag-4-linear" title="Tu pedido">
+                    <ul className="divide-y" style={{ borderColor: t.hair }}>
+                      {items.map((item) => {
+                        const id = item.cartId || item.id; const qty = Number(item.cantidad || 1); const price = Number(item.precioUnitario || 0);
+                        return (
+                          <li key={id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0" style={{ borderColor: t.hair }}>
+                            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-none" style={{ background: t.soft }}>
+                              {item.imagenUrl ? <img src={item.imagenUrl} alt="" className="h-full w-full object-contain p-1.5 mix-blend-multiply" /> : <Icon icon="ph:t-shirt-thin" width={30} style={{ color: t.muted }} />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="line-clamp-2 text-[13.5px] leading-snug" style={display(t, { color: t.ink })}>{item.descripcion}</h3>
+                              <p className="mt-0.5 text-[12px]" style={{ color: t.muted }}>{hdMoney(price)} c/u</p>
+                              <button type="button" onClick={() => removeItem(id)} className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-rose-500"><Icon icon="solar:trash-bin-minimalistic-linear" width={14} /> Quitar</button>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="flex h-9 items-center overflow-hidden rounded-none border" style={{ borderColor: t.hair }}>
+                                <button type="button" aria-label="Restar" onClick={() => updateQuantity(id, qty - 1)} className="flex w-8 items-center justify-center text-base font-bold" style={{ color: t.muted }}>−</button>
+                                <span className="w-7 text-center text-[13px] font-bold" style={{ color: t.ink }}>{qty}</span>
+                                <button type="button" aria-label="Sumar" onClick={() => updateQuantity(id, qty + 1)} className="flex w-8 items-center justify-center text-base font-bold" style={{ color: t.muted }}>+</button>
+                              </div>
+                              <span className="text-[15px] font-semibold" style={{ color: t.ink }}>{hdMoney(price * qty)}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </Block>
+
+                  {configEnvio && (configEnvio.aceptaEnvio || configEnvio.aceptaRecojo) && (
+                    <Block t={t} icon="solar:delivery-linear" title="Entrega">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {configEnvio.aceptaEnvio && deliveryOption('ENVIO', 'solar:delivery-linear', 'Envío a domicilio', Number(configEnvio.costoEnvio) > 0 ? hdMoney(Number(configEnvio.costoEnvio)) : undefined)}
+                        {configEnvio.aceptaRecojo && deliveryOption('RECOJO', 'solar:shop-2-linear', 'Recojo en tienda', 'Gratis')}
+                      </div>
+                    </Block>
+                  )}
+
+                  <Block t={t} icon="solar:user-linear" title="Tus datos">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field t={t} error={errs.clienteNombre}><input type="text" name="clienteNombre" autoComplete="name" placeholder="Nombre completo *" value={form.clienteNombre || ''} onChange={handleChange} className={inputCls} /></Field>
+                      <Field t={t} error={errs.clienteTelefono}><input type="tel" name="clienteTelefono" autoComplete="tel" placeholder="Celular *" value={form.clienteTelefono || ''} onChange={handleChange} className={inputCls} /></Field>
+                      <Field t={t} className="sm:col-span-2"><input type="email" name="clienteEmail" autoComplete="email" placeholder="Correo (opcional)" value={form.clienteEmail || ''} onChange={handleChange} className={inputCls} /></Field>
+                      {form.tipoEntrega === 'ENVIO' && (
+                        <>
+                          <Field t={t} error={errs.clienteDireccion} className="sm:col-span-2"><input type="text" name="clienteDireccion" autoComplete="street-address" placeholder="Dirección de entrega *" value={form.clienteDireccion || ''} onChange={handleChange} className={inputCls} /></Field>
+                          <Field t={t} className="sm:col-span-2"><input type="text" name="clienteReferencia" placeholder="Referencia (opcional)" value={form.clienteReferencia || ''} onChange={handleChange} className={inputCls} /></Field>
+                        </>
+                      )}
+                    </div>
+                  </Block>
+
+                  <Block t={t} icon="solar:card-linear" title="Pago">
+                    <MedioPagoSelector configPago={configPago} value={form.medioPago} onChange={handleChange} accent={t.primary} radius="16px" />
+                    {form.medioPago === 'TRANSFERENCIA' && configPago?.cuentasBancarias?.length > 0 && (
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        {configPago.cuentasBancarias.map((c: any) => (
+                          <div key={c.id} className="flex items-center gap-4 rounded-none p-4" style={{ background: t.soft }}>
+                            <BancoLogo banco={c.banco} size={44} />
+                            <div className="min-w-0"><p className="font-mono text-[13px] font-bold" style={{ color: t.ink }}>{c.numeroCuenta}</p>{c.cci && <p className="text-[11.5px]" style={{ color: t.muted }}>CCI: {c.cci}</p>}{c.titular && <p className="text-[11.5px]" style={{ color: t.muted }}>{c.titular}</p>}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Block>
+
+                  <Block t={t} icon="solar:notes-linear" title="Nota (opcional)">
+                    <Field t={t}><textarea name="observaciones" rows={3} placeholder="Talla a confirmar, horario de entrega, referencia…" value={form.observaciones || ''} onChange={handleChange} className="w-full resize-none appearance-none rounded-none border-0 bg-transparent bg-none p-4 text-[14px] font-medium text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" /></Field>
+                  </Block>
+                </>
+              )}
             </motion.div>
 
-            {suggestedProducts.length > 0 && (
-              <motion.div initial="hidden" whileInView="show" viewport={hdViewport} variants={hdSection} className="rounded-[22px] border p-6 md:p-8" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-                <div className="mb-6 flex items-end justify-between gap-4">
-                  <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: HD.taupe }}>Completa tu look</p>
-                    <h2 className="text-2xl uppercase tracking-[-0.01em]" style={{ fontFamily: HD.display, fontWeight: 900, color: HD.ink }}>También te encantará</h2>
-                  </div>
-                  <a href={`/tienda/${slug}/catalogo`} className="text-xs font-bold uppercase tracking-[0.12em] hover:opacity-70" style={{ color: HD.ink }}>Ver todo</a>
+            <motion.aside initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: hdEase, delay: 0.1 }} className="w-full shrink-0 md:sticky md:top-6 md:w-[380px]">
+              <div className="overflow-hidden rounded-none border bg-white" style={{ borderColor: t.hair }}>
+                <div className="px-6 pb-4 pt-6">
+                  <h2 className="text-[15px] tracking-[-0.01em]" style={display(t, { color: t.ink })}>Resumen</h2>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {suggestedProducts.slice(0, 3).map((producto) => (
-                    <button
-                      key={producto.id}
-                      type="button"
-                      onClick={() => onAddToCart(producto)}
-                      className="group flex items-center gap-3 rounded-2xl border bg-white p-3 text-left transition-colors hover:border-neutral-900/25"
-                      style={{ borderColor: HD.line }}
-                    >
-                      <span className="h-16 w-16 shrink-0 overflow-hidden rounded-xl" style={{ backgroundColor: HD.sand }}>
-                        <HdProductImage producto={producto} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="line-clamp-2 text-sm font-medium" style={{ color: HD.ink }}>{producto.descripcion}</span>
-                        <span className="mt-1 block text-sm font-bold" style={{ color: HD.ink }}>{money(producto.precioUnitario)}</span>
-                      </span>
-                      <Icon icon="solar:add-circle-linear" width={22} className="text-neutral-400 transition-colors group-hover:text-neutral-900" />
-                    </button>
+                <div className="max-h-64 space-y-3 overflow-y-auto border-b px-6 pb-4" style={{ borderColor: t.hair }}>
+                  {items.length === 0 ? <p className="py-6 text-center text-[13px]" style={{ color: t.muted }}>Sin productos.</p> : items.map((item) => (
+                    <div key={item.cartId || item.id} className="grid grid-cols-[48px_1fr_auto] items-center gap-3">
+                      <div className="relative"><div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-none" style={{ background: t.soft }}>{item.imagenUrl ? <img src={item.imagenUrl} alt="" className="h-full w-full object-contain p-1 mix-blend-multiply" /> : <Icon icon="ph:t-shirt-thin" style={{ color: t.muted }} />}</div><span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-none px-1 text-[10px] font-bold" style={{ background: t.primary, color: t.onPrimary }}>{item.cantidad}</span></div>
+                      <p className="line-clamp-2 text-[12px] font-medium leading-snug" style={{ color: t.ink }}>{item.descripcion}</p>
+                      <span className="text-[12.5px] font-bold" style={{ color: t.ink }}>{hdMoney(Number(item.precioUnitario || 0) * Number(item.cantidad || 1))}</span>
+                    </div>
                   ))}
                 </div>
-              </motion.div>
-            )}
-          </section>
-
-          {/* Resumen */}
-          <motion.aside initial="hidden" animate="show" variants={hdCard} className="h-fit overflow-hidden rounded-[22px] border shadow-[0_30px_60px_-42px_rgba(21,18,14,0.5)] lg:sticky lg:top-28" style={{ backgroundColor: HD.panel, borderColor: HD.line }}>
-            <div className="border-b p-6" style={{ borderColor: HD.line }}>
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-400">Tu pedido</p>
-              <h2 className="mt-1 text-2xl uppercase tracking-[-0.01em]" style={{ fontFamily: HD.display, fontWeight: 900, color: HD.ink }}>Resumen</h2>
-            </div>
-
-            <div className="max-h-[440px] overflow-y-auto px-6">
-              {carritoState.length === 0 ? (
-                <div className="my-6 rounded-2xl bg-white p-8 text-center">
-                  <Icon icon="solar:bag-cross-linear" className="mx-auto text-4xl text-neutral-300" />
-                  <p className="mt-3 text-sm font-medium text-neutral-500">Tu carrito está vacío.</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white" style={{ backgroundColor: HD.ink }}>Ver tienda</a>
-                </div>
-              ) : (
-                carritoState.map((item) => {
-                  const itemId = item.cartId || item.id;
-                  const qty = Number(item.cantidad || 1);
-                  const price = Number(item.precioUnitario || item.precio || 0);
-                  return (
-                    <div key={itemId} className="flex gap-4 border-b py-5" style={{ borderColor: HD.line }}>
-                      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl" style={{ backgroundColor: HD.sand }}>
-                        <HdProductImage producto={item} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="line-clamp-2 text-sm font-medium leading-5" style={{ color: HD.ink }}>{item.descripcion}</p>
-                        <p className="mt-1 text-sm font-bold" style={{ color: HD.ink }}>{money(price * qty)}</p>
-                        <div className="mt-2.5 flex items-center justify-between gap-3">
-                          <div className="flex h-9 items-center rounded-full bg-white ring-1" style={{ ['--tw-ring-color' as any]: HD.line }}>
-                            <button type="button" onClick={() => updateQuantity(itemId, qty - 1)} className="h-9 w-9 text-sm font-bold text-neutral-600">-</button>
-                            <span className="w-8 text-center text-sm font-semibold">{qty}</span>
-                            <button type="button" onClick={() => updateQuantity(itemId, qty + 1)} className="h-9 w-9 text-sm font-bold text-neutral-600">+</button>
-                          </div>
-                          <button type="button" onClick={() => removeItem(itemId)} className="flex h-9 w-9 items-center justify-center rounded-full text-red-500 hover:bg-red-50">
-                            <Icon icon="solar:trash-bin-trash-linear" />
-                          </button>
-                        </div>
-                      </div>
+                <div className="space-y-3 px-6 py-5">
+                  <div className="flex justify-between text-[13px]" style={{ color: t.muted }}><span>Subtotal</span><span className="font-bold" style={{ color: t.ink }}>{hdMoney(subtotal)}</span></div>
+                  {!ocultarEnvio && <div className="flex justify-between text-[13px]" style={{ color: t.muted }}><span>Envío</span><span className="font-bold" style={{ color: t.ink }}>{envio === 0 ? 'Gratis' : hdMoney(envio)}</span></div>}
+                  {!ocultarEnvio && freeDeliveryThreshold > 0 && freeDeliveryRemaining > 0 && (
+                    <div className="rounded-none px-3.5 py-2.5" style={{ background: t.soft }}>
+                      <p className="text-[12px] font-semibold" style={{ color: t.ink }}>Agrega {hdMoney(freeDeliveryRemaining)} para envío gratis</p>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-none bg-white"><div className="h-full rounded-none" style={{ width: `${freeDeliveryProgress}%`, background: t.primary }} /></div>
                     </div>
-                  );
-                })
-              )}
-            </div>
-
-            {!ocultarEnvio && freeDeliveryRemaining > 0 && carritoState.length > 0 && (
-              <div className="mx-6 mt-5 rounded-xl p-4 text-xs font-medium leading-5" style={{ backgroundColor: HD.sand, color: HD.ink }}>
-                Te faltan {money(freeDeliveryRemaining)} para el envío gratis.
-              </div>
-            )}
-
-            <div className="p-6">
-              <div className="space-y-3 text-sm">
-                <div className="flex justify-between text-neutral-500"><span>Subtotal</span><span className="font-medium" style={{ color: HD.ink }}>{money(calcularSubtotal())}</span></div>
-                {!ocultarEnvio && <div className="flex justify-between text-neutral-500"><span>Envío</span><span className="font-medium" style={{ color: HD.ink }}>{money(calcularCostoEnvio())}</span></div>}
-                <div className="flex items-baseline justify-between border-t pt-4" style={{ borderColor: HD.line }}>
-                  <span className="text-sm font-bold uppercase tracking-[0.1em] text-neutral-500">Total</span>
-                  <span className="text-3xl font-bold" style={{ fontFamily: HD.display, color: HD.ink }}>{money(ocultarEnvio ? calcularSubtotal() : calcularTotal())}</span>
+                  )}
+                  {errs._minimo && <p className="rounded-none bg-rose-50 px-3.5 py-2.5 text-[12px] font-semibold text-rose-500">{errs._minimo}</p>}
+                  <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: t.hair }}><span className="text-[13px] font-bold uppercase" style={{ color: t.ink }}>Total</span><span className="text-[28px] font-semibold" style={{ color: t.ink }}>{hdMoney(total)}</span></div>
+                  <button type="button" onClick={onSubmit} disabled={enviando || items.length === 0} className="flex h-[54px] w-full items-center justify-between rounded-none pl-6 pr-1.5 text-[14px] font-bold transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-50" style={{ background: t.primary, color: t.onPrimary }}>
+                    {enviando ? 'Procesando…' : editable(diseno?.hoodieCheckoutButton, 'Confirmar pedido')}
+                    <span className="flex h-11 w-11 items-center justify-center rounded-none bg-white/90" style={{ color: t.ink }}><Icon icon={enviando ? 'solar:refresh-linear' : 'solar:arrow-right-linear'} width={18} className={enviando ? 'animate-spin' : ''} /></span>
+                  </button>
+                  <p className="text-center text-[11px]" style={{ color: t.muted }}>Revisas y confirmas tu pedido antes de enviarlo.</p>
                 </div>
               </div>
+            </motion.aside>
+          </div>
+        </main>
 
-              <motion.button
-                type="button"
-                disabled={!canSubmit}
-                onClick={onSubmit}
-                className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-full text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg transition-transform disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ backgroundColor: HD.ink }}
-                whileHover={canSubmit ? { scale: 1.02, y: -2 } : undefined}
-                whileTap={canSubmit ? hdTap : undefined}
-              >
-                {enviando ? 'Enviando pedido...' : 'Confirmar pedido'}
-                <Icon icon="solar:arrow-right-linear" />
-              </motion.button>
-
-              <div className="mt-5 grid grid-cols-2 gap-2 text-center text-[10px] font-bold uppercase tracking-[0.1em] text-neutral-500">
-                <span className="rounded-full bg-white px-2 py-3">Pago seguro</span>
-                <span className="rounded-full bg-white px-2 py-3">Datos protegidos</span>
-              </div>
-            </div>
-          </motion.aside>
-        </div>
-      </motion.main>
-
-      <HdFooter tienda={tienda} slug={slug} diseno={diseno} cp={primary} categories={[]} />
-      <HdWhatsAppFab tienda={tienda} />
-
-      {pedidoCreado && (
-        <PaymentConfirmationModal
-          isOpen={showPaymentModal}
-          onClose={() => {
-            setShowPaymentModal(false);
-            window.location.href = `/tienda/${slug}/seguimiento?codigo=${pedidoCreado.codigoSeguimiento}`;
-          }}
-          orderData={{
-            id: pedidoCreado.id,
-            codigoSeguimiento: pedidoCreado.codigoSeguimiento,
-            total: pedidoCreado.total || calcularTotal(),
-            medioPago: formData.medioPago,
-            tipoEntrega: formData.tipoEntrega,
-            clienteNombre: formData.clienteNombre,
-          }}
-          paymentConfig={configPago}
-          storeSlug={slug}
-        />
-      )}
-
-      <ConfirmOrderModal
-        isOpen={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={enviarPedido}
-        total={calcularTotal()}
-        loading={enviando}
-        tiendaColor={HD.ink}
-      />
-    </motion.div>
+        {props.pedidoCreado && (
+          <PaymentConfirmationModal
+            isOpen={props.showPaymentModal}
+            onClose={() => { props.setShowPaymentModal(false); window.location.href = `/tienda/${props.slug}/seguimiento?codigo=${props.pedidoCreado.codigoSeguimiento}`; }}
+            orderData={{ id: props.pedidoCreado.id, codigoSeguimiento: props.pedidoCreado.codigoSeguimiento, total: props.pedidoCreado.total || props.calcularTotal(), medioPago: form.medioPago, tipoEntrega: form.tipoEntrega, clienteNombre: form.clienteNombre }}
+            paymentConfig={props.configPago ? { yapeQR: props.configPago.yapeQR || props.configPago.yapeQrUrl || undefined, plinQR: props.configPago.plinQR || props.configPago.plinQrUrl || undefined, yapeNumero: props.configPago.yapeNumero || undefined, plinNumero: props.configPago.plinNumero || undefined, whatsappTienda: props.configPago?.whatsappTienda ?? props.tienda?.whatsappTienda ?? props.tienda?.diseno?.whatsappTienda, cuentasBancarias: props.configPago.cuentasBancarias || undefined } : undefined}
+            storeSlug={props.slug || ''}
+          />
+        )}
+        <ConfirmOrderModal isOpen={props.showConfirmModal} onClose={() => props.setShowConfirmModal(false)} onConfirm={props.enviarPedido} total={total} loading={props.enviando} tiendaColor={t.primary} />
+      </div>
+    </MotionConfig>
   );
 }

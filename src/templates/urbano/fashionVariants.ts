@@ -82,7 +82,8 @@ export const variantValues = (variant: any): VariantValueMap => {
 
 const isColorName = (name: string) => {
   const normalized = normalizeText(name);
-  return normalized.includes('color') || normalized.includes('colour');
+  // "Tono"/"Shade": así nombran el color las tiendas de maquillaje (base, labial, rubor).
+  return normalized.includes('color') || normalized.includes('colour') || /^tonos?\b/.test(normalized) || normalized.includes('shade');
 };
 
 const isSizeName = (name: string) => {

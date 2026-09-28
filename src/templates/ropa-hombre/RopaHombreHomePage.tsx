@@ -1,520 +1,344 @@
-import { type ReactNode, useEffect, useState } from 'react';
-import { buildCategoryTiles } from '../shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
+import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getProductPricing } from '@/templates/shared/pricing';
+import { buildCategoryTiles, type CategoryTile } from '@/templates/shared/categoryTiles';
+import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
-import { URB, UrbCartModal, UrbFooter, UrbHeader, UrbProductCard, UrbWhatsAppFab, urbFont, urbPrimary, withAlpha } from './RopaHombreParts';
-import { urbCard, urbEase, urbPage, urbSection, urbStagger, urbTap, urbViewport } from './motion';
+import { useFavoritosStore } from '@/zustand/favoritos';
+import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
+import TiendaCompareBar from '@/components/tienda/TiendaCompareBar';
+import {
+  UrbHeader, UrbFooter, UrbCartModal, buildServices, urbTheme, useUrbFont,
+  editable, optional, isOn, nameOf, serif, btnCls, type Theme, type Service,
+} from './RopaHombreParts';
+import { SectionHeader, ProductGrid, GridSkeleton, ProductRail, OfferCountdown, RealReviews, Eyebrow, soonestOfferEnd, storeChannels, getName, hasImage, type OpenFn, type AddFn } from './RopaHombreSections';
+import { mix, urEase, urHeroText, urItem, urReveal, urStagger, urViewport } from './motion';
 
-const navigate = (to: string) => { window.location.href = to; };
+const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
-const HERO_FALLBACKS = [
-  'https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1520975954732-35dd22299614?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?auto=format&fit=crop&w=1200&q=80',
-];
-const CATEGORY_FALLBACKS = [
-  'https://images.unsplash.com/photo-1602810318383-e386cc2a3ccf?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1551028719-00167b16eac5?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1473966968600-fa801b869a1a?auto=format&fit=crop&w=600&q=80',
-];
-const PREMIUM_FALLBACK = 'https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&w=900&q=80';
-const SALE_FALLBACK = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=900&q=80';
-const TESTIMONIAL_FALLBACK = 'https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=700&q=80';
-const COMMUNITY_FALLBACK = 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=900&q=80';
-const AVATAR_FALLBACKS = [
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80',
-  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=100&q=80',
-];
+/** Fotografía de ejemplo (reemplazable en Personalizar). */
+export const URBANIC_IMG = {
+  hero: [u('1507679799987-c73779587ccf', 2000), u('1617127365659-c47fa864d8bc', 2000), u('1618886614638-80e3c103d31a', 2000)],
+  tiles: [u('1552374196-1ab2a1c593e8', 1100), u('1602810316693-3667c854239a', 900), u('1622519407650-3df9883f76a5', 800), u('1473966968600-fa801b869a1a', 800)],
+  manifesto: [u('1593030761757-71fae45fa0e7', 700), u('1504593811423-6dd665756598', 700)],
+  editorial: u('1480429370139-e0132c086e2a', 1300),
+  sale: u('1602810318383-e386cc2a3ccf', 1100),
+  community: u('1491336477066-31156b5e4f35', 1100),
+};
 
-const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
-const nameOf = (p: any) => p?.descripcion || p?.nombre || 'Producto';
-const imgOf = (p: any) => p?.imagenUrl || p?.imagen || '';
+// ═════════════════════════════════════════════════════════════════ PAGE ══
+export default function RopaHombreHomePage(props: TemplateHomePageProps) {
+  const { tienda, slug, productos, allCategories, diseno, carrito, setCarrito, mostrarCarrito, setMostrarCarrito, agregarAlCarrito, actualizarCantidad, loading } = props as any;
+  useUrbFont();
+  const navigate = useNavigate();
+  const t = urbTheme(diseno);
+  const [showFav, setShowFav] = useState(false);
+  const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
+  const favoritos = getFavoritosBySlug(slug);
 
-function Eyebrow({ children, color, center }: { children: ReactNode; color: string; center?: boolean }) {
+  const list: any[] = useMemo(() => (Array.isArray(productos) ? productos : []), [productos]);
+  const withImg = useMemo(() => list.filter(hasImage), [list]);
+  const categories: string[] = useMemo(() => (allCategories || []).map(getName).filter(Boolean), [allCategories]);
+  const newest = useMemo(() => {
+    const pool = [...list].sort((a, b) => Number(b?.id ?? 0) - Number(a?.id ?? 0));
+    return pool.slice(0, pool.length >= 8 ? 8 : Math.min(4, pool.length));
+  }, [list]);
+  const essentials = useMemo(() => {
+    const seen = new Set(newest.slice(0, 4).map((p) => p?.id));
+    const pool = [...withImg.filter((p) => p?.destacado), ...withImg.filter((p) => !p?.destacado)];
+    return pool.filter((p) => !seen.has(p?.id)).slice(0, 10);
+  }, [withImg, newest]);
+  const offers = useMemo(() => list.filter((p) => getProductPricing(p).enOferta), [list]);
+  const offerEndsAt = useMemo(() => soonestOfferEnd(offers), [offers]);
+  const brands = useMemo(() => Array.from(new Set(list.map((p) => nameOf(p?.marca).trim()).filter(Boolean))).slice(0, 10), [list]);
+  const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'ropaHombre', count: 4, fallbackImages: URBANIC_IMG.tiles }), [allCategories, diseno]);
+  const ch = storeChannels(tienda, diseno);
+  const services = useMemo(() => buildServices(tienda, ch.hasWhatsapp), [tienda, ch.hasWhatsapp]);
+
+  const cartCount = (carrito || []).reduce((s: number, i: any) => s + Number(i?.cantidad || 1), 0);
+  const goCatalog = () => navigate(`/tienda/${slug}/catalogo`);
+  const goCategory = (name: string) => navigate(`/tienda/${slug}/catalogo?category=${encodeURIComponent(name)}`);
+  const goProduct: OpenFn = (p) => navigate(`/tienda/${slug}/producto/${p.id}`);
+  const add: AddFn = (p, qty = 1) => agregarAlCarrito({ ...p, __cantidad: qty });
+  const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate });
+  const advisorUrl = ch.wa('Hola, quisiera asesoría de estilo para elegir mis prendas.');
+
   return (
-    <p className={`flex items-center gap-2.5 text-[11px] font-semibold uppercase tracking-[0.28em] ${center ? 'justify-center' : ''}`} style={{ color }}>
-      <span className="h-px w-5" style={{ backgroundColor: color }} />
-      {children}
-      {center && <span className="h-px w-5" style={{ backgroundColor: color }} />}
-    </p>
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, fontFamily: t.font }}>
+        <UrbHeader tienda={tienda} slug={slug} diseno={diseno} categories={categories} t={t} cartCount={cartCount} favCount={favoritos.length} onOpenCart={() => setMostrarCarrito(true)} onOpenFav={() => setShowFav(true)} navigate={navigate} overlay />
+
+        <HeroSlider t={t} diseno={diseno} goAction={goAction} />
+        <Manifesto t={t} diseno={diseno} />
+        {tiles.length > 0 && <Collections t={t} diseno={diseno} tiles={tiles} onPick={goCategory} />}
+
+        <section id="novedades" className="mx-auto max-w-[1440px] scroll-mt-28 px-5 py-20 lg:px-10">
+          <SectionHeader t={t} index="03" eyebrow={editable(diseno?.ropaHombreFreshEyebrow, 'Recién llegado')} title={editable(diseno?.ropaHombreFreshTitle, 'Novedades de la temporada')} onMore={goCatalog} moreLabel={editable(diseno?.ropaHombreFreshButton, 'Ver todo')} />
+          {loading && !list.length ? <GridSkeleton t={t} /> : <ProductGrid t={t} products={newest} slug={slug} onOpen={goProduct} onAdd={add} />}
+        </section>
+
+        <Editorial t={t} diseno={diseno} goAction={goAction} />
+        {offers.length > 0 && <SaleBand t={t} diseno={diseno} offers={offers} endsAt={offerEndsAt} slug={slug} onOpen={goProduct} onAdd={add} onMore={goCatalog} />}
+        {essentials.length >= 4 && <ProductRail t={t} eyebrow={`05 — ${editable(diseno?.ropaHombreBestsellersEyebrow, 'Siempre en el armario')}`} title={editable(diseno?.ropaHombreBestsellersTitle, 'Los esenciales')} products={essentials} slug={slug} onOpen={goProduct} onAdd={add} onMore={goCatalog} />}
+        {brands.length >= 3 && <BrandStrip t={t} diseno={diseno} brands={brands} />}
+        <RealReviews t={t} slug={slug} products={list} eyebrow={editable(diseno?.ropaHombreTestimonialEyebrow, 'Clientes de la casa')} title={editable(diseno?.ropaHombreTestimonialTitle, 'Lo que dicen de nosotros')} />
+        <ServicesRow t={t} diseno={diseno} services={services} />
+        {advisorUrl && <Advisor t={t} diseno={diseno} url={advisorUrl} />}
+
+        <UrbFooter tienda={tienda} slug={slug} diseno={diseno} t={t} categories={categories} navigate={navigate} />
+
+        <UrbCartModal isOpen={mostrarCarrito} onClose={() => setMostrarCarrito(false)} carrito={carrito} setCarrito={setCarrito} actualizarCantidad={actualizarCantidad} onCheckout={() => navigate(`/tienda/${slug}/checkout`, { state: { carrito, tienda } })} t={t} tienda={tienda} diseno={diseno} />
+        <FavoritesDrawer open={showFav} slug={slug} cp={t.primary} favoritos={favoritos} onClose={() => setShowFav(false)} onProduct={(item: any) => { setShowFav(false); goProduct(item); }} onRemove={(id: any, s: string) => removeFavorito(id, s)} />
+        <TiendaCompareBar slug={slug} cp={t.primary} onGoProduct={(item: any) => goProduct(item)} />
+      </div>
+    </MotionConfig>
   );
 }
 
-/* ─────────────────────────────── Hero slider ─────────────────────────────── */
+// ═════════════════════════════════════════════════════════════════ HERO ══
+type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string; title2: string; subtitle: string; button: string; action: string };
 
-interface HeroSlide {
-  image: string;
-  eyebrow: string;
-  title: string;
-  title2: string;
-  subtitle: string;
-  button: string;
-  button2?: string;
-  onlyImage: boolean;
-  actionKey: string;
-}
+/** Línea 2 del titular: si el dueño cambió la línea 1 y no tocó la 2, no se le pega el texto de ejemplo. */
+const line2 = (title: any, title2: any, fallback: string) => (title2 !== undefined && title2 !== null ? String(title2).trim() : String(title || '').trim() ? '' : fallback);
 
-function buildHeroSlides(diseno: any): HeroSlide[] {
-  const raw: HeroSlide[] = [
-    {
-      image: diseno?.ropaHombreHeroImage || '',
-      eyebrow: diseno?.ropaHombreHeroEyebrow || 'Premium Clothing',
-      title: diseno?.ropaHombreHeroTitle || 'Wear your style.',
-      title2: diseno?.ropaHombreHeroTitle2 || 'Own your confidence.',
-      subtitle: diseno?.ropaHombreHeroSubtitle || 'Ropa de calidad premium, confeccionada con comodidad y diseñada para el hombre moderno.',
-      button: diseno?.ropaHombreHeroButton || 'Shop Now',
-      button2: diseno?.ropaHombreHeroButton2 || '',
-      onlyImage: Boolean(diseno?.ropaHombreHeroOnlyImage),
-      actionKey: 'ropaHombreHeroAction',
-    },
-    {
-      image: diseno?.ropaHombreSlide2Image || '',
-      eyebrow: diseno?.ropaHombreSlide2Eyebrow || 'Esenciales',
-      title: diseno?.ropaHombreSlide2Title || 'Básicos que duran.',
-      title2: diseno?.ropaHombreSlide2Title2 || 'Hechos para ti.',
-      subtitle: diseno?.ropaHombreSlide2Subtitle || 'Camisas, polos y pantalones que combinan con todo. Calidad que se siente en cada prenda.',
-      button: diseno?.ropaHombreSlide2Button || 'Descubrir',
-      onlyImage: Boolean(diseno?.ropaHombreSlide2OnlyImage),
-      actionKey: 'ropaHombreSlide2Action',
-    },
-    {
-      image: diseno?.ropaHombreSlide3Image || '',
-      eyebrow: diseno?.ropaHombreSlide3Eyebrow || 'Temporada',
-      title: diseno?.ropaHombreSlide3Title || 'Hasta 40% OFF.',
-      title2: diseno?.ropaHombreSlide3Title2 || 'Solo por hoy.',
-      subtitle: diseno?.ropaHombreSlide3Subtitle || 'Aprovecha descuentos exclusivos en prendas seleccionadas de la colección.',
-      button: diseno?.ropaHombreSlide3Button || 'Ver ofertas',
-      onlyImage: Boolean(diseno?.ropaHombreSlide3OnlyImage),
-      actionKey: 'ropaHombreSlide3Action',
-    },
+function slidesFrom(d: any = {}): Slide[] {
+  return [
+    { image: d.ropaHombreHeroImage || URBANIC_IMG.hero[0], onlyImage: isOn(d.ropaHombreHeroOnlyImage), eyebrow: editable(d.ropaHombreHeroEyebrow, 'Colección de temporada'), title: editable(d.ropaHombreHeroTitle, 'El arte de'), title2: line2(d.ropaHombreHeroTitle, d.ropaHombreHeroTitle2, 'vestir bien'), subtitle: editable(d.ropaHombreHeroSubtitle, 'Cortes precisos, tejidos nobles y piezas pensadas para durar.'), button: editable(d.ropaHombreHeroButton, 'Descubrir la colección'), action: 'ropaHombreHeroAction' },
+    { image: d.ropaHombreSlide2Image || URBANIC_IMG.hero[1], onlyImage: isOn(d.ropaHombreSlide2OnlyImage), eyebrow: editable(d.ropaHombreSlide2Eyebrow, 'Sastrería'), title: editable(d.ropaHombreSlide2Title, 'Presencia'), title2: line2(d.ropaHombreSlide2Title, d.ropaHombreSlide2Title2, 'sin esfuerzo'), subtitle: editable(d.ropaHombreSlide2Subtitle, 'Sacos y camisas con líneas limpias para cada ocasión.'), button: editable(d.ropaHombreSlide2Button, 'Ver sastrería'), action: 'ropaHombreSlide2Action' },
+    { image: d.ropaHombreSlide3Image || URBANIC_IMG.hero[2], onlyImage: isOn(d.ropaHombreSlide3OnlyImage), eyebrow: editable(d.ropaHombreSlide3Eyebrow, 'Esenciales'), title: editable(d.ropaHombreSlide3Title, 'Menos, pero'), title2: line2(d.ropaHombreSlide3Title, d.ropaHombreSlide3Title2, 'mejor'), subtitle: editable(d.ropaHombreSlide3Subtitle, 'Básicos impecables que combinan con todo tu armario.'), button: editable(d.ropaHombreSlide3Button, 'Ver esenciales'), action: 'ropaHombreSlide3Action' },
   ];
-  return raw.map((slide, i) => ({ ...slide, image: slide.image || HERO_FALLBACKS[i % HERO_FALLBACKS.length] }));
 }
 
-function HeroSlider({ slides, slug, primary, diseno, featured }: { slides: HeroSlide[]; slug: string; primary: string; diseno: any; featured?: any }) {
-  const navigateRouter = useNavigate();
-  const [index, setIndex] = useState(0);
-  const count = slides.length;
+const PROGRESS_CSS = `
+@keyframes ur-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ur-progress { transform-origin: left; animation: ur-progress var(--ur-dur) linear forwards; }
+.ur-paused .ur-progress { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) { .ur-progress { animation: none; transform: scaleX(1); } }
+`;
 
-  // Segundos entre slides, configurable desde el editor (0 = sin avance automático).
-  const intervalMs = resolveHeroIntervalMs(diseno, 'ropaHombreHeroInterval', 6500);
+/** Hero a pantalla completa. Aislado: su temporizador solo re-renderiza este componente. */
+function HeroSlider({ t, diseno, goAction }: { t: Theme; diseno: any; goAction: (k: string) => void }) {
+  const slides = useMemo(() => slidesFrom(diseno || {}), [diseno]);
+  const interval = resolveHeroIntervalMs(diseno, 'ropaHombreHeroInterval', 7000);
+  const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
   usePreloadImages(slides.map((s) => s.image));
-
   useEffect(() => {
-    if (count <= 1 || intervalMs <= 0) return;
-    const timer = setInterval(() => setIndex((prev) => (prev + 1) % count), intervalMs);
-    return () => clearInterval(timer);
-  }, [count, intervalMs]);
-
-  const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
-  const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
-  const goCatalog = () => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    navigateRouter(`/tienda/${slug}/catalogo`);
-  };
-  const slide = slides[index];
-
-  const featPrice = featured ? getProductPricing(featured).precioFinal : 0;
-  const newArrivalLabel = diseno?.ropaHombreHeroNewArrivalLabel || 'New Arrival';
+    if (!interval || paused) return;
+    const id = window.setTimeout(() => setIdx((v) => (v + 1) % slides.length), interval);
+    return () => window.clearTimeout(id);
+  }, [idx, interval, paused, slides.length]);
+  const s = slides[idx];
+  const secondary = optional(diseno?.ropaHombreHeroButton2, 'Ver novedades');
 
   return (
-    <section className="relative isolate overflow-hidden" style={{ background: `radial-gradient(120% 100% at 78% 18%, ${URB.nude} 0%, ${URB.cream} 60%)` }} aria-roledescription="carousel">
-      <div className="mx-auto max-w-7xl px-5 md:px-8">
-        {slide.onlyImage ? (
-          <div className="py-6 md:py-8">
-            <AnimatePresence mode="popLayout">
-              <motion.button
-                key={`only-${index}`}
-                type="button"
-                onClick={() => goAction(slide.actionKey)}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.6, ease: urbEase }}
-                className="group relative block h-72 w-full cursor-pointer overflow-hidden rounded-[28px] md:h-[540px]"
-                aria-label={slide.eyebrow || 'Ver más'}
-              >
-                <img src={slide.image} alt={slide.eyebrow || 'Banner'} className="h-full w-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]" />
-              </motion.button>
-            </AnimatePresence>
-          </div>
-        ) : (
-          <div className="grid items-center gap-10 py-10 md:grid-cols-[1.02fr_1fr] md:py-14">
-            {/* Texto */}
-            <div className="relative order-2 md:order-1">
-              <AnimatePresence mode="wait">
-                <motion.div key={`c-${index}`} initial={{ opacity: 0, y: 22 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.6, ease: urbEase }}>
-                  {slide.eyebrow && <div className="mb-5"><Eyebrow color={primary}>{slide.eyebrow}</Eyebrow></div>}
-                  <h1 className="text-[13vw] leading-[0.95] tracking-tight sm:text-6xl md:text-[5.2rem]" style={{ fontFamily: URB.serif, color: URB.ink }}>
-                    <span className="block">{slide.title}</span>
-                    {slide.title2 && <span className="mt-1 block italic" style={{ color: primary }}>{slide.title2}</span>}
-                  </h1>
-                  {slide.subtitle && <p className="mt-6 max-w-md text-[15px] leading-relaxed text-neutral-600">{slide.subtitle}</p>}
-                  <div className="mt-8 flex flex-wrap items-center gap-3">
-                    {slide.button && (
-                      <motion.button type="button" onClick={() => goAction(slide.actionKey)} whileHover={{ scale: 1.03, y: -2 }} whileTap={urbTap}
-                        className="inline-flex items-center gap-3 rounded-full py-4 pl-7 pr-3 text-[13px] font-semibold text-white shadow-lg" style={{ backgroundColor: URB.ink }}>
-                        {slide.button}
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/15"><Icon icon="solar:arrow-right-up-linear" width={16} /></span>
-                      </motion.button>
-                    )}
-                    {slide.button2 && (
-                      <button type="button" onClick={goCatalog} className="inline-flex items-center gap-2 rounded-full border px-7 py-4 text-[13px] font-semibold text-neutral-800 transition-colors hover:border-neutral-900" style={{ borderColor: URB.tan }}>
-                        {slide.button2}
-                      </button>
-                    )}
-                  </div>
+    <section className={`relative h-[100svh] min-h-[620px] overflow-hidden bg-black ${paused ? 'ur-paused' : ''}`} onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <style>{PROGRESS_CSS}</style>
+      {slides.map((sl, i) => (
+        <motion.img key={sl.action} src={sl.image} alt="" initial={false} animate={{ opacity: i === idx ? 1 : 0, scale: i === idx ? 1.04 : 1.1 }} transition={{ opacity: { duration: 1.4, ease: urEase }, scale: { duration: 8, ease: 'linear' } }} className="absolute inset-0 h-full w-full object-cover" loading={i === 0 ? 'eager' : 'lazy'} />
+      ))}
+      {!s.onlyImage && <div aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.35)_0%,rgba(0,0,0,0)_28%,rgba(0,0,0,0)_45%,rgba(0,0,0,.72)_100%)]" />}
+      {s.onlyImage && <button type="button" aria-label={s.title} onClick={() => goAction(s.action)} className="absolute inset-0 z-[1]" />}
 
-                  {/* Confianza */}
-                  <div className="mt-9 flex items-center gap-3">
-                    <div className="flex -space-x-3">
-                      {AVATAR_FALLBACKS.map((a, i) => (
-                        <img key={i} src={a} alt="" className="h-10 w-10 rounded-full border-2 border-white object-cover" />
-                      ))}
-                    </div>
-                    <div className="text-[13px] leading-tight">
-                      <p className="font-semibold" style={{ color: URB.ink }}>{diseno?.ropaHombreTrustNumber || 'Trusted by 10K+'}</p>
-                      <p className="text-neutral-500">{diseno?.ropaHombreTrustLabel || 'Happy Customers'}</p>
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </div>
+      {!s.onlyImage && (
+        <div className="absolute inset-x-0 bottom-0 z-[2] mx-auto max-w-[1440px] px-5 pb-28 lg:px-10 lg:pb-24">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={idx} variants={urStagger} initial="hidden" animate="show" exit={{ opacity: 0, transition: { duration: 0.3 } }} className="max-w-3xl text-white">
+              <motion.p variants={urHeroText} className="text-[11px] font-medium uppercase tracking-[0.32em] text-white/80">{s.eyebrow}</motion.p>
+              <motion.h1 variants={urHeroText} className="mt-5 text-[56px] leading-[0.92] sm:text-[84px] lg:text-[112px]" style={serif(t)}>
+                {s.title}{s.title2 && <><br /><em className="font-normal">{s.title2}</em></>}
+              </motion.h1>
+              <motion.p variants={urHeroText} className="mt-6 max-w-md text-[15px] leading-relaxed text-white/85">{s.subtitle}</motion.p>
+              <motion.div variants={urHeroText} className="mt-9 flex flex-wrap items-center gap-6">
+                <button type="button" onClick={() => goAction(s.action)} className={`${btnCls} h-14 px-9`} style={{ background: t.bg, color: t.ink }}>{s.button}</button>
+                {idx === 0 && secondary && (
+                  <button type="button" onClick={() => document.getElementById('novedades')?.scrollIntoView({ behavior: 'smooth' })} className="group inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-white">
+                    {secondary}<span className="h-px w-10 origin-left bg-white transition-transform duration-500 group-hover:scale-x-150" />
+                  </button>
+                )}
+              </motion.div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      )}
 
-            {/* Imagen + tarjeta flotante */}
-            <div className="relative order-1 md:order-2">
-              {/* Forma beige detrás */}
-              <div className="absolute right-2 top-2 -z-10 hidden h-[86%] w-[70%] rounded-[40px_40px_40px_120px] md:block" style={{ backgroundColor: URB.sand, transform: 'rotate(-6deg)' }} />
-              <Icon icon="solar:star-bold" className="absolute -right-1 top-1 text-3xl" style={{ color: URB.ink }} />
-              <AnimatePresence mode="popLayout">
-                <motion.div key={`i-${index}`} initial={{ opacity: 0, scale: 1.03 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.7, ease: urbEase }}
-                  className="relative h-80 overflow-hidden rounded-[28px] shadow-[0_40px_90px_-40px_rgba(26,22,19,0.55)] md:h-[540px]">
-                  <img src={slide.image} alt={slide.eyebrow || 'Colección'} className="h-full w-full object-cover" />
-                </motion.div>
-              </AnimatePresence>
-
-              {/* Tarjeta New Arrival */}
-              {featured && (
-                <motion.button
-                  type="button"
-                  onClick={() => navigate(slug === 'preview' ? '#' : `/tienda/${slug}/producto/${featured.id}`)}
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3, duration: 0.6, ease: urbEase }}
-                  className="absolute -bottom-5 left-4 flex w-[220px] items-center gap-3 rounded-2xl bg-white/95 p-3 text-left shadow-xl backdrop-blur md:left-auto md:right-5"
-                >
-                  <span className="h-14 w-14 shrink-0 overflow-hidden rounded-xl" style={{ backgroundColor: URB.mist }}>
-                    {imgOf(featured) ? <img src={imgOf(featured)} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center"><Icon icon="solar:t-shirt-linear" style={{ color: URB.tan }} width={22} /></span>}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.16em]" style={{ color: primary }}>{newArrivalLabel}</span>
-                    <span className="line-clamp-1 text-[13px] font-semibold" style={{ color: URB.ink }}>{nameOf(featured)}</span>
-                    <span className="text-sm font-bold" style={{ color: URB.ink }}>{money(featPrice)}</span>
-                  </span>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white" style={{ backgroundColor: URB.ink }}><Icon icon="solar:arrow-right-linear" width={15} /></span>
-                </motion.button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {count > 1 && (
-          <div className="flex items-center justify-center gap-4 pb-10 md:justify-end md:pb-8">
-            <button type="button" onClick={() => go(-1)} aria-label="Anterior" className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-sm ring-1 ring-black/5 transition-colors hover:bg-neutral-50">
-              <Icon icon="solar:alt-arrow-left-linear" width={20} />
+      {/* Progreso de slides con su nombre */}
+      <div className="absolute inset-x-0 bottom-8 z-[3] mx-auto flex max-w-[1440px] justify-end px-5 lg:px-10">
+        <div className="grid w-full max-w-[520px] grid-cols-3 gap-4">
+          {slides.map((sl, i) => (
+            <button key={sl.action} type="button" onClick={() => setIdx(i)} aria-label={`Ir a ${sl.eyebrow}`} className="group text-left">
+              <span className="relative block h-px w-full overflow-hidden bg-white/30">
+                {i === idx && interval > 0 && <span key={`p-${idx}`} className="ur-progress absolute inset-0 bg-white" style={{ ['--ur-dur' as any]: `${interval}ms` }} />}
+                {i === idx && !interval && <span className="absolute inset-0 bg-white" />}
+              </span>
+              <span className={`mt-3 hidden text-[10px] font-medium uppercase tracking-[0.24em] transition-opacity sm:block ${i === idx ? 'text-white' : 'text-white/50 group-hover:text-white/80'}`}>{String(i + 1).padStart(2, '0')} — {sl.eyebrow}</span>
             </button>
-            <div className="flex items-center gap-2">
-              {slides.map((_, i) => (
-                <button key={i} type="button" onClick={() => setIndex(i)} aria-label={`Slide ${i + 1}`} className="h-1.5 rounded-full transition-all" style={{ width: i === index ? 30 : 10, backgroundColor: i === index ? primary : 'rgba(26,22,19,0.18)' }} />
-              ))}
-            </div>
-            <button type="button" onClick={() => go(1)} aria-label="Siguiente" className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-800 shadow-sm ring-1 ring-black/5 transition-colors hover:bg-neutral-50">
-              <Icon icon="solar:alt-arrow-right-linear" width={20} />
-            </button>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-/* ───────────────────────────────── Home ──────────────────────────────────── */
-
-export default function RopaHombreHomePage({
-  tienda,
-  slug,
-  productos,
-  allCategories,
-  cp,
-  diseno,
-  carrito,
-  setCarrito,
-  mostrarCarrito,
-  setMostrarCarrito,
-  agregarAlCarrito,
-  actualizarCantidad,
-  loading,
-}: TemplateHomePageProps) {
-  const primary = urbPrimary(cp);
-  const font = urbFont(diseno);
-  const featured = productos.slice(0, 4);
-  const heroProduct = productos[0];
-  const freshProduct = productos[1] || productos[0];
-
-  const brands = String(diseno?.ropaHombreBrands || 'ZARA,MANGO,H&M,asos,PULL&BEAR').split(',').map((s) => s.trim()).filter(Boolean);
-
-  // Bloques de categoría configurables desde el editor (categoría/título/imagen);
-  // sin configurar, se rellenan con las categorías reales de la tienda.
-  const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'ropaHombre', count: 4, fallbackImages: CATEGORY_FALLBACKS,
-    fallbackNames: ['Shirts', 'T-Shirts', 'Jackets', 'Pants'], });
-
-  const WHY = [
-    { icon: 'solar:settings-minimalistic-linear', title: diseno?.ropaHombreWhy1Title || 'Premium Quality', text: diseno?.ropaHombreWhy1Text || 'Telas finas para una comodidad duradera.' },
-    { icon: 'solar:hanger-2-linear', title: diseno?.ropaHombreWhy2Title || 'Modern Design', text: diseno?.ropaHombreWhy2Text || 'Estilo atemporal que sigue las tendencias.' },
-    { icon: 'solar:t-shirt-linear', title: diseno?.ropaHombreWhy3Title || 'Perfect Fit', text: diseno?.ropaHombreWhy3Text || 'Diseñado para calzar justo como quieres.' },
-    { icon: 'solar:refresh-square-linear', title: diseno?.ropaHombreWhy4Title || 'Easy Returns', text: diseno?.ropaHombreWhy4Text || 'Cambios sin complicaciones en 30 días.' },
-  ];
-
-  const freshPrice = freshProduct ? getProductPricing(freshProduct).precioFinal : 0;
-
+// ═════════════════════════════════════════════════════════════ MANIFIESTO ══
+function Manifesto({ t, diseno }: { t: Theme; diseno: any }) {
+  if (isOn(diseno?.ropaHombreManifestoHidden)) return null;
+  const imgs = [diseno?.ropaHombreManifestoImage1 || URBANIC_IMG.manifesto[0], diseno?.ropaHombreManifestoImage2 || URBANIC_IMG.manifesto[1]];
   return (
-    <motion.div initial="hidden" animate="show" variants={urbPage} className="min-h-screen" style={{ backgroundColor: URB.cream, fontFamily: font }}>
-      <UrbHeader
-        tienda={tienda}
-        slug={slug}
-        cp={primary}
-        diseno={diseno}
-        carritoSize={carrito.reduce((s, i) => s + Number(i.cantidad || 1), 0)}
-        onOpenCart={() => setMostrarCarrito(true)}
-        allCategories={allCategories}
-        onSearchSubmit={(event, value) => {
-          event.preventDefault();
-          navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
-        }}
-      />
-
-      <main>
-        {/* ── Hero ─────────────────────────────────────────────────────────── */}
-        <HeroSlider slides={buildHeroSlides(diseno)} slug={slug} primary={primary} diseno={diseno} featured={heroProduct} />
-
-        {/* ── Tira diagonal de marcas ──────────────────────────────────────── */}
-        <div className="relative overflow-hidden py-10">
-          <div className="w-[105%] -translate-x-[2.5%] py-4 text-white" style={{ backgroundColor: URB.ink, transform: 'rotate(-2.4deg)' }}>
-            <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-2 px-6">
-              {brands.map((b, i) => (
-                <span key={`${b}-${i}`} className="flex items-center gap-8 text-lg font-semibold tracking-wide md:text-2xl" style={{ fontFamily: URB.serif }}>
-                  {b}
-                  {i < brands.length - 1 && <span className="text-white/40">•</span>}
-                </span>
-              ))}
-            </div>
+    <section className="mx-auto max-w-[1440px] px-5 py-24 lg:px-10 lg:py-36">
+      <motion.div variants={urStagger} initial="hidden" whileInView="show" viewport={urViewport} className="grid items-end gap-12 lg:grid-cols-[0.8fr_2fr]">
+        <motion.div variants={urItem} className="flex gap-4 lg:flex-col">
+          <Eyebrow t={t}>01 — {editable(diseno?.ropaHombreManifestoEyebrow, 'La casa')}</Eyebrow>
+          <div className="hidden aspect-[3/4] w-40 overflow-hidden lg:block"><img src={imgs[0]} alt="" loading="lazy" className="h-full w-full object-cover" /></div>
+        </motion.div>
+        <motion.div variants={urItem}>
+          <p className="text-[32px] leading-[1.18] sm:text-[44px] lg:text-[56px]" style={serif(t, { color: t.ink })}>
+            {editable(diseno?.ropaHombreManifesto, 'Prendas pensadas para durar: cortes precisos, materiales que mejoran con el tiempo y un estilo que no depende de la temporada.')}
+          </p>
+          <div className="mt-10 flex items-center gap-6">
+            <div className="aspect-[4/3] w-44 overflow-hidden sm:w-56"><img src={imgs[1]} alt="" loading="lazy" className="h-full w-full object-cover" /></div>
+            <span className="h-px flex-1" style={{ background: t.line }} />
           </div>
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}
+
+// ═════════════════════════════════════════════════════ COLECCIONES (grilla asimétrica) ══
+function Collections({ t, diseno, tiles, onPick }: { t: Theme; diseno: any; tiles: CategoryTile[]; onPick: (c: string) => void }) {
+  // 4 bloques: uno alto a la izquierda y tres a la derecha. Con menos, grilla simple y pareja.
+  const layout = tiles.length >= 4
+    ? ['lg:col-span-6 lg:row-span-2', 'lg:col-span-6', 'lg:col-span-3', 'lg:col-span-3']
+    : tiles.length === 3 ? ['lg:col-span-4', 'lg:col-span-4', 'lg:col-span-4'] : ['lg:col-span-6', 'lg:col-span-6', 'lg:col-span-12'];
+  return (
+    <section className="mx-auto max-w-[1440px] px-5 pb-8 lg:px-10">
+      <SectionHeader t={t} index="02" eyebrow={editable(diseno?.ropaHombreCategoriesEyebrow, 'Colecciones')} title={editable(diseno?.ropaHombreCategoriesTitle, 'Vestir para cada momento')} />
+      <motion.div variants={urStagger} initial="hidden" whileInView="show" viewport={urViewport} className={`grid grid-cols-2 gap-3 lg:grid-cols-12 lg:gap-4 ${tiles.length >= 4 ? 'lg:h-[840px] lg:grid-rows-2' : 'lg:h-[560px]'}`}>
+        {tiles.slice(0, 4).map((tile, i) => (
+          <motion.button key={`${tile.nombre}-${i}`} type="button" variants={urItem} onClick={() => onPick(tile.nombre)} className={`group relative overflow-hidden text-left ${i === 0 && tiles.length >= 4 ? 'col-span-2 aspect-[4/5] lg:aspect-auto' : 'aspect-[3/4] lg:aspect-auto'} ${layout[i] || ''}`} style={{ background: t.soft }}>
+            {tile.imagenUrl && <img src={tile.imagenUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-[1400ms] ease-out group-hover:scale-[1.05]" />}
+            <div aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,rgba(0,0,0,.6)_100%)]" />
+            <div className="absolute inset-x-0 bottom-0 p-5 text-white lg:p-8">
+              <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-white/75">{String(i + 1).padStart(2, '0')}</p>
+              <h3 className={`mt-1 leading-none ${i === 0 && tiles.length >= 4 ? 'text-[40px] lg:text-[64px]' : 'text-[26px] lg:text-[36px]'}`} style={serif(t)}>{tile.label}</h3>
+              <span className="mt-4 inline-flex items-center gap-3 text-[10.5px] font-semibold uppercase tracking-[0.22em]">Descubrir<span className="h-px w-6 origin-left bg-white transition-transform duration-500 group-hover:scale-x-[2.2]" /></span>
+            </div>
+          </motion.button>
+        ))}
+      </motion.div>
+    </section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════ EDITORIAL ══
+function Editorial({ t, diseno, goAction }: { t: Theme; diseno: any; goAction: (k: string) => void }) {
+  if (isOn(diseno?.ropaHombreEditorialHidden)) return null;
+  return (
+    <section className="grid lg:grid-cols-2" style={{ background: t.primary, color: t.onPrimary }}>
+      <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={urViewport} transition={{ duration: 1.2, ease: urEase }} className="relative min-h-[520px] overflow-hidden lg:min-h-[760px]">
+        <img src={diseno?.ropaHombrePremiumImage || URBANIC_IMG.editorial} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+      </motion.div>
+      <motion.div variants={urStagger} initial="hidden" whileInView="show" viewport={urViewport} className="flex flex-col justify-center px-6 py-20 sm:px-14 lg:px-20">
+        <motion.p variants={urItem} className="text-[10.5px] font-medium uppercase tracking-[0.3em]" style={{ color: mix(t.onPrimary, 60, t.primary) }}>04 — {editable(diseno?.ropaHombrePremiumEyebrow, 'Lookbook')}</motion.p>
+        <motion.h2 variants={urItem} className="mt-6 text-[44px] leading-[1] sm:text-[64px]" style={serif(t)}>{editable(diseno?.ropaHombrePremiumTitle, 'La elegancia está en los detalles')}</motion.h2>
+        <motion.p variants={urItem} className="mt-6 max-w-md text-[15px] leading-relaxed" style={{ color: mix(t.onPrimary, 75, t.primary) }}>{editable(diseno?.ropaHombrePremiumText, 'Costuras limpias, botones bien puestos y un calce que acompaña. Así se reconoce una buena prenda.')}</motion.p>
+        <motion.div variants={urItem} className="mt-10">
+          <button type="button" onClick={() => goAction('ropaHombrePremiumAction')} className={`${btnCls} h-14 px-9`} style={{ background: t.bg, color: t.ink }}>{editable(diseno?.ropaHombrePremiumButton, 'Ver la colección')}</button>
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════ OFERTAS ══
+/** Solo con ofertas REALES. El "hasta X%" sale del mayor descuento vigente; el reloj, de fechaFinOferta. */
+function SaleBand({ t, diseno, offers, endsAt, slug, onOpen, onAdd, onMore }: { t: Theme; diseno: any; offers: any[]; endsAt: number | null; slug: string; onOpen: OpenFn; onAdd: AddFn; onMore: () => void }) {
+  const maxOff = Math.max(...offers.map((p) => getProductPricing(p).porcentajeDescuento));
+  const few = offers.length < 4; // con pocas ofertas van junto al texto: sin filas a medias
+  const head = (
+    <div>
+      <Eyebrow t={t}>{editable(diseno?.ropaHombreSaleEyebrow, 'Precios especiales')}</Eyebrow>
+      <h2 className="mt-4 text-[48px] leading-[0.95] sm:text-[72px]" style={serif(t, { color: t.ink })}>{editable(diseno?.ropaHombreSaleTitle, 'Selección en oferta')}</h2>
+      <p className="mt-5 text-[15px]" style={{ color: t.muted }}>{editable(diseno?.ropaHombreSaleSubtitle, `Hasta ${maxOff}% de descuento en ${offers.length} ${offers.length === 1 ? 'pieza' : 'piezas'} seleccionadas.`)}</p>
+      <div className="mt-8 flex flex-wrap items-center gap-6">
+        <button type="button" onClick={onMore} className={`${btnCls} h-14 px-9`} style={{ background: t.primary, color: t.onPrimary }}>{editable(diseno?.ropaHombreSaleButton, 'Ver ofertas')}</button>
+        {endsAt && <div className="flex items-center gap-3"><span className="text-[10.5px] uppercase tracking-[0.22em]" style={{ color: t.muted }}>Termina en</span><OfferCountdown t={t} endsAt={endsAt} /></div>}
+      </div>
+    </div>
+  );
+  return (
+    <section className="mx-auto max-w-[1440px] px-5 py-24 lg:px-10">
+      <motion.div variants={urReveal} initial="hidden" whileInView="show" viewport={urViewport} className={`grid gap-10 lg:grid-cols-[1fr_1.1fr] ${few ? 'items-start' : 'mb-14 items-end'}`}>
+        <div className={`${few ? 'aspect-[4/5] lg:sticky lg:top-32' : 'aspect-[16/10]'} overflow-hidden`} style={{ background: t.soft }}><img src={diseno?.ropaHombreSaleImage || URBANIC_IMG.sale} alt="" loading="lazy" className="h-full w-full object-cover" /></div>
+        {few ? (
+          <div className="flex flex-col gap-12">
+            {head}
+            <ProductGrid t={t} products={offers} slug={slug} onOpen={onOpen} onAdd={onAdd} cols="sm:!grid-cols-2 lg:!grid-cols-2" />
+          </div>
+        ) : head}
+      </motion.div>
+      {!few && <ProductGrid t={t} products={offers.slice(0, 4)} slug={slug} onOpen={onOpen} onAdd={onAdd} />}
+    </section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════ MARCAS ══
+/** Marcas REALES del catálogo (campo marca de los productos). Con menos de 3, la franja no aparece. */
+function BrandStrip({ t, diseno, brands }: { t: Theme; diseno: any; brands: string[] }) {
+  return (
+    <section className="border-y" style={{ borderColor: t.line }}>
+      <div className="mx-auto flex max-w-[1440px] flex-col items-center gap-6 px-5 py-12 lg:flex-row lg:gap-14 lg:px-10">
+        <Eyebrow t={t} className="shrink-0">{editable(diseno?.ropaHombreBrandsTitle, 'Marcas en la casa')}</Eyebrow>
+        <ul className="flex flex-wrap items-center justify-center gap-x-12 gap-y-4 lg:justify-start">
+          {brands.map((b) => <li key={b} className="text-[26px] leading-none" style={serif(t, { color: mix(t.ink, 70, t.bg) })}>{b}</li>)}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════ SERVICIOS ══
+function ServicesRow({ t, diseno, services }: { t: Theme; diseno: any; services: Service[] }) {
+  if (!services.length) return null;
+  const cols: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' };
+  return (
+    <section className="mx-auto max-w-[1440px] px-5 py-20 lg:px-10">
+      <div className="mb-12 text-center">
+        <Eyebrow t={t}>{editable(diseno?.ropaHombreWhyEyebrow, 'Servicio')}</Eyebrow>
+        <h2 className="mt-3 text-[34px] leading-tight sm:text-[44px]" style={serif(t, { color: t.ink })}>{editable(diseno?.ropaHombreWhyTitle, 'Atención a la medida')}</h2>
+      </div>
+      <motion.ul variants={urStagger} initial="hidden" whileInView="show" viewport={urViewport} className={`grid grid-cols-2 gap-y-10 ${cols[services.length] || 'lg:grid-cols-4'}`}>
+        {services.map((s) => (
+          <motion.li key={s.label} variants={urItem} className="flex flex-col items-center px-4 text-center">
+            <Icon icon={s.icon} width={40} style={{ color: t.ink }} />
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: t.ink }}>{s.label}</p>
+            <p className="mt-1.5 text-[13px]" style={{ color: t.muted }}>{s.sub}</p>
+          </motion.li>
+        ))}
+      </motion.ul>
+    </section>
+  );
+}
+
+// ═════════════════════════════════════════════════════════════ ASESORÍA ══
+function Advisor({ t, diseno, url }: { t: Theme; diseno: any; url: string }) {
+  return (
+    <section className="mx-auto max-w-[1440px] px-5 pb-24 lg:px-10">
+      <motion.div variants={urReveal} initial="hidden" whileInView="show" viewport={urViewport} className="grid overflow-hidden lg:grid-cols-2" style={{ background: t.soft }}>
+        <div className="flex flex-col justify-center px-6 py-16 sm:px-14">
+          <Eyebrow t={t}>{editable(diseno?.ropaHombreCommunityEyebrow, 'Asesoría personal')}</Eyebrow>
+          <h2 className="mt-4 text-[40px] leading-[1] sm:text-[54px]" style={serif(t, { color: t.ink })}>{editable(diseno?.ropaHombreCommunityTitle, 'Te ayudamos a elegir')}</h2>
+          <p className="mt-5 max-w-md text-[15px] leading-relaxed" style={{ color: t.muted }}>{editable(diseno?.ropaHombreCommunitySubtitle, 'Cuéntanos la ocasión, tu talla habitual y tu estilo. Te respondemos personalmente por WhatsApp.')}</p>
+          <a href={url} target="_blank" rel="noopener noreferrer" className={`${btnCls} mt-9 h-14 w-max px-9`} style={{ background: t.primary, color: t.onPrimary }}>
+            <Icon icon="ic:baseline-whatsapp" width={17} /> {editable(diseno?.ropaHombreCommunityButton, 'Escribir a un asesor')}
+          </a>
         </div>
-
-        {/* ── Premium Collection banner ────────────────────────────────────── */}
-        <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-          <div className="grid items-center gap-6 overflow-hidden rounded-[28px] md:grid-cols-2" style={{ backgroundColor: URB.sand }}>
-            <div className="p-9 md:p-12">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: primary }}>{diseno?.ropaHombrePremiumEyebrow || 'Premium Collection'}</p>
-              <h2 className="mt-3 text-4xl leading-[1.05] md:text-5xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{diseno?.ropaHombrePremiumTitle || 'Elevate your everyday look.'}</h2>
-              <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-7 inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-semibold text-white transition-transform hover:-translate-y-0.5" style={{ backgroundColor: URB.ink }}>
-                {diseno?.ropaHombrePremiumButton || 'Shop Collection'} <Icon icon="solar:arrow-right-linear" width={15} />
-              </button>
-            </div>
-            <div className="relative h-64 md:h-full md:min-h-[300px]">
-              <img src={diseno?.ropaHombrePremiumImage || PREMIUM_FALLBACK} alt="" className="h-full w-full object-cover" />
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── Shop by category ─────────────────────────────────────────────── */}
-        <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-          <p className="mb-6 text-[12px] font-semibold uppercase tracking-[0.22em] text-neutral-500">{diseno?.ropaHombreCategoriesTitle || 'Shop by Category'}</p>
-          <motion.div variants={urbStagger} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            {categoryCards.map((cat, i) => (
-              <motion.a
-                key={`cat-${i}`}
-                variants={urbCard}
-                whileHover={{ y: -6 }}
-                href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
-                className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5"
-              >
-                <div className="relative aspect-[4/5] overflow-hidden" style={{ backgroundColor: URB.mist }}>
-                  <img src={cat.imagenUrl} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.07]" />
-                </div>
-                <div className="flex items-center justify-between px-4 py-3.5">
-                  <div>
-                    <h3 className="text-sm font-semibold" style={{ color: URB.ink }}>{cat.label}</h3>
-                    <span className="text-[11px] font-medium text-neutral-400">Explore Now →</span>
-                  </div>
-                  <Icon icon="solar:arrow-right-up-linear" width={18} className="text-neutral-400 transition-colors group-hover:text-neutral-900" />
-                </div>
-              </motion.a>
-            ))}
-          </motion.div>
-        </motion.section>
-
-        {/* ── Summer sale banner ───────────────────────────────────────────── */}
-        <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-          <div className="relative flex min-h-[220px] items-center overflow-hidden rounded-[28px]" style={{ backgroundColor: URB.charcoal }}>
-            <img src={diseno?.ropaHombreSaleImage || SALE_FALLBACK} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: '78% center' }} />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${URB.ink} 0%, ${withAlpha(URB.ink, 'e6')} 30%, ${withAlpha(URB.ink, '80')} 52%, ${withAlpha(URB.ink, '00')} 74%)` }} />
-            <div className="relative z-10 max-w-md p-9 text-white md:p-12" style={{ textShadow: '0 2px 16px rgba(0,0,0,0.4)' }}>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: URB.goldSoft }}>{diseno?.ropaHombreSaleEyebrow || 'Summer Sale'}</p>
-              <h2 className="mt-3 text-4xl md:text-5xl" style={{ fontFamily: URB.serif }}>{diseno?.ropaHombreSaleTitle || 'Up to 40% Off'}</h2>
-              <p className="mt-2 text-sm text-white/70">{diseno?.ropaHombreSaleSubtitle || 'On Selected Items Only'}</p>
-              <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-[13px] font-semibold text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
-                {diseno?.ropaHombreSaleButton || 'Shop Now'} <Icon icon="solar:arrow-right-linear" width={15} />
-              </button>
-            </div>
-            <div className="absolute right-6 top-6 z-10 hidden h-24 w-24 items-center justify-center rounded-full border border-white/25 text-center text-[9px] font-semibold uppercase leading-tight tracking-[0.16em] text-white/80 md:flex">
-              {diseno?.ropaHombreSaleBadge || 'Limited · Time · Only'}
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── Best sellers ─────────────────────────────────────────────────── */}
-        <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: primary }}>{diseno?.ropaHombreBestsellersEyebrow || 'Best Sellers'}</p>
-              <h2 className="mt-2 text-3xl md:text-4xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{diseno?.ropaHombreBestsellersTitle || 'Our Most Loved Styles'}</h2>
-            </div>
-            <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] hover:opacity-70" style={{ color: URB.ink }}>
-              View All Products <Icon icon="solar:arrow-right-linear" width={15} />
-            </a>
-          </div>
-          {loading ? (
-            <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-2xl bg-black/[0.04]" />)}</div>
-          ) : featured.length === 0 ? (
-            <div className="rounded-2xl border border-dashed py-20 text-center text-neutral-400" style={{ borderColor: URB.line }}>Aún no hay prendas publicadas.</div>
-          ) : (
-            <motion.div variants={urbStagger} className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
-              {featured.map((producto) => (
-                <UrbProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
-              ))}
-            </motion.div>
-          )}
-        </motion.section>
-
-        {/* ── Fresh styles (featured split) ────────────────────────────────── */}
-        {freshProduct && (
-          <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-            <div className="grid items-stretch gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-              <div className="relative overflow-hidden rounded-[28px]" style={{ backgroundColor: URB.mist }}>
-                <img src={imgOf(freshProduct) || HERO_FALLBACKS[1]} alt={nameOf(freshProduct)} className="h-full min-h-[360px] w-full object-cover" />
-                <div className="absolute left-7 top-7 max-w-xs">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: URB.ink }}>{diseno?.ropaHombreFreshEyebrow || 'New Arrivals'}</p>
-                  <h2 className="mt-2 text-3xl leading-tight md:text-4xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{diseno?.ropaHombreFreshTitle || 'Fresh styles for every you.'}</h2>
-                  <p className="mt-3 text-sm text-neutral-700">{diseno?.ropaHombreFreshSubtitle || 'Descubre las últimas tendencias y básicos atemporales, todo en un solo lugar.'}</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: URB.ink }}>
-                    {diseno?.ropaHombreFreshButton || 'View All Collection'} <Icon icon="solar:arrow-right-linear" width={14} />
-                  </a>
-                </div>
-              </div>
-              <div className="flex flex-col overflow-hidden rounded-[28px] bg-white shadow-sm ring-1 ring-black/5">
-                <button type="button" onClick={() => navigate(`/tienda/${slug}/producto/${freshProduct.id}`)} className="relative aspect-[4/3] w-full overflow-hidden" style={{ backgroundColor: URB.mist }}>
-                  {imgOf(freshProduct) ? <img src={imgOf(freshProduct)} alt="" className="h-full w-full object-cover" /> : <span className="flex h-full w-full items-center justify-center"><Icon icon="solar:t-shirt-linear" width={54} style={{ color: URB.tan }} /></span>}
-                </button>
-                <div className="flex flex-1 flex-col p-6">
-                  <h3 className="text-xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{nameOf(freshProduct)}</h3>
-                  <p className="mt-1 text-lg font-semibold" style={{ color: URB.ink }}>{money(freshPrice)}</p>
-                  <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">Available in 6 colors</p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {['#E1D3C0', '#8C6A45', '#262220', '#3B4652', '#B79C7C', '#6E5637'].map((c) => (
-                      <span key={c} className="h-5 w-5 rounded-full ring-1 ring-black/10" style={{ backgroundColor: c }} />
-                    ))}
-                  </div>
-                  <button type="button" onClick={() => { agregarAlCarrito(freshProduct); setMostrarCarrito(true); }} className="mt-auto flex items-center justify-center gap-2 rounded-full py-3.5 text-[12px] font-semibold uppercase tracking-[0.14em] text-white" style={{ backgroundColor: URB.ink }}>
-                    <Icon icon="solar:bag-4-linear" width={15} /> Shop Now
-                  </button>
-                </div>
-              </div>
-            </div>
-          </motion.section>
-        )}
-
-        {/* ── Testimonial ──────────────────────────────────────────────────── */}
-        <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="border-y bg-white" style={{ borderColor: URB.line }}>
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-5 py-16 md:grid-cols-[1fr_0.7fr] md:px-8">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: primary }}>{diseno?.ropaHombreTestimonialEyebrow || 'What Our Customers Say'}</p>
-              <h2 className="mt-2 text-3xl md:text-4xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{diseno?.ropaHombreTestimonialTitle || 'Real People. Real Style.'}</h2>
-              <div className="mt-7 rounded-2xl p-7" style={{ backgroundColor: URB.cream }}>
-                <Icon icon="solar:quote-up-square-bold" width={30} style={{ color: primary }} />
-                <p className="mt-3 text-[15px] leading-7 text-neutral-700">“{diseno?.ropaHombreTestimonialQuote || 'La calidad es increíble y el calce es perfecto. Urbanic es mi tienda favorita para cada ocasión.'}”</p>
-                <div className="mt-5 flex items-center gap-3">
-                  <img src={AVATAR_FALLBACKS[1]} alt="" className="h-11 w-11 rounded-full object-cover" />
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: URB.ink }}>{diseno?.ropaHombreTestimonialAuthor || 'James Carter'}</p>
-                    <p style={{ color: primary }}>★★★★★</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="relative h-72 overflow-hidden rounded-[28px] md:h-96">
-              <img src={diseno?.ropaHombreTestimonialImage || TESTIMONIAL_FALLBACK} alt="" className="h-full w-full object-cover" />
-            </div>
-          </div>
-        </motion.section>
-
-        {/* ── Why choose us ────────────────────────────────────────────────── */}
-        <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.22em] text-neutral-500">{diseno?.ropaHombreWhyEyebrow || 'Why Choose Us'}</p>
-          <h2 className="mt-2 max-w-md text-4xl leading-[1.05] md:text-5xl" style={{ fontFamily: URB.serif, color: URB.ink }}>{diseno?.ropaHombreWhyTitle || 'Crafted for quality. Made for you.'}</h2>
-          <motion.div variants={urbStagger} className="mt-12 grid grid-cols-2 gap-8 lg:grid-cols-4">
-            {WHY.map((w) => (
-              <motion.div key={w.title} variants={urbCard} className="flex flex-col items-start">
-                <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: URB.mist, color: URB.ink }}>
-                  <Icon icon={w.icon} width={26} />
-                </span>
-                <p className="mt-4 text-base font-semibold" style={{ color: URB.ink }}>{w.title}</p>
-                <p className="mt-1.5 text-sm leading-6 text-neutral-500">{w.text}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </motion.section>
-
-        {/* ── Join community ───────────────────────────────────────────────── */}
-        <motion.section variants={urbSection} initial="hidden" whileInView="show" viewport={urbViewport} className="mx-auto max-w-7xl px-5 pb-16 md:px-8">
-          <div className="relative flex min-h-[240px] items-center overflow-hidden rounded-[28px]" style={{ backgroundColor: URB.ink }}>
-            <img src={diseno?.ropaHombreCommunityImage || COMMUNITY_FALLBACK} alt="" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover opacity-60" />
-            <div className="absolute inset-0" style={{ background: `linear-gradient(90deg, ${URB.ink} 46%, rgba(26,22,19,0.25) 100%)` }} />
-            <div className="relative z-10 max-w-lg p-9 text-white md:p-12">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: URB.goldSoft }}>{diseno?.ropaHombreCommunityEyebrow || 'Stay in Style'}</p>
-              <h2 className="mt-3 text-3xl md:text-4xl" style={{ fontFamily: URB.serif }}>{diseno?.ropaHombreCommunityTitle || 'Join our community'}</h2>
-              <p className="mt-2 text-sm text-white/65">{diseno?.ropaHombreCommunitySubtitle || 'Recibe ofertas exclusivas, acceso anticipado y tips de estilo.'}</p>
-              <form onSubmit={(e) => e.preventDefault()} className="mt-6 flex w-full max-w-md items-center gap-2 rounded-full bg-white/10 p-1.5 ring-1 ring-white/15">
-                <input type="email" placeholder="Enter your email" className="h-11 flex-1 border-0 bg-transparent px-4 text-sm text-white outline-none placeholder:text-white/50 focus:ring-0" />
-                <button type="submit" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-neutral-900" style={{ backgroundColor: '#fff' }}>
-                  <Icon icon="solar:arrow-right-linear" width={17} />
-                </button>
-              </form>
-            </div>
-          </div>
-        </motion.section>
-      </main>
-
-      <UrbFooter tienda={tienda} slug={slug} diseno={diseno} cp={primary} categories={allCategories} />
-      <UrbWhatsAppFab tienda={tienda} />
-
-      <UrbCartModal
-        isOpen={mostrarCarrito}
-        onClose={() => setMostrarCarrito(false)}
-        carrito={carrito}
-        setCarrito={setCarrito}
-        actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
-        cp={primary}
-        tienda={tienda}
-      />
-    </motion.div>
+        <div className="relative min-h-[380px]"><img src={diseno?.ropaHombreCommunityImage || URBANIC_IMG.community} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" /></div>
+      </motion.div>
+    </section>
   );
 }
