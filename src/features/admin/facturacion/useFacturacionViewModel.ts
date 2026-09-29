@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useState, useMemo, useRef } from "react";
+import { heredaCredito } from './conversionPago';
 import { guardarObservacionesRecordadas, leerObservacionesRecordadas } from '@/utils/observacionesVenta';
 import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
 import { IExtentionsState, useExtentionsStore } from "@/zustand/extentions";
@@ -1138,9 +1139,16 @@ export const useFacturacionViewModel = () => {
                     setDescuentoPctNV(0);
                 }
 
-                // Condición de pago: si fue a CRÉDITO, seleccionar Crédito y precargar
-                // la fecha de vencimiento, las cuotas y el pago inicial (si hubo).
-                if (String(nvData.formaPagoTipo || '').toUpperCase() === 'CREDITO') {
+                // Condición de pago: se hereda el CRÉDITO solo si todavía queda saldo.
+                //
+                // Una venta a crédito que ya se cobró entera no tiene nada que
+                // financiar, y arrastrar el crédito dejaba al empresario sin poder
+                // emitir: el modal pedía un cronograma por un saldo inexistente y
+                // la emisión moría con "todas las cuotas deben tener monto mayor a
+                // cero". Se convierte como contado, que es lo que refleja la
+                // realidad: la plata ya entró.
+                // (Reportado por OWENSOFT al convertir NV01-297, S/280 ya cobrados.)
+                if (heredaCredito(nvData)) {
                     setFormValues(prev => ({ ...prev, medioPago: 'Crédito' }));
                     if (nvData.fechaVencimientoCredito) {
                         setFechaVencimientoCredito(String(nvData.fechaVencimientoCredito).slice(0, 10));
