@@ -191,14 +191,22 @@ const DataTable: FC<IDataTableProps> = ({
         );
     };
 
+    // La tabla NO se remonta al cambiar de página: la `key` es fija.
+    //
+    // Antes era `table-${currentPage}`, así que cada página desmontaba la tabla
+    // entera y montaba otra. Con `mode="sync"` las dos convivían y quedaba un
+    // hueco en blanco de la altura de una tabla; con `popLayout` la saliente
+    // pasaba a `absolute` y tapaba los botones de paginado, dejando al usuario
+    // sin poder volver atrás. Cambiar de página solo cambia las filas, y el
+    // `layout` de framer-motion se encarga de la transición de alto.
     return (
         <div className="flex flex-col">
             <AutoScrollTable>
                 <div className="px-4 w-max min-w-full">
                     {data?.length > 0 && safeResolvedColumns.length > 0 ? (
-                        <AnimatePresence mode="sync">
+                        <AnimatePresence mode="wait">
                             <motion.table
-                                key={`table-${currentPage}`}
+                                key="tabla"
                                 className={`${styles.table} ${isCompact ? styles.compact : ''} w-full`}
                                 id={idTable}
                                 layout
