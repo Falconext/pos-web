@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Icon } from '@iconify/react';
 import Casilla from '@/components/Casilla';
+import DataTable from '@/components/Datatable';
 import apiClient from '@/utils/apiClient';
 import { get, post } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
@@ -58,6 +59,73 @@ interface CruceCompras {
   totalSoloEnSistema: number;
   totalDiferencias: number;
   totalDenegadas: number;
+}
+
+
+/** "08/09/2026" -> "8 set": en una lista larga la fecha completa es ruido. */
+const fmtFechaCorta = (f: string | undefined) => {
+  if (!f) return '';
+  const [d, m] = String(f).split('/');
+  const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'set', 'oct', 'nov', 'dic'];
+  const mes = meses[Number(m) - 1];
+  return mes ? `${Number(d)} ${mes}` : String(f);
+};
+
+/**
+ * Una de las listas del cruce, plegable.
+ *
+ * Van plegadas porque son trabajos distintos —registrar, revisar, reclamarle al
+ * proveedor— y mostrarlos juntos como tres tablas iguales hacía que no se
+ * leyera ninguno. Solo abre sola la primera: es la que tiene la plata.
+ */
+function SeccionCruce({
+  titulo, descripcion, cantidad, monto, montoEtiqueta, tono, abiertaPorDefecto, children,
+}: {
+  titulo: string;
+  descripcion: string;
+  cantidad: number;
+  monto?: number;
+  montoEtiqueta?: string;
+  tono: 'ambar' | 'neutral' | 'azul' | 'rojo';
+  abiertaPorDefecto?: boolean;
+  children: React.ReactNode;
+}) {
+  const [abierta, setAbierta] = useState(!!abiertaPorDefecto);
+  const tonos = {
+    ambar: { borde: 'border-amber-200', fondo: 'bg-amber-50/60', texto: 'text-amber-700', icono: 'solar:danger-triangle-bold-duotone' },
+    neutral: { borde: 'border-gray-200', fondo: 'bg-gray-50', texto: 'text-gray-600', icono: 'solar:sort-horizontal-bold-duotone' },
+    azul: { borde: 'border-blue-200', fondo: 'bg-blue-50/60', texto: 'text-blue-700', icono: 'solar:inbox-out-bold-duotone' },
+    rojo: { borde: 'border-rose-200', fondo: 'bg-rose-50/60', texto: 'text-rose-700', icono: 'solar:close-circle-bold-duotone' },
+  }[tono];
+
+  return (
+    <div className={`rounded-2xl border ${tonos.borde} overflow-hidden`}>
+      <button
+        type="button"
+        onClick={() => setAbierta((v) => !v)}
+        className={`w-full flex items-center gap-3 px-4 py-3 text-left ${tonos.fondo} hover:brightness-[0.98] transition`}
+      >
+        <Icon icon={tonos.icono} className={`text-xl shrink-0 ${tonos.texto}`} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-gray-800">
+            {titulo} <span className={tonos.texto}>({cantidad})</span>
+          </p>
+          <p className="text-xs text-gray-500 truncate">{descripcion}</p>
+        </div>
+        {monto !== undefined && (
+          <div className="text-right shrink-0">
+            <p className={`text-sm font-bold tabular-nums ${tonos.texto}`}>{fmtMoneda(monto)}</p>
+            {montoEtiqueta && <p className="text-[10px] uppercase tracking-wide text-gray-400">{montoEtiqueta}</p>}
+          </div>
+        )}
+        <Icon
+          icon="solar:alt-arrow-down-linear"
+          className={`text-lg shrink-0 text-gray-400 transition-transform ${abierta ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {abierta && <div className="bg-white px-2 pb-2">{children}</div>}
+    </div>
+  );
 }
 
 const ESTADO_STYLE: Record<string, { label: string; cls: string; icon: string }> = {
@@ -695,7 +763,9 @@ export default function LibroCompras() {
         {/* ── Cruce con la propuesta del RCE de SUNAT ── */}
         {/* Las dos tarjetas cortas van lado a lado en pantallas anchas: apiladas
             a todo lo ancho dejaban la pantalla medio vacía. */}
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2 items-start">
+        {/* Una sola columna: con el cruce cargado, el grid de dos dejaba media
+            pantalla en blanco y las listas apretadas a la izquierda. */}
+        <div className="mt-4 space-y-4">
         <div className="bg-white border border-gray-200 rounded-xl p-4" data-testid="cruce-sunat">
           <p className="font-semibold text-gray-900 flex items-center gap-2">
             <Icon icon="solar:compare-bold-duotone" className="text-blue-500 text-xl" />
@@ -738,89 +808,135 @@ export default function LibroCompras() {
           )}
 
           {cruce && (
-            <div className="mt-3 space-y-3">
-              <div className={`rounded-xl px-4 py-3 text-sm ${cruce.cuadra ? 'bg-emerald-50 text-emerald-800' : 'bg-amber-50 text-amber-800'}`}>
-                {cruce.cuadra
-                  ? 'Todo cuadra con la propuesta de SUNAT.'
-                  : <>SUNAT tiene <b>{cruce.totales.sunat.cantidad}</b> comprobantes y el sistema <b>{cruce.totales.sistema.cantidad}</b>.</>}
-                {cruce.igvNoAprovechado > 0 && (
-                  <p className="mt-1 font-bold">
-                    Crédito fiscal sin aprovechar: {fmtMoneda(cruce.igvNoAprovechado)}
-                  </p>
-                )}
-              </div>
-
-              {!!cruce.totalSoloEnSunat && (
-                <div>
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    SUNAT las tiene y no están registradas ({cruce.totalSoloEnSunat})
-                  </p>
-                  <div className="rounded-xl border border-amber-200 divide-y divide-amber-100">
-                    {cruce.soloEnSunat.map((i) => (
-                      <div key={i.comprobante} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                        <span className="font-mono font-semibold text-gray-800">{i.comprobante}</span>
-                        <span className="flex-1 truncate text-gray-600">{i.proveedor}</span>
-                        <span className="tabular-nums text-gray-500">IGV {fmtMoneda(i.igv)}</span>
-                        <span className="tabular-nums font-semibold">{fmtMoneda(i.total)}</span>
-                      </div>
-                    ))}
+            <div className="mt-4 space-y-3">
+              {/* El crédito fiscal es la razón de ser de esta pantalla: es plata
+                  que el negocio no está tomando. Antes era una línea chica
+                  dentro de una caja pálida y se perdía entre las tres listas. */}
+              {cruce.cuadra ? (
+                <div className="rounded-2xl bg-emerald-50 border border-emerald-200 px-5 py-4 flex items-center gap-3">
+                  <Icon icon="solar:check-circle-bold" className="text-2xl text-emerald-600 shrink-0" />
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-900">Todo cuadra con SUNAT</p>
+                    <p className="text-xs text-emerald-700">
+                      Los {cruce.totales.sunat.cantidad} comprobantes del período están registrados.
+                    </p>
                   </div>
                 </div>
+              ) : (
+                <div className="rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 px-5 py-4">
+                  {cruce.igvNoAprovechado > 0 ? (
+                    <>
+                      <p className="text-3xl font-bold tabular-nums text-amber-900 leading-none">
+                        {fmtMoneda(cruce.igvNoAprovechado)}
+                      </p>
+                      <p className="mt-1.5 text-sm text-amber-800">
+                        de crédito fiscal que no estás tomando este período
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm font-semibold text-amber-900">
+                      Hay diferencias con la propuesta de SUNAT
+                    </p>
+                  )}
+                  <div className="mt-3 pt-3 border-t border-amber-200/70 flex flex-wrap gap-x-6 gap-y-1 text-xs text-amber-800">
+                    <span>SUNAT tiene <b className="tabular-nums">{cruce.totales.sunat.cantidad}</b> comprobantes</span>
+                    <span>Tú registraste <b className="tabular-nums">{cruce.totales.sistema.cantidad}</b></span>
+                  </div>
+                </div>
+              )}
+
+              {!!cruce.totalSoloEnSunat && (
+                <SeccionCruce
+                  titulo="Te faltan registrar"
+                  descripcion="SUNAT las tiene a tu nombre y no están en el sistema"
+                  cantidad={cruce.totalSoloEnSunat}
+                  monto={cruce.igvNoAprovechado}
+                  montoEtiqueta="IGV en juego"
+                  tono="ambar"
+                  abiertaPorDefecto
+                >
+                  <DataTable
+                    headerColumns={['Comprobante', 'Fecha', 'Proveedor', 'RUC', 'IGV']}
+                    bodyData={cruce.soloEnSunat.map((i) => ({
+                      Comprobante: i.comprobante,
+                      Fecha: fmtFechaCorta(i.fechaEmision),
+                      Proveedor: i.proveedor || '—',
+                      RUC: i.proveedorDoc,
+                      IGV: fmtMoneda(i.igv),
+                    }))}
+                    pageSize={10}
+                  />
+                </SeccionCruce>
               )}
 
               {!!cruce.totalDiferencias && (
-                <div>
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    Con diferencias de importe ({cruce.totalDiferencias})
-                  </p>
-                  <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
-                    {cruce.diferencias.map((d) => (
-                      <div key={d.comprobante} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                        <span className="font-mono font-semibold text-gray-800">{d.comprobante}</span>
-                        <span className="text-gray-500">SUNAT {fmtMoneda(d.sunat.total)}</span>
-                        <span className="text-gray-500">Sistema {fmtMoneda(d.sistema.total)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <SeccionCruce
+                  titulo="No coinciden los importes"
+                  descripcion="Están en los dos lados, pero por montos distintos"
+                  cantidad={cruce.totalDiferencias}
+                  tono="neutral"
+                >
+                  <DataTable
+                    headerColumns={['Comprobante', 'SUNAT', 'Sistema', 'Diferencia']}
+                    bodyData={cruce.diferencias.map((d) => {
+                      const brecha = Number(d.sistema.total) - Number(d.sunat.total);
+                      return {
+                        Comprobante: d.comprobante,
+                        SUNAT: fmtMoneda(d.sunat.total),
+                        Sistema: fmtMoneda(d.sistema.total),
+                        // Con el signo no hay que restar mentalmente fila por fila.
+                        Diferencia: `${brecha > 0 ? '+' : ''}${fmtMoneda(brecha)}`,
+                      };
+                    })}
+                    pageSize={10}
+                  />
+                </SeccionCruce>
               )}
 
               {!!cruce.totalSoloEnSistema && (
-                <div>
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    Registradas y SUNAT no las tiene ({cruce.totalSoloEnSistema})
-                  </p>
-                  <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
-                    {cruce.soloEnSistema.map((i) => (
-                      <div key={i.comprobante} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                        <span className="font-mono font-semibold text-gray-800">{i.comprobante}</span>
-                        <span className="flex-1 truncate text-gray-600">{i.proveedor}</span>
-                        <span className="tabular-nums font-semibold">{fmtMoneda(i.total)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <SeccionCruce
+                  titulo="Tu proveedor no las declaró"
+                  descripcion="Las registraste pero SUNAT no las tiene a tu nombre"
+                  cantidad={cruce.totalSoloEnSistema}
+                  tono="azul"
+                >
+                  <DataTable
+                    headerColumns={['Comprobante', 'Proveedor', 'Importe']}
+                    bodyData={cruce.soloEnSistema.map((i) => ({
+                      Comprobante: i.comprobante,
+                      Proveedor: i.proveedor || '—',
+                      Importe: fmtMoneda(i.total),
+                    }))}
+                    pageSize={10}
+                  />
+                </SeccionCruce>
               )}
 
               {!!cruce.totalDenegadas && (
-                <div>
-                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide mb-1">
-                    Denegadas por el contador ({cruce.totalDenegadas}) · {fmtMoneda(cruce.igvDenegado)} de IGV excluido
-                  </p>
-                  <div className="rounded-xl border border-rose-200 divide-y divide-rose-100">
-                    {cruce.denegadas.map((i) => (
-                      <div key={i.comprobante} className="flex items-center justify-between gap-3 px-3 py-2 text-xs">
-                        <span className="font-mono font-semibold text-gray-800">{i.comprobante}</span>
-                        <span className="flex-1 truncate text-rose-600 italic">{i.motivo}</span>
-                        <span className="tabular-nums text-gray-500">IGV {fmtMoneda(i.igv)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <SeccionCruce
+                  titulo="Denegadas por el contador"
+                  descripcion="Excluidas del RCE a propósito"
+                  cantidad={cruce.totalDenegadas}
+                  monto={cruce.igvDenegado}
+                  montoEtiqueta="IGV excluido"
+                  tono="rojo"
+                >
+                  <DataTable
+                    headerColumns={['Comprobante', 'Proveedor', 'Motivo', 'IGV']}
+                    bodyData={cruce.denegadas.map((i) => ({
+                      Comprobante: i.comprobante,
+                      Proveedor: i.proveedor || '—',
+                      Motivo: i.motivo || 'Sin motivo',
+                      IGV: fmtMoneda(i.igv),
+                    }))}
+                    pageSize={10}
+                  />
+                </SeccionCruce>
               )}
             </div>
           )}
         </div>
+
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
           <div className="flex gap-3">
             <Icon icon="solar:info-circle-bold-duotone" className="text-blue-500 text-xl shrink-0 mt-0.5" />
