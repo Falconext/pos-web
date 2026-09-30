@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" type="image/png" href="/assets/logofalconext.png" />
+  <link rel="icon" type="image/png" href="%VITE_OG_ICON%" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,8 +13,26 @@
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Archivo:wght@500;600;700;800;900&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
-  <title>Falconext - Sistema de Facturación</title>
-  <meta name="description" content="Falconext - Sistema de facturación integral para pymes" />
+  <title>%VITE_OG_TITLE%</title>
+  <meta name="description" content="%VITE_OG_DESCRIPTION%" />
+
+  <!-- Vista previa al pegar un enlace (WhatsApp, Facebook, Telegram…).
+       WhatsApp NO ejecuta JavaScript: lee estas etiquetas del HTML tal como
+       sale del servidor. Sin ellas caía al <title> y al favicon, que estaban
+       fijos en Falconext, y un enlace de una tienda de Krezka se previsualizaba
+       con la marca equivocada.
+
+       Los valores salen del .env de cada marca, así que el mismo código
+       construido como krezka o como falconext se previsualiza correcto. -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="%VITE_OG_SITE_NAME%" />
+  <meta property="og:title" content="%VITE_OG_TITLE%" />
+  <meta property="og:description" content="%VITE_OG_DESCRIPTION%" />
+  <meta property="og:image" content="%VITE_OG_IMAGE%" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="%VITE_OG_TITLE%" />
+  <meta name="twitter:description" content="%VITE_OG_DESCRIPTION%" />
+  <meta name="twitter:image" content="%VITE_OG_IMAGE%" />
 </head>
 
 <body>
