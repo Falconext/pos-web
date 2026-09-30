@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND } from '@/lib/branding';
 import { Facebook, Instagram, Linkedin, Twitter, Mail, MapPin, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -11,7 +12,7 @@ const Footer = () => {
           {/* Brand & Info */}
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-2 mb-6">
-              <img src="/src/assets/logo.png" alt="Falconext Logo" className="h-10 w-auto opacity-90 grayscale contrast-200 brightness-200" />
+              <img src="/src/assets/logo.png" alt={`${BRAND.name} Logo`} className="h-10 w-auto opacity-90 grayscale contrast-200 brightness-200" />
               <span className="text-white font-bold text-xl tracking-tight">FALCONEXT</span>
             </Link>
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
@@ -81,7 +82,7 @@ const Footer = () => {
         {/* Bottom */}
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-gray-500 text-sm text-center md:text-left">
-            &copy; {new Date().getFullYear()} Falconext. Todos los derechos reservados.
+            &copy; {new Date().getFullYear()} {BRAND.name}. Todos los derechos reservados.
           </p>
           <div className="flex gap-6">
             <a href="#" className="text-gray-500 hover:text-white text-sm transition-colors">Términos y Condiciones</a>

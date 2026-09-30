@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { BRAND } from '@/lib/branding';
 import { MetodosPagoResponse, formatSoles } from './MetodosPagoModel';
 
 Font.register({
@@ -125,7 +126,7 @@ export function MetodosPagoReportPDF({
                 ))}
 
                 <View style={styles.footer} fixed>
-                    <Text style={styles.footerText}>Falconext · Finanzas</Text>
+                    <Text style={styles.footerText}>{BRAND.name} · Finanzas</Text>
                     <Text style={styles.footerText}>Reporte de métodos de pago</Text>
                 </View>
             </Page>

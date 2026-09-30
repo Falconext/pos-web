@@ -24,7 +24,7 @@ const getLocalWhiteLabelBrand = (host: string): Partial<BrandConfig> | null => {
     whatsapp: '51932332556',
     logo: '/assets/fnlogo.png',
     logoWhite: '/assets/logofalconwhite.png',
-    favicon: '/assets/logofalconext.png',
+    favicon: '/assets/krezka/krezkalogo.png',
     primaryColor: '#111827',
     secondaryColor: '#3E2BC7',
     dashboardUrl: `http://${host}`,
@@ -50,7 +50,10 @@ const inferDefaultBaseUrl = () => {
     }
   }
 
-  return import.meta.env.VITE_API_FALLBACK_URL || 'https://api.falconext.pe/api'
+  // Último recurso cuando el host no se reconoce. Va a Krezka: es la marca de
+  // este producto, y caer al backend de otra dejaba al usuario mirando datos
+  // que no son suyos sin ningún aviso.
+  return import.meta.env.VITE_API_FALLBACK_URL || 'https://api.krezka.com/api'
 }
 
 const applyBrandToDocument = (brand: Partial<BrandConfig>) => {
@@ -83,7 +86,9 @@ const applyBrandToDocument = (brand: Partial<BrandConfig>) => {
 const bootstrapBranding = async () => {
   if (typeof window === 'undefined') return
   if (String(import.meta.env.VITE_DISABLE_PUBLIC_BRANDING_FETCH || '').toLowerCase() === 'true') {
-    const brandKey = String(import.meta.env.VITE_PUBLIC_BRAND || 'falconext').toLowerCase()
+    // Krezka por defecto: es la marca de este producto. Con 'falconext' de
+    // respaldo, un build sin la variable puesta salía con la marca ajena.
+    const brandKey = String(import.meta.env.VITE_PUBLIC_BRAND || 'krezka').toLowerCase()
     applyBrandToDocument({
       name: brandKey === 'krezka' ? 'Krezka' : 'Falconext',
       favicon: brandKey === 'krezka' ? '/assets/krezka/krezkalogo.png' : '/assets/logofalconext.png',

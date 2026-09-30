@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND } from '@/lib/branding';
 import { Icon } from '@iconify/react';
 import { Link } from 'react-router-dom';
 
@@ -185,7 +186,7 @@ export default function AutopartesFooter({ tienda, slug, diseno }: Props) {
 
           <div className="mt-16 pt-8 border-t border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-[11px] text-gray-500">
-              ©copyright {currentYear} . Diseñado Por <span className="text-white font-bold">Falconext</span>
+              ©copyright {currentYear} . Diseñado Por <span className="text-white font-bold">{BRAND.name}</span>
             </p>
             <div className="flex items-center gap-6">
               <Link to="#" className="text-[11px] text-gray-400 hover:text-white transition-colors">Política de Privacidad</Link>

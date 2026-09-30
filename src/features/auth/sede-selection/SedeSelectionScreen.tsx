@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/zustand/auth';
 import { ISede } from '@/interfaces/auth';
+import { BRAND } from '@/lib/branding';
 import Alert from '@/components/Alert';
 import useAlertStore from '@/zustand/alert';
 import banner from '@/assets/fnlogin.png';
@@ -146,7 +147,7 @@ export default function SedeSelectionScreen() {
                             <Icon icon="solar:logout-bold-duotone" width={16} />
                             Cambiar cuenta
                         </button>
-                        <p className="text-xs text-gray-300">© 2025 Falconext</p>
+                        <p className="text-xs text-gray-300">© {new Date().getFullYear()} {BRAND.name}</p>
                     </div>
                 </div>
             </div>
@@ -160,7 +161,7 @@ export default function SedeSelectionScreen() {
                     <div className="w-8 h-8 rounded-lg bg-white/20   flex items-center justify-center">
                         <Icon icon="solar:bolt-bold" className="text-white text-xl" />
                     </div>
-                    <span className="text-white font-bold text-xl tracking-tight">Falconext</span>
+                    <span className="text-white font-bold text-xl tracking-tight">{BRAND.name}</span>
                 </div>
 
                 <div className="w-full max-w-lg z-10 flex flex-col gap-10">
@@ -180,7 +181,7 @@ export default function SedeSelectionScreen() {
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                             <div className="ml-4 h-4 w-32 bg-gray-200 rounded-full opacity-50" />
                         </div>
-                        <img src={banner} alt="Falconext Dashboard" className="w-full h-full object-contain top-[-15px] relative" />
+                        <img src={banner} alt={`${BRAND.name} Dashboard`} className="w-full h-full object-contain top-[-15px] relative" />
                     </div>
                 </div>
             </div>

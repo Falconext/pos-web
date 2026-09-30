@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { BRAND } from '@/lib/branding';
 import { Icon } from '@iconify/react';
 import UrbanoHeader from '../../templates/urbano/UrbanoHeader';
 
@@ -375,7 +376,7 @@ export function UrbanoProductoPreviewPage({
                     </div>
                 </div>
                 <div className="max-w-[1600px] mx-auto mt-20 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">© 2026 {diseno?.urbanoStoreName || demo.storeName || 'Urbano'}, Powered by Falconext</p>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">© 2026 {diseno?.urbanoStoreName || demo.storeName || 'Urbano'}, Powered by {BRAND.name}</p>
                     <div className="flex gap-4">
                         <Icon icon="mdi:facebook" className="text-gray-500 hover:text-white transition-colors text-lg" />
                         <Icon icon="mdi:instagram" className="text-gray-500 hover:text-white transition-colors text-lg" />

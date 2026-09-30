@@ -1,4 +1,5 @@
 import type React from 'react';
+import { BRAND } from '@/lib/branding';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -482,7 +483,7 @@ export function GroFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           </span>
         </div>
       </div>
-      <div className="border-t px-6 py-5 text-center text-xs" style={{ borderColor: GRO.line, color: GRO.inkSoft }}>© 2026 {name}. Powered by Falconext.</div>
+      <div className="border-t px-6 py-5 text-center text-xs" style={{ borderColor: GRO.line, color: GRO.inkSoft }}>© 2026 {name}. Powered by {BRAND.name}.</div>
     </motion.footer>
   );
 }

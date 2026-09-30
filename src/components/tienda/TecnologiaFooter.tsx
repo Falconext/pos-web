@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { BRAND } from '@/lib/branding';
 import { Link } from 'react-router-dom';
 import { buildStorePurchaseWhatsappUrl, normalizeStoreWhatsapp } from '@/utils/storeWhatsapp';
 
@@ -170,7 +171,7 @@ export default function TecnologiaFooter({ tienda, slug, diseno, categories = []
         </div>
 
         <div className="mt-10 flex flex-col gap-4 border-t border-white/10 pt-6 text-xs text-white/40 md:flex-row md:items-center md:justify-between">
-          <p>© {year} {storeName}. Diseñado por <span className="font-bold text-white">Falconext</span></p>
+          <p>© {year} {storeName}. Diseñado por <span className="font-bold text-white">{BRAND.name}</span></p>
           <div className="flex items-center gap-4">
             <Link to={route('/catalogo')} className="hover:text-white">Catálogo</Link>
             <Link to={route('/checkout')} className="hover:text-white">Pedido</Link>

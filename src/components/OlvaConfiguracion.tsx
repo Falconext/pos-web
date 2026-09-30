@@ -10,7 +10,7 @@ const lbl = 'block text-xs font-bold text-slate-500 dark:text-slate-400 uppercas
  * Configuración del courier Olva del negocio.
  *
  * A diferencia de Shalom Pro no hay cuenta que conectar: el proveedor autentica
- * con la API key global de Falconext. Aquí el negocio solo elige desde qué
+ * con la API key global de la plataforma. Aquí el negocio solo elige desde qué
  * agencia despacha (necesario para generar guías) y activa el rastreo
  * automático. Se oculta si el plan no incluye el módulo.
  */

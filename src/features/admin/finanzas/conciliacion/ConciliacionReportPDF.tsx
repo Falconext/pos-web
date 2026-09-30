@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { BRAND } from '@/lib/branding';
 import type { IResultadoConciliacion } from './ConciliacionModel';
 import { origenLabel } from './ConciliacionModel';
 
@@ -197,7 +198,7 @@ export function ConciliacionReportPDF({
                 ) : null}
 
                 <View style={styles.footer} fixed>
-                    <Text style={styles.footerText}>Falconext · Finanzas</Text>
+                    <Text style={styles.footerText}>{BRAND.name} · Finanzas</Text>
                     <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `Conciliación bancaria · ${pageNumber}/${totalPages}`} />
                 </View>
             </Page>

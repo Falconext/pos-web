@@ -1,4 +1,5 @@
 import { Document, Page, Text, View, StyleSheet, Font } from '@react-pdf/renderer';
+import { BRAND } from '@/lib/branding';
 import { CategoriasResponse, formatPct, formatSoles } from './CategoriasModel';
 
 Font.register({
@@ -115,7 +116,7 @@ export function CategoriasReportPDF({
                 ))}
 
                 <View style={styles.footer} fixed>
-                    <Text style={styles.footerText}>Falconext · Finanzas</Text>
+                    <Text style={styles.footerText}>{BRAND.name} · Finanzas</Text>
                     <Text style={styles.footerText}>Reporte de categorías</Text>
                 </View>
             </Page>

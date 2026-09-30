@@ -422,7 +422,7 @@ export default function PerfilIndex() {
                             <div className="space-y-4">
                                 <div className="grid gap-3 md:grid-cols-3">
                                     {[
-                                        { value: 'PLATFORM', title: 'Plataforma', icon: 'solar:cloud-bold-duotone', description: 'Falconext/Krezka envía por ti.' },
+                                        { value: 'PLATFORM', title: 'Plataforma', icon: 'solar:cloud-bold-duotone', description: `${BRAND.name} envía por ti.` },
                                         { value: 'EMPRESA', title: 'Propio', icon: 'solar:smartphone-bold-duotone', description: 'Usa el número de Meta de la empresa.' },
                                         { value: 'DISABLED', title: 'Desactivado', icon: 'solar:close-circle-bold-duotone', description: 'Bloquea envíos automáticos.' },
                                     ].map(option => {

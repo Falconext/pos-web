@@ -1,4 +1,5 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
+import { BRAND } from '@/lib/branding';
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -538,7 +539,7 @@ export default function Checkout() {
 
             culqi.publicKey = publicKey;
             culqi.settings({
-                title: (tienda?.nombreComercial || tienda?.razonSocial || 'Falconext').toString(),
+                title: (tienda?.nombreComercial || tienda?.razonSocial || BRAND.name).toString(),
                 currency: 'PEN',
                 amount: totalCentavos,
             });

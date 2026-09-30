@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND } from '@/lib/branding';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LogIn, ShoppingCart, Phone } from 'lucide-react';
@@ -15,7 +16,7 @@ const Header = () => {
           {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/src/assets/logo.png" alt="Falconext Logo" className="h-10 w-auto" />
+              <img src="/src/assets/logo.png" alt={`${BRAND.name} Logo`} className="h-10 w-auto" />
               <span className="text-white font-bold text-xl tracking-tight">FALCONEXT</span>
             </Link>
           </div>

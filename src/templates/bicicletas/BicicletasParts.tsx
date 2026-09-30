@@ -1,4 +1,5 @@
 import type React from 'react';
+import { BRAND } from '@/lib/branding';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -432,7 +433,7 @@ export function VeloFooter({ tienda, slug, diseno, cp, categories = [] }: { tien
           </span>
         </div>
       </div>
-      <div className="border-t border-white/10 px-6 py-5 text-center text-xs text-white/40">© 2026 {name}. Powered by Falconext.</div>
+      <div className="border-t border-white/10 px-6 py-5 text-center text-xs text-white/40">© 2026 {name}. Powered by {BRAND.name}.</div>
     </motion.footer>
   );
 }

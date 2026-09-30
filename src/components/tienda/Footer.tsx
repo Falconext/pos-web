@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { BRAND } from '@/lib/branding';
 import { buildStorePurchaseWhatsappUrl, normalizeStoreWhatsapp } from '@/utils/storeWhatsapp';
 
 interface FooterProps {
@@ -154,7 +155,7 @@ export default function Footer({ tienda, diseno }: FooterProps) {
                         &copy; {tienda.nombreComercial || 'Mi Tienda'} {year} — porque tus clientes merecen lo mejor 🐾
                     </p>
                     <p className="text-xs text-[#BBB]">
-                        Powered by <span className="font-bold" style={{ color: cp }}>Falconext</span>
+                        Powered by <span className="font-bold" style={{ color: cp }}>{BRAND.name}</span>
                     </p>
                 </div>
             </div>

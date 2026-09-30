@@ -142,7 +142,7 @@ export default function IntegracionesView() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Integraciones API</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Genera credenciales y configura webhooks para conectar Falconext Logística con tus sistemas.
+          Genera credenciales y configura webhooks para conectar el módulo de Logística con tus sistemas.
         </p>
       </div>
 

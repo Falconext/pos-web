@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, type ComponentType } from 'react';
+import { BRAND } from '@/lib/branding';
 import { useLocation } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import ProductCardXtra from '@/components/tienda/ProductCardXtra';
@@ -1017,7 +1018,7 @@ function ProductoPage({ producto, demo, cp, diseno, onNav, onProduct, onAddToCar
               <p className="text-[11px] text-gray-400">{demo.slogan}</p>
             </div>
           </div>
-          <p className="text-xs text-gray-400">© {new Date().getFullYear()} {demo.storeName} · Powered by <strong className="text-gray-600">Falconext</strong></p>
+          <p className="text-xs text-gray-400">© {new Date().getFullYear()} {demo.storeName} · Powered by <strong className="text-gray-600">{BRAND.name}</strong></p>
         </div>
       </footer>
     </div>
@@ -5496,7 +5497,7 @@ export default function StorePreviewPage() {
                   <p className="text-[11px] text-gray-400">{demo.slogan}</p>
                 </div>
               </div>
-              <p className="text-xs text-gray-400">© {new Date().getFullYear()} {demo.storeName} · Powered by <strong className="text-gray-600">Falconext</strong></p>
+              <p className="text-xs text-gray-400">© {new Date().getFullYear()} {demo.storeName} · Powered by <strong className="text-gray-600">{BRAND.name}</strong></p>
             </div>
           </footer>
         )}

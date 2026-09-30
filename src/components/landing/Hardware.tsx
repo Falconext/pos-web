@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND } from '@/lib/branding';
 import { motion } from 'framer-motion';
 import { Printer, Wifi, Battery, MonitorSmartphone } from 'lucide-react';
 
@@ -43,7 +44,7 @@ const Hardware = () => {
               Equipa tu negocio con la <span className="text-blue-500">mejor tecnología</span>
             </h2>
             <p className="text-gray-400 text-lg mb-8 leading-relaxed">
-              Descubre nuestra línea de terminales POS diseñados para máxima eficiencia. Equipos robustos, rápidos y con el sistema Falconext preinstalado listos para usar.
+              Descubre nuestra línea de terminales POS diseñados para máxima eficiencia. Equipos robustos, rápidos y con el sistema {BRAND.name} preinstalado listos para usar.
             </p>
 
             <div className="space-y-6">

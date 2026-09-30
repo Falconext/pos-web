@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { BRAND } from '@/lib/branding';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
@@ -431,7 +432,7 @@ export function ConstruccionFooter({ tienda, slug, cp, categories, diseno: disen
       </div>
       <div className="border-t border-white/10 px-4 py-7">
         <div className="mx-auto flex max-w-7xl flex-col justify-between gap-4 text-base font-semibold text-white/70 md:flex-row">
-          <span>© {new Date().getFullYear()} {storeName}. Desarrollado por Falconext.</span>
+          <span>© {new Date().getFullYear()} {storeName}. Desarrollado por {BRAND.name}.</span>
           <span className="text-white/40">{editable(diseno?.construccionFooterPaymentsText, 'Visa · Mastercard · Yape · Plin')}</span>
         </div>
       </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { BRAND } from '@/lib/branding';
 import { motion } from 'framer-motion';
 import { ChevronRight, Play } from 'lucide-react';
 
@@ -42,7 +43,7 @@ const Hero = () => {
             </h1>
             
             <p className="text-lg text-gray-400 mb-10 max-w-lg leading-relaxed">
-              Falconext es el sistema inteligente que ayuda a emprendedores a escalar sus ventas con facturación electrónica sin límites y gestión total desde cualquier lugar.
+              {BRAND.name} es el sistema inteligente que ayuda a emprendedores a escalar sus ventas con facturación electrónica sin límites y gestión total desde cualquier lugar.
             </p>
 
             <div className="flex flex-wrap gap-4">
@@ -79,7 +80,7 @@ const Hero = () => {
             <div className="relative z-10 rounded-3xl overflow-hidden border border-white/10 shadow-2xl shadow-blue-500/10">
               <img 
                 src="/src/assets/mainproject.webp" 
-                alt="Falconext Dashboard" 
+                alt={`${BRAND.name} Dashboard`} 
                 className="w-full h-auto transform hover:scale-105 transition-transform duration-700"
               />
             </div>

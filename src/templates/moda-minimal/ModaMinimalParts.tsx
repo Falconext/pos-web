@@ -1,4 +1,5 @@
 import type React from 'react';
+import { BRAND } from '@/lib/branding';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -389,7 +390,7 @@ export function MinFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
       <div className="border-t" style={{ borderColor: MIN.line }}>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-5 text-xs md:flex-row md:px-8" style={{ color: MIN.muted }}>
           <span>© 2026 {name}. Todos los derechos reservados.</span>
-          <span>Powered by Falconext</span>
+          <span>Powered by {BRAND.name}</span>
         </div>
       </div>
     </motion.footer>

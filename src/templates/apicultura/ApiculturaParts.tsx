@@ -1,4 +1,5 @@
 import type React from 'react';
+import { BRAND } from '@/lib/branding';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
@@ -182,7 +183,7 @@ export function ApiculturaFooter({ tienda, slug, diseno, cp, categories = [] }: 
         </div>
       </div>
       <div className="border-t border-gray-100 px-5 py-5 text-center text-xs font-semibold text-gray-400">
-        © 2026 {name}. Powered by Falconext.
+        © 2026 {name}. Powered by {BRAND.name}.
       </div>
     </motion.footer>
   );

@@ -16,7 +16,9 @@ const inferDefaultBaseUrl = () => {
     }
   }
 
-  return import.meta.env.VITE_API_FALLBACK_URL || 'https://api.falconext.pe/api'
+  // Último recurso cuando el host no se reconoce: Krezka, la marca de este
+  // producto. Caer al backend de otra marca mostraba datos ajenos sin aviso.
+  return import.meta.env.VITE_API_FALLBACK_URL || 'https://api.krezka.com/api'
 }
 
 const BASE_URL = inferDefaultBaseUrl()

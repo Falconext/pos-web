@@ -1,4 +1,5 @@
 import type React from 'react';
+import { BRAND } from '@/lib/branding';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -365,7 +366,7 @@ export function FoodFooter({ tienda, slug, diseno, cp, categories = [] }: { tien
         </div>
         <div className="mt-8 flex flex-col items-center justify-between gap-2 border-t border-white/10 pt-5 text-xs text-white/40 md:flex-row">
           <span>© 2026 {name}. Todos los derechos reservados.</span>
-          <span>Powered by Falconext</span>
+          <span>Powered by {BRAND.name}</span>
         </div>
       </div>
     </footer>

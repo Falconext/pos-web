@@ -111,7 +111,7 @@ export default function LibroControlView() {
             <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50 rounded-xl px-4 py-2.5 flex items-start gap-2 print:hidden">
                 <Icon icon="solar:info-circle-bold" className="text-amber-600 dark:text-amber-400 text-lg flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Este libro incluye solo productos marcados como <strong>Medicamento Controlado</strong> en la ficha del producto. Solo registra movimientos desde el uso de Falconext — el saldo inicial es 0 (no incluye histórico previo).
+                    Este libro incluye solo productos marcados como <strong>Medicamento Controlado</strong> en la ficha del producto. Solo registra movimientos desde el uso del sistema — el saldo inicial es 0 (no incluye histórico previo).
                 </p>
             </div>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { BRAND } from '@/lib/branding';
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import { useAuthStore } from "../zustand/auth";
@@ -134,7 +135,7 @@ const TiendaLogin = () => {
                     {/* Footer */}
                     <div className="text-center pt-8 border-t border-gray-100">
                         <p className="text-xs text-gray-400">
-                            &copy; {new Date().getFullYear()} Falconext. Todos los derechos reservados.
+                            &copy; {new Date().getFullYear()} {BRAND.name}. Todos los derechos reservados.
                         </p>
                     </div>
                 </div>
