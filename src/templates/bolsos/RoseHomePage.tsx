@@ -5,7 +5,7 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { buildCategoryTiles } from '@/templates/shared/categoryTiles';
 import { getProductPricing } from '@/templates/shared/pricing';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
@@ -109,11 +109,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 
 function slidesFrom(diseno: any): Slide[] {
   const d = diseno || {};
-  return [
+  return slidesVisibles(d, 'bolsos', [
     { image: d.bolsosHeroImage || BOLSOS_IMG.hero[0], onlyImage: isOn(d.bolsosHeroOnlyImage), eyebrow: optional(d.bolsosHeroEyebrow, 'Lleva tu confianza'), title: editable(d.bolsosHeroTitle, 'Carteras únicas'), highlight: optional(d.bolsosHeroHighlight, 'para cada día'), subtitle: optional(d.bolsosHeroSubtitle, 'Descubre nuestra colección de carteras pensadas para acompañarte y elevar tu estilo.'), button: editable(d.bolsosHeroButton, 'Comprar ahora'), action: 'bolsosHeroAction' },
     { image: d.bolsosSlide2Image || BOLSOS_IMG.hero[1], onlyImage: isOn(d.bolsosSlide2OnlyImage), eyebrow: optional(d.bolsosSlide2Eyebrow, 'Nueva temporada'), title: editable(d.bolsosSlide2Title, 'Elegancia'), highlight: optional(d.bolsosSlide2Highlight, 'que se nota'), subtitle: optional(d.bolsosSlide2Subtitle, 'Modelos de mano, bandolera y hombro para cada ocasión.'), button: editable(d.bolsosSlide2Button, 'Descubrir'), action: 'bolsosSlide2Action' },
     { image: d.bolsosSlide3Image || BOLSOS_IMG.hero[2], onlyImage: isOn(d.bolsosSlide3OnlyImage), eyebrow: optional(d.bolsosSlide3Eyebrow, 'Detalles que enamoran'), title: editable(d.bolsosSlide3Title, 'Tu look'), highlight: optional(d.bolsosSlide3Highlight, 'empieza aquí'), subtitle: optional(d.bolsosSlide3Subtitle, 'Mochilas, billeteras y accesorios que combinan contigo.'), button: editable(d.bolsosSlide3Button, 'Ver colección'), action: 'bolsosSlide3Action' },
-  ];
+  ]);
 }
 
 /** Slider del hero. Aislado: su intervalo solo re-renderiza este componente. */

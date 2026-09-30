@@ -5,7 +5,7 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { buildCategoryTiles, type CategoryTile } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
@@ -136,11 +136,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 function slidesFrom(diseno: any): Slide[] {
   const d = diseno || {};
   const on = (v: any) => v === true || v === 'true' || v === '1';
-  return [
+  return slidesVisibles(d, 'zapatos', [
     { image: d.zapatosHeroImage || ZAPATOS_HERO_FALLBACKS[0], onlyImage: on(d.zapatosHeroOnlyImage), eyebrow: editable(d.zapatosHeroEyebrow, 'Colección premium'), title: editable(d.zapatosHeroTitle, 'Zapatillas para tu ritmo y tu ciudad'), subtitle: editable(d.zapatosHeroSubtitle, 'Comodidad, estilo y tecnología en cada paso. Elige el par que va contigo.'), button: editable(d.zapatosHeroButton, 'Ver catálogo'), action: 'zapatosHeroAction' },
     { image: d.zapatosSlide2Image || ZAPATOS_HERO_FALLBACKS[1], onlyImage: on(d.zapatosSlide2OnlyImage), eyebrow: editable(d.zapatosSlide2Eyebrow, 'Running'), title: editable(d.zapatosSlide2Title, 'Corre más lejos en cada salida'), subtitle: editable(d.zapatosSlide2Subtitle, 'Modelos ligeros con buena amortiguación para entrenar o competir.'), button: editable(d.zapatosSlide2Button, 'Ver modelos'), action: 'zapatosSlide2Action' },
     { image: d.zapatosSlide3Image || ZAPATOS_HERO_FALLBACKS[2], onlyImage: on(d.zapatosSlide3OnlyImage), eyebrow: editable(d.zapatosSlide3Eyebrow, 'Lifestyle'), title: editable(d.zapatosSlide3Title, 'Clásicos que combinan con todo'), subtitle: editable(d.zapatosSlide3Subtitle, 'Pares versátiles para el día a día, del trabajo al fin de semana.'), button: editable(d.zapatosSlide3Button, 'Descubrir'), action: 'zapatosSlide3Action' },
-  ];
+  ]);
 }
 
 /** Slider del hero. Aislado: su intervalo solo re-renderiza este componente (las tarjetas no parpadean). */

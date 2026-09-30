@@ -1,6 +1,6 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { buildCategoryTiles } from '../shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -58,7 +58,7 @@ interface HeroSlide {
 
 /** Construye los slides del hero desde `diseno` (todo editable en el editor en vivo). */
 function buildHeroSlides(diseno: any): HeroSlide[] {
-  const raw: HeroSlide[] = [
+  const raw: HeroSlide[] = slidesVisibles(diseno, 'carteras', [
     {
       image: diseno?.carterasHeroImage || '',
       eyebrow: diseno?.carterasHeroEyebrow || 'Nueva colección',
@@ -90,7 +90,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       onlyImage: Boolean(diseno?.carterasSlide3OnlyImage),
       actionKey: 'carterasSlide3Action',
     },
-  ];
+  ]);
   // Cada slide se completa con una imagen de respaldo para que el slider luzca
   // completo por defecto; el emprendedor reemplaza imagen/textos desde el editor.
   return raw.map((slide, i) => ({ ...slide, image: slide.image || HERO_SLIDE_FALLBACKS[i % HERO_SLIDE_FALLBACKS.length] }));

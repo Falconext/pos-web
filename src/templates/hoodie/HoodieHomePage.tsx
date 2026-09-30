@@ -5,7 +5,7 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { buildCategoryTiles, type CategoryTile } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
@@ -113,11 +113,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 const line2 = (title: any, title2: any, fallback: string) => (title2 !== undefined && title2 !== null ? String(title2).trim() : String(title || '').trim() ? '' : fallback);
 
 function slidesFrom(d: any = {}): Slide[] {
-  return [
+  return slidesVisibles(d, 'hoodie', [
     { image: d.hoodieHeroImage || HOODIE_IMG.hero[0], onlyImage: isOn(d.hoodieHeroOnlyImage), eyebrow: editable(d.hoodieHeroEyebrow, 'Nuevo drop'), title: editable(d.hoodieHeroTitle, 'Hecho para'), title2: line2(d.hoodieHeroTitle, d.hoodieHeroTitle2, 'la calle'), subtitle: editable(d.hoodieHeroSubtitle, 'Hoodies, polos y básicos oversize. Pocas unidades por modelo.'), button: editable(d.hoodieHeroButton, 'Comprar el drop'), action: 'hoodieHeroAction' },
     { image: d.hoodieSlide2Image || HOODIE_IMG.hero[1], onlyImage: isOn(d.hoodieSlide2OnlyImage), eyebrow: editable(d.hoodieSlide2Eyebrow, 'Street'), title: editable(d.hoodieSlide2Title, 'Sin reglas'), title2: line2(d.hoodieSlide2Title, d.hoodieSlide2Title2, 'sin filtro'), subtitle: editable(d.hoodieSlide2Subtitle, 'Piezas para combinar a tu manera, todos los días.'), button: editable(d.hoodieSlide2Button, 'Ver colección'), action: 'hoodieSlide2Action' },
     { image: d.hoodieSlide3Image || HOODIE_IMG.hero[2], onlyImage: isOn(d.hoodieSlide3OnlyImage), eyebrow: editable(d.hoodieSlide3Eyebrow, 'Esenciales'), title: editable(d.hoodieSlide3Title, 'Básicos'), title2: line2(d.hoodieSlide3Title, d.hoodieSlide3Title2, 'pesados'), subtitle: editable(d.hoodieSlide3Subtitle, 'Algodón grueso, calce amplio y colores que combinan con todo.'), button: editable(d.hoodieSlide3Button, 'Ver básicos'), action: 'hoodieSlide3Action' },
-  ];
+  ]);
 }
 
 /** Hero en bloque negro. Aislado: su temporizador solo re-renderiza este componente. */

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -21,7 +21,7 @@ const PROMO_FALLBACK = 'https://images.unsplash.com/photo-1568901346375-23c9450c
 interface HeroSlide { image: string; badge: string; title: string; subtitle: string; button: string; onlyImage: boolean; actionKey: string; }
 
 function buildHeroSlides(diseno: any): HeroSlide[] {
-  const raw: HeroSlide[] = [
+  const raw: HeroSlide[] = slidesVisibles(diseno, 'comidaApp', [
     {
       image: diseno?.comidaAppHeroImage || '',
       badge: diseno?.comidaAppHeroBadge || 'Recién hecho',
@@ -49,7 +49,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       onlyImage: Boolean(diseno?.comidaAppSlide3OnlyImage),
       actionKey: 'comidaAppSlide3Action',
     },
-  ];
+  ]);
   return raw.map((s, i) => ({ ...s, image: s.image || HERO_FALLBACKS[i % HERO_FALLBACKS.length] }));
 }
 

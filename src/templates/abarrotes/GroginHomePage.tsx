@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { buildCategoryTiles } from '../shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -52,7 +52,7 @@ interface HeroSlide {
 }
 
 function buildHeroSlides(diseno: any): HeroSlide[] {
-  const raw: HeroSlide[] = [
+  const raw: HeroSlide[] = slidesVisibles(diseno, 'abarrotes', [
     {
       image: diseno?.abarrotesHeroImage || '',
       eyebrow: diseno?.abarrotesHeroEyebrow || 'Descuentos de la semana',
@@ -86,7 +86,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       onlyImage: Boolean(diseno?.abarrotesSlide3OnlyImage),
       actionKey: 'abarrotesSlide3Action',
     },
-  ];
+  ]);
   return raw.map((slide, i) => ({ ...slide, image: slide.image || HERO_FALLBACKS[i % HERO_FALLBACKS.length] }));
 }
 

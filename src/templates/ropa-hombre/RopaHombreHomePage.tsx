@@ -5,7 +5,7 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { buildCategoryTiles, type CategoryTile } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
@@ -105,11 +105,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 const line2 = (title: any, title2: any, fallback: string) => (title2 !== undefined && title2 !== null ? String(title2).trim() : String(title || '').trim() ? '' : fallback);
 
 function slidesFrom(d: any = {}): Slide[] {
-  return [
+  return slidesVisibles(d, 'ropaHombre', [
     { image: d.ropaHombreHeroImage || URBANIC_IMG.hero[0], onlyImage: isOn(d.ropaHombreHeroOnlyImage), eyebrow: editable(d.ropaHombreHeroEyebrow, 'Colección de temporada'), title: editable(d.ropaHombreHeroTitle, 'El arte de'), title2: line2(d.ropaHombreHeroTitle, d.ropaHombreHeroTitle2, 'vestir bien'), subtitle: editable(d.ropaHombreHeroSubtitle, 'Cortes precisos, tejidos nobles y piezas pensadas para durar.'), button: editable(d.ropaHombreHeroButton, 'Descubrir la colección'), action: 'ropaHombreHeroAction' },
     { image: d.ropaHombreSlide2Image || URBANIC_IMG.hero[1], onlyImage: isOn(d.ropaHombreSlide2OnlyImage), eyebrow: editable(d.ropaHombreSlide2Eyebrow, 'Sastrería'), title: editable(d.ropaHombreSlide2Title, 'Presencia'), title2: line2(d.ropaHombreSlide2Title, d.ropaHombreSlide2Title2, 'sin esfuerzo'), subtitle: editable(d.ropaHombreSlide2Subtitle, 'Sacos y camisas con líneas limpias para cada ocasión.'), button: editable(d.ropaHombreSlide2Button, 'Ver sastrería'), action: 'ropaHombreSlide2Action' },
     { image: d.ropaHombreSlide3Image || URBANIC_IMG.hero[2], onlyImage: isOn(d.ropaHombreSlide3OnlyImage), eyebrow: editable(d.ropaHombreSlide3Eyebrow, 'Esenciales'), title: editable(d.ropaHombreSlide3Title, 'Menos, pero'), title2: line2(d.ropaHombreSlide3Title, d.ropaHombreSlide3Title2, 'mejor'), subtitle: editable(d.ropaHombreSlide3Subtitle, 'Básicos impecables que combinan con todo tu armario.'), button: editable(d.ropaHombreSlide3Button, 'Ver esenciales'), action: 'ropaHombreSlide3Action' },
-  ];
+  ]);
 }
 
 const PROGRESS_CSS = `

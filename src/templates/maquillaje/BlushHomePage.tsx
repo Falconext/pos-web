@@ -4,7 +4,7 @@ import { Icon } from '@iconify/react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { buildCategoryTiles } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
@@ -108,11 +108,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 
 function slidesFrom(diseno: any): Slide[] {
   const d = diseno || {};
-  return [
+  return slidesVisibles(d, 'maquillaje', [
     { image: d.maquillajeHeroImage || MAQUILLAJE_IMG.hero[0], onlyImage: isOn(d.maquillajeHeroOnlyImage), eyebrow: optional(d.maquillajeHeroEyebrow, 'Tu rutina de belleza'), title: editable(d.maquillajeHeroTitle, 'Brilla.|Define.|Sé tú.'), subtitle: optional(d.maquillajeHeroSubtitle, 'Belleza sin esfuerzo, con productos pensados para realzar lo que ya eres.'), button: editable(d.maquillajeHeroButton, 'Comprar ahora'), action: 'maquillajeHeroAction' },
     { image: d.maquillajeSlide2Image || MAQUILLAJE_IMG.hero[1], onlyImage: isOn(d.maquillajeSlide2OnlyImage), eyebrow: optional(d.maquillajeSlide2Eyebrow, 'Cuidado de la piel'), title: editable(d.maquillajeSlide2Title, 'Piel que|brilla.'), subtitle: optional(d.maquillajeSlide2Subtitle, 'Una rutina simple para una piel luminosa todos los días.'), button: editable(d.maquillajeSlide2Button, 'Descubrir'), action: 'maquillajeSlide2Action' },
     { image: d.maquillajeSlide3Image || MAQUILLAJE_IMG.hero[2], onlyImage: isOn(d.maquillajeSlide3OnlyImage), eyebrow: optional(d.maquillajeSlide3Eyebrow, 'Maquillaje'), title: editable(d.maquillajeSlide3Title, 'Tu tono,|tu estilo.'), subtitle: optional(d.maquillajeSlide3Subtitle, 'Del nude natural al color intenso, para cada momento.'), button: editable(d.maquillajeSlide3Button, 'Ver maquillaje'), action: 'maquillajeSlide3Action' },
-  ];
+  ]);
 }
 
 /** Slider del hero (foto a la izquierda, texto sobre rosado a la derecha). Aislado: su timer solo re-renderiza este componente. */

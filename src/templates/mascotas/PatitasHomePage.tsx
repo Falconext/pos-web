@@ -5,7 +5,7 @@ import axios from 'axios';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { buildCategoryTiles } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getStoreLinkAction, isLinkActionConfigured, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
@@ -104,11 +104,11 @@ type Slide = { image: string; onlyImage: boolean; title: string; highlight: stri
 
 function slidesFrom(diseno: any): Slide[] {
   const d = diseno || {};
-  return [
+  return slidesVisibles(d, 'mascotas', [
     { image: d.mascotasHeroImage || MASCOTAS_IMG.hero[0], onlyImage: isOn(d.mascotasHeroOnlyImage), title: editable(d.mascotasHeroTitle, 'Todo lo que tu mascota necesita,'), highlight: optional(d.mascotasHeroHighlight, 'cada día'), subtitle: editable(d.mascotasHeroSubtitle, 'Productos de calidad para una vida más feliz y saludable.'), button: editable(d.mascotasHeroButton, 'Comprar ahora'), action: 'mascotasHeroAction' },
     { image: d.mascotasSlide2Image || MASCOTAS_IMG.hero[1], onlyImage: isOn(d.mascotasSlide2OnlyImage), title: editable(d.mascotasSlide2Title, 'Juegos y paseos'), highlight: optional(d.mascotasSlide2Highlight, 'llenos de energía'), subtitle: editable(d.mascotasSlide2Subtitle, 'Correas, juguetes y todo para sus aventuras.'), button: editable(d.mascotasSlide2Button, 'Ver accesorios'), action: 'mascotasSlide2Action' },
     { image: d.mascotasSlide3Image || MASCOTAS_IMG.hero[2], onlyImage: isOn(d.mascotasSlide3OnlyImage), title: editable(d.mascotasSlide3Title, 'Cuidados desde'), highlight: optional(d.mascotasSlide3Highlight, 'cachorros'), subtitle: editable(d.mascotasSlide3Subtitle, 'Alimento, camitas y cuidados para cada etapa.'), button: editable(d.mascotasSlide3Button, 'Ver productos'), action: 'mascotasSlide3Action' },
-  ];
+  ]);
 }
 
 /** Slider del hero. Aislado: su intervalo solo re-renderiza este componente. */

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { buildCategoryTiles } from '../shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -50,7 +50,7 @@ interface HeroSlide {
 }
 
 function buildHeroSlides(diseno: any): HeroSlide[] {
-  const raw: HeroSlide[] = [
+  const raw: HeroSlide[] = slidesVisibles(diseno, 'modaMinimal', [
     {
       image: diseno?.modaMinimalHeroImage || '',
       eyebrow: diseno?.modaMinimalHeroEyebrow || 'Nueva temporada',
@@ -81,7 +81,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       onlyImage: Boolean(diseno?.modaMinimalSlide3OnlyImage),
       actionKey: 'modaMinimalSlide3Action',
     },
-  ];
+  ]);
   return raw.map((slide, i) => ({ ...slide, image: slide.image || HERO_FALLBACKS[i % HERO_FALLBACKS.length] }));
 }
 

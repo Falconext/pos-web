@@ -5,7 +5,7 @@ import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { buildCategoryTiles } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
@@ -116,11 +116,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 function slidesFrom(diseno: any): Slide[] {
   const d = diseno || {};
   const note = (v: any, fb: string) => (v === undefined || v === null ? fb : String(v).trim()); // vacío = sin nota
-  return [
+  return slidesVisibles(d, 'muebleria', [
     { image: d.muebleriaHeroImage || MUEBLERIA_IMG.hero[0], onlyImage: isOn(d.muebleriaHeroOnlyImage), eyebrow: editable(d.muebleriaHeroEyebrow, 'Espacios naturales, mejor vida'), title: editable(d.muebleriaHeroTitle, 'Muebles para un hogar más sereno'), subtitle: editable(d.muebleriaHeroSubtitle, 'Piezas pensadas para la comodidad, el estilo y el día a día de tu casa.'), button: editable(d.muebleriaHeroButton, 'Ver catálogo'), note: note(d.muebleriaHeroNote, 'Un día a día\nmás bonito ♡'), action: 'muebleriaHeroAction' },
     { image: d.muebleriaSlide2Image || MUEBLERIA_IMG.hero[1], onlyImage: isOn(d.muebleriaSlide2OnlyImage), eyebrow: editable(d.muebleriaSlide2Eyebrow, 'Sala'), title: editable(d.muebleriaSlide2Title, 'Sofás que invitan a quedarse'), subtitle: editable(d.muebleriaSlide2Subtitle, 'Formas suaves y tejidos cálidos para el corazón de tu casa.'), button: editable(d.muebleriaSlide2Button, 'Ver sala'), note: note(d.muebleriaSlide2Note, 'Tu rincón\nfavorito ♡'), action: 'muebleriaSlide2Action' },
     { image: d.muebleriaSlide3Image || MUEBLERIA_IMG.hero[2], onlyImage: isOn(d.muebleriaSlide3OnlyImage), eyebrow: editable(d.muebleriaSlide3Eyebrow, 'Dormitorio'), title: editable(d.muebleriaSlide3Title, 'Descanso con calma y estilo'), subtitle: editable(d.muebleriaSlide3Subtitle, 'Camas, veladores y almacenaje para empezar bien cada mañana.'), button: editable(d.muebleriaSlide3Button, 'Ver dormitorio'), note: note(d.muebleriaSlide3Note, 'Dulces\nsueños ♡'), action: 'muebleriaSlide3Action' },
-  ];
+  ]);
 }
 
 /** Slider del hero. Aislado: su intervalo solo re-renderiza este componente. */

@@ -39,3 +39,44 @@ export function heroIntervalField(key: string, group: string, defaultSecs: numbe
     hint: 'Tiempo que se muestra cada banner antes de pasar al siguiente (mín. 1). Pon 0 para desactivar el avance automático.',
   };
 }
+
+/**
+ * La clave del interruptor "ocultar" del slide N de una plantilla.
+ *
+ * Sigue la misma convención que las imágenes: `<prefijo>HeroImage`,
+ * `<prefijo>Slide2Image`, `<prefijo>Slide3Image`.
+ */
+export const claveSlideOculto = (prefijo: string, indice: number) =>
+  indice === 0 ? `${prefijo}HeroOculto` : `${prefijo}Slide${indice + 1}Oculto`;
+
+const estaEncendido = (v: unknown) =>
+  v === true || v === 'true' || v === '1' || v === 1 || v === 'on' || v === 'si';
+
+/**
+ * Los slides que el negocio realmente quiere mostrar.
+ *
+ * Las plantillas traen tres banners de ejemplo, y hasta ahora no había forma de
+ * usar menos: quien tenía una sola foto quedaba obligado a inventar dos más o a
+ * dejar las de muestra en su tienda.
+ *
+ * Nunca devuelve una lista vacía: si alguien oculta los tres, se conserva el
+ * primero. Un hero en blanco se ve como una tienda rota, y el editor no avisa
+ * de eso en el momento.
+ */
+export function slidesVisibles<T>(diseno: any, prefijo: string, slides: T[]): T[] {
+  const visibles = slides.filter(
+    (_, i) => !estaEncendido(diseno?.[claveSlideOculto(prefijo, i)]),
+  );
+  return visibles.length ? visibles : slides.slice(0, 1);
+}
+
+/** Campo del editor para ocultar un banner (mismo texto en todas las plantillas). */
+export function heroSlideOcultoField(prefijo: string, indice: number, group: string) {
+  return {
+    key: claveSlideOculto(prefijo, indice),
+    label: indice === 0 ? 'No mostrar este banner' : `No mostrar el banner ${indice + 1}`,
+    type: 'toggle' as const,
+    group,
+    hint: 'Ocúltalo si no lo vas a usar. Si ocultas todos, se conserva el primero.',
+  };
+}

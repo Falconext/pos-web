@@ -4,7 +4,7 @@ import { Icon } from '@iconify/react';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { buildCategoryTiles } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { getStoreLinkAction, isLinkActionConfigured, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
@@ -103,11 +103,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 
 function slidesFrom(diseno: any): Slide[] {
   const d = diseno || {};
-  return [
+  return slidesVisibles(d, 'modaElegante', [
     { image: d.modaEleganteHeroImage || ELAN_IMG.hero[0], onlyImage: isOn(d.modaEleganteHeroOnlyImage), eyebrow: optional(d.modaEleganteHeroEyebrow, 'Nueva temporada'), title: editable(d.modaEleganteHeroTitle, 'Elegancia moderna'), subtitle: optional(d.modaEleganteHeroSubtitle, 'Piezas atemporales con estilo contemporáneo. Pensadas para ti.'), button: editable(d.modaEleganteHeroButton, 'Ver la colección'), action: 'modaEleganteHeroAction' },
     { image: d.modaEleganteSlide2Image || ELAN_IMG.hero[1], onlyImage: isOn(d.modaEleganteSlide2OnlyImage), eyebrow: optional(d.modaEleganteSlide2Eyebrow, 'Recién llegados'), title: editable(d.modaEleganteSlide2Title, 'Lo nuevo de la semana'), subtitle: optional(d.modaEleganteSlide2Subtitle, 'Prendas que combinan con todo y duran temporadas.'), button: editable(d.modaEleganteSlide2Button, 'Descubrir'), action: 'modaEleganteSlide2Action' },
     { image: d.modaEleganteSlide3Image || ELAN_IMG.hero[2], onlyImage: isOn(d.modaEleganteSlide3OnlyImage), eyebrow: optional(d.modaEleganteSlide3Eyebrow, 'Calzado'), title: editable(d.modaEleganteSlide3Title, 'Pasos con estilo'), subtitle: optional(d.modaEleganteSlide3Subtitle, 'Tacones, sandalias y zapatillas para cada ocasión.'), button: editable(d.modaEleganteSlide3Button, 'Ver calzado'), action: 'modaEleganteSlide3Action' },
-  ];
+  ]);
 }
 
 /** Slider del hero. Aislado: su intervalo solo re-renderiza este componente. */

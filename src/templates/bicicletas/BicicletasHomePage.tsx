@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -46,7 +46,7 @@ interface HeroSlide {
 
 /** Construye los slides del hero desde `diseno` (todo editable en el editor en vivo). */
 function buildHeroSlides(diseno: any): HeroSlide[] {
-  const raw: HeroSlide[] = [
+  const raw: HeroSlide[] = slidesVisibles(diseno, 'bicicletas', [
     {
       image: diseno?.bicicletasHeroImage || '',
       eyebrow: diseno?.bicicletasHeroEyebrow || 'Serie Trek',
@@ -77,7 +77,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       onlyImage: Boolean(diseno?.bicicletasSlide3OnlyImage),
       actionKey: 'bicicletasSlide3Action',
     },
-  ];
+  ]);
   return raw.map((slide, i) => ({ ...slide, image: slide.image || HERO_SLIDE_FALLBACKS[i % HERO_SLIDE_FALLBACKS.length] }));
 }
 

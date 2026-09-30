@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { buildCategoryTiles } from '../shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '../shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -52,11 +52,11 @@ interface HeroSlide {
 }
 
 function buildHeroSlides(diseno: any): HeroSlide[] {
-  const raw: HeroSlide[] = [
+  const raw: HeroSlide[] = slidesVisibles(diseno, 'supermercado', [
     { image: diseno?.supermercadoHeroImage || '', eyebrow: diseno?.supermercadoHeroEyebrow || 'Frescura en la que puedes confiar', title: diseno?.supermercadoHeroTitle || 'Abarrotes frescos,', title2: diseno?.supermercadoHeroTitle2 || 'mejor vida', subtitle: diseno?.supermercadoHeroSubtitle || 'Recibe las frutas, verduras y esenciales más frescos directo en tu puerta.', badge: diseno?.supermercadoHeroBadge || 'Hasta 30% OFF', button: diseno?.supermercadoHeroButton || 'Comprar ahora', button2: diseno?.supermercadoHeroButton2 || 'Ver ofertas', onlyImage: Boolean(diseno?.supermercadoHeroOnlyImage), actionKey: 'supermercadoHeroAction' },
     { image: diseno?.supermercadoSlide2Image || '', eyebrow: diseno?.supermercadoSlide2Eyebrow || 'Directo del campo', title: diseno?.supermercadoSlide2Title || 'Frutas y verduras', title2: diseno?.supermercadoSlide2Title2 || 'del día', subtitle: diseno?.supermercadoSlide2Subtitle || 'Seleccionamos lo mejor de cada cosecha para tu mesa.', badge: diseno?.supermercadoSlide2Badge || 'Nuevo ingreso', button: diseno?.supermercadoSlide2Button || 'Descubrir', button2: diseno?.supermercadoSlide2Button2 || 'Ver todo', onlyImage: Boolean(diseno?.supermercadoSlide2OnlyImage), actionKey: 'supermercadoSlide2Action' },
     { image: diseno?.supermercadoSlide3Image || '', eyebrow: diseno?.supermercadoSlide3Eyebrow || 'Entrega en 30 minutos', title: diseno?.supermercadoSlide3Title || 'Tu despensa llena,', title2: diseno?.supermercadoSlide3Title2 || 'sin salir de casa', subtitle: diseno?.supermercadoSlide3Subtitle || 'Haz tu pedido y recíbelo el mismo día. Rápido y seguro.', badge: diseno?.supermercadoSlide3Badge || 'Envío gratis', button: diseno?.supermercadoSlide3Button || 'Pedir ahora', button2: diseno?.supermercadoSlide3Button2 || 'Ver ofertas', onlyImage: Boolean(diseno?.supermercadoSlide3OnlyImage), actionKey: 'supermercadoSlide3Action' },
-  ];
+  ]);
   return raw.map((s, i) => ({ ...s, image: s.image || HERO_FALLBACKS[i % HERO_FALLBACKS.length] }));
 }
 

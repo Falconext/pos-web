@@ -5,7 +5,7 @@ import axios from 'axios';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { buildCategoryTiles } from '@/templates/shared/categoryTiles';
-import { resolveHeroIntervalMs, usePreloadImages } from '@/templates/shared/heroSlider';
+import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '@/templates/shared/heroSlider';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { useFavoritosStore } from '@/zustand/favoritos';
@@ -123,11 +123,11 @@ type Slide = { image: string; onlyImage: boolean; eyebrow: string; title: string
 
 function slidesFrom(diseno: any): Slide[] {
   const d = diseno || {};
-  return [
+  return slidesVisibles(d, 'retail', [
     { image: d.retailHeroImage || RETAIL_IMG.hero[0], onlyImage: isOn(d.retailHeroOnlyImage), eyebrow: optional(d.retailHeroEyebrow, 'Descubre. Elige. Disfruta.'), title: editable(d.retailHeroTitle, 'Hecho para tu|forma de'), highlight: optional(d.retailHeroHighlight, 'comprar.'), subtitle: optional(d.retailHeroSubtitle, 'Productos de calidad, elegidos para ti. Compra fácil y seguro.'), button: editable(d.retailHeroButton, 'Comprar ahora'), action: 'retailHeroAction' },
     { image: d.retailSlide2Image || RETAIL_IMG.hero[1], onlyImage: isOn(d.retailSlide2OnlyImage), eyebrow: optional(d.retailSlide2Eyebrow, 'Para tu hogar'), title: editable(d.retailSlide2Title, 'Espacios con|más'), highlight: optional(d.retailSlide2Highlight, 'estilo.'), subtitle: optional(d.retailSlide2Subtitle, 'Todo para darle un toque nuevo a tu casa.'), button: editable(d.retailSlide2Button, 'Ver productos'), action: 'retailSlide2Action' },
     { image: d.retailSlide3Image || RETAIL_IMG.hero[2], onlyImage: isOn(d.retailSlide3OnlyImage), eyebrow: optional(d.retailSlide3Eyebrow, 'Para ti'), title: editable(d.retailSlide3Title, 'Encuentra tu|nuevo'), highlight: optional(d.retailSlide3Highlight, 'favorito.'), subtitle: optional(d.retailSlide3Subtitle, 'Explora todas nuestras categorías en un solo lugar.'), button: editable(d.retailSlide3Button, 'Explorar'), action: 'retailSlide3Action' },
-  ];
+  ]);
 }
 
 /** Slider del hero (foto de estilo de vida a la derecha, titular serif a la izquierda). Aislado: su timer solo re-renderiza este componente. */
@@ -147,7 +147,29 @@ function HeroSlider({ t, diseno, services, goAction }: { t: Theme; diseno: any; 
 
   return (
     <section className="relative" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} aria-roledescription="carrusel">
-      <div className="relative mx-auto min-h-[540px] max-w-[1440px] overflow-hidden lg:h-[620px]" style={{ background: t.bg }}>
+      {/* Con "solo imagen" el hero va de borde a borde y su alto lo da la propia
+          imagen. El banner que sube el cliente ya trae su texto y su composición
+          adentro: encerrarlo en 1440px lo dejaba como una caja flotando con
+          fondo crema a los costados, y forzarle 620px de alto le recortaba
+          parte del mensaje. Con la composición partida se sigue usando el
+          contenedor de siempre, porque ahí la mitad izquierda ES el fondo. */}
+      <div
+        className={
+          s.onlyImage
+            ? 'relative w-full overflow-hidden'
+            : 'relative mx-auto min-h-[540px] max-w-[1440px] overflow-hidden lg:h-[620px]'
+        }
+        style={{ background: t.bg }}
+      >
+        {/* En "solo imagen" el alto lo marca la propia imagen: se pone la activa
+            en el flujo, invisible, y las demás quedan superpuestas para el
+            crossfade. Con un alto fijo, un banner más alto o más ancho que el
+            del diseño quedaba recortado o con barras a los costados — y el
+            banner del cliente trae su texto adentro, así que recortarlo le come
+            parte del mensaje. */}
+        {s.onlyImage && (
+          <img src={s.image} alt="" aria-hidden className="block w-full opacity-0" />
+        )}
         {/* Fotos apiladas (crossfade sin hueco). Con textos, la foto se funde con el fondo por máscara. */}
         <div aria-hidden className={s.onlyImage ? 'absolute inset-0' : 'absolute inset-x-0 top-0 h-[300px] [mask-image:linear-gradient(180deg,#000_60%,transparent)] lg:inset-y-0 lg:left-auto lg:h-full lg:w-[66%] lg:[mask-image:linear-gradient(90deg,transparent,#000_34%)]'}>
           {slides.map((sl, i) => (
