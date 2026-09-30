@@ -51,7 +51,7 @@ interface CruceCompras {
   igvNoAprovechado: number;
   igvDenegado: number;
   totales: { sunat: { cantidad: number; igv: number; total: number }; sistema: { cantidad: number; igv: number; total: number } };
-  soloEnSunat: Array<{ comprobante: string; proveedor: string; proveedorDoc: string; fechaEmision: string; base: number; igv: number; total: number }>;
+  soloEnSunat: Array<{ comprobante: string; proveedor: string; proveedorDoc: string; fechaEmision: string; base: number; igv: number; total: number; tipoDoc?: string }>;
   soloEnSistema: Array<{ comprobante: string; proveedor: string; total: number }>;
   diferencias: Array<{ comprobante: string; sunat: { base: number; igv: number; total: number }; sistema: { base: number; igv: number; total: number } }>;
   denegadas: Array<{ comprobante: string; proveedor: string; motivo: string | null; igv: number }>;
@@ -61,6 +61,22 @@ interface CruceCompras {
   totalDenegadas: number;
 }
 
+
+
+/**
+ * El tipo de comprobante del RCE, en palabras.
+ *
+ * Una nota de crédito de compra DEVUELVE crédito fiscal, así que su IGV va en
+ * negativo. Sin la etiqueta, ese "-3.68" en medio de la lista parece un error
+ * del sistema y no lo es.
+ */
+const TIPO_RCE: Record<string, string> = {
+  '01': 'Factura',
+  '03': 'Boleta',
+  '07': 'Nota de crédito',
+  '08': 'Nota de débito',
+  '14': 'Servicio público',
+};
 
 /** "08/09/2026" -> "8 set": en una lista larga la fecha completa es ruido. */
 const fmtFechaCorta = (f: string | undefined) => {
@@ -842,13 +858,22 @@ export default function LibroCompras() {
                     <span>SUNAT tiene <b className="tabular-nums">{cruce.totales.sunat.cantidad}</b> comprobantes</span>
                     <span>Tú registraste <b className="tabular-nums">{cruce.totales.sistema.cantidad}</b></span>
                   </div>
+                  {/* El período tributario no es la fecha del comprobante: SUNAT arma
+                      la propuesta con lo que los proveedores declararon en el mes, y
+                      una factura emitida antes entra igual. Sin esta línea, ver fechas
+                      de otro mes parece un error de filtro y no lo es. */}
+                  <p className="mt-2 text-[11px] leading-snug text-amber-700/90">
+                    Es el período <b>tributario</b>, no la fecha del comprobante: si un proveedor
+                    declaró tarde, su factura de un mes anterior aparece igual — y podés tomar
+                    ese crédito acá. Las notas de crédito restan, por eso van en negativo.
+                  </p>
                 </div>
               )}
 
               {!!cruce.totalSoloEnSunat && (
                 <SeccionCruce
                   titulo="Te faltan registrar"
-                  descripcion="SUNAT las tiene a tu nombre y no están en el sistema"
+                  descripcion="SUNAT las tiene a tu nombre y no están en el sistema · puede haber comprobantes emitidos antes de este período"
                   cantidad={cruce.totalSoloEnSunat}
                   monto={cruce.igvNoAprovechado}
                   montoEtiqueta="IGV en juego"
@@ -856,9 +881,10 @@ export default function LibroCompras() {
                   abiertaPorDefecto
                 >
                   <DataTable
-                    headerColumns={['Comprobante', 'Fecha', 'Proveedor', 'RUC', 'IGV']}
+                    headerColumns={['Comprobante', 'Tipo', 'Fecha', 'Proveedor', 'RUC', 'IGV']}
                     bodyData={cruce.soloEnSunat.map((i) => ({
                       Comprobante: i.comprobante,
+                      Tipo: TIPO_RCE[String(i.tipoDoc ?? '')] ?? 'Factura',
                       Fecha: fmtFechaCorta(i.fechaEmision),
                       Proveedor: i.proveedor || '—',
                       RUC: i.proveedorDoc,
