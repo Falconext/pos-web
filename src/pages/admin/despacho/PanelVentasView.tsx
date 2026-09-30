@@ -49,11 +49,33 @@ const TIPO_CONFIG: Record<TipoVenta, { label: string; cls: string }> = {
     PEDIDO_TIENDA:     { label: 'Tienda',    cls: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300' },
 };
 
+
+/**
+ * Si el cliente ya compró antes, y cuántas veces.
+ *
+ * Se muestra el número de compra y no un sí/no: "3ra compra" le dice al
+ * vendedor mucho más que "recurrente" — sabe si tiene delante a alguien que
+ * vuelve seguido o a uno que compró dos veces en un año.
+ *
+ * El conteo es de TODA la historia del cliente con la empresa, no del rango que
+ * se está viendo: el panel muestra un día y ahí todos parecerían nuevos.
+ */
+const recurrencia = (compras: number | undefined) => {
+  const n = Number(compras ?? 0);
+  // `Number.isFinite` y no `n <= 0`: un NaN pasa de largo las comparaciones y
+  // terminaba pintando "NaN compras" en la fila.
+  if (!Number.isFinite(n) || n <= 0) return { texto: '—', clase: 'text-gray-400' };
+  if (n === 1) return { texto: 'Nuevo', clase: 'bg-blue-50 text-blue-700 border-blue-200' };
+  if (n <= 3) return { texto: `${n}ª compra`, clase: 'bg-amber-50 text-amber-700 border-amber-200' };
+  return { texto: `${n} compras`, clase: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+};
+
 // Columnas configurables de la tabla de ventas (el usuario elige cuáles ver).
 // Las columnas fijas (Fecha, Referencia, Tipo, Cliente, Total, Pago, Vendedor,
 // Acciones) siempre se muestran. `sede` solo aplica al admin principal.
 const COLUMNAS_CONFIG: { key: string; label: string; soloAdminPrincipal?: boolean }[] = [
     { key: 'sede', label: 'Sede', soloAdminPrincipal: true },
+    { key: 'recurrente', label: 'Cliente recurrente' },
     { key: 'saldo', label: 'Saldo' },
     { key: 'mpago', label: 'Medio de pago' },
     { key: 'productos', label: 'Productos' },
@@ -1029,6 +1051,7 @@ export default function PanelVentasView() {
                                 {col('sunat') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">SUNAT</th>}
                                 {col('despacho') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Despacho</th>}
                                 {col('turno') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Turno</th>}
+                                {col('recurrente') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Recurrente</th>}
                                 {col('celular') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Celular</th>}
                                 {col('agencia') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Agencia</th>}
                                 {col('paq') && <th className="px-3 py-3 text-center text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Paq.</th>}
@@ -1172,6 +1195,20 @@ export default function PanelVentasView() {
                                                     {item.estadoDespacho !== 'NO_APLICA' ? (item.turnoEnvio ?? '—') : '—'}
                                                 </td>
                                             )}
+                                            {col('recurrente') && (() => {
+                                                const r = recurrencia((item as any).clienteCompras);
+                                                return (
+                                                    <td className="px-3 py-2.5 whitespace-nowrap">
+                                                        {r.texto === '—' ? (
+                                                            <span className="text-xs text-gray-400">—</span>
+                                                        ) : (
+                                                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full border text-[11px] font-semibold ${r.clase}`}>
+                                                                {r.texto}
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                );
+                                            })()}
                                             {col('celular') && (
                                                 <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                                     {item.estadoDespacho !== 'NO_APLICA' ? (item.celularDest ?? '—') : '—'}
