@@ -212,13 +212,17 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                 <label className="flex items-center gap-2 rounded-lg border border-white/70 bg-white px-3 py-2 text-[11px] font-semibold text-gray-700 shadow-sm dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200">
                     <input
                         type="checkbox"
-                        name="disponibleParaVenta"
-                        checked={formValues?.disponibleParaVenta !== false}
-                        onChange={(e) => handleChange({ target: { name: 'disponibleParaVenta', value: e.target.checked } } as any)}
+                        name="vendibleEnSede"
+                        checked={formValues?.vendibleEnSede !== false}
+                        onChange={(e) => handleChange({ target: { name: 'vendibleEnSede', value: e.target.checked } } as any)}
                         className="h-3.5 w-3.5 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
                     />
                     Permite vender
                 </label>
+                {/* Ojo: el `name` tiene que ser `vendibleEnSede`, que es el campo
+                    que viaja al backend. Antes decía `disponibleParaVenta`, que
+                    no existe en ningún lado: la casilla se marcaba y no guardaba
+                    nada (0 de 42,064 filas lo tenían apagado). */}
             </div>
 
             <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-4">
@@ -305,7 +309,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                             <div>
                                 <div>
-                                    <label className="text-sm font-medium text-gray-700 mb-2 block">Tipo de Ajuste</label>
+                                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">Tipo de Ajuste</label>
                                     <div className="flex flex-wrap gap-2">
                                         {[
                                             { value: 'ninguno', label: 'Sin cambios', color: 'bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300' },
@@ -333,7 +337,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                         {presentaciones.length > 0 && (
                                             <PresentacionSelector value={factorAjuste} onChange={setFactorAjuste} />
                                         )}
-                                        <label className="text-sm font-medium text-gray-700 mb-1 block">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
                                             {factorAjuste > 1
                                                 ? (tipoAjusteStock === 'reemplazar' ? 'Nuevo stock total (en cajas):' :
                                                     tipoAjusteStock === 'sumar' ? 'Cajas a agregar:' : 'Cajas a quitar:')
@@ -346,7 +350,7 @@ export const ProductStockManager: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                             min="0"
                                             value={cantidadAjuste}
                                             onChange={(e) => setCantidadAjuste(Number(e.target.value))}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                            className="w-full px-3 py-2 rounded-lg border border-gray-300 bg-white text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500"
                                             placeholder={factorAjuste > 1 ? 'Ingrese la cantidad de cajas' : 'Ingrese la cantidad'}
                                         />
                                         {factorAjuste > 1 && (
