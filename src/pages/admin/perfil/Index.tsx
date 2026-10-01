@@ -26,6 +26,87 @@ import DespachoAutomatizacionCard from '@/components/DespachoAutomatizacionCard'
  */
 const MOSTRAR_PASARELAS_TIENDA = false;
 
+/**
+ * Las dos piezas de abajo viven FUERA de `PerfilIndex` a propósito.
+ *
+ * Definir un componente dentro de otro crea un tipo nuevo en cada render: React
+ * no lo reconoce como el mismo y desmonta y vuelve a montar todo el subárbol.
+ * Como esta página tiene 20 piezas de estado, cualquier tecla o interruptor
+ * hacía parpadear las siete tarjetas y sus modales —y los bloques que
+ * consultan su plan al montarse volvían a consultarlo cada vez—.
+ *
+ * Si alguna necesita datos de la página, va por props. Nunca de vuelta adentro.
+ */
+
+const SeccionConfig = ({ id, icono, titulo, resumen, abierta, onToggle, className = '', children }: {
+    id: string; icono: string; titulo: string; resumen: string;
+    abierta: boolean; onToggle: (id: string) => void; className?: string; children: React.ReactNode;
+}) => (
+    <>
+        {/* La tarjeta es solo el acceso: siempre mide lo mismo, así la rejilla
+            queda pareja y no se abren huecos a los costados. */}
+        <button
+            type="button"
+            data-testid={`seccion-${id}`}
+            onClick={() => onToggle(id)}
+            aria-haspopup="dialog"
+            aria-expanded={abierta}
+            className={`w-full self-start flex items-center gap-3 p-4 text-left bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 hover:border-violet-300 hover:shadow-md dark:hover:border-violet-700 transition-all ${className}`}
+        >
+            <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
+                <Icon icon={icono} width="20" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <h2 className="text-base font-bold text-gray-900 dark:text-white truncate">{titulo}</h2>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{resumen}</p>
+            </div>
+            <Icon icon="solar:alt-arrow-right-linear" width="20" className="shrink-0 text-gray-400" />
+        </button>
+
+        {/* El contenido queda montado aunque el modal esté cerrado: algunos
+            bloques (Shalom, Olva) consultan su plan al montarse y así pueden
+            avisar si hay algo que mostrar. */}
+            <div
+                className={abierta ? 'fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4' : 'hidden'}
+                role="dialog"
+                aria-modal="true"
+                aria-label={titulo}
+                onClick={() => onToggle(id)}
+            >
+                <div
+                    className="w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border dark:border-slate-800 dark:bg-[#111827]"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-white/90 px-5 py-4 backdrop-blur-md dark:border-slate-800 dark:bg-[#111827]/90">
+                        <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
+                            <Icon icon={icono} width="20" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">{titulo}</h2>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{resumen}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => onToggle(id)}
+                            aria-label="Cerrar"
+                            className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-white transition-colors"
+                        >
+                            <Icon icon="mdi:close" width={22} />
+                        </button>
+                    </div>
+                    <div className="p-5 space-y-3">{children}</div>
+                </div>
+            </div>
+    </>
+);
+
+const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
+    <div className="pb-3 border-b border-gray-50 dark:border-slate-800/50 last:border-0 last:pb-0">
+        <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">{label}</label>
+        {children}
+    </div>
+);
+
 export default function PerfilIndex() {
     const vm = usePerfilViewModel();
     const { auth } = useAuthStore();
@@ -146,75 +227,6 @@ export default function PerfilIndex() {
      * arbitrario. Ahora cada tema es su propia sección, cerrada por defecto, para
      * que la página entera se vea de un golpe y solo se abra lo que se va a tocar.
      */
-    const SeccionConfig = ({ id, icono, titulo, resumen, abierta, onToggle, className = '', children }: {
-        id: string; icono: string; titulo: string; resumen: string;
-        abierta: boolean; onToggle: (id: string) => void; className?: string; children: React.ReactNode;
-    }) => (
-        <>
-            {/* La tarjeta es solo el acceso: siempre mide lo mismo, así la rejilla
-                queda pareja y no se abren huecos a los costados. */}
-            <button
-                type="button"
-                data-testid={`seccion-${id}`}
-                onClick={() => onToggle(id)}
-                aria-haspopup="dialog"
-                aria-expanded={abierta}
-                className={`w-full self-start flex items-center gap-3 p-4 text-left bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-200/60 dark:border-slate-800 hover:border-violet-300 hover:shadow-md dark:hover:border-violet-700 transition-all ${className}`}
-            >
-                <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
-                    <Icon icon={icono} width="20" />
-                </div>
-                <div className="min-w-0 flex-1">
-                    <h2 className="text-base font-bold text-gray-900 dark:text-white truncate">{titulo}</h2>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{resumen}</p>
-                </div>
-                <Icon icon="solar:alt-arrow-right-linear" width="20" className="shrink-0 text-gray-400" />
-            </button>
-
-            {/* El contenido queda montado aunque el modal esté cerrado: algunos
-                bloques (Shalom, Olva) consultan su plan al montarse y así pueden
-                avisar si hay algo que mostrar. */}
-                <div
-                    className={abierta ? 'fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4' : 'hidden'}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label={titulo}
-                    onClick={() => onToggle(id)}
-                >
-                    <div
-                        className="w-full max-w-3xl max-h-[88vh] overflow-y-auto rounded-2xl bg-white shadow-2xl border dark:border-slate-800 dark:bg-[#111827]"
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-white/90 px-5 py-4 backdrop-blur-md dark:border-slate-800 dark:bg-[#111827]/90">
-                            <div className="p-2 bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 rounded-lg shrink-0">
-                                <Icon icon={icono} width="20" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">{titulo}</h2>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">{resumen}</p>
-                            </div>
-                            <button
-                                type="button"
-                                onClick={() => onToggle(id)}
-                                aria-label="Cerrar"
-                                className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-800 dark:hover:text-white transition-colors"
-                            >
-                                <Icon icon="mdi:close" width={22} />
-                            </button>
-                        </div>
-                        <div className="p-5 space-y-3">{children}</div>
-                    </div>
-                </div>
-        </>
-    );
-
-    const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-        <div className="pb-3 border-b border-gray-50 dark:border-slate-800/50 last:border-0 last:pb-0">
-            <label className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider block mb-1">{label}</label>
-            {children}
-        </div>
-    );
-
     return (
         <div className="min-h-screen px-2 pb-4 bg-gray-50 dark:bg-[#0A0D14]">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6 pt-4 px-2">
