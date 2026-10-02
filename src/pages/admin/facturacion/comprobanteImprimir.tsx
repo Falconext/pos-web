@@ -51,7 +51,8 @@ const ComprobantePrintPage = ({
     quotationPaymentType = 'CONTADO',
     quotationAdvance = 0,
     quotationCurrency = 'PEN',
-    retencionData = null
+    retencionData = null,
+    id: idRoot,
 }: any) => {
 
     // Moneda del documento: cotización (quotationCurrency) o comprobante (formValues.tipoMoneda).
@@ -310,7 +311,13 @@ console.log(formValues)
 
     return (
         <div
-            id="print-root"
+            // El id se puede sobrescribir: el modal "Continuar pago" muestra una
+            // vista previa a la vez que el POS mantiene su instancia oculta para
+            // imprimir, y dos nodos con el mismo id es HTML inválido.
+            id={idRoot || 'print-root'}
+            // Los estilos de comprobante enganchan por este atributo, no por el
+            // id, justamente para que valgan en las dos instancias.
+            data-print-root=""
             data-size={size}
             aria-hidden={isScreenHidden}
             className={isScreenHidden ? 'pointer-events-none opacity-0 fixed -left-[200vw] top-0 z-[-1]' : 'bg-[#fff]'}
