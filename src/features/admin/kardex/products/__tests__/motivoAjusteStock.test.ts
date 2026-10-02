@@ -120,3 +120,42 @@ describe('Traducir un código suelto', () => {
         expect(etiquetaDeMotivo(null)).toBe('');
     });
 });
+
+describe('Se pueden revisar las mermas juntas', () => {
+    /**
+     * DEMENVER pidió "un apartado de mermas". Antes había que filtrar por Salida
+     * y leer línea por línea: el buscador de movimientos solo mira el nombre del
+     * producto, no el concepto. Ahora hay un selector de motivo.
+     */
+    const MOV = path.join(__dirname, '..', '..', 'movements');
+    const vista = fs.readFileSync(path.join(MOV, 'MovementsView.tsx'), 'utf-8');
+    const modelo = fs.readFileSync(path.join(MOV, 'MovementsModel.ts'), 'utf-8');
+    const vm = fs.readFileSync(path.join(MOV, 'useMovementsViewModel.ts'), 'utf-8');
+
+    it('la pantalla ofrece filtrar por motivo', () => {
+        expect(vista).toContain('label="Motivo del ajuste"');
+        expect(vista).toContain('MOTIVOS_DE_AJUSTE');
+    });
+
+    it('las opciones salen de la misma lista que usa el inventario', () => {
+        // Si se escribieran a mano, al agregar un motivo nuevo el filtro
+        // quedaría incompleto sin que nadie lo note.
+        expect(vista).toContain("from '../products/motivoAjusteStock'");
+    });
+
+    it('el filtro viaja al backend', () => {
+        // El backend ya filtraba por `concepto`; solo faltaba exponerlo.
+        expect(modelo).toMatch(/concepto: string;/);
+        expect(vm).toMatch(/concepto: '',/);
+    });
+
+    it('se vuelve a consultar al cambiar el motivo', () => {
+        // Sin esto el selector se movería y la lista no cambiaría.
+        expect(vm).toContain('state.filters.concepto]');
+    });
+
+    it('"Limpiar" también lo borra', () => {
+        const limpiar = vm.slice(vm.indexOf('const cleared = {'), vm.indexOf('};', vm.indexOf('const cleared = {')));
+        expect(limpiar).toContain("concepto: ''");
+    });
+});
