@@ -36,6 +36,7 @@ import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCoti
 import ModalImportarComprobante from "./ModalImportarComprobante";
 import { useUsersStore } from "@/zustand/users";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
+import { monedaDeCotizacion } from '@/features/admin/cotizaciones/monedaCotizacion';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -456,6 +457,9 @@ const Comprobantes = () => {
                     cliente: cotizacion.cliente,
                     productos: cotizacion.detalles,
                     observaciones: cotizacion.observaciones,
+                    // Sin la moneda el POS arranca en soles y una cotización en
+                    // dólares se factura con los mismos números en soles.
+                    cotizMoneda: monedaDeCotizacion(cotizacion),
                 }
             }
         });
