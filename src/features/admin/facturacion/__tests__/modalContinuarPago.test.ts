@@ -46,9 +46,15 @@ describe('La vista previa es el comprobante real', () => {
         expect(POS).toMatch(/useState<FormatoImpresion>\('TICKET'\)/);
     });
 
-    it('ofrece los tres formatos, igual que "Configurar formato"', () => {
-        expect(POS).toContain("['TICKET', 'A4', 'A5']");
-        for (const f of ['A4', 'A5', 'TICKET']) {
+    it('ofrece ticket y A4, no A5', () => {
+        // A5 queda en "Configurar formato": tres botones estorban al cobrar.
+        expect(POS).toContain("const FORMATOS_PREVIEW: FormatoImpresion[] = ['TICKET', 'A4'];");
+        expect(POS).toContain('{FORMATOS_PREVIEW.map((f) => (');
+        expect(POS).not.toContain("['TICKET', 'A4', 'A5']");
+    });
+
+    it('cada formato ofrecido tiene su medida', () => {
+        for (const f of ['A4', 'TICKET']) {
             expect(POS).toMatch(new RegExp(`${f}: \\{ width: \\d+, scale:`));
         }
     });

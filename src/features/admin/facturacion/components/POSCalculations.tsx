@@ -78,6 +78,13 @@ const METODO_LOGOS: Record<string, string> = {
  * Ancho real de cada formato en px (96 dpi) y cuánto se achica para que entre
  * en el panel del modal. Mismos valores que el modal "Configurar formato".
  */
+/**
+ * Los formatos que ofrece el modal. A5 sigue disponible en "Configurar
+ * formato": acá no se usa, y tener tres botones para elegir entre ticket y A4
+ * solo estorba en el momento de cobrar.
+ */
+const FORMATOS_PREVIEW: FormatoImpresion[] = ['TICKET', 'A4'];
+
 const PREVIEW_DIMS: Record<FormatoImpresion, { width: number; scale: number }> = {
     A4: { width: 794, scale: 0.5 },
     A5: { width: 559, scale: 0.7 },
@@ -792,7 +799,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                                     {/* Los mismos formatos que en "Configurar formato", para que lo
                                         que se ve acá sea lo que sale impreso. */}
                                     <div className="inline-flex rounded-lg bg-gray-100 p-0.5 dark:bg-slate-800">
-                                        {(['TICKET', 'A4', 'A5'] as FormatoImpresion[]).map((f) => (
+                                        {FORMATOS_PREVIEW.map((f) => (
                                             <button
                                                 key={f}
                                                 type="button"
