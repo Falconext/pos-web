@@ -1,4 +1,5 @@
 import { ChangeEvent, useEffect, useState, useMemo, useRef } from "react";
+import { afectacionPorDefecto } from '@/utils/afectacionIgv';
 import { heredaCredito } from './conversionPago';
 import { guardarObservacionesRecordadas, leerObservacionesRecordadas } from '@/utils/observacionesVenta';
 import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
@@ -123,14 +124,16 @@ const cleanText = (value?: string) => String(value ?? '').trim();
 const esServicioTecnico = (item: any) =>
     String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
 
-const crearEstadoItemLibre = () => ({
+const crearEstadoItemLibre = (empresa?: { leyAmazonia?: boolean | null } | null) => ({
     descripcion: '',
     cantidad: '1',
     precioUnitario: '',
     tipo: 'SERVICIO' as 'SERVICIO' | 'PRODUCTO',
     // Afectación IGV (Catálogo 07): '10' gravado, '20' exonerado, '30' inafecto,
     // '40' exportación, y gratuitas (11-16 gravado, 21 exonerado, 31-37 inafecto).
-    afectacion: '10' as string,
+    // Bajo la Ley de Amazonía arranca exonerado: un delivery o un flete cargado
+    // acá salía con 18% aunque el resto del comprobante fuera exonerado.
+    afectacion: afectacionPorDefecto(empresa) as string,
     // Producto externo con número de serie (p. ej. accesorios/repuestos de cómputo
     // que no están en catálogo pero requieren registrar su serie para garantía).
     requiereSerie: false,
@@ -586,7 +589,9 @@ export const useFacturacionViewModel = () => {
     const [editQuotationId, setEditQuotationId] = useState<number | null>(null);
     const [editNotaVentaId, setEditNotaVentaId] = useState<number | null>(null);
     const [showFreeQuoteItemForm, setShowFreeQuoteItemForm] = useState(false);
-    const [freeQuoteItem, setFreeQuoteItem] = useState(crearEstadoItemLibre);
+    const [freeQuoteItem, setFreeQuoteItem] = useState(() =>
+        crearEstadoItemLibre(auth?.empresa as any),
+    );
     // Anticipos previos a regularizar/descontar en esta factura (referencia a
     // comprobantes de anticipo ya emitidos). Se envían en el payload como `anticipos[]`
     // y el backend genera el UBL de regularización (PrepaidPayment + descuento 04/05/06).
@@ -1875,7 +1880,7 @@ export const useFacturacionViewModel = () => {
             },
         } as any);
 
-        setFreeQuoteItem(crearEstadoItemLibre());
+        setFreeQuoteItem(crearEstadoItemLibre(auth?.empresa as any));
     };
 
     // Farmacia: confirmar datos de receta para un ítem del carrito

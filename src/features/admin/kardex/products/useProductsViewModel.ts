@@ -12,6 +12,7 @@ import { get, patch } from '@/utils/fetch';
 import { hasPlanFeature, type IUserPermissions } from '@/utils/permissions';
 import { useRubroFeatures } from '@/utils/rubro-features';
 import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
+import { afectacionPorDefecto, nombreAfectacionPorDefecto } from '@/utils/afectacionIgv';
 
 const COLUMNAS_CORPORATIVAS = ['Localización', '% Venta', '% Provisión'];
 const REQUIRED_VISIBLE_COLUMNS = ['Valor Inventario'];
@@ -95,8 +96,13 @@ export const useProductsViewModel = () => {
         const r = auth?.empresa?.rubro?.nombre?.toLowerCase() || '';
         return r.includes('farmacia') || r.includes('botica') || r.includes('medicament') || r.includes('drogueria') || r.includes('droguería');
     })();
+    // Un negocio bajo la Ley de Amazonia (Ley 27037) vende exonerado: que el
+    // formulario arranque en "Gravado" obliga a corregir cada producto a mano, y
+    // el olvido recien se ve en la factura, con el IGV ya cobrado al cliente.
     const createEmptyProductForm = (): IFormProduct => ({
         ...initialProductForm,
+        tipoAfectacionIGV: afectacionPorDefecto(auth?.empresa as any),
+        afectacionNombre: nombreAfectacionPorDefecto(auth?.empresa as any),
         preciosMayorista: [],
     });
     const createEmptyProductErrors = () => ({
