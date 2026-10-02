@@ -90,15 +90,20 @@ describe('Front y backend hablan el mismo idioma', () => {
      * el código crudo ("MERMA") en vez de la frase. Esta prueba lo impide.
      */
     it('cada motivo del POS existe en la tabla del backend', () => {
-        // __tests__ → products → kardex → admin → features → src → frontend →
-        // la raíz del proyecto, donde vive `backend/`.
-        const tabla = path.join(
-            __dirname, '..', '..', '..', '..', '..', '..', '..',
-            'backend', 'src', 'producto', 'motivo-ajuste-stock.ts',
-        );
-        if (!fs.existsSync(tabla)) {
-            throw new Error(`No encontré la tabla del backend en ${tabla}. ` +
-                'Si este repo no tiene el backend al lado, ajusta la ruta.');
+        // El backend vive al lado del POS, pero no se llama igual en todos los
+        // repos: `backend/` en falconext-mype, `vendify-api/` en vendify.
+        const raizProyecto = path.join(__dirname, '..', '..', '..', '..', '..', '..');
+        // Desde `__tests__`, seis niveles arriba es la carpeta del POS; el
+        // backend es su hermano.
+        const candidatos = ['backend', 'vendify-api'].map((n) => '..' + path.sep + n);
+        const tabla = candidatos
+            .map((c) => path.join(raizProyecto, c, 'src', 'producto', 'motivo-ajuste-stock.ts'))
+            .find((ruta) => fs.existsSync(ruta));
+        if (!tabla) {
+            throw new Error(
+                'No encontré la tabla de motivos del backend. Se buscó en: ' +
+                candidatos.join(', '),
+            );
         }
         const backend = fs.readFileSync(tabla, 'utf-8');
         for (const m of [...MOTIVOS_SALIDA, ...MOTIVOS_INGRESO]) {

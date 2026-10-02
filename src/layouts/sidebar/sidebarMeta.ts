@@ -93,6 +93,7 @@ export const LEGACY_SUBMODULE_ROUTES: Record<string, string> = {
   'kardex:movimientos': '/administrador/kardex',
   'kardex:reservas': '/administrador/reservas',
   'kardex:series-garantias': '/administrador/kardex/series-garantias',
+  'kardex:mermas': '/administrador/kardex/mermas',
   'comprobantes:lista': '/administrador/facturacion/comprobantes',
   'comprobantes:emitir': '/administrador/facturacion/nuevo',
   'comprobantes:informales': '/administrador/facturacion/comprobantes-informales',
@@ -158,6 +159,8 @@ export const MODULE_META: Record<string, ModuleMeta> = {
           { codigo: 'kardex:libro-control', nombre: 'Libro Control', ruta: '/administrador/kardex/libro-control' },
         );
       }
+      // Mermas: cuánto se perdió por producto roto, vencido o extraviado.
+      items.push({ codigo: 'kardex:mermas', nombre: 'Mermas', ruta: '/administrador/kardex/mermas' });
       // Listas de Precio: solo el ADMIN_EMPRESA las gestiona.
       if (auth?.rol === 'ADMIN_EMPRESA') {
         items.push({ codigo: 'kardex:listas-precio', nombre: 'Listas de Precio', ruta: '/administrador/listas-precio' });
