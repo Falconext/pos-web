@@ -911,8 +911,14 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
             {(vm.isModaRubro || vm.features?.usaVariantes) && <ProductVariantsManager vm={vm} />}
 
-            {productSections.fichaComputo && (
-                <div className="col-span-1 md:col-span-2 rounded-2xl border border-violet-100 bg-white p-3 dark:border-violet-900/40 dark:bg-slate-950/20">
+            {/* Tipo de ítem: va para TODOS los rubros, no solo cómputo/motos.
+                Antes colgaba de `productSections.fichaComputo` y un negocio de ropa
+                no tenía cómo registrar un delivery: creaba el producto, le quedaba
+                stock 0 y el POS no lo dejaba vender. Cambiar la unidad de medida a
+                "servicio" no sirve —ese código solo viaja al XML—; lo que manda es
+                `atributosTecnicos.tipoProducto`, que es lo que este selector escribe.
+                La ficha técnica sigue aparte, abajo, y sí sigue siendo de cómputo. */}
+            <div className="col-span-1 md:col-span-2 rounded-2xl border border-violet-100 bg-white p-3 dark:border-violet-900/40 dark:bg-slate-950/20">
                     <div className="mb-3 flex items-start gap-3">
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-950/40 dark:text-violet-300">
                             <Icon icon="solar:layers-bold-duotone" width={18} />
@@ -925,7 +931,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {[
                             { id: 'PRODUCTO', title: 'Producto físico', desc: 'Descuenta inventario y usa stock.' },
-                            { id: 'SERVICIO', title: 'Servicio técnico', desc: 'Instalación, formateo, soporte.' },
+                            { id: 'SERVICIO', title: 'Servicio', desc: 'Delivery, instalación, soporte. Sin stock.' },
                         ].map((option) => {
                             const active = option.id === 'SERVICIO' ? esServicio : !esServicio;
                             return (
@@ -949,8 +955,7 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             );
                         })}
                     </div>
-                </div>
-            )}
+            </div>
 
             {fichaTecnicaComputo}
 
