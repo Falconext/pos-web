@@ -389,6 +389,19 @@ export default function MovementsView() {
                                     </p>
                                 </div>
 
+                                {selectedMovimiento.observacion && (
+                                    <div>
+                                        {/* El detalle que escribió quien hizo el ajuste: a quién,
+                                            para qué, cuál lote. Antes este campo guardaba el stock
+                                            anterior y el nuevo —que ya están más abajo— y la razón
+                                            real no quedaba en ningún lado. */}
+                                        <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Detalle del motivo</label>
+                                        <p className="text-sm text-gray-800 dark:text-gray-200 bg-amber-50 dark:bg-amber-900/15 border border-amber-100 dark:border-amber-800/40 p-3 rounded-lg">
+                                            {selectedMovimiento.observacion}
+                                        </p>
+                                    </div>
+                                )}
+
                                 {selectedMovimiento.lote && (
                                     <div>
                                         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Lote</label>
