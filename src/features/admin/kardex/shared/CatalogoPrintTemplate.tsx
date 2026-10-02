@@ -128,7 +128,7 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                             <table className="w-full text-sm text-left">
                                 <thead className="bg-gray-50 text-gray-600 font-bold border-b-2 border-gray-200">
                                     <tr>
-                                        <th className="py-3 px-4 w-16">Img</th>
+                                        <th className="py-3 px-4 w-24">Img</th>
                                         <th className="py-3 px-4 w-32">Código</th>
                                         <th className="py-3 px-4">Producto / Modelo</th>
                                         <th className="py-3 px-4 w-32 text-center">Marca</th>
@@ -140,10 +140,10 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                                     {items.map(p => (
                                         <tr key={p.id} className="avoid-break hover:bg-gray-50">
                                             <td className="py-2 px-4">
-                                                <div className="w-10 h-10 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden">
+                                                <div className="w-20 h-20 bg-white rounded border border-gray-200 flex items-center justify-center overflow-hidden">
                                                     {p.imagenUrl ? (
                                                         <>
-                                                            <img src={p.imagenUrl} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
+                                                            <img src={p.imagenUrl} className="w-full h-full object-contain p-0.5" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling?.classList.remove('hidden'); }} />
                                                             <Icon icon="solar:gallery-minimalistic-broken" className="hidden text-gray-300 text-xl opacity-50" />
                                                         </>
                                                     ) : <Icon icon="solar:gallery-minimalistic-broken" className="text-gray-300 text-xl opacity-50" />}

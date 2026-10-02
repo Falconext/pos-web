@@ -62,3 +62,21 @@ describe('La tabla se sigue entendiendo en la página 2', () => {
         expect(PLANTILLA).toMatch(/\n\s*tr \{ page-break-inside: avoid/);
     });
 });
+
+describe('La imagen del catálogo Técnica se ve', () => {
+    it('mide 80px, no los 40px de antes', () => {
+        // A 40px el producto no se distinguía. Medido con puppeteer sobre 92
+        // productos con los nombres reales: el catálogo pasa de 8 a 10 páginas.
+        expect(PLANTILLA).toContain('w-20 h-20 bg-white rounded border border-gray-200');
+        expect(PLANTILLA).not.toContain('w-10 h-10 bg-white rounded border border-gray-200');
+    });
+
+    it('la columna acompaña el ancho nuevo', () => {
+        expect(PLANTILLA).toContain('<th className="py-3 px-4 w-24">Img</th>');
+    });
+
+    it('se muestra el producto entero, sin recortarlo', () => {
+        // `object-cover` recortaba los bordes de la foto; `contain` la encaja.
+        expect(PLANTILLA).toContain('object-contain p-0.5');
+    });
+});
