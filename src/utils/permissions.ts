@@ -186,7 +186,11 @@ export const getRedirectPath = (user: IUserPermissions | null, intendedPath: str
       comprobantes: '/administrador/facturacion/comprobantes',
       clientes: '/administrador/clientes',
       kardex: '/administrador/kardex',
-      reportes: '/administrador/contabilidad/arqueo',
+      // 'reportes' y 'contabilidad' son el MISMO módulo con dos nombres (ver
+      // MODULE_ALIASES). Mandaban a pantallas distintas, y como 'reportes' va
+      // antes en la lista de módulos, una empresa con solo Contabilidad caía en
+      // Arqueo de caja en vez del Reporte. Los dos llevan al mismo lugar.
+      reportes: '/administrador/contabilidad/reporte',
       contabilidad: '/administrador/contabilidad/reporte',
       configuracion: '/administrador/configuracion',
       usuarios: '/administrador/usuarios',
