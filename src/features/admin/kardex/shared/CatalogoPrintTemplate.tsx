@@ -36,7 +36,27 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
                         @page { margin: 15mm; size: A4; }
                         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: white !important; }
                         .page-break { page-break-before: always; }
-                        .avoid-break { page-break-inside: avoid; }
+
+                        /* Solo para piezas CHICAS: una fila de la tabla, una tarjeta
+                           de producto. Nunca para el bloque de una categoría entera:
+                           con 92 productos ese bloque mide varias páginas, el
+                           navegador no lo puede partir y lo empuja completo a la
+                           siguiente, dejando la primera hoja con el encabezado y el
+                           resto en blanco. Era justo lo que pasaba. */
+                        .avoid-break { page-break-inside: avoid; break-inside: avoid; }
+
+                        /* El bloque de una categoría SÍ se parte entre páginas. */
+                        .categoria-bloque { page-break-inside: auto; break-inside: auto; }
+
+                        /* Pero su título no se queda solo al pie de una hoja. */
+                        .categoria-titulo { page-break-after: avoid; break-after: avoid; }
+
+                        /* El encabezado de la tabla se repite en cada página, para
+                           que a partir de la segunda se siga sabiendo qué es cada
+                           columna. */
+                        thead { display: table-header-group; }
+                        tfoot { display: table-footer-group; }
+                        tr { page-break-inside: avoid; break-inside: avoid; }
                     }
                 `}
             </style>
@@ -68,14 +88,14 @@ export default function CatalogoPrintTemplate({ componentRef, productos, theme, 
             {/* Content based on theme */}
             <div className="space-y-10">
                 {Object.entries(groupedProducts).map(([categoria, items]) => (
-                    <div key={categoria} className="avoid-break mb-8">
+                    <div key={categoria} className="categoria-bloque mb-8">
                         {theme === 'premium-tech' ? (
-                            <div className="mb-6">
+                            <div className="categoria-titulo mb-6">
                                 <h2 className="text-[11px] font-extrabold tracking-[0.2em] text-[#4facfe] uppercase mb-2">{categoria}</h2>
                                 <div className="w-full h-px bg-gray-200"></div>
                             </div>
                         ) : (
-                            <h2 className="text-2xl font-bold border-b border-gray-200 pb-2 mb-6 text-gray-800 uppercase tracking-wider">{categoria}</h2>
+                            <h2 className="categoria-titulo text-2xl font-bold border-b border-gray-200 pb-2 mb-6 text-gray-800 uppercase tracking-wider">{categoria}</h2>
                         )}
 
                         {theme === 'moderna' && (
