@@ -140,7 +140,15 @@ export const useAuthStore = create<IAuthState>()(
       }
     };
 
-    initAuth();
+    // Restaurar la sesión al cargar el módulo es lo correcto en el navegador,
+    // pero en las pruebas dispara una llamada de red real contra `auth/me` en
+    // cada suite que importe este store, aunque no tenga nada que ver con auth.
+    // En test se arranca en el estado "sin sesión" y cada prueba monta lo suyo.
+    if (import.meta.env.MODE !== 'test') {
+      initAuth();
+    } else {
+      set({ auth: null, success: false, isLoading: false, bootstrapDone: true });
+    }
 
     if (typeof window !== 'undefined') {
       let lastRefreshAt = 0;

@@ -6,10 +6,11 @@ export default {
         '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
         '\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/__mocks__/fileMock.js',
         '^@/(.*)$': '<rootDir>/src/$1',
+        // Paquetes ESM que Jest no puede transformar desde node_modules.
+        '^@react-pdf/renderer$': '<rootDir>/__mocks__/reactPdfMock.js',
     },
     transform: {
-        '^.+\\.tsx?$': ['ts-jest', {
-            tsconfig: 'tsconfig.json', // Adjust if you use a different config for app
-        }],
+        // ts-jest envuelto para que entienda `import.meta.env` de Vite.
+        '^.+\\.tsx?$': '<rootDir>/jest/viteEnvTransformer.cjs',
     },
 };

@@ -4,8 +4,13 @@ import { useAuthStore } from '../../../../zustand/auth';
 import useAlertStore from '../../../../zustand/alert';
 
 // Mock dependencies
+// El hook también lee useLocation (para no redirigir si ya estás en la ruta
+// destino); sin mockearlo, el render del hook reventaba antes de cualquier
+// aserción.
+const mockNavigate = jest.fn();
 jest.mock('react-router-dom', () => ({
-    useNavigate: () => jest.fn(),
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({ pathname: '/login', search: '', hash: '', state: null, key: 'test' }),
 }));
 
 jest.mock('../../../../zustand/auth', () => ({

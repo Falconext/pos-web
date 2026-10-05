@@ -1,4 +1,5 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { useComprasViewModel } from '../useComprasViewModel';
 import { useComprasStore } from '@/zustand/compras';
 
@@ -84,8 +85,10 @@ describe('useComprasViewModel', () => {
         expect(table).toHaveLength(2);
         expect(table![0]['Comprobante']).toBe('F001-000001');
         expect(table![0]['Total']).toBe('S/ 1000.00');
-        expect(table![0]['Pago']).toBe('PAGO PARCIAL');
-        expect(table![1]['Pago']).toBe('PAGADO');
+        // La columna Pago dejó de ser texto: es un badge con ícono y color.
+        // Se mira lo que el usuario termina leyendo, no la forma interna.
+        expect(textoDeCelda(table![0]['Pago'])).toBe('Pago parcial');
+        expect(textoDeCelda(table![1]['Pago'])).toBe('Pagado');
     });
 
     it('should calculate stats correctly', () => {
@@ -216,3 +219,11 @@ describe('useComprasViewModel', () => {
         expect(result.current.totalPorPagar).toBe(0);
     });
 });
+
+/** Texto visible de una celda que puede ser string o un elemento React. */
+function textoDeCelda(celda: unknown): string {
+    if (celda == null) return '';
+    if (typeof celda === 'string' || typeof celda === 'number') return String(celda);
+    const { container } = render(celda as ReactElement);
+    return (container.textContent || '').trim();
+}

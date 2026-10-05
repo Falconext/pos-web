@@ -24,7 +24,13 @@ jest.mock("@/zustand/invoices", () => ({
 }));
 
 jest.mock("@/zustand/alert", () => ({
-    default: () => ({ success: false }),
+    // Sin __esModule el interop de CommonJS envuelve el objeto y el hook
+    // terminaba llamando a algo que no es función.
+    __esModule: true,
+    default: Object.assign(() => ({ success: false, loading: false, alert: jest.fn() }), {
+        getState: () => ({ alert: jest.fn(), loading: false }),
+        setState: jest.fn(),
+    }),
 }));
 
 jest.mock("@/zustand/auth", () => ({
