@@ -144,3 +144,68 @@ export const totalDeFilas = (filas: FilaVariante[]): number =>
 /** Cuántas combinaciones quedaron sin una sola unidad. */
 export const sinStock = (filas: FilaVariante[]): number =>
     filas.filter((fila) => fila.stock <= 0).length;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Resumen por talla, para el catálogo impreso
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Una talla y cuánto queda de ella. */
+export interface TallaDisponible {
+    talla: string;
+    stock: number;
+}
+
+const ES_TALLA = /talla|size|medida/i;
+
+/**
+ * El nombre del atributo que hace de talla, si lo hay.
+ *
+ * Se busca por nombre porque "Talla" no es un campo del sistema: el usuario
+ * bautiza sus atributos. En calzado suelen ser Color, Talla y Taco.
+ */
+export const nombreDeLaTalla = (producto: any): string | null =>
+    nombresDeAtributos(producto).find((nombre) => ES_TALLA.test(nombre)) ?? null;
+
+/**
+ * Qué tallas hay disponibles y cuántas de cada una.
+ *
+ * Pedido de COMERCIAL LINNA MODA: el catálogo en PDF mostraba "Stock: 5" para
+ * un modelo y la vendedora no sabía de qué tallas eran esos 5. Se listan solo
+ * las que tienen stock: en un catálogo lo que importa es qué se puede vender,
+ * y una lista con ceros ocupa el doble sin decir nada.
+ *
+ * Si el modelo no tiene un atributo que parezca talla, se cae a la etiqueta
+ * completa de la variante ("Negro / M"), que es mejor que no mostrar nada.
+ */
+export const tallasDisponibles = (
+    producto: any,
+    sedeId?: number,
+): TallaDisponible[] => {
+    const filas = filasDeVariantes(producto, sedeId).filter((f) => f.stock > 0);
+    if (filas.length === 0) return [];
+
+    const clave = nombreDeLaTalla(producto);
+    const acumulado = new Map<string, number>();
+    for (const fila of filas) {
+        const talla = clave ? (fila.atributos[clave] || '').trim() : '';
+        const etiqueta = talla || fila.etiqueta || '—';
+        acumulado.set(etiqueta, (acumulado.get(etiqueta) ?? 0) + fila.stock);
+    }
+
+    // Las tallas se ordenan como números cuando lo son (35, 36, 37…) y como
+    // texto cuando no (S, M, L): ordenar "40" antes que "9" sería absurdo.
+    return [...acumulado.entries()]
+        .map(([talla, stock]) => ({ talla, stock }))
+        .sort((a, b) => {
+            const na = Number(a.talla);
+            const nb = Number(b.talla);
+            if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+            return a.talla.localeCompare(b.talla, 'es');
+        });
+};
+
+/** "36:1 · 37:1 · 39:2" — compacto, para que entre en una ficha del catálogo. */
+export const textoDeTallas = (producto: any, sedeId?: number): string =>
+    tallasDisponibles(producto, sedeId)
+        .map(({ talla, stock }) => `${talla}:${stock}`)
+        .join(' · ');
