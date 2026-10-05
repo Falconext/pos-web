@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { fechaDeEnvio } from './fechaDeEnvio';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
@@ -13,6 +14,7 @@ import AutoScrollTable from '@/components/Autoscrolltable';
 import RotuloPrint from './RotuloPrint';
 import RotulosLotePrint, { type RotuloLoteItem } from './RotulosLotePrint';
 import { ROTULO_FORMATOS, guardarRotuloFormato, leerRotuloFormato, type RotuloFormato } from './rotuloFormato';
+import { elegiblesParaRotulo, estaMarcado, rotulosAImprimir, alternarRotulo, alternarTodos, resumenSeleccion, type SeleccionRotulos } from './seleccionRotulos';
 import { useInvoiceStore } from '@/zustand/invoices';
 import {
     usePanelVentasViewModel,
@@ -81,6 +83,10 @@ const COLUMNAS_CONFIG: { key: string; label: string; soloAdminPrincipal?: boolea
     { key: 'productos', label: 'Productos' },
     { key: 'sunat', label: 'SUNAT' },
     { key: 'despacho', label: 'Despacho' },
+    // Pedido de COMERCIAL LINNA MODA: despachan por día de entrega y no tenían
+    // dónde ver la relación de pedidos programados. El dato ya venía del panel
+    // (EnvioDespacho.fechaEstimada); solo faltaba mostrarlo.
+    { key: 'fechaEnvio', label: 'Fecha de envío' },
     { key: 'turno', label: 'Turno' },
     { key: 'celular', label: 'Celular' },
     { key: 'agencia', label: 'Agencia' },
@@ -384,16 +390,14 @@ export default function PanelVentasView() {
     const empresaIdRotulo = useAuthStore((st) => (st.auth as any)?.empresa?.id ?? (st.auth as any)?.empresaId);
     const [rotuloFormato, setRotuloFormatoState] = useState<RotuloFormato>(() => leerRotuloFormato(empresaIdRotulo));
     const setRotuloFormato = (f: RotuloFormato) => { setRotuloFormatoState(f); guardarRotuloFormato(empresaIdRotulo, f); };
-    const preparandoParaRotulo = useMemo<RotuloLoteItem[]>(
-        () => vm.filtrados
-            .filter((i) => i.comprobanteId && i.estadoDespacho === 'PREPARANDO')
-            .map((i) => ({
-                comprobanteId: i.comprobanteId as number,
-                referencia: i.referencia,
-                courier: i.courier || '',
-                celular: i.celularDest && i.celularDest !== '—' ? i.celularDest : (i.clienteTelefono || ''),
-            })),
-        [vm.filtrados],
+    const preparandoParaRotulo = useMemo(() => elegiblesParaRotulo(vm.filtrados), [vm.filtrados]);
+    // Selección de qué rótulos imprimir: `null` = todos (un clic, como siempre).
+    // Apenas destildan uno, manda la lista marcada.
+    const [seleccionRotulos, setSeleccionRotulos] = useState<SeleccionRotulos>(null);
+    const [showRotulosMenu, setShowRotulosMenu] = useState(false);
+    const rotulosResumen = useMemo(
+        () => resumenSeleccion(preparandoParaRotulo, seleccionRotulos),
+        [preparandoParaRotulo, seleccionRotulos],
     );
     const { cancelInvoice } = useInvoiceStore((s) => s);
 
@@ -678,6 +682,34 @@ export default function PanelVentasView() {
                             portal
                         />
                     </div>
+                    {/* Día de ENTREGA: "qué sale el jueves". Al usarlo deja de
+                        importar cuándo se tomó el pedido, así que se muestra
+                        aparte y con su propia forma de quitarlo. */}
+                    <div className="flex shrink-0 items-center gap-1 rounded-lg border border-dashed border-indigo-200 bg-indigo-50/40 px-2 py-1 dark:border-indigo-900/40 dark:bg-indigo-950/10">
+                        <span className="text-[11px] font-bold uppercase tracking-wide text-indigo-500 dark:text-indigo-300">Sale el</span>
+                        <div className="w-36">
+                            <Calendar
+                                name="fechaEnvio"
+                                value={vm.fechaEnvio ? moment(vm.fechaEnvio).format('DD/MM/YYYY') : ''}
+                                onChange={(d: string) => {
+                                    const iso = moment(d, 'DD/MM/YYYY', true);
+                                    vm.setFechaEnvio(iso.isValid() ? iso.format('YYYY-MM-DD') : '');
+                                }}
+                                className="admin-date-filter"
+                                portal
+                            />
+                        </div>
+                        {vm.fechaEnvio && (
+                            <button
+                                onClick={() => vm.setFechaEnvio('')}
+                                className="grid h-8 w-8 place-items-center rounded-lg text-gray-400 transition hover:bg-white hover:text-rose-500 dark:hover:bg-slate-800"
+                                title="Quitar el filtro por día de entrega"
+                                data-testid="quitar-fecha-envio"
+                            >
+                                <Icon icon="solar:close-circle-linear" className="text-lg" />
+                            </button>
+                        )}
+                    </div>
                     {vm.fechaFin && (
                         <button
                             onClick={() => vm.setFechaFin('')}
@@ -834,22 +866,111 @@ export default function PanelVentasView() {
                     >
                         {ROTULO_FORMATOS.map((f) => <option key={f.value} value={f.value} title={f.hint}>{f.label}</option>)}
                     </select>
-                    {/* Rótulos de todos los paquetes en preparación (un rótulo por página) */}
-                    <button
-                        type="button"
-                        onClick={() => setRotulosLote(preparandoParaRotulo)}
-                        disabled={preparandoParaRotulo.length === 0 || rotulosLote.length > 0}
-                        title={preparandoParaRotulo.length ? `Imprimir ${preparandoParaRotulo.length} rótulo(s) de los despachos en Preparando de la lista` : 'No hay despachos en Preparando en la lista'}
-                        className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                        <Icon icon="solar:printer-2-bold-duotone" className="text-base" />
-                        Rótulos
-                        {preparandoParaRotulo.length > 0 && (
-                            <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-black">
-                                {preparandoParaRotulo.length}
-                            </span>
+                    {/* Rótulos de los paquetes en preparación (un rótulo por página).
+                        El botón imprime; la flecha abre el selector para elegir
+                        solo algunas filas en vez de todo lo que está en Preparando. */}
+                    <div className="relative flex">
+                        <button
+                            type="button"
+                            onClick={() => setRotulosLote(rotulosAImprimir(preparandoParaRotulo, seleccionRotulos))}
+                            disabled={rotulosResumen.vacio || rotulosLote.length > 0}
+                            title={
+                                preparandoParaRotulo.length === 0
+                                    ? 'No hay despachos en Preparando en la lista'
+                                    : rotulosResumen.vacio
+                                        ? 'No marcaste ningún rótulo: abre la flecha y elige al menos uno'
+                                        : rotulosResumen.todos
+                                            ? `Imprimir los ${rotulosResumen.total} rótulo(s) en Preparando de la lista`
+                                            : `Imprimir ${rotulosResumen.marcados} de ${rotulosResumen.total} rótulo(s) marcados`
+                            }
+                            data-testid="rotulos-imprimir"
+                            className="flex items-center gap-1.5 pl-3 pr-2.5 py-2 rounded-l-xl border border-r-0 text-sm font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <Icon icon="solar:printer-2-bold-duotone" className="text-base" />
+                            Rótulos
+                            {preparandoParaRotulo.length > 0 && (
+                                <span
+                                    data-testid="rotulos-badge"
+                                    className={`min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full text-white text-[10px] font-black ${rotulosResumen.todos ? 'bg-amber-500' : 'bg-blue-600'}`}
+                                >
+                                    {rotulosResumen.marcados}
+                                </span>
+                            )}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setShowRotulosMenu((v) => !v)}
+                            disabled={preparandoParaRotulo.length === 0}
+                            title="Elegir qué rótulos imprimir"
+                            aria-label="Elegir qué rótulos imprimir"
+                            data-testid="rotulos-selector"
+                            className="flex items-center px-2 py-2 rounded-r-xl border text-sm font-bold transition-all bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            <Icon icon="solar:alt-arrow-down-bold" className="text-xs" />
+                        </button>
+                        {showRotulosMenu && preparandoParaRotulo.length > 0 && (
+                            <>
+                                <div className="fixed inset-0 z-20" onClick={() => setShowRotulosMenu(false)} />
+                                <div className="absolute right-0 top-full mt-2 z-30 w-80 rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-xl p-3">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-[11px] font-bold uppercase tracking-wide text-gray-400">
+                                            Rótulos a imprimir
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setSeleccionRotulos(alternarTodos(preparandoParaRotulo, seleccionRotulos))}
+                                            data-testid="rotulos-todos"
+                                            className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                                        >
+                                            {rotulosResumen.todos ? 'Ninguno' : 'Todos'}
+                                        </button>
+                                    </div>
+                                    <div className="max-h-72 overflow-y-auto -mx-1 px-1 space-y-0.5">
+                                        {preparandoParaRotulo.map((r) => {
+                                            const marcado = estaMarcado(seleccionRotulos, r.comprobanteId);
+                                            return (
+                                                <label
+                                                    key={r.comprobanteId}
+                                                    className="flex items-start gap-2.5 px-2 py-1.5 rounded-xl cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/60"
+                                                >
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={marcado}
+                                                        onChange={() => setSeleccionRotulos(alternarRotulo(preparandoParaRotulo, seleccionRotulos, r.comprobanteId))}
+                                                        data-testid={`rotulo-check-${r.comprobanteId}`}
+                                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500/30"
+                                                    />
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block text-xs font-bold text-gray-700 dark:text-gray-200 truncate">
+                                                            {r.referencia}
+                                                        </span>
+                                                        <span className="block text-[11px] text-gray-500 dark:text-gray-400 truncate">
+                                                            {r.cliente || 'Sin cliente'}
+                                                            {r.courier ? ` · ${r.courier}` : ''}
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setRotulosLote(rotulosAImprimir(preparandoParaRotulo, seleccionRotulos));
+                                            setShowRotulosMenu(false);
+                                        }}
+                                        disabled={rotulosResumen.vacio || rotulosLote.length > 0}
+                                        data-testid="rotulos-imprimir-seleccion"
+                                        className="mt-2.5 w-full px-3 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        {rotulosResumen.vacio
+                                            ? 'Marca al menos uno'
+                                            : `Imprimir ${rotulosResumen.marcados} rótulo${rotulosResumen.marcados === 1 ? '' : 's'}`}
+                                    </button>
+                                </div>
+                            </>
                         )}
-                    </button>
+                    </div>
                     {/* Filtros secundarios agrupados: la fila tenía 9 controles y los
                         selects se recortaban. Solo queda a la vista lo que cambia los
                         totales (sede) o el layout (columnas), más la búsqueda. */}
@@ -1050,6 +1171,7 @@ export default function PanelVentasView() {
                                 )}
                                 {col('sunat') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">SUNAT</th>}
                                 {col('despacho') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Despacho</th>}
+                                {col('fechaEnvio') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide whitespace-nowrap">Fecha de envío</th>}
                                 {col('turno') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Turno</th>}
                                 {col('recurrente') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Recurrente</th>}
                                 {col('celular') && <th className="px-3 py-3 text-left text-[11px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Celular</th>}
@@ -1188,6 +1310,11 @@ export default function PanelVentasView() {
                                             {col('despacho') && (
                                                 <td className="px-3 py-2.5">
                                                     <EstadoDespachoSelector item={item} onChange={vm.actualizarEstado} />
+                                                </td>
+                                            )}
+                                            {col('fechaEnvio') && (
+                                                <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                                                    {fechaDeEnvio(item)}
                                                 </td>
                                             )}
                                             {col('turno') && (
