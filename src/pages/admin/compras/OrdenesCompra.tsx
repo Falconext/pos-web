@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import ModalCurvaTallas from './ModalCurvaTallas';
+import { sePideEnCurva } from './curvaDeTallas';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
 import { get, post, put, patch } from '@/utils/fetch';
@@ -330,7 +332,8 @@ export default function OrdenesCompraPage() {
 }
 
 /* ─── Modal Crear/Editar ─────────────────────────────────────────────────── */
-function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | null; onClose: () => void; onSaved: () => void }) {
+/** Exportado para poder probar el formulario sin montar toda la página. */
+export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | null; onClose: () => void; onSaved: () => void }) {
     const { alert } = useAlertStore();
     const esEdicion = Boolean(orden?.id);
 
@@ -445,7 +448,18 @@ function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | nu
         })();
     }, [debouncedProd]);
 
+    // Modelo elegido del catálogo que se está pidiendo por curva de tallas.
+    const [modeloEnCurva, setModeloEnCurva] = useState<any | null>(null);
+
     const agregarProducto = (p: any) => {
+        // Un modelo con varias tallas se pide por curva: al proveedor se le
+        // encarga "2 de la 36, 3 de la 37", no "1 Verona rosa".
+        if (sePideEnCurva(p)) {
+            setModeloEnCurva(p);
+            setProdQuery('');
+            setProdOpts([]);
+            return;
+        }
         setDetalles((prev) => [...prev, {
             productoId: p.id,
             descripcion: p.descripcion,
@@ -455,6 +469,11 @@ function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | nu
         }]);
         setProdQuery('');
         setProdOpts([]);
+    };
+
+    const agregarCurva = (lineas: any[]) => {
+        setDetalles((prev) => [...prev, ...lineas]);
+        setModeloEnCurva(null);
     };
 
     const agregarLibre = () => {
@@ -549,7 +568,9 @@ function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | nu
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {/* items-end: si una etiqueta ocupara dos renglones, los tres campos
+                    seguirían alineados por abajo en vez de escalonarse. */}
+                <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-3">
                     <div>
                         <Calendar
                             text="Fecha de entrega"
@@ -562,8 +583,9 @@ function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | nu
                     <div>
                         <InputPro
                             name="condicionesPago"
-                            label="Condiciones de pago (Ej: Crédito 30 días)"
+                            label="Condiciones de pago"
                             isLabel
+                            placeholder="Ej: Crédito 30 días"
                             value={condicionesPago}
                             onChange={(e: any) => setCondicionesPago(e.target.value)}
                         />
@@ -613,7 +635,14 @@ function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | nu
                                         onClick={() => agregarProducto(p)}
                                         className="flex w-full items-center justify-between px-4 py-2.5 text-left text-sm hover:bg-blue-50 dark:hover:bg-slate-800"
                                     >
-                                        <span className="font-semibold text-gray-800 dark:text-gray-100">{p.descripcion}</span>
+                                        <span className="font-semibold text-gray-800 dark:text-gray-100">
+                                            {p.descripcion}
+                                            {sePideEnCurva(p) && (
+                                                <span className="ml-2 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-600 dark:bg-blue-900/30 dark:text-blue-300">
+                                                    pedir por talla
+                                                </span>
+                                            )}
+                                        </span>
                                         <span className="text-xs text-gray-400">Stock: {Number(p.stock ?? 0)}</span>
                                     </button>
                                 ))}
@@ -667,6 +696,12 @@ function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | nu
                         </table>
                     )}
                 </div>
+
+                <ModalCurvaTallas
+                    producto={modeloEnCurva}
+                    onCancelar={() => setModeloEnCurva(null)}
+                    onAgregar={agregarCurva}
+                />
 
                 <div>
                     <label className={lblCls}>Observaciones para el proveedor</label>
