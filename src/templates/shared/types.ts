@@ -32,7 +32,11 @@ export interface TemplateCatalogoPageProps {
   slug: string;
   diseno: any;
   cp: string;
-  navigate: (to: string) => void;
+  /**
+   * El `navigate` de react-router tal cual: el checkout le pasa `state` con el
+   * carrito, así que el tipo no puede quedarse en un solo argumento.
+   */
+  navigate: (to: string, options?: { state?: unknown; replace?: boolean }) => void;
 
   // Products
   productos: any[];

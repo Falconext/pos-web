@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import axios from 'axios';
 import TiendaFloatingButtons from '@/components/tienda/TiendaFloatingButtons';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
@@ -26,7 +26,7 @@ const formatPhone = (raw: any) => {
   return `+51 ${national.slice(0, 3)} ${national.slice(3, 6)} ${national.slice(6)}`;
 };
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 22 },
   show: { opacity: 1, y: 0, transition: { duration: 0.48, ease: [0.22, 1, 0.36, 1] } },
 };

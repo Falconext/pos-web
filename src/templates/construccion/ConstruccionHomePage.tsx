@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { BRAND } from '@/lib/branding';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import ProductCardActions from '@/components/tienda/ProductCardActions';
 import HammerCatalogCard from './HammerCatalogCard';
@@ -14,7 +14,7 @@ import FavoritesDrawer from '@/components/tienda/FavoritesDrawer';
 import TiendaCompareBar from '@/components/tienda/TiendaCompareBar';
 import { useFavoritosStore } from '@/zustand/favoritos';
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 26 },
   show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
 };

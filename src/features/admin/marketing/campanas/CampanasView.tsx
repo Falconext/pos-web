@@ -37,7 +37,7 @@ function CampanaCard({ c, onEditar, onToggle }: { c: Campana; onEditar: () => vo
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-gray-900 dark:text-white truncate flex items-center gap-1.5">
             {c.nombre}
-            {c.esRecurrente && <Icon icon="solar:refresh-circle-bold-duotone" className="text-indigo-500" title="Bucle recurrente activo" />}
+            {c.esRecurrente && <span title="Bucle recurrente activo" className="inline-flex"><Icon icon="solar:refresh-circle-bold-duotone" className="text-indigo-500" /></span>}
           </p>
           {c.producto && (
             <p className="text-xs text-indigo-500 dark:text-indigo-400 truncate mt-0.5">{c.producto.descripcion}</p>

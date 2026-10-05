@@ -91,9 +91,14 @@ export function colorValueHex(value: string, producto?: any) {
   return colorCatalog[normalizeText(value)] || '#FACC15';
 }
 
-function optionNameMap(producto: any) {
+function optionNameMap(producto: any): Map<string, string> {
   const options = Array.isArray(producto?.opcionesAtributos) ? producto.opcionesAtributos : [];
-  return new Map(options.map((option: any) => [normalizeText(option?.nombre), String(option?.nombre || '').trim()]));
+  return new Map<string, string>(
+    options.map((option: any): [string, string] => [
+      normalizeText(option?.nombre),
+      String(option?.nombre || '').trim(),
+    ]),
+  );
 }
 
 function normalizeAttrs(producto: any, variant: any, fallbackIndex: number) {

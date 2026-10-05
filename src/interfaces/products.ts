@@ -117,7 +117,11 @@ export type IFormProduct = {
   productoId: number
   descripcion: string,
   categoriaNombre: string
-  disponibleParaVenta: boolean
+  /**
+   * Heredado: el campo que de verdad viaja al backend es `vendibleEnSede`.
+   * Se deja opcional para no romper lo que todavía lo setea.
+   */
+  disponibleParaVenta?: boolean
   categoriaId: string | number | null,
   marcaNombre?: string
   marcaId?: number | null,

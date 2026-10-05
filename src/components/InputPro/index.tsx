@@ -20,6 +20,11 @@ interface IInput {
   id?: string;
   uppercase?: boolean;
   step?: string;
+  /** Rango del input numérico. Se pasaba desde las pantallas pero el
+   *  componente ni lo declaraba ni lo reenviaba: los campos quedaban sin
+   *  tope en el DOM (ej. el % de comisión podía escribirse en 500). */
+  min?: string | number;
+  max?: string | number;
   error?: string | null | undefined;
   onCopy?: (e: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   onSelect?: (e: React.SyntheticEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -41,6 +46,8 @@ const InputPro: FC<IInput> = ({
   item,
   autoFocus,
   step,
+  min,
+  max,
   isLabel,
   placeholder,
   onChange,
@@ -128,6 +135,8 @@ const InputPro: FC<IInput> = ({
         onKeyDown?.(e);
       },
       step,
+      min,
+      max,
       onCopy,
       onBlur: (e: any) => {
         handleBlur(e);

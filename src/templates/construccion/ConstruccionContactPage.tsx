@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { ConstruccionFooter } from './ConstruccionHomePage';
 import ConstruccionCartModal from './ConstruccionCartModal';
 
 const editable = (value: any, fallback: string) => String(value || '').trim() || fallback;
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 22 },
   show: { opacity: 1, y: 0, transition: { duration: 0.48, ease: [0.22, 1, 0.36, 1] } },
 };

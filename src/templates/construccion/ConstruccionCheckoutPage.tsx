@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { BancoLogo } from '@/components/shared/BancoLogo';
@@ -21,7 +21,7 @@ const PAYMENT_META: Record<MedioPago, { label: string; icon: string }> = {
 const money = (value: number) => `S/ ${Number(value || 0).toFixed(2)}`;
 const editable = (value: any, fallback: string) => String(value || '').trim() || fallback;
 
-const fadeUp = {
+const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
 };

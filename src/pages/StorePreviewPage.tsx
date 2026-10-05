@@ -169,6 +169,10 @@ import { resolveTemplate } from '@/components/tienda/resolveTemplate';
 
 // Mapa de cards igual al de la tienda real ([slug].tsx) para que el preview
 // de las plantillas genéricas respete el cardComponent de cada plantilla.
+/** Marca y categoría llegan como objeto o como texto según el origen. */
+const nombreDe = (valor: unknown): string =>
+  typeof valor === 'string' ? valor : String((valor as any)?.nombre ?? '');
+
 const PREVIEW_CARD_MAP: Record<string, ComponentType<any>> = {
   ProductCardPio,
   ProductCardEmox,
@@ -1050,7 +1054,7 @@ function TecnologiaProductoPreviewPage({
   actualizarCantidad: (id: number | string, cantidad: number) => void;
   onNav: (p: PreviewPage) => void;
   onProduct: (p: DemoProduct) => void;
-  onAddToCart: (producto: DemoProduct) => void;
+  onAddToCart: (producto: DemoProduct & { cantidad?: number }) => void;
 }) {
   const [cantidad, setCantidad] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
@@ -1143,7 +1147,7 @@ function TecnologiaProductoPreviewPage({
                 {isOutOfStock ? 'Agotado' : `En stock (${stock})`}
               </span>
               <span className="rounded-full bg-gray-900 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-white">
-                {producto.marca?.nombre || producto.marca || 'Tech'}
+                {nombreDe(producto.marca) || 'Tech'}
               </span>
             </div>
 
@@ -1208,11 +1212,11 @@ function TecnologiaProductoPreviewPage({
               <div className="mt-5 grid gap-3 text-sm">
                 <div className="flex justify-between border-b border-white/10 pb-3">
                   <span className="text-white/45">Categoría</span>
-                  <span className="font-bold">{producto.categoria?.nombre || producto.categoria || 'Tecnología'}</span>
+                  <span className="font-bold">{nombreDe(producto.categoria) || 'Tecnología'}</span>
                 </div>
                 <div className="flex justify-between border-b border-white/10 pb-3">
                   <span className="text-white/45">Marca</span>
-                  <span className="font-bold">{producto.marca?.nombre || producto.marca || 'Tech'}</span>
+                  <span className="font-bold">{nombreDe(producto.marca) || 'Tech'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-white/45">Disponibilidad</span>
@@ -1636,13 +1640,16 @@ export default function StorePreviewPage() {
     goToPage('home');
   };
 
-  const addToCart = (p: DemoProduct) => {
+  // La ficha de producto manda la cantidad elegida; antes se descartaba y
+  // siempre se agregaba 1, así que elegir 3 unidades agregaba una sola.
+  const addToCart = (p: DemoProduct & { cantidad?: number }) => {
+    const aAgregar = Math.max(1, Math.trunc(Number(p.cantidad) || 1));
     setCarrito(prev => {
       const existing = prev.find(item => item.id === p.id);
       if (existing) {
-        return prev.map(item => item.id === p.id ? { ...item, cantidad: item.cantidad + 1 } : item);
+        return prev.map(item => item.id === p.id ? { ...item, cantidad: Number(item.cantidad || 0) + aAgregar } : item);
       }
-      return [...prev, { ...p, cantidad: 1 }];
+      return [...prev, { ...p, cantidad: aAgregar }];
     });
     setIsCartOpen(true);
   };

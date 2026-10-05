@@ -3,7 +3,8 @@ import { textoDeTallas, tieneVariantes } from '../products/stockPorVariante';
 import { Icon } from '@iconify/react';
 
 interface Props {
-    componentRef: React.RefObject<HTMLDivElement>;
+    // React 19: useRef<T>(null) devuelve RefObject<T | null>.
+    componentRef: React.RefObject<HTMLDivElement | null>;
     productos: any[];
     theme: 'moderna' | 'tecnica' | 'minimal' | 'menu' | 'premium-tech';
     company: any;

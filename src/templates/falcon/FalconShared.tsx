@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
-import { AnimatePresence, motion, type Variants } from 'framer-motion';
+import { AnimatePresence, motion, type TargetAndTransition, type Variants } from 'framer-motion';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 
@@ -85,7 +85,7 @@ export const falconStagger: Variants = {
 };
 
 export const falconTap = { scale: 0.985 };
-export const falconHoverLift = { y: -5, transition: { duration: 0.22, ease: 'easeOut' } };
+export const falconHoverLift: TargetAndTransition = { y: -5, transition: { duration: 0.22, ease: 'easeOut' } };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Blog posts — shared source used by home + blog page
