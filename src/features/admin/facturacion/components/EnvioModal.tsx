@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import { precargaDesdeCliente } from '../precargaEnvio';
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/Date";
 import Select from "@/components/Select";
@@ -80,15 +81,16 @@ export function EnvioModal({ vm, onClose }: { vm: any; onClose: () => void }) {
     const [errors, setErrors] = useState<EnvioValidationErrors>({});
     const { alert } = useAlertStore();
 
-    // Precarga el celular del destinatario con el del cliente ya seleccionado
-    // en la venta (si tiene uno registrado y el campo todavía está vacío) —
-    // en la práctica casi siempre es la misma persona que recibe el envío.
+    // Trae del cliente de la venta lo que el envío ya sabe: celular, dirección,
+    // distrito y nombre de quien recibe. Solo campos vacíos, y nunca desde un
+    // cliente genérico (ver `precargaEnvio.ts`).
+    //
+    // Corre una sola vez al abrir: si el usuario cambia de cliente a mitad de
+    // la carga, no se le repisa lo que ya escribió.
     useEffect(() => {
-        if (envioData.celularDest) return;
-        const celularCliente = onlyDigits(vm.selectedClient?.telefono);
-        if (celularCliente.length === 9 && celularCliente.startsWith('9')) {
-            setEnvioData((prev: any) => ({ ...prev, celularDest: celularCliente }));
-        }
+        const precarga = precargaDesdeCliente(vm.selectedClient, envioData);
+        if (Object.keys(precarga).length === 0) return;
+        setEnvioData((prev: any) => ({ ...prev, ...precarga }));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
