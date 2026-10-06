@@ -4,6 +4,7 @@ import useAlertStore from '@/zustand/alert';
 import { useDebounce } from '@/hooks/useDebounce';
 import { post, patch } from '@/utils/fetch';
 import apiClient from '@/utils/apiClient';
+import { esEmpresaNueva, ordenarGrupo } from './ordenGrupoEmpresas';
 
 const DAY_MS = 86400000;
 
@@ -385,18 +386,18 @@ export const useEmpresaIndexViewModel = (): any => {
 
     const toggleSalud = () => setSaludFiltro((prev) => (prev === 'EN_RIESGO' ? '' : 'EN_RIESGO'));
 
-    const ordenarPorVencimiento = (a: any, b: any) => {
-        const da = a.diasRestantes === null ? Number.POSITIVE_INFINITY : a.diasRestantes;
-        const db = b.diasRestantes === null ? Number.POSITIVE_INFINITY : b.diasRestantes;
-        return da - db;
-    };
 
-    const filasVisibles = empresasTable.filter((e: any) => pasaVencimiento(e) && pasaSalud(e));
+    const filasVisibles = empresasTable
+        .filter((e: any) => pasaVencimiento(e) && pasaSalud(e))
+        .map((e: any) => ({ ...e, esNueva: esEmpresaNueva(e) }));
 
     // Agrupa por tipo de cliente y ordena cada grupo por proximidad de vencimiento (lo que vence primero, arriba)
     const grupos: Record<GrupoCliente, any[]> = { DEMO: [], MENSUAL: [], ANUAL: [] };
     filasVisibles.forEach((e: any) => { grupos[e.grupo as GrupoCliente].push(e); });
-    (Object.keys(grupos) as GrupoCliente[]).forEach((k) => grupos[k].sort(ordenarPorVencimiento));
+    // Nuevas arriba y después el resto por vencimiento: una empresa recién
+    // creada tiene el vencimiento más lejano y quedaba al final de su grupo,
+    // justo donde no la ve el que la acaba de dar de alta.
+    (Object.keys(grupos) as GrupoCliente[]).forEach((k) => { grupos[k] = ordenarGrupo(grupos[k]); });
 
     const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') =>
         setVencimientoFiltro((prev) => (prev === valor ? '' : valor));

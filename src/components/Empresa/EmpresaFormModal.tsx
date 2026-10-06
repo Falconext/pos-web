@@ -18,7 +18,8 @@ interface EmpresaFormModalProps {
   mode: EmpresaFormMode;
   empresaId?: number;
   onClose: () => void;
-  onSaved?: () => void;
+  /** Recibe el id de la empresa creada, para que el listado pueda ubicarla. */
+  onSaved?: (empresaId?: number) => void;
 }
 
 interface CreateFormData {
@@ -543,15 +544,17 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     if (!validate()) return;
     setIsSubmitting(true);
     try {
+      let creadaId: number | undefined;
       if (isEdit) {
         await actualizarEmpresa(editData as any);
         await guardarSeriesEmpresa(editData.id, seriesConfig);
         alert('Empresa actualizada correctamente', 'success');
       } else {
-        await crearEmpresa(createData as any);
+        const creada = await crearEmpresa(createData as any);
+        creadaId = creada?.id != null ? Number(creada.id) : undefined;
         alert('Empresa creada correctamente', 'success');
       }
-      onSaved?.();
+      onSaved?.(creadaId);
       onClose();
     } catch (_err) {
       // El store maneja errores

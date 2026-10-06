@@ -1,0 +1,746 @@
+[
+ {
+  "id": 88,
+  "Razon Social": "TIENDA MINERA S.A.C.",
+  "fechaActivacion": "2026-10-03T12:00:00Z",
+  "diasRestantes": 29,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 87,
+  "Razon Social": "SIMON VEGA MILENA LESLEY",
+  "fechaActivacion": "2026-10-03T12:00:00Z",
+  "diasRestantes": 29,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 86,
+  "Razon Social": "COMERCIAL LINNA MODA S.A.C.",
+  "fechaActivacion": "2026-10-01T12:00:00Z",
+  "diasRestantes": 26,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 85,
+  "Razon Social": "MANRIQUE POMA MARCO ANTONIO",
+  "fechaActivacion": "2026-09-28T12:00:00Z",
+  "diasRestantes": 23,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 84,
+  "Razon Social": "PANDABOX IMPORT E.I.R.L.",
+  "fechaActivacion": "2026-09-28T12:00:00Z",
+  "diasRestantes": 23,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 83,
+  "Razon Social": "CONECTA TELECOM DEMO S.A.C.",
+  "fechaActivacion": "2026-09-23T12:00:00Z",
+  "diasRestantes": 353,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 82,
+  "Razon Social": "COMERCIAL FERRETERO EL DORADO SOCIEDAD ANONIMA CERRADA - COMERCIAL FERRETERO EL DORADO S.A.C.",
+  "fechaActivacion": "2026-09-23T12:00:00Z",
+  "diasRestantes": 353,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 81,
+  "Razon Social": "BOTICA SALUD TOTAL DEMO S.A.C.",
+  "fechaActivacion": "2026-09-23T12:00:00Z",
+  "diasRestantes": 353,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 80,
+  "Razon Social": "SEGURIDAD INDUSTRIAL Y EPP DEMO S.A.C.",
+  "fechaActivacion": "2026-09-23T12:00:00Z",
+  "diasRestantes": 353,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 79,
+  "Razon Social": "José Araujo Castro ",
+  "fechaActivacion": "2026-09-14T12:00:00Z",
+  "diasRestantes": 9,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 78,
+  "Razon Social": "DEMENVER IMPORT S.A.C.",
+  "fechaActivacion": "2026-09-08T12:00:00Z",
+  "diasRestantes": 3,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 77,
+  "Razon Social": "Navilook",
+  "fechaActivacion": "2026-09-08T12:00:00Z",
+  "diasRestantes": 3,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 76,
+  "Razon Social": "FRUTA PURA SOCIEDAD ANONIMA CERRADA - FRUTA PURA S.A.C.",
+  "fechaActivacion": "2026-09-03T12:00:00Z",
+  "diasRestantes": 361,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 75,
+  "Razon Social": "KREZKA DEMO META",
+  "fechaActivacion": "2026-09-03T12:00:00Z",
+  "diasRestantes": 363,
+  "plan": {
+   "nombre": "Full",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 74,
+  "Razon Social": "INPRA INDUSTRIAL E.I.R.L.",
+  "fechaActivacion": "2026-09-02T12:00:00Z",
+  "diasRestantes": 28,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 73,
+  "Razon Social": "CARNICERIA DE EMBUTIDOS Y CARNES S.A.C.",
+  "fechaActivacion": "2026-09-02T12:00:00Z",
+  "diasRestantes": 296,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 72,
+  "Razon Social": "CRUZ VELASQUEZ OLGA MERCEDES",
+  "fechaActivacion": "2026-09-01T12:00:00Z",
+  "diasRestantes": 27,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 71,
+  "Razon Social": "BORDA CASQUINA KAREN MARJORIE",
+  "fechaActivacion": "2026-09-01T12:00:00Z",
+  "diasRestantes": 331,
+  "plan": {
+   "nombre": "NEGOCIO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 70,
+  "Razon Social": "MINIMARKET'S DEL PERU E.I.R.L.",
+  "fechaActivacion": "2026-08-27T12:00:00Z",
+  "diasRestantes": 1360,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 69,
+  "Razon Social": "FOOD FAIR S.A.C.",
+  "fechaActivacion": "2026-08-25T12:00:00Z",
+  "diasRestantes": 333,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 58,
+  "Razon Social": "BERRIOS LOPEZ DIANA MILAGROS",
+  "fechaActivacion": "2026-08-25T12:00:00Z",
+  "diasRestantes": -11,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 56,
+  "Razon Social": "LA DESPENSA HM E.I.R.L.",
+  "fechaActivacion": "2026-08-24T12:00:00Z",
+  "diasRestantes": 20,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 55,
+  "Razon Social": "FACUSOLD E.I.R.L.",
+  "fechaActivacion": "2026-08-22T12:00:00Z",
+  "diasRestantes": -14,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 54,
+  "Razon Social": "MOTO + E.I.R.L.",
+  "fechaActivacion": "2026-08-22T12:00:00Z",
+  "diasRestantes": 351,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 53,
+  "Razon Social": "BICICLETA PRODUCCIONES S.A.C.",
+  "fechaActivacion": "2026-08-22T12:00:00Z",
+  "diasRestantes": 1546,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 52,
+  "Razon Social": "IMPERIO ROJAS S.A.C.",
+  "fechaActivacion": "2026-08-22T12:00:00Z",
+  "diasRestantes": 1913,
+  "plan": {
+   "nombre": "NEGOCIO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 51,
+  "Razon Social": "SANTOS CORREA YENS MENJIL",
+  "fechaActivacion": "2026-08-20T12:00:00Z",
+  "diasRestantes": 16,
+  "plan": {
+   "nombre": "EMPRENDEDOR",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 50,
+  "Razon Social": "M & T SOLUCIONES S.A.C.",
+  "fechaActivacion": "2026-08-21T12:00:00Z",
+  "diasRestantes": 16,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 49,
+  "Razon Social": "EMBUTIDOS EL CORDOBES S.A.C.",
+  "fechaActivacion": "2026-08-19T12:00:00Z",
+  "diasRestantes": 15,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 48,
+  "Razon Social": "M3-RAKI CORP S.A.C.",
+  "fechaActivacion": "2026-08-17T12:00:00Z",
+  "diasRestantes": 11,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 47,
+  "Razon Social": "CAR & AGUILAR SOLUCIONES SOCIEDAD POR ACCIONES CERRADA SIMPLIFICADA",
+  "fechaActivacion": "2026-08-13T12:00:00Z",
+  "diasRestantes": 11,
+  "plan": {
+   "nombre": "EMPRENDEDOR",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 46,
+  "Razon Social": "GPS MANAGEMENT DEL PERU S.A.C.",
+  "fechaActivacion": "2026-08-13T12:00:00Z",
+  "diasRestantes": 342,
+  "plan": {
+   "nombre": "NEGOCIO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 45,
+  "Razon Social": "BEAUTY PRODUCTS SOCIEDAD ANONIMA CERRADA - BEAUTY PRODUCTS S.A.C.",
+  "fechaActivacion": "2026-08-07T12:00:00Z",
+  "diasRestantes": 87,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 44,
+  "Razon Social": "LUBRICANTES NORTHCORE S.A.C.",
+  "fechaActivacion": "2026-08-04T12:00:00Z",
+  "diasRestantes": 30,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 43,
+  "Razon Social": "J.E. DISTRIBUIDORA MEDICA DEL SUR SAC",
+  "fechaActivacion": "2026-07-02T12:00:00Z",
+  "diasRestantes": 1,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 42,
+  "Razon Social": "AMELIS LABORATORIO MAGISTRAL E.I.R.L.",
+  "fechaActivacion": "2026-08-01T12:00:00Z",
+  "diasRestantes": 24,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 41,
+  "Razon Social": "CONSTRUCTORA & FERRETERIA MHC MATEO SOCIEDAD ANONIMA CERRADA",
+  "fechaActivacion": "2026-07-31T12:00:00Z",
+  "diasRestantes": 299,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 40,
+  "Razon Social": "PERFUMERIAS UNIDAS S.A.",
+  "fechaActivacion": "2026-07-30T12:00:00Z",
+  "diasRestantes": 328,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 39,
+  "Razon Social": "INVERSIONES HUERTA Q S.A.C.",
+  "fechaActivacion": "2026-07-29T12:00:00Z",
+  "diasRestantes": 147,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 38,
+  "Razon Social": "SANTOS TORIBIO RODRIGO ALONSO",
+  "fechaActivacion": "2026-07-28T12:00:00Z",
+  "diasRestantes": 296,
+  "plan": {
+   "nombre": "NEGOCIO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 37,
+  "Razon Social": "GOCOMPRAZ E.I.R.L.",
+  "fechaActivacion": "2026-07-24T12:00:00Z",
+  "diasRestantes": 292,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 36,
+  "Razon Social": "WAWABB EIRL",
+  "fechaActivacion": "2026-07-23T12:00:00Z",
+  "diasRestantes": 19,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 35,
+  "Razon Social": "SALVADOR PERU GROUP S.A.C.",
+  "fechaActivacion": "2026-07-23T12:00:00Z",
+  "diasRestantes": -42,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 33,
+  "Razon Social": "PACHACUTE MAMANI RENE",
+  "fechaActivacion": "2026-07-18T12:00:00Z",
+  "diasRestantes": 13,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 32,
+  "Razon Social": "INVERSIONES HLK E.I.R.L.",
+  "fechaActivacion": "2026-07-15T12:00:00Z",
+  "diasRestantes": 15,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 30,
+  "Razon Social": "REPRESENTACIONES FORKLIFT HNS S.A.C.",
+  "fechaActivacion": "2026-07-10T12:00:00Z",
+  "diasRestantes": 340,
+  "plan": {
+   "nombre": "EMPRENDEDOR ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 29,
+  "Razon Social": "TECNOLOGIA DE SEGURIDAD INTEGRAL PERU E.I.R.L.",
+  "fechaActivacion": "2026-07-06T12:00:00Z",
+  "diasRestantes": 274,
+  "plan": {
+   "nombre": "EMPRENDEDOR ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 28,
+  "Razon Social": "PROLACFER S.R.L.",
+  "fechaActivacion": "2026-07-01T12:00:00Z",
+  "diasRestantes": -35,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 25,
+  "Razon Social": "GRUPO MEDICA TECNOLOGICA SOCIEDAD ANONIMA CERRADA",
+  "fechaActivacion": "2026-07-01T12:00:00Z",
+  "diasRestantes": -64,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 23,
+  "Razon Social": "BIOAMERICAN S.A.C",
+  "fechaActivacion": "2026-06-25T12:00:00Z",
+  "diasRestantes": -62,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 22,
+  "Razon Social": "KREZKA PERU S.A.C.",
+  "fechaActivacion": "2026-06-24T12:00:00Z",
+  "diasRestantes": 292,
+  "plan": {
+   "nombre": "Full",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 21,
+  "Razon Social": "MODA & LINEA S.A.C.",
+  "fechaActivacion": "2026-06-22T12:00:00Z",
+  "diasRestantes": 168,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 20,
+  "Razon Social": "CORPORACION MAYE TEC E.I.R.L.",
+  "fechaActivacion": "2026-06-21T12:00:00Z",
+  "diasRestantes": 259,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 19,
+  "Razon Social": "AUTOPARTES S.A.",
+  "fechaActivacion": "2026-06-19T12:00:00Z",
+  "diasRestantes": 1383,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 18,
+  "Razon Social": "LAPTOPS PERU E.I.R.L.",
+  "fechaActivacion": "2026-06-19T12:00:00Z",
+  "diasRestantes": 1383,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 17,
+  "Razon Social": "OWENSOFT PERU E.I.R.L.",
+  "fechaActivacion": "2026-06-18T12:00:00Z",
+  "diasRestantes": 14,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 16,
+  "Razon Social": "ALVAREZ NEIRA MARIA YANET",
+  "fechaActivacion": "2026-06-11T12:00:00Z",
+  "diasRestantes": -86,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 15,
+  "Razon Social": "JAMBLE PERU E.I.R.L.",
+  "fechaActivacion": "2026-06-09T12:00:00Z",
+  "diasRestantes": -88,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 14,
+  "Razon Social": "IMPORTEMOS JUNTOS PERU S.A.C.",
+  "fechaActivacion": "2026-06-13T12:00:00Z",
+  "diasRestantes": 10,
+  "plan": {
+   "nombre": "CORPORATIVO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 13,
+  "Razon Social": "SEMINARIO ANTON YURY MORONI",
+  "fechaActivacion": "2026-05-23T12:00:00Z",
+  "diasRestantes": 230,
+  "plan": {
+   "nombre": "COORPORATIVO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ },
+ {
+  "id": 11,
+  "Razon Social": "TRANSPORTES GAMONAL S.A.C",
+  "fechaActivacion": "2026-05-11T12:00:00Z",
+  "diasRestantes": 87,
+  "plan": {
+   "nombre": "NEGOCIO",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": true
+ },
+ {
+  "id": 1,
+  "Razon Social": "MATERIALES ORTEGA SAC",
+  "fechaActivacion": "2025-05-23T12:00:00Z",
+  "diasRestantes": 87,
+  "plan": {
+   "nombre": "NEGOCIO ANUAL",
+   "tipoFacturacion": "MENSUAL",
+   "esPrueba": false
+  },
+  "usaDemo": false
+ }
+]

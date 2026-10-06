@@ -11,6 +11,7 @@ import Select from '@/components/Select';
 import ModalConfirm from '@/components/ModalConfirm';
 import TableSkeleton from '@/components/Skeletons/table';
 import TableActionMenu from '@/components/TableActionMenu';
+import { filasDePagina, paginaSegura, rangoMostrado, totalDePaginas } from '@/features/admin/empresa/ordenGrupoEmpresas';
 
 const GRUPO_META: Record<GrupoCliente, { label: string; badge: string; icon: string; ring: string; bg: string; iconBg: string; text: string; badgeBg: string }> = {
   MENSUAL: {
@@ -66,8 +67,25 @@ const EmpresasIndex = () => {
   const vm = useEmpresaIndexViewModel();
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [selectedMenuRow, setSelectedMenuRow] = useState<any>(null);
-  const [expanded, setExpanded] = useState<Record<GrupoCliente, boolean>>({ DEMO: false, MENSUAL: false, ANUAL: false });
-  const PREVIEW = 5;
+  // Cada grupo pagina por su cuenta: antes se mostraban 5 y el resto quedaba
+  // detrás de un "ver todos" que escupía la lista entera.
+  const [paginaPorGrupo, setPaginaPorGrupo] = useState<Record<GrupoCliente, number>>({ DEMO: 1, MENSUAL: 1, ANUAL: 1 });
+  // Empresa recién creada: se resalta para que el que la dio de alta la ubique.
+  const [recienCreada, setRecienCreada] = useState<number | null>(null);
+
+  const irAPagina = (g: GrupoCliente, pagina: number) =>
+    setPaginaPorGrupo((p) => ({ ...p, [g]: pagina }));
+
+  /** Al crear una empresa: se vuelve a la primera página de cada grupo (donde
+   *  quedan las nuevas) y se marca la fila para resaltarla unos segundos. */
+  const alGuardarEmpresa = (empresaId?: number) => {
+    vm.refreshEmpresas();
+    setPaginaPorGrupo({ DEMO: 1, MENSUAL: 1, ANUAL: 1 });
+    if (empresaId) {
+      setRecienCreada(Number(empresaId));
+      window.setTimeout(() => setRecienCreada(null), 8000);
+    }
+  };
 
   const handleOpenMenu = (event: MouseEvent<HTMLElement>, row: any) => {
     setMenuAnchor(event.currentTarget);
@@ -156,7 +174,22 @@ const EmpresasIndex = () => {
       ...row,
       'Razon Social': (
         <div className="max-w-[170px] sm:max-w-[230px]" title={`${row['Razon Social']} · RUC ${row['RUC']}`}>
-          <span className="block truncate font-medium text-gray-800 dark:text-gray-100">{row['Razon Social']}</span>
+          <span className="flex items-center gap-1.5">
+            <span className="block truncate font-medium text-gray-800 dark:text-gray-100">{row['Razon Social']}</span>
+            {row.esNueva && (
+              <span
+                data-testid={`empresa-nueva-${row.id}`}
+                title="Dada de alta esta semana"
+                className={`shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-black uppercase tracking-wide ${
+                  Number(row.id) === recienCreada
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/30'
+                }`}
+              >
+                Nueva
+              </span>
+            )}
+          </span>
           {row.nombreComercial && row.nombreComercial !== row['Razon Social'] && (
             <span className="block text-[11px] text-gray-400 dark:text-gray-500 truncate font-normal">{row.nombreComercial}</span>
           )}
@@ -396,18 +429,55 @@ const EmpresasIndex = () => {
                 {rows.length > 0 ? (
                   <div className="bg-white dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800">
                     <div className="overflow-hidden overflow-x-auto">
-                      <DataTable actions={[]} bodyData={expanded[g] ? rows : rows.slice(0, PREVIEW)} headerColumns={headerColumnsFor(g)} />
+                      <DataTable actions={[]} bodyData={filasDePagina(rows, paginaPorGrupo[g])} headerColumns={headerColumnsFor(g)} />
                     </div>
-                    {rows.length > PREVIEW && (
-                      <button
-                        type="button"
-                        onClick={() => setExpanded((p) => ({ ...p, [g]: !p[g] }))}
-                        className={`w-full flex items-center justify-center gap-1.5 py-3 text-sm font-semibold border-t border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${meta.text}`}
-                      >
-                        {expanded[g] ? 'Ver menos' : `Ver todos los ${meta.label.toLowerCase()} (${rows.length})`}
-                        <Icon icon={expanded[g] ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} width={16} height={16} />
-                      </button>
-                    )}
+                    {totalDePaginas(rows.length) > 1 && (() => {
+                      const paginas = totalDePaginas(rows.length);
+                      const actual = paginaSegura(paginaPorGrupo[g], rows.length);
+                      const rango = rangoMostrado(actual, rows.length);
+                      return (
+                        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-gray-100 dark:border-slate-800">
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400" data-testid={`rango-${g}`}>
+                            Mostrando {rango.desde}–{rango.hasta} de {rango.total}
+                          </span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              aria-label={`Página anterior de ${meta.label}`}
+                              disabled={actual <= 1}
+                              onClick={() => irAPagina(g, actual - 1)}
+                              className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800"
+                            >
+                              <Icon icon="solar:alt-arrow-left-linear" width={16} height={16} />
+                            </button>
+                            {Array.from({ length: paginas }, (_, i) => i + 1).map((n) => (
+                              <button
+                                key={n}
+                                type="button"
+                                aria-label={`Página ${n} de ${meta.label}`}
+                                onClick={() => irAPagina(g, n)}
+                                className={`h-8 min-w-8 px-2 rounded-lg text-xs font-bold transition-colors ${
+                                  n === actual
+                                    ? `${meta.badgeBg} ring-1 ring-current`
+                                    : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-800'
+                                }`}
+                              >
+                                {n}
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              aria-label={`Página siguiente de ${meta.label}`}
+                              disabled={actual >= paginas}
+                              onClick={() => irAPagina(g, actual + 1)}
+                              className="h-8 w-8 flex items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-500 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-slate-800"
+                            >
+                              <Icon icon="solar:alt-arrow-right-linear" width={16} height={16} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ) : (
                   <div className="bg-white dark:bg-[#111827] border-t border-gray-100 dark:border-slate-800 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
@@ -434,7 +504,7 @@ const EmpresasIndex = () => {
         information={vm.selectedEmpresa?.accion === 'eliminar' ? `⚠️ Esta acción eliminará PERMANENTEMENTE la empresa "${vm.selectedEmpresa?.['Razon Social']}". Esta acción NO se puede deshacer.` : `¿Estás seguro que deseas ${vm.selectedEmpresa?.estado === 'ACTIVO' ? 'desactivar' : 'activar'} la empresa "${vm.selectedEmpresa?.['Razon Social']}"?`}
         confirmSubmit={vm.confirmAction}
       />
-      <EmpresaFormModal open={vm.openEmpresaModal} mode={vm.empresaModalMode} empresaId={vm.empresaEditingId} onClose={() => vm.setOpenEmpresaModal(false)} onSaved={vm.refreshEmpresas} />
+      <EmpresaFormModal open={vm.openEmpresaModal} mode={vm.empresaModalMode} empresaId={vm.empresaEditingId} onClose={() => vm.setOpenEmpresaModal(false)} onSaved={alGuardarEmpresa} />
       <EmpresaDrawer empresa={vm.drawerEmpresa} onClose={() => vm.setDrawerEmpresa(null)} />
       <SeguimientoModal empresa={vm.seguimientoEmpresa} onClose={vm.closeSeguimiento} onGestionActualizada={vm.onGestionActualizada} />
       <TableActionMenu
