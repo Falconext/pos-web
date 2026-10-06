@@ -12,6 +12,7 @@ import ModalCatalog from '@/features/admin/kardex/shared/ModalCatalog';
 import ModalEtiquetasBarras from './components/ModalEtiquetasBarras';
 import ModalStockVariantes from './components/ModalStockVariantes';
 import { tieneVariantes } from './stockPorVariante';
+import { detalleEnCamino, enCaminoDe } from './stockEnCamino';
 import ModalAsignarSedes from './components/ModalAsignarSedes';
 import CategoriaInlineSelect from './components/CategoriaInlineSelect';
 import ModalConfirm from '@/components/ModalConfirm';
@@ -256,16 +257,31 @@ export default function ProductsView() {
                     // el desglose por talla ya viene en la fila, solo faltaba
                     // dónde verlo sin entrar a vender.
                     const conVariantes = !esServicio && tieneVariantes(itemAny);
+                    // Pedido al proveedor y aún no recibido: va aparte del número de
+                    // stock, nunca sumado, para que nadie lo lea como disponible.
+                    const viene = esServicio ? 0 : enCaminoDe(itemAny);
                     const badge = (
-                        <span
-                            style={{
-                                backgroundColor: esServicio ? '#7C3AED' : stock <= 0 ? '#F43F5F' : stock <= 10 ? '#F49D0D' : '#0BB980',
-                                color: '#ffffff',
-                            }}
-                            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
-                        >
-                            {esServicio ? 'Servicio' : stock}
-                            {conVariantes && <Icon icon="solar:alt-arrow-down-bold" width={11} />}
+                        <span className="inline-flex items-center gap-1">
+                            <span
+                                style={{
+                                    backgroundColor: esServicio ? '#7C3AED' : stock <= 0 ? '#F43F5F' : stock <= 10 ? '#F49D0D' : '#0BB980',
+                                    color: '#ffffff',
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
+                            >
+                                {esServicio ? 'Servicio' : stock}
+                                {conVariantes && <Icon icon="solar:alt-arrow-down-bold" width={11} />}
+                            </span>
+                            {viene > 0 && (
+                                <span
+                                    data-testid={`en-camino-${itemAny?.id}`}
+                                    title={detalleEnCamino(itemAny)}
+                                    className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-50 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-400/30"
+                                >
+                                    <Icon icon="solar:posting-square-bold-duotone" width={11} />
+                                    +{viene}
+                                </span>
+                            )}
                         </span>
                     );
                     if (!conVariantes) return badge;

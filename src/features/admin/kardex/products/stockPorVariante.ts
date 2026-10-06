@@ -26,6 +26,14 @@ export interface FilaVariante {
     etiqueta: string;
     stock: number;
     porSede: StockEnSede[];
+    /** Pedido al proveedor y aún no recibido (órdenes de compra abiertas). */
+    enCamino: number;
+    /** Entrega comprometida más próxima, o null si ninguna orden la tiene. */
+    enCaminoProximaEntrega: string | null;
+    /** Ya prometido en Notas de Pedido sin entregar. */
+    comprometido: number;
+    /** Cuánto más se puede prometer (puede ser negativo: se sobrevendió). */
+    saldoPrometible: number;
 }
 
 const texto = (valor: unknown): string => String(valor ?? '').trim();
@@ -133,6 +141,13 @@ export const filasDeVariantes = (
                     ? Number(deLaSede?.stock ?? 0)
                     : Number(variante?.stock ?? 0),
                 porSede,
+                enCamino: Number(variante?.enCamino ?? 0) || 0,
+                enCaminoProximaEntrega: variante?.enCaminoProximaEntrega ?? null,
+                comprometido: Number(variante?.comprometido ?? 0) || 0,
+                saldoPrometible: Number(
+                    variante?.saldoPrometible ??
+                    (Number(variante?.stock ?? 0) + Number(variante?.enCamino ?? 0) - Number(variante?.comprometido ?? 0)),
+                ) || 0,
             };
         });
 };
@@ -149,10 +164,12 @@ export const sinStock = (filas: FilaVariante[]): number =>
 // Resumen por talla, para el catálogo impreso
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** Una talla y cuánto queda de ella. */
+/** Una talla, cuánto queda y cuánto viene en camino. */
 export interface TallaDisponible {
     talla: string;
     stock: number;
+    /** Pedido al proveedor y aún no recibido. No se vende contra esto. */
+    enCamino: number;
 }
 
 const ES_TALLA = /talla|size|medida/i;
@@ -181,21 +198,29 @@ export const tallasDisponibles = (
     producto: any,
     sedeId?: number,
 ): TallaDisponible[] => {
-    const filas = filasDeVariantes(producto, sedeId).filter((f) => f.stock > 0);
+    // Una talla agotada pero con reposición pedida SÍ tiene que aparecer: es
+    // justo la que la vendedora necesita poder ofrecer (pedido de KREZKA).
+    const filas = filasDeVariantes(producto, sedeId).filter(
+        (f) => f.stock > 0 || f.enCamino > 0,
+    );
     if (filas.length === 0) return [];
 
     const clave = nombreDeLaTalla(producto);
     const acumulado = new Map<string, number>();
+    const enCaminoPorTalla = new Map<string, number>();
     for (const fila of filas) {
         const talla = clave ? (fila.atributos[clave] || '').trim() : '';
         const etiqueta = talla || fila.etiqueta || '—';
         acumulado.set(etiqueta, (acumulado.get(etiqueta) ?? 0) + fila.stock);
+        if (fila.enCamino > 0) {
+            enCaminoPorTalla.set(etiqueta, (enCaminoPorTalla.get(etiqueta) ?? 0) + fila.enCamino);
+        }
     }
 
     // Las tallas se ordenan como números cuando lo son (35, 36, 37…) y como
     // texto cuando no (S, M, L): ordenar "40" antes que "9" sería absurdo.
     return [...acumulado.entries()]
-        .map(([talla, stock]) => ({ talla, stock }))
+        .map(([talla, stock]) => ({ talla, stock, enCamino: enCaminoPorTalla.get(talla) ?? 0 }))
         .sort((a, b) => {
             const na = Number(a.talla);
             const nb = Number(b.talla);
@@ -204,8 +229,14 @@ export const tallasDisponibles = (
         });
 };
 
-/** "36:1 · 37:1 · 39:2" — compacto, para que entre en una ficha del catálogo. */
+/**
+ * "36:1 · 37:0+3 · 39:2" — compacto, para que entre en una ficha del catálogo.
+ * El "+3" es lo que viene en camino: se muestra aparte del stock real para que
+ * nadie lo confunda con mercadería disponible.
+ */
 export const textoDeTallas = (producto: any, sedeId?: number): string =>
     tallasDisponibles(producto, sedeId)
-        .map(({ talla, stock }) => `${talla}:${stock}`)
+        .map(({ talla, stock, enCamino }) =>
+            enCamino > 0 ? `${talla}:${stock}+${enCamino}` : `${talla}:${stock}`,
+        )
         .join(' · ');

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import { useSedesStore } from '@/zustand/sedes';
+import { detalleEnCamino } from '../stockEnCamino';
 import {
     filasDeVariantes,
     nombresDeAtributos,
@@ -98,6 +99,9 @@ export const ModalStockVariantes = ({ producto, onClose, sedeId }: Props) => {
                                 ))}
                                 <th className="pb-2 pr-3 font-bold">Código</th>
                                 <th className="pb-2 pr-3 text-right font-bold">Stock</th>
+                                <th className="pb-2 pr-3 text-right font-bold" title="Pedido al proveedor y aún no recibido">En camino</th>
+                                <th className="pb-2 pr-3 text-right font-bold" title="Ya prometido en Notas de Pedido sin entregar">Comprometido</th>
+                                <th className="pb-2 pr-3 text-right font-bold" title="Cuánto más se puede prometer contando lo que hay y lo que viene">Puedo prometer</th>
                                 {mostrarSedes &&
                                     sedes.map((sede: any) => (
                                         <th key={sede.id} className="pb-2 pr-3 text-right font-bold">
@@ -123,6 +127,46 @@ export const ModalStockVariantes = ({ producto, onClose, sedeId }: Props) => {
                                     <td className="py-2 pr-3 text-right">
                                         <span className={`inline-flex min-w-[2.2rem] justify-center rounded-full px-2 py-0.5 text-[11px] font-black ${tono(fila.stock)}`}>
                                             {fila.stock}
+                                        </span>
+                                    </td>
+                                    {/* En camino va en su propia columna, nunca sumado al stock:
+                                        es mercadería pedida, no mercadería que se puede vender. */}
+                                    <td className="py-2 pr-3 text-right">
+                                        {fila.enCamino > 0 ? (
+                                            <span
+                                                data-testid={`talla-en-camino-${fila.id}`}
+                                                title={detalleEnCamino(fila)}
+                                                className="inline-flex min-w-[2.2rem] justify-center rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-black text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-400/30"
+                                            >
+                                                +{fila.enCamino}
+                                            </span>
+                                        ) : (
+                                            <span className="text-[11px] text-gray-300 dark:text-slate-600">—</span>
+                                        )}
+                                    </td>
+                                    {/* Ya prometido a clientes en Notas de Pedido sin entregar. */}
+                                    <td className="py-2 pr-3 text-right">
+                                        {fila.comprometido > 0 ? (
+                                            <span className="inline-flex min-w-[2.2rem] justify-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-black text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-400/30">
+                                                {fila.comprometido}
+                                            </span>
+                                        ) : (
+                                            <span className="text-[11px] text-gray-300 dark:text-slate-600">—</span>
+                                        )}
+                                    </td>
+                                    {/* El número con el que la vendedora decide si toma el pedido. */}
+                                    <td className="py-2 pr-3 text-right">
+                                        <span
+                                            data-testid={`puedo-prometer-${fila.id}`}
+                                            className={`inline-flex min-w-[2.2rem] justify-center rounded-full px-2 py-0.5 text-[11px] font-black ${
+                                                fila.saldoPrometible < 0
+                                                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300'
+                                                    : fila.saldoPrometible === 0
+                                                        ? 'bg-gray-100 text-gray-500 dark:bg-slate-700/50 dark:text-gray-400'
+                                                        : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-400/30'
+                                            }`}
+                                        >
+                                            {fila.saldoPrometible}
                                         </span>
                                     </td>
                                     {mostrarSedes &&
