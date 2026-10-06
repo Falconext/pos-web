@@ -4,6 +4,7 @@ import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
+import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 
 export type TipoVenta =
     | 'BOLETA' | 'FACTURA' | 'NOTA_CREDITO' | 'NOTA_DEBITO'
@@ -112,7 +113,8 @@ export function usePanelVentasViewModel() {
     const [filtroRepartidorId, setFiltroRepartidorId] = useState<number | null | undefined>(undefined);
     const [filtroUsuarioId, setFiltroUsuarioId] = useState<number | null>(null);
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
-    const canFilterByUsuario = isAdmin;
+    // El supervisor también filtra por vendedor: lee las ventas de todos.
+    const canFilterByUsuario = puedeLeerVentasDeTodos(auth as any);
     const esPrincipalAdmin = isAdmin && Boolean(sedeActiva?.esPrincipal);
 
     // Alcance de la vista para el admin parado en la sede principal: por

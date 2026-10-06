@@ -38,6 +38,7 @@ import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCoti
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
 import apiClient from "@/utils/apiClient";
 import { EditarDespachoModal } from "@/pages/admin/despacho/EditarDespachoModal";
+import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 
 // Informales que sí se despachan (las cotizaciones no: se convierten primero).
 const TIPOS_ENVIABLES = new Set(['NV', 'TICKET', 'NP', 'OT', 'RH', 'CP']);
@@ -124,7 +125,8 @@ const ComprobantesInformales = () => {
 
     const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
     const effectiveSedeId = canFilterBySede ? selectedSedeId : (sedeActiva?.id ?? null);
-    const canFilterByUsuario = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    // El supervisor también filtra por vendedor: lee las ventas de todos.
+    const canFilterByUsuario = puedeLeerVentasDeTodos(auth as any);
     // Anular/eliminar: admin siempre puede; un vendedor solo si se le activó
     // el permiso fino "puedeAnularComprobantes" (backend igual lo revalida).
     const canAnularOEliminar = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || Boolean((auth as any)?.puedeAnularComprobantes);

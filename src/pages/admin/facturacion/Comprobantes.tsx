@@ -37,6 +37,7 @@ import ModalImportarComprobante from "./ModalImportarComprobante";
 import { useUsersStore } from "@/zustand/users";
 import { buildComprobantePrintPageStyle } from "@/utils/printStyles";
 import { monedaDeCotizacion } from '@/features/admin/cotizaciones/monedaCotizacion';
+import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -225,7 +226,8 @@ const Comprobantes = () => {
 
     const canFilterBySede = (auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'ADMIN_EMPRESA') && Boolean(sedeActiva?.esPrincipal);
     const effectiveSedeId = canFilterBySede ? selectedSedeId : (sedeActiva?.id ?? null);
-    const canFilterByUsuario = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
+    // El supervisor también filtra por vendedor: lee las ventas de todos.
+    const canFilterByUsuario = puedeLeerVentasDeTodos(auth as any);
     // Dar de baja / Eliminar comprobante: admin siempre puede; un vendedor
     // solo si se le activó el permiso fino "puedeAnularComprobantes"
     // (backend igual lo revalida).
