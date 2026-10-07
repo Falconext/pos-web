@@ -752,6 +752,16 @@ export default function PanelVentasView() {
                         Excel
                     </button>
                     <button
+                        onClick={vm.exportarPorProducto}
+                        disabled={vm.exportandoProducto}
+                        data-testid="btn-exportar-producto"
+                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-300 text-sm font-semibold hover:bg-indigo-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                        title="Excel por producto: cuánto vendiste de cada uno (cantidad, valor y valor con IGV) en el rango"
+                    >
+                        <Icon icon={vm.exportandoProducto ? 'svg-spinners:180-ring' : 'solar:box-bold-duotone'} className="text-lg" />
+                        Por producto
+                    </button>
+                    <button
                         type="button"
                         onClick={vm.exportarReparto}
                         disabled={vm.exportandoReparto}
