@@ -414,6 +414,10 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 destinoId: envioData.shalomAgenciaDestinoId || undefined,
                 destinoNombre: envioData.agenciaDestino || undefined,
                 clave: claveEscrita || undefined,
+                // Si ya hay una guía (ej. la de hace 2 días que venció en Shalom),
+                // el botón dice "Regenerar": se fuerza una nueva, igual que Olva.
+                // Sin esto el backend respondía "ya tiene la guía X registrada".
+                forzar: Boolean(envioData.nroOrden),
             });
             setEnvioData((prev: any) => ({
                 ...prev,
