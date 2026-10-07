@@ -315,7 +315,20 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     // quedaba vacío aunque la ayuda dijera "la clave que ya usaste hoy").
     useEffect(() => {
         if (!claveInfo?.clave || loading) return;
-        setEnvioData((prev: any) => (!prev.claveEnvio && !prev.nroOrden ? { ...prev, claveEnvio: claveInfo.clave } : prev));
+        setEnvioData((prev: any) => {
+            const actual = String(prev.claveEnvio ?? '').trim();
+            const esDeAyer = Boolean(actual) && (claveInfo.usadasAyer ?? []).includes(actual);
+            // Se pre-llena con una clave válida si está vacía (venta nueva) o si
+            // la que quedó guardada es la de ayer. Este segundo caso es el de
+            // regenerar una guía vencida (Shalom pide dejarla en 24h): antes el
+            // campo conservaba la clave de ayer y, al regenerar, Shalom la
+            // rechazaba una y otra vez con "no puede repetir la clave del día
+            // anterior" (reportado por COMERCIAL LINNA MODA).
+            if ((!actual && !prev.nroOrden) || esDeAyer) {
+                return { ...prev, claveEnvio: claveInfo.clave };
+            }
+            return prev;
+        });
     }, [claveInfo, loading]);
 
     // Validación local de la clave escrita (el backend la repite): 4 dígitos y
@@ -751,7 +764,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                                             />
                                         </Field>
                                     </div>
-                                    {claveInfo && !envioData.nroOrden && (
+                                    {claveInfo && (!envioData.nroOrden || claveEsDeAyer) && (
                                         <p className="-mt-1 text-[11px] leading-4 text-slate-500 dark:text-slate-400" data-testid="clave-ayuda">
                                             {claveEsDeAyer
                                                 ? <span className="font-semibold text-amber-700 dark:text-amber-400">La clave {claveEscrita} fue la de ayer: Shalom no permite repetirla hoy.{claveAlternativa ? ` Usa ${claveAlternativa}.` : ''}</span>
