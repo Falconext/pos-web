@@ -1,4 +1,4 @@
-import { usePlanesViewModel } from '@/features/admin/sistema/usePlanesViewModel';
+import { usePlanesViewModel, catalogoModulosDe } from '@/features/admin/sistema/usePlanesViewModel';
 import Button from "@/components/Button";
 import DataTable from "@/components/Datatable";
 import Modal from "@/components/Modal";
@@ -133,6 +133,8 @@ const Planes = () => {
                                 { id: 'hotel', label: 'Hotel' },
                                 { id: 'restaurante', label: 'Restaurante' },
                                 { id: 'logistica', label: 'Logística' },
+                                { id: 'ventas', label: 'Ventas (IA)' },
+                                { id: 'full', label: 'Fact. + Ventas' },
                             ] as const).map((item) => (
                                 <button
                                     key={item.id || 'all'}
@@ -171,6 +173,8 @@ const Planes = () => {
                                             { id: 'hotel', label: 'Hotel', icon: 'solar:bed-bold-duotone', color: '#F59E0B' },
                                             { id: 'restaurante', label: 'Restaurante', icon: 'solar:chef-hat-bold-duotone', color: '#F97316' },
                                             { id: 'logistica', label: 'Logística', icon: 'solar:routing-2-bold-duotone', color: '#6366F1' },
+                                            { id: 'ventas', label: 'Ventas (IA)', icon: 'solar:chat-round-dots-bold-duotone', color: '#8B5CF6' },
+                                            { id: 'full', label: 'Fact. + Ventas', icon: 'solar:crown-bold-duotone', color: '#10B981' },
                                         ] as const).map((product) => {
                                             const selected = (vm.form.producto || 'facturacion') === product.id;
                                             return (
@@ -278,9 +282,28 @@ const Planes = () => {
                                     }
                                 />
                             </div>
+                            <div className="space-y-2">
+                                <InputPro
+                                    isLabel
+                                    label="Máx. conversaciones IA / mes"
+                                    name="maxLeadsMes"
+                                    type="number"
+                                    value={vm.form.maxLeadsMes ?? 0}
+                                    disabled={Number(vm.form.maxLeadsMes ?? 0) === 0}
+                                    onChange={(e) => vm.setForm({ ...vm.form, maxLeadsMes: Number(e.target.value) })}
+                                />
+                                <LimitToggle
+                                    label="Ilimitado"
+                                    checked={Number(vm.form.maxLeadsMes ?? 0) === 0}
+                                    onChange={(checked) =>
+                                        vm.setForm({ ...vm.form, maxLeadsMes: checked ? 0 : 1000 })
+                                    }
+                                />
+                            </div>
                         </div>
                         <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             Usa <span className="font-semibold">0</span> para dejar el límite como <span className="font-semibold">Ilimitado</span>.
+                            Pasado el tope de conversaciones, el prospecto se sigue guardando pero la IA deja de responder.
                         </p>
                     </div>
                     <div className="border-t border-gray-100 dark:border-slate-700 my-4"></div>
@@ -362,7 +385,7 @@ const Planes = () => {
                         <p className="text-sm text-purple-700 dark:text-purple-400">Selecciona los <strong>módulos</strong> que incluye este plan. Para cada módulo seleccionado, haz clic en <strong>▼</strong> para elegir qué <strong>submódulos</strong> estarán disponibles. Si no configuras submódulos, la empresa tendrá acceso a todos los del módulo.</p>
                     </div>
                     <ModuloSelector
-                        producto={(vm.form.producto || 'facturacion') as 'facturacion' | 'hotel' | 'restaurante' | 'logistica'}
+                        producto={catalogoModulosDe(vm.form.producto)}
                         selectedModulos={vm.form.moduloIds || []}
                         onModulosChange={(modulos) => vm.setForm(prev => ({ ...prev, moduloIds: modulos }))}
                         selectedSubModulos={vm.form.subModuloIds || []}
