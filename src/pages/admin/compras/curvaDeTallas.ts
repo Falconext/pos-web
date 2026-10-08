@@ -122,10 +122,14 @@ export const lineasDeCurva = (
                     ? `${nombre} - ${celda.etiqueta}`
                     : nombre,
                 cantidad,
-                precioUnitario:
-                    costoElegido === undefined || costoElegido === ''
+                // 2 decimales: el costo guardado suele venir sin IGV con 4 decimales
+                // (ej. 46.6102) y en la orden al proveedor se ve más limpio redondeado.
+                precioUnitario: Number(
+                    (costoElegido === undefined || costoElegido === ''
                         ? celda.costo
-                        : Math.max(0, num(costoElegido)),
+                        : Math.max(0, num(costoElegido))
+                    ).toFixed(2),
+                ),
                 gravado,
             };
         })
