@@ -16,6 +16,7 @@ import RotulosLotePrint, { type RotuloLoteItem } from './RotulosLotePrint';
 import { ROTULO_FORMATOS, guardarRotuloFormato, leerRotuloFormato, type RotuloFormato } from './rotuloFormato';
 import { elegiblesParaRotulo, estaMarcado, rotulosAImprimir, alternarRotulo, alternarTodos, resumenSeleccion, type SeleccionRotulos } from './seleccionRotulos';
 import { useInvoiceStore } from '@/zustand/invoices';
+import useOutsideClick from '@/hooks/useOutsideClick';
 import {
     usePanelVentasViewModel,
     VentaPanelItem,
@@ -385,6 +386,8 @@ export default function PanelVentasView() {
     // Rótulos en lote: los despachos "Preparando" que se ven en la tabla
     // (respeta pestaña, búsqueda y filtros; cualquier courier), un rótulo por página.
     const [rotulosLote, setRotulosLote] = useState<RotuloLoteItem[]>([]);
+    // Menú único "Exportar" (agrupa PDF/Excel/Por producto/Reparto para no llenar la barra de botones)
+    const [showExportMenu, setShowExportMenu, exportMenuRef] = useOutsideClick(false);
     // Formato del rótulo (ticket 80 mm o etiqueta 80×50): es de la caja/impresora,
     // se recuerda en este navegador por empresa.
     const empresaIdRotulo = useAuthStore((st) => (st.auth as any)?.empresa?.id ?? (st.auth as any)?.empresaId);
@@ -733,45 +736,67 @@ export default function PanelVentasView() {
                     >
                         <Icon icon="solar:refresh-linear" className={`text-lg ${vm.loading ? 'animate-spin' : ''}`} />
                     </button>
-                    <button
-                        onClick={() => vm.exportarResumen('pdf', columnasVisiblesCSV)}
-                        disabled={vm.exportando !== null}
-                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-rose-200 dark:border-slate-700 text-rose-600 dark:text-rose-300 text-sm font-semibold hover:bg-rose-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
-                        title="Exportar el rango en PDF imprimible"
-                    >
-                        <Icon icon={vm.exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg" />
-                        PDF
-                    </button>
-                    <button
-                        onClick={() => vm.exportarResumen('excel', columnasVisiblesCSV)}
-                        disabled={vm.exportando !== null}
-                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-emerald-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-300 text-sm font-semibold hover:bg-emerald-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
-                        title="Exportar el rango en Excel"
-                    >
-                        <Icon icon={vm.exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg" />
-                        Excel
-                    </button>
-                    <button
-                        onClick={vm.exportarPorProducto}
-                        disabled={vm.exportandoProducto}
-                        data-testid="btn-exportar-producto"
-                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-indigo-600 dark:text-indigo-300 text-sm font-semibold hover:bg-indigo-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
-                        title="Excel por producto: cuánto vendiste de cada uno (cantidad, valor y valor con IGV) en el rango"
-                    >
-                        <Icon icon={vm.exportandoProducto ? 'svg-spinners:180-ring' : 'solar:box-bold-duotone'} className="text-lg" />
-                        Por producto
-                    </button>
-                    <button
-                        type="button"
-                        onClick={vm.exportarReparto}
-                        disabled={vm.exportandoReparto}
-                        className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-fuchsia-200 dark:border-slate-700 text-fuchsia-600 dark:text-fuchsia-300 text-sm font-semibold hover:bg-fuchsia-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
-                        title="Descargar el Excel del reparto propio (formato de carga masiva del motorizado) para el rango seleccionado"
-                        data-testid="btn-exportar-reparto"
-                    >
-                        <Icon icon={vm.exportandoReparto ? 'svg-spinners:180-ring' : 'solar:scooter-bold-duotone'} className="text-lg" />
-                        Reparto
-                    </button>
+                    <div className="relative" ref={exportMenuRef}>
+                        <button
+                            type="button"
+                            onClick={() => setShowExportMenu(!showExportMenu)}
+                            disabled={vm.exportando !== null || vm.exportandoProducto || vm.exportandoReparto}
+                            data-testid="btn-exportar-menu"
+                            className="inline-flex items-center gap-1.5 h-10 px-3 rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 transition disabled:opacity-50"
+                            title="Exportar y descargar: PDF, Excel, Por producto y Reparto"
+                        >
+                            <Icon icon={(vm.exportando !== null || vm.exportandoProducto || vm.exportandoReparto) ? 'svg-spinners:180-ring' : 'solar:download-minimalistic-bold-duotone'} className="text-lg" />
+                            Exportar
+                            <Icon icon={showExportMenu ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} width={14} />
+                        </button>
+                        {showExportMenu && (
+                            <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-[#1E2435] border border-gray-100 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden py-1">
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowExportMenu(false); vm.exportarResumen('pdf', columnasVisiblesCSV); }}
+                                    disabled={vm.exportando !== null}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                                    title="Exportar el rango en PDF imprimible"
+                                >
+                                    <Icon icon={vm.exportando === 'pdf' ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-lg text-rose-500" />
+                                    <span className="flex-1 text-left">PDF del rango</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowExportMenu(false); vm.exportarResumen('excel', columnasVisiblesCSV); }}
+                                    disabled={vm.exportando !== null}
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                                    title="Exportar el rango en Excel (detalle por venta)"
+                                >
+                                    <Icon icon={vm.exportando === 'excel' ? 'svg-spinners:180-ring' : 'solar:document-add-bold-duotone'} className="text-lg text-emerald-500" />
+                                    <span className="flex-1 text-left">Excel (detalle de ventas)</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowExportMenu(false); vm.exportarPorProducto(); }}
+                                    disabled={vm.exportandoProducto}
+                                    data-testid="btn-exportar-producto"
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                                    title="Excel por producto: cuánto vendiste de cada uno (cantidad, valor y valor con IGV) en el rango"
+                                >
+                                    <Icon icon={vm.exportandoProducto ? 'svg-spinners:180-ring' : 'solar:box-bold-duotone'} className="text-lg text-indigo-500" />
+                                    <span className="flex-1 text-left">Excel por producto (vendidos)</span>
+                                </button>
+                                <div className="mx-4 my-1 border-t border-gray-100 dark:border-slate-700" />
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowExportMenu(false); vm.exportarReparto(); }}
+                                    disabled={vm.exportandoReparto}
+                                    data-testid="btn-exportar-reparto"
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition disabled:opacity-50"
+                                    title="Descargar el Excel del reparto propio (formato de carga masiva del motorizado) para el rango seleccionado"
+                                >
+                                    <Icon icon={vm.exportandoReparto ? 'svg-spinners:180-ring' : 'solar:scooter-bold-duotone'} className="text-lg text-fuchsia-500" />
+                                    <span className="flex-1 text-left">Excel de reparto propio</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 

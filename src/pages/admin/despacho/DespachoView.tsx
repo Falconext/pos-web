@@ -8,6 +8,7 @@ import { Calendar } from '@/components/Date';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { EditarDespachoModal } from './EditarDespachoModal';
 import { ModalTrazabilidad } from './ModalTrazabilidad';
+import { ReporteEnviosModal } from './ReporteEnviosModal';
 import { useRepartidoresStore } from '@/zustand/repartidores';
 import { mapDetalleToInvoiceProduct } from '@/features/admin/facturacion/utils/comprobanteProductMapper';
 import ShalomTrackingModal from '@/components/ShalomTrackingModal';
@@ -692,6 +693,7 @@ export default function DespachoView() {
     // Reparto propio / motorizado: resumen del día (mismos filtros que el export).
     const [repartoResumen, setRepartoResumen] = useState<any>(null);
     const [exportandoReparto, setExportandoReparto] = useState(false);
+    const [reporteEnviosAbierto, setReporteEnviosAbierto] = useState(false);
 
     const cargar = useCallback(async () => {
         setLoading(true);
@@ -1072,6 +1074,16 @@ export default function DespachoView() {
                             <span className="hidden sm:inline">Exportar reparto</span>
                         </button>
                         <button
+                            type="button"
+                            onClick={() => setReporteEnviosAbierto(true)}
+                            className="relative top-2 h-10 px-3 flex items-center gap-1.5 rounded-xl bg-slate-900 text-white hover:bg-slate-800 transition-colors text-xs font-black dark:bg-slate-700 dark:hover:bg-slate-600"
+                            title="Estadísticas y Excel de envíos por rango de fechas y courier (Shalom, Olva o reparto propio)"
+                            data-testid="btn-reporte-envios"
+                        >
+                            <Icon icon="solar:chart-2-bold-duotone" className="text-base" />
+                            <span className="hidden sm:inline">Reporte de envíos</span>
+                        </button>
+                        <button
                             onClick={() => navigate('/administrador/perfil?tab=configuracion')}
                             className="relative top-2 h-10 w-10 flex items-center justify-center rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 transition-colors"
                             title="Configurar notificaciones y rastreo automático (Perfil → Configuración)"
@@ -1316,6 +1328,9 @@ export default function DespachoView() {
                     trackingNumber={olvaTracking.trackingNumber}
                     onClose={() => setOlvaTracking(null)}
                 />
+            )}
+            {reporteEnviosAbierto && (
+                <ReporteEnviosModal onClose={() => setReporteEnviosAbierto(false)} />
             )}
         </div>
     );
