@@ -348,7 +348,18 @@ export default function Checkout() {
                 }
             }
 
-            const items = carritoState.map((item: any) => ({ productoId: item.productoId || item.id, cantidad: item.cantidad, modificadores: item.modificadores }));
+            // `varianteId` y `presentacionCodigo` viajan para que el SERVIDOR
+            // resuelva el precio de lo que realmente se eligió. El precio nunca
+            // se manda desde acá: antes el pedido se cobraba siempre al precio
+            // del producto padre, así que elegir "rollo" terminaba facturado
+            // como si fuera la unidad suelta.
+            const items = carritoState.map((item: any) => ({
+                productoId: item.productoId || item.id,
+                cantidad: item.cantidad,
+                varianteId: item.varianteId,
+                presentacionCodigo: item.presentacionCodigo,
+                modificadores: item.modificadores,
+            }));
             const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/orders`, {
                 ...formData,
                 items,
