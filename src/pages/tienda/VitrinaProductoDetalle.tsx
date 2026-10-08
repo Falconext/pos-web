@@ -56,12 +56,33 @@ export function VitrinaProductoDetalleView({ tienda, slug, producto, related = [
 
   const selectedColor = selection[colorName] || colors[0]?.name || '';
   const activeVariant = useMemo(() => (hasVariants ? findFashionVariant(producto, selection) : null), [producto, selection, hasVariants]);
+
+  // ── Presentaciones (ej. "por metro" / "por rollo de 12 m") ──
+  // Vienen del backend con el precio ya resuelto. El comprador elige cómo se
+  // lo lleva; el servidor vuelve a calcular el precio con el código elegido.
+  const presentaciones: any[] = Array.isArray(producto?.presentaciones) ? producto.presentaciones : [];
+  const hasPresentaciones = presentaciones.length > 0;
+  const [presCodigo, setPresCodigo] = useState<string>('');
+  useEffect(() => { setPresCodigo(''); }, [producto?.id]);
+  const presSel = useMemo(
+    () => presentaciones.find((x) => String(x.codigo) === presCodigo) || null,
+    [presentaciones, presCodigo],
+  );
+  /** Unidades base que consume una unidad de lo elegido (el rollo de 12 m gasta 12). */
+  const unidadesPorCompra = Math.max(1, Number(presSel?.unidadesPorPaquete ?? 1));
   const allSelected = hasVariants ? options.every((o) => !!selection[o.nombre]) : true;
   const stock = activeVariant ? Number(activeVariant.stock || 0) : Number(producto?.stock ?? 0);
-  const isOut = hasVariants ? allSelected && stock <= 0 : stock <= 0;
-  const canAdd = hasVariants ? allSelected && !!activeVariant && stock > 0 : stock > 0;
-  const price = activeVariant ? Number(activeVariant.precioUnitario || pricing.precioFinal) : pricing.precioFinal;
-  const showStrike = !activeVariant && pricing.enOferta;
+  // Con presentación, el stock se mide en unidades base: para vender un rollo
+  // de 12 m tienen que quedar 12, no 1.
+  const alcanzaStock = stock >= unidadesPorCompra;
+  const isOut = hasVariants ? allSelected && !alcanzaStock : !alcanzaStock;
+  const canAdd = hasVariants ? allSelected && !!activeVariant && alcanzaStock : alcanzaStock;
+  const price = presSel
+    ? Number(presSel.precio || 0)
+    : activeVariant
+      ? Number(activeVariant.precioUnitario || pricing.precioFinal)
+      : pricing.precioFinal;
+  const showStrike = !activeVariant && !presSel && pricing.enOferta;
   const missing = hasVariants ? options.find((o) => !selection[o.nombre])?.nombre : '';
 
   const images: string[] = useMemo(() => {
@@ -90,15 +111,16 @@ export function VitrinaProductoDetalleView({ tienda, slug, producto, related = [
       ...producto,
       id: producto.id,
       productoId: producto.id,
-      cartId: variantKey ? `${producto.id}::${variantKey}` : String(producto.id),
+      cartId: [producto.id, variantKey, presSel?.codigo].filter(Boolean).join('::'),
       varianteId: activeVariant?.id,
+      presentacionCodigo: presSel?.codigo,
       valoresAtributos: activeVariant?.valoresAtributos || (hasVariants ? selection : undefined),
       precioUnitario: price,
       precioOferta: undefined,
-      imagenUrl: img,
+      imagenUrl: presSel?.imagenUrl || img,
       cantidad: Math.max(1, quantity),
-      descripcion: variantKey ? `${producto.descripcion} — ${variantKey}` : producto.descripcion,
-      codigo: activeVariant?.codigo || producto?.codigo,
+      descripcion: [producto.descripcion, variantKey, presSel?.nombre].filter(Boolean).join(' — '),
+      codigo: presSel?.codigo || activeVariant?.codigo || producto?.codigo,
     };
   };
   const pushItem = (item: any) => {
@@ -170,6 +192,37 @@ export function VitrinaProductoDetalleView({ tienda, slug, producto, related = [
                         <button key={c.name} type="button" title={c.name} aria-label={c.name} aria-pressed={active} onClick={() => { setHint(false); setSelection((cur) => ({ ...cur, [colorName]: c.name })); }} className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-white transition-shadow" style={{ boxShadow: `inset 0 0 0 ${active ? 2 : 1}px ${active ? t.ink : t.line}`, opacity: available ? 1 : 0.45 }}>
                           {c.useImage && c.image ? <img src={c.image} alt="" className="h-9 w-9 rounded-xl object-cover" /> : <span className="h-7 w-7 rounded-full" style={{ background: c.hex, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12)' }} />}
                           {!available && <span aria-hidden className="absolute h-px w-14 rotate-45" style={{ background: t.muted }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Presentaciones: cómo se lo lleva (unidad, metro, rollo…) */}
+              {hasPresentaciones && (
+                <motion.div variants={vtHeroText} className="mt-6">
+                  <p className="mb-3 text-[12px] font-bold uppercase tracking-[0.08em]" style={{ color: t.ink }}>
+                    Presentación
+                    {presSel && <span className="font-medium normal-case tracking-normal" style={{ color: t.muted }}>: {presSel.nombre}</span>}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {[{ codigo: '', nombre: 'Unidad', precio: pricing.precioFinal, unidadesPorPaquete: 1 }, ...presentaciones].map((op: any) => {
+                      const active = String(op.codigo) === presCodigo;
+                      const alcanza = stock >= Math.max(1, Number(op.unidadesPorPaquete ?? 1));
+                      return (
+                        <button
+                          key={op.codigo || 'unidad'}
+                          type="button"
+                          disabled={!alcanza}
+                          aria-pressed={active}
+                          onClick={() => { setHint(false); setQty(1); setPresCodigo(String(op.codigo)); }}
+                          className="relative flex min-h-[44px] flex-col items-start justify-center rounded-2xl px-4 py-2 text-left transition-colors disabled:cursor-not-allowed"
+                          style={active ? { background: t.ink, color: '#fff' } : { background: '#fff', boxShadow: `inset 0 0 0 1px ${t.line}`, color: alcanza ? t.ink : mix(t.ink, 30, '#fff') }}
+                        >
+                          <span className="text-[13px] font-medium">{op.nombre}</span>
+                          <span className="text-[12px] font-semibold opacity-80">{vtMoney(Number(op.precio || 0))}</span>
+                          {!alcanza && <span className="text-[10.5px] font-medium opacity-70">Sin stock</span>}
                         </button>
                       );
                     })}
