@@ -26,6 +26,7 @@ import {
 } from './usePanelVentasViewModel';
 import { EditarDespachoModal } from './EditarDespachoModal';
 import { ModalTrazabilidad } from './ModalTrazabilidad';
+import { ReporteEnviosModal } from './ReporteEnviosModal';
 import ModalDetalleComprobante from '@/pages/admin/facturacion/ModalDetalleComprobante';
 import ModalEnviarWhatsApp from '@/pages/admin/facturacion/ModalEnviarWhatsApp';
 import ModalRegistrarPago from '@/pages/admin/facturacion/ModalRegistrarPago';
@@ -398,6 +399,10 @@ export default function PanelVentasView() {
     // Apenas destildan uno, manda la lista marcada.
     const [seleccionRotulos, setSeleccionRotulos] = useState<SeleccionRotulos>(null);
     const [showRotulosMenu, setShowRotulosMenu] = useState(false);
+    // Reporte de envíos: estadísticas por courier y rango (Shalom, Olva, reparto
+    // propio o todos juntos) + su Excel. Va en el menú Exportar, al lado del
+    // Excel de reparto, que es de un día y en el formato del motorizado.
+    const [reporteEnviosAbierto, setReporteEnviosAbierto] = useState(false);
     const rotulosResumen = useMemo(
         () => resumenSeleccion(preparandoParaRotulo, seleccionRotulos),
         [preparandoParaRotulo, seleccionRotulos],
@@ -793,6 +798,16 @@ export default function PanelVentasView() {
                                 >
                                     <Icon icon={vm.exportandoReparto ? 'svg-spinners:180-ring' : 'solar:scooter-bold-duotone'} className="text-lg text-fuchsia-500" />
                                     <span className="flex-1 text-left">Excel de reparto propio</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => { setShowExportMenu(false); setReporteEnviosAbierto(true); }}
+                                    data-testid="btn-reporte-envios"
+                                    className="w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition"
+                                    title="Estadísticas de envíos por courier y rango de fechas (Shalom, Olva, reparto propio o todos): a dónde mandas más mes a mes, entregados y flete, con su Excel"
+                                >
+                                    <Icon icon="solar:chart-2-bold-duotone" className="text-lg text-sky-500" />
+                                    <span className="flex-1 text-left">Reporte de envíos (estadísticas)</span>
                                 </button>
                             </div>
                         )}
@@ -1885,6 +1900,9 @@ export default function PanelVentasView() {
                     onEntregado={async () => { await vm.actualizarEstado(olvaTracking.item, 'ENTREGADO'); }}
                     wrapperClassName="top-[-30px]"
                 />
+            )}
+            {reporteEnviosAbierto && (
+                <ReporteEnviosModal onClose={() => setReporteEnviosAbierto(false)} />
             )}
         </div>
     );
