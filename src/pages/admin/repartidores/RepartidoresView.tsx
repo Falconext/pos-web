@@ -341,7 +341,14 @@ export default function RepartidoresView() {
   };
 
   const handleViewDespachos = (item: Repartidor) => {
-    navigate(`/administrador/ventas?fecha=${moment().format('YYYY-MM-DD')}&repartidorId=${item.id}`);
+    // Se manda `fechaEnvio` (día de ENTREGA) y no `fecha` (día de emisión),
+    // que es exactamente lo que cuentan las tarjetas de esta pantalla. Con
+    // `fecha` el Panel de Ventas filtraba por el día en que se tomó la venta y
+    // la tabla salía vacía, porque un pedido que sale hoy pudo venderse días
+    // antes.
+    navigate(
+      `/administrador/ventas?fechaEnvio=${moment().format('YYYY-MM-DD')}&repartidorId=${item.id}`,
+    );
   };
 
   const globalTasa = globalDespacho.total > 0 ? Math.round((globalDespacho.entregado / globalDespacho.total) * 100) : 0;
@@ -548,9 +555,12 @@ export default function RepartidoresView() {
 
       {/* ── Create / Edit Modal ──────────────────────────────────── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          <button className="absolute inset-0 bg-black/50  " onClick={() => setModalOpen(false)} aria-label="Cerrar" />
-          <form onSubmit={handleSubmit} className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-white shadow-2xl dark:bg-[#111827]">
+        <div className="fixed inset-0 z-[999999] flex items-center justify-center overflow-y-auto p-4">
+          <button className="fixed inset-0 bg-black/50" onClick={() => setModalOpen(false)} aria-label="Cerrar" />
+          {/* `my-auto` + `max-h` lo deja centrado de verdad y con scroll propio:
+              antes el formulario no tenía tope de alto, así que en una pantalla
+              baja se salía por arriba y los botones quedaban fuera de vista. */}
+          <form onSubmit={handleSubmit} className="relative my-auto max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white shadow-2xl dark:bg-[#111827]">
             <div className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 text-white">
