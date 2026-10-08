@@ -272,7 +272,16 @@ export function ReporteEnviosModal({ onClose }: { onClose: () => void }) {
                                 }
                             />
                             <Bloque
-                                titulo={courier === 'PROPIOS' ? 'Por distrito' : 'Por agencia destino'}
+                                // Mismo criterio que el Excel: en "todos" el eje
+                                // mezcla agencias y distritos, así que no se
+                                // puede llamar "por agencia".
+                                titulo={
+                                    courier === 'PROPIOS'
+                                        ? 'Por distrito'
+                                        : courier === 'TODOS'
+                                          ? 'Por destino'
+                                          : 'Por agencia destino'
+                                }
                                 icono="solar:map-point-bold-duotone"
                                 grupos={resumen?.porDestino}
                             />
