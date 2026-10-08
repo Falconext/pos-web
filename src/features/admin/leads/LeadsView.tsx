@@ -399,6 +399,8 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
           return conv.mensajes.map((m) => {
             const date = new Date(m.creadoEn)
             const esUsuario = m.rol === 'USUARIO'
+            // SISTEMA = lo escribió el vendedor a mano desde el panel.
+            const esManual = m.rol === 'SISTEMA'
             const showDay = !lastDay || !isSameDay(date, lastDay)
             const nuevoGrupo = showDay || m.rol !== lastRol
             lastDay = date
@@ -414,9 +416,18 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                 )}
                 {nuevoGrupo && !esUsuario && (
                   <div className="mb-1 flex justify-end pr-1">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-500 dark:text-violet-300">
-                      <Icon icon="solar:magic-stick-3-bold" width={11} />
-                      Asistente IA
+                    <span
+                      className={`inline-flex items-center gap-1 text-[10px] font-semibold ${
+                        esManual
+                          ? 'text-emerald-600 dark:text-emerald-300'
+                          : 'text-violet-500 dark:text-violet-300'
+                      }`}
+                    >
+                      <Icon
+                        icon={esManual ? 'solar:user-bold' : 'solar:magic-stick-3-bold'}
+                        width={11}
+                      />
+                      {esManual ? 'Tú' : 'Asistente IA'}
                     </span>
                   </div>
                 )}
@@ -433,13 +444,21 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                     className={`max-w-[74%] px-3 py-2 text-sm shadow-sm ${
                       esUsuario
                         ? `rounded-2xl bg-white text-gray-800 dark:bg-slate-800 dark:text-gray-100 ${nuevoGrupo ? 'rounded-bl-md' : ''}`
-                        : `rounded-2xl bg-gradient-to-br from-violet-600 to-violet-500 text-white ${nuevoGrupo ? 'rounded-br-md' : ''}`
+                        : `rounded-2xl bg-gradient-to-br text-white ${
+                            esManual
+                              ? 'from-emerald-600 to-emerald-500'
+                              : 'from-violet-600 to-violet-500'
+                          } ${nuevoGrupo ? 'rounded-br-md' : ''}`
                     }`}
                   >
                     <p className="whitespace-pre-wrap break-words leading-relaxed">{m.contenido}</p>
                     <span
                       className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
-                        esUsuario ? 'text-gray-400' : 'text-violet-100/80'
+                        esUsuario
+                          ? 'text-gray-400'
+                          : esManual
+                            ? 'text-emerald-100/80'
+                            : 'text-violet-100/80'
                       }`}
                     >
                       {format(date, 'HH:mm')}
@@ -452,6 +471,8 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
           })
         })()}
       </div>
+
+      <Composer vm={vm} botActivo={botActivo} />
 
       {prospecto?.proximaAccion && (
         <div className="border-t border-gray-100 pt-3 dark:border-slate-800">
@@ -472,6 +493,69 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Caja para responder a mano en la conversación. Enviar un mensaje toma el chat:
+ * la IA queda pausada hasta que el vendedor la reactive.
+ */
+function Composer({
+  vm,
+  botActivo,
+}: {
+  vm: ReturnType<typeof useLeadsViewModel>
+  botActivo: boolean
+}) {
+  const [texto, setTexto] = useState('')
+  const enviando = vm.enviandoMensaje
+  const puedeEnviar = texto.trim().length > 0 && !enviando
+
+  const enviar = async () => {
+    if (!puedeEnviar) return
+    const ok = await vm.actions.enviarMensajeManual(texto)
+    if (ok) setTexto('')
+  }
+
+  return (
+    <div className="border-t border-gray-100 pt-3 dark:border-slate-800">
+      {botActivo && (
+        <p className="mb-1.5 flex items-center gap-1 px-0.5 text-[11px] text-amber-600 dark:text-amber-400">
+          <Icon icon="solar:info-circle-bold" width={12} />
+          Si respondes, la IA se pausa en este chat.
+        </p>
+      )}
+      <div className="flex items-end gap-2">
+        <textarea
+          value={texto}
+          onChange={(e) => setTexto(e.target.value)}
+          onKeyDown={(e) => {
+            // Enter envía; Shift+Enter hace salto de línea.
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault()
+              void enviar()
+            }
+          }}
+          rows={1}
+          maxLength={4096}
+          disabled={enviando}
+          placeholder="Escribe tu respuesta…"
+          className="max-h-28 min-h-[40px] flex-1 resize-y rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100 dark:focus:ring-violet-900/40"
+        />
+        <button
+          type="button"
+          onClick={() => void enviar()}
+          disabled={!puedeEnviar}
+          title="Enviar por WhatsApp"
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <Icon
+            icon={enviando ? 'svg-spinners:180-ring' : 'solar:plain-bold'}
+            width={18}
+          />
+        </button>
+      </div>
     </div>
   )
 }
