@@ -10,6 +10,34 @@ const FB_SDK_VERSION = 'v21.0';
 
 let sdkPromise: Promise<void> | null = null;
 
+/**
+ * Mensaje del resultado de conectar. Un número puede quedar guardado y aun así
+ * NO estar operativo: Meta lo deja en `PENDING` hasta que se registra en Cloud
+ * API. Avisarlo en verde como si todo estuviera listo esconde un número que no
+ * recibe un solo mensaje, así que el aviso sigue al estado real.
+ */
+function avisoConexion(res: any): { texto: string; tipo: 'success' | 'error' } {
+    const numero = res?.numeroVisible ?? res?.phoneNumberId ?? 'tu número';
+    const creadas = res?.plantillas?.creadas?.length ?? 0;
+    const existentes = res?.plantillas?.existentes?.length ?? 0;
+    // `conectado` no viaja en respuestas de versiones anteriores del backend:
+    // si no viene, no inventamos una falla.
+    if (res?.conectado === false) {
+        return {
+            texto:
+                `${numero} quedó guardado pero Meta lo dejó en estado ${res?.estado ?? 'PENDIENTE'}: ` +
+                `todavía no puede enviar ni recibir mensajes.` +
+                (res?.motivo ? ` Motivo: ${res.motivo}.` : '') +
+                ' Vuelve a intentar la conexión o escríbenos para activarlo.',
+            tipo: 'error',
+        };
+    }
+    return {
+        texto: `WhatsApp conectado (${numero}). Plantillas: ${creadas} creadas, ${existentes} ya existían.`,
+        tipo: 'success',
+    };
+}
+
 /** Carga (una sola vez) el SDK de Facebook e inicializa FB con el appId. */
 function cargarFbSdk(appId: string): Promise<void> {
     if (sdkPromise) return sdkPromise;
@@ -101,12 +129,8 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                 wabaId: wabaInfo.current.wabaId,
             });
             const res = data?.data ?? data;
-            const creadas = res?.plantillas?.creadas?.length ?? 0;
-            const existentes = res?.plantillas?.existentes?.length ?? 0;
-            useAlertStore.getState().alert(
-                `WhatsApp conectado (${res?.numeroVisible ?? res?.phoneNumberId}). Plantillas: ${creadas} creadas, ${existentes} ya existían.`,
-                'success',
-            );
+            const aviso = avisoConexion(res);
+            useAlertStore.getState().alert(aviso.texto, aviso.tipo);
             onConectado?.({ phoneNumberId: res?.phoneNumberId, numeroVisible: res?.numeroVisible });
         } catch (e: any) {
             useAlertStore.getState().alert(
@@ -132,12 +156,8 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                 accessToken: accessToken.trim(),
             });
             const res = data?.data ?? data;
-            const creadas = res?.plantillas?.creadas?.length ?? 0;
-            const existentes = res?.plantillas?.existentes?.length ?? 0;
-            useAlertStore.getState().alert(
-                `WhatsApp conectado (${res?.numeroVisible}). Plantillas: ${creadas} creadas, ${existentes} ya existían.`,
-                'success',
-            );
+            const aviso = avisoConexion(res);
+            useAlertStore.getState().alert(aviso.texto, aviso.tipo);
             setManual({ phoneNumberId: '', wabaId: '', accessToken: '' });
             setShowManual(false);
             onConectado?.({ phoneNumberId, numeroVisible: res?.numeroVisible });

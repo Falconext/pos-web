@@ -121,6 +121,28 @@ export async function setBotActivo(
   return r.data
 }
 
+export interface EnvioManualResult {
+  mensaje: LeadMensaje
+  /** true si este envío fue el que pausó la IA (ya estaba pausada => false). */
+  botPausado: boolean
+}
+
+/**
+ * Responde a mano en la conversación, desde el WhatsApp de la empresa.
+ * Tomar el chat pausa la IA automáticamente.
+ */
+export async function enviarMensajeManual(
+  conversacionId: number,
+  texto: string,
+): Promise<EnvioManualResult> {
+  const r = await post<EnvioManualResult>(
+    `/leads/conversaciones/${conversacionId}/mensaje`,
+    { texto },
+  )
+  if (!r.success || !r.data) throw new Error(r.error || 'No se pudo enviar el mensaje')
+  return r.data
+}
+
 export interface ConvertirResult {
   cliente: { id: number; nombre: string; nroDoc: string }
   yaExistia: boolean

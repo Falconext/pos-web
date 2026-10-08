@@ -149,6 +149,51 @@ export function useLeadsViewModel() {
     }
   }
 
+  const [enviandoMensaje, setEnviandoMensaje] = useState(false)
+
+  /**
+   * Responde a mano en el chat abierto. El mensaje se agrega al historial solo
+   * si salió de verdad, y si este envío fue el que tomó el chat, la IA queda
+   * pausada también en pantalla.
+   */
+  const enviarMensajeManual = async (texto: string) => {
+    const conv = conversacion
+    if (!conv) return false
+    const contenido = texto.trim()
+    if (!contenido || enviandoMensaje) return false
+
+    setEnviandoMensaje(true)
+    try {
+      const { mensaje, botPausado } = await api.enviarMensajeManual(conv.id, contenido)
+      setConversacion((prev) =>
+        prev && prev.id === conv.id
+          ? {
+              ...prev,
+              mensajes: [...prev.mensajes, mensaje],
+              cantidadMensajes: prev.cantidadMensajes + 1,
+              prospecto: prev.prospecto
+                ? { ...prev.prospecto, botActivo: false }
+                : prev.prospecto,
+            }
+          : prev,
+      )
+      if (botPausado) {
+        const prospectoId = conv.prospecto?.id
+        if (prospectoId)
+          setProspectos((prev) =>
+            prev.map((p) => (p.id === prospectoId ? { ...p, botActivo: false } : p)),
+          )
+        alertStore.alert('Mensaje enviado — IA pausada, tomaste el chat', 'success')
+      }
+      return true
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo enviar el mensaje', 'error')
+      return false
+    } finally {
+      setEnviandoMensaje(false)
+    }
+  }
+
   const [convirtiendo, setConvirtiendo] = useState(false)
 
   const convertirCliente = async (prospectoId: number) => {
@@ -282,12 +327,14 @@ export function useLeadsViewModel() {
     loadingDocs,
     guardandoDoc,
     convirtiendo,
+    enviandoMensaje,
     porEstado,
     actions: {
       recargar: cargarProspectos,
       abrirConversacion,
       cerrarConversacion,
       toggleBot,
+      enviarMensajeManual,
       convertirCliente,
       guardarConfig,
       toggleIaVentas,
