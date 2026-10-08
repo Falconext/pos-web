@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { fechaDeEnvio } from './fechaDeEnvio';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
@@ -248,6 +248,8 @@ export default function PanelVentasView() {
     const { alert } = useAlertStore();
     const { usuarios, getAllUsers } = useUsersStore();
     const queryFecha = searchParams.get('fecha');
+    const queryFechaEnvio = searchParams.get('fechaEnvio');
+    const queryRepartidorId = searchParams.get('repartidorId');
     const queryComprobanteId = Number(searchParams.get('comprobanteId') || 0) || null;
 
     // ── Configuración de columnas visibles (persistida por usuario) ──────────────
@@ -415,11 +417,36 @@ export default function PanelVentasView() {
         }
     }, [vm.canFilterByUsuario, getAllUsers]);
 
+    // Los filtros que llegan por la URL son un punto de partida (se entra así
+    // desde Repartidores → "Ver despachos"), no una fuente de verdad continua.
+    //
+    // Antes esto comparaba contra `vm.fecha` y lo tenía en las dependencias, así
+    // que en cuanto el usuario cambiaba el día con la flecha, el efecto veía la
+    // discrepancia y lo devolvía al de la URL: la fecha "no se movía" y cada
+    // intento disparaba dos cargas del panel (la del usuario y la del rebote),
+    // hasta tumbar la pestaña con ERR_INSUFFICIENT_RESOURCES.
+    //
+    // Se aplica UNA vez por cada valor distinto que traiga la URL; después manda
+    // el usuario.
+    const urlAplicada = useRef<string | null>(null);
     useEffect(() => {
-        if (queryFecha && moment(queryFecha, 'YYYY-MM-DD', true).isValid() && queryFecha !== vm.fecha) {
+        const clave = `${queryFecha ?? ''}|${queryFechaEnvio ?? ''}|${queryRepartidorId ?? ''}`;
+        if (urlAplicada.current === clave) return;
+        urlAplicada.current = clave;
+        if (queryFecha && moment(queryFecha, 'YYYY-MM-DD', true).isValid()) {
             vm.setFecha(queryFecha);
         }
-    }, [queryFecha, vm.fecha, vm.setFecha]);
+        // Día de ENTREGA: es como cuenta sus despachos la pantalla de
+        // Repartidores. Filtrar por fecha de emisión dejaba la tabla vacía,
+        // porque un pedido que sale hoy pudo tomarse días antes.
+        if (queryFechaEnvio && moment(queryFechaEnvio, 'YYYY-MM-DD', true).isValid()) {
+            vm.setFechaEnvio(queryFechaEnvio);
+        }
+        if (queryRepartidorId) {
+            const id = Number(queryRepartidorId);
+            if (Number.isFinite(id) && id > 0) vm.setFiltroRepartidorId(id);
+        }
+    }, [queryFecha, queryFechaEnvio, queryRepartidorId, vm.setFecha, vm.setFechaEnvio, vm.setFiltroRepartidorId]);
 
     const filasVisibles = queryComprobanteId
         ? vm.filtrados.filter((item) => item.comprobanteId === queryComprobanteId)
@@ -666,6 +693,7 @@ export default function PanelVentasView() {
                 <div className="flex items-center gap-2 flex-wrap">
                     <button
                         onClick={() => vm.setFecha(moment(vm.fecha).subtract(1, 'day').format('YYYY-MM-DD'))}
+                        data-testid="btn-dia-anterior"
                         className="h-10 w-10 grid place-items-center rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                         title="Día anterior"
                     >
@@ -729,6 +757,7 @@ export default function PanelVentasView() {
                     )}
                     <button
                         onClick={() => vm.setFecha(moment(vm.fecha).add(1, 'day').format('YYYY-MM-DD'))}
+                        data-testid="btn-dia-siguiente"
                         className="h-10 w-10 grid place-items-center rounded-lg bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-500 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
                         title="Día siguiente"
                     >
