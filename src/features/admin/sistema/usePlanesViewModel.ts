@@ -4,10 +4,37 @@ import useAlertStore from '@/zustand/alert';
 import { useModulosStore } from '@/zustand/modulos';
 import { useAuthStore } from '@/zustand/auth';
 
+/**
+ * Producto de destino del plan. `ventas` = solo la IA de Ventas; `full` =
+ * facturación completa + IA de Ventas. Ambos se arman con el catálogo de
+ * módulos de facturación (ahí vive el módulo `leads`).
+ */
+export type ProductoPlan =
+    | 'facturacion'
+    | 'hotel'
+    | 'restaurante'
+    | 'logistica'
+    | 'ventas'
+    | 'full';
+
+/**
+ * Catálogo de módulos del que se arma un plan. `ventas` y `full` no tienen
+ * catálogo propio: usan el de facturación (espeja `catalogoModulosDe` del
+ * backend en plan.service.ts).
+ */
+export const catalogoModulosDe = (
+    producto?: ProductoPlan | null,
+): 'facturacion' | 'hotel' | 'restaurante' | 'logistica' => {
+    if (producto === 'hotel' || producto === 'restaurante' || producto === 'logistica') return producto;
+    return 'facturacion';
+};
+
 export interface Plan {
     id: number; nombre: string; descripcion?: string; costo: number;
     plataforma?: 'falconext' | 'krezka';
-    producto?: 'facturacion' | 'hotel' | 'restaurante' | 'logistica';
+    producto?: ProductoPlan;
+    /** Tope mensual de conversaciones que atiende la IA de Ventas. 0/undefined = ilimitado. */
+    maxLeadsMes?: number | null;
     duracionDias: number; limiteUsuarios: number; maxSedes: number;
     maxImagenesProducto: number;
     maxBanners: number; maxComprobantes: number; esPrueba: boolean;
@@ -45,6 +72,7 @@ const initialForm: Partial<Plan> & { moduloIds?: number[]; subModuloIds?: number
     producto: 'facturacion',
     nombre: '', descripcion: '', costo: 0, duracionDias: 30,
     limiteUsuarios: 1, maxSedes: 1, maxImagenesProducto: 1, maxBanners: 0, maxComprobantes: 100,
+    maxLeadsMes: 0,
     esPrueba: false, tieneTienda: false, tieneBanners: false, tieneGaleria: false,
     tieneCulqi: false, tieneDeliveryGPS: false, tieneTicketera: false,
     tieneGestionLotes: false, tieneGestionProvisiones: false, tieneDescripcionRica: false,
@@ -71,10 +99,10 @@ export const usePlanesViewModel = () => {
     const plataformaScope = (String(auth?.sistemaNegocio || '').toLowerCase() === 'krezka' ? 'krezka' : String(auth?.sistemaNegocio || '').toLowerCase() === 'falconext' ? 'falconext' : '') as '' | 'falconext' | 'krezka';
     const productoScope = (() => {
         const p = String(auth?.sistemaProducto || '').toLowerCase();
-        return (p === 'hotel' || p === 'restaurante' || p === 'facturacion' || p === 'logistica' ? p : '') as '' | 'facturacion' | 'hotel' | 'restaurante' | 'logistica';
+        return (p === 'hotel' || p === 'restaurante' || p === 'facturacion' || p === 'logistica' ? p : '') as '' | ProductoPlan;
     })();
     const [plataformaFiltro, setPlataformaFiltro] = useState<'' | 'falconext' | 'krezka'>(plataformaScope);
-    const [productoFiltro, setProductoFiltro] = useState<'' | 'facturacion' | 'hotel' | 'restaurante' | 'logistica'>(productoScope);
+    const [productoFiltro, setProductoFiltro] = useState<'' | ProductoPlan>(productoScope);
 
     useEffect(() => {
         setPlataformaFiltro(plataformaScope);
@@ -129,7 +157,7 @@ export const usePlanesViewModel = () => {
 
     const handleOpenEdit = (plan: Plan) => {
         const plataforma = (plan.plataforma || 'falconext') as 'falconext' | 'krezka';
-        const producto = (plan.producto || 'facturacion') as 'facturacion' | 'hotel' | 'restaurante' | 'logistica';
+        const producto = (plan.producto || 'facturacion') as ProductoPlan;
         setIsEdit(true);
         setCurrentId(plan.id);
         setForm({
@@ -157,7 +185,7 @@ export const usePlanesViewModel = () => {
                     return acc;
                 }, {} as Record<string, boolean>),
                 plataforma: (plataformaScope || form.plataforma || 'falconext') as 'falconext' | 'krezka',
-                producto: (productoScope || form.producto || 'facturacion') as 'facturacion' | 'hotel' | 'restaurante' | 'logistica',
+                producto: (productoScope || form.producto || 'facturacion') as ProductoPlan,
                 costo: Number(form.costo),
                 duracionDias: Number(form.duracionDias),
                 limiteUsuarios: Number(form.limiteUsuarios),
