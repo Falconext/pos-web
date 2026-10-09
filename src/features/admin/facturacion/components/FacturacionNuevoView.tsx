@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useReactToPrint } from "react-to-print";
+import { filtrarClientes, normalizeSearch } from '@/features/admin/facturacion/buscarCliente';
 import { Icon } from "@iconify/react";
 import { useLocation } from "react-router-dom";
 import { useFacturacionViewModel } from "../useFacturacionViewModel";
@@ -74,33 +75,6 @@ export const FacturacionNuevoView = () => {
     const [clienteSearchTerm, setClienteSearchTerm] = useState('');
     const [clienteSearchOpen, setClienteSearchOpen] = useState(false);
     const lastSelectedClientIdRef = useRef<number | null>(null);
-    const normalizeSearch = (value: string) =>
-        String(value || '')
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim();
-    const filtrarClientes = (items: any[], termino: string) => {
-        const query = normalizeSearch(termino);
-        if (query.length < 3) return [];
-        const compactQuery = query.replace(/[^a-z0-9]/g, '');
-        return (Array.isArray(items) ? items : []).filter((client: any) => {
-            const fullName = normalizeSearch([
-                client?.nombre,
-                client?.apellidoPaterno,
-                client?.apellidoMaterno,
-                client?.razonSocial,
-            ].filter(Boolean).join(' '));
-            const doc = String(client?.nroDoc || '').replace(/\D/g, '');
-            const telefono = String(client?.telefono || '').replace(/\D/g, '');
-            return (
-                fullName.includes(query)
-                || doc.includes(compactQuery)
-                || normalizeSearch(client?.nroDoc).includes(query)
-                || (compactQuery.length >= 3 && telefono.includes(compactQuery))
-            );
-        }).slice(0, 6);
-    };
     const clienteSearchResults = useMemo(() => filtrarClientes(vm.clients, clienteSearchTerm), [clienteSearchTerm, vm.clients]); // eslint-disable-line react-hooks/exhaustive-deps
     // Celular de 9 dígitos (empieza en 9) sin coincidencias → ofrecer alta rápida
     // "WSP <celular>" (clientes que compran por WhatsApp).
@@ -501,6 +475,9 @@ export const FacturacionNuevoView = () => {
                                                     <div className="min-w-0">
                                                         <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
                                                             {client?.nombre || client?.razonSocial || 'Cliente'}
+                                                            {client?.alias ? (
+                                                                <span className="ml-1.5 font-semibold text-violet-600 dark:text-violet-400">({client.alias})</span>
+                                                            ) : null}
                                                         </p>
                                                         <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                                                             {client?.nroDoc && client?.nroDoc !== '0' ? client.nroDoc : '-'}

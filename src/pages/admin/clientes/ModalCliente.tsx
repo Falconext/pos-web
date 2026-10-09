@@ -158,6 +158,11 @@ const ModalClient = ({ isOpenModal, closeModal, setIsOpenModal, isEdit, formValu
                         <InputPro autocomplete="off" value={formValues?.nombre} error={errors.nombre} name="nombre" onChange={handleChange} isLabel label="Nombre o Razon social" />
                     </div>
                     <div className="md:col-start-1 md:col-end-3">
+                        {/* El vendedor rara vez recuerda el RUC o la razón social exacta;
+                            sí recuerda el apodo. Se busca igual que el nombre. */}
+                        <InputPro autocomplete="off" value={formValues?.alias ?? ''} error={""} name="alias" onChange={handleChange} isLabel label="Alias (opcional) — cómo lo llamas al buscarlo" />
+                    </div>
+                    <div className="md:col-start-1 md:col-end-3">
                         <InputPro autocomplete="off" error={errors.direccion} value={formValues?.direccion} name="direccion" onChange={handleChange} isLabel label="Direccion" />
                     </div>
                     <div className="">
