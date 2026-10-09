@@ -19,6 +19,7 @@ import {
 } from '@/templates/ropa-hombre/RopaHombreParts';
 import { ProductRail, OfferCountdown, soonestOfferEnd, storeChannels, getName, type Channels } from '@/templates/ropa-hombre/RopaHombreSections';
 import { mix, urEase, urHeroText, urStagger } from '@/templates/ropa-hombre/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const optionsOf = (p: any): { nombre: string; valores: string[] }[] => (Array.isArray(p?.opcionesAtributos) ? p.opcionesAtributos : []);
@@ -244,6 +245,7 @@ export function RopaHombreProductoDetalleView({ tienda, slug, producto, related 
           <DetailTabs t={t} producto={producto} tienda={tienda} ch={ch} marca={marca} categoria={categoria} sku={activeVariant?.codigo || producto?.codigo} />
         </main>
 
+        <ProductoVideo url={producto?.videoUrl} />
         {related.length > 0 && <ProductRail t={t} eyebrow={editable(diseno?.ropaHombreRelatedEyebrow, 'Relacionados')} title={editable(diseno?.ropaHombreRelatedTitle, 'También te puede gustar')} products={related} slug={slug} onOpen={goProduct} onAdd={(p: any, q?: number) => pushItem({ ...p, cartId: String(p.id), productoId: p.id, cantidad: Math.max(1, q || 1), precioUnitario: getProductPricing(p).precioFinal })} />}
 
         <UrbFooter tienda={tienda} slug={slug} diseno={diseno} t={t} categories={categories} navigate={nav} />

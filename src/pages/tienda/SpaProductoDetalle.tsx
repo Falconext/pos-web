@@ -8,6 +8,7 @@ import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import { SPA, SpaFooter, SpaHeader, SpaProductCard, SpaProductImage, SpaWhatsAppFab, spaFont, spaPrimary, waLink, withAlpha } from '@/templates/spa/SpaParts';
 import { spaCard, spaFade, spaPage, spaSection, spaStagger, spaTap, spaViewport } from '@/templates/spa/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -240,6 +241,7 @@ export function SpaProductoDetalleView({
         </motion.section>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={spaViewport} variants={spaSection} className="mt-16">
             <div className="mb-8 text-center">

@@ -7,6 +7,7 @@ import { getProductPricing, withPricing, withPricingList } from '@/templates/sha
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { TN, TnCartModal, TnFooter, TnHeader, TnProductCard, TnProductImage, TnSwatches, TnWhatsAppFab, tnFont, tnPrimary, waLink, withAlpha } from '@/templates/tones/TonesParts';
 import { tnCard, tnFade, tnPage, tnSection, tnStagger, tnTap, tnViewport } from '@/templates/tones/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -260,6 +261,7 @@ export function TonesProductoDetalleView({
         </motion.section>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={tnViewport} variants={tnSection} className="mt-16">
             <div className="mb-8 text-center">

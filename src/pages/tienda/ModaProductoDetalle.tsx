@@ -21,6 +21,7 @@ import {
   isFashionVariantAvailable,
   variantValues,
 } from '@/templates/urbano/fashionVariants';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -1243,6 +1244,7 @@ export default function ModaProductoDetalle() {
         </section>
 
         {/* ── You May Also Like ── */}
+        <ProductoVideo url={producto?.videoUrl} />
         {related.length > 0 && (
           <section className="mt-16">
             <div className="flex items-center justify-between mb-2">

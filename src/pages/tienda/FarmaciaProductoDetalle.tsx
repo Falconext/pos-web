@@ -16,6 +16,7 @@ import {
 } from '@/templates/farmacia/FarmaciaParts';
 import { ProductRail, OfferCountdown, buildServices, soonestOfferEnd, storeChannels, getName, type Theme } from '@/templates/farmacia/FarmaciaSections';
 import { fmEase, fmHeroText, fmStagger, mix } from '@/templates/farmacia/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -183,6 +184,7 @@ export function FarmaciaProductoDetalleView({ tienda, slug, producto, related = 
           <DetailTabs t={t} producto={producto} tienda={tienda} ch={ch} marca={marca} categoria={categoria} unidad={unidad} />
         </main>
 
+        <ProductoVideo url={producto?.videoUrl} />
         {related.length > 0 && (
           <ProductRail t={t} eyebrow="Relacionados" title="También te puede interesar" products={related} slug={slug} onOpen={goProduct} onAdd={(p: any, q?: number) => addItem(p, q)} />
         )}

@@ -16,6 +16,7 @@ import {
 } from '@/templates/urbano/fashionVariants';
 import { MIN, MinCartModal, MinFooter, MinHeader, MinProductCard, MinProductImage, MinWhatsAppFab, minFont, minPrimary, waLink } from '@/templates/moda-minimal/ModaMinimalParts';
 import { minFade, minPage, minSection, minStagger, minViewport } from '@/templates/moda-minimal/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -432,6 +433,7 @@ export function ModaMinimalProductoDetalleView({
         </motion.section>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={minViewport} variants={minSection} className="mt-16">
             <h2 className="mb-8 text-xl font-medium tracking-tight" style={{ color: MIN.ink }}>También te puede gustar</h2>

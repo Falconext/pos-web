@@ -11,6 +11,7 @@ import {
   FalconCartDrawer, FalconWishlistDrawer, FalconCompareModal, FalconQuickView,
   falconFadeUp, falconHoverLift, falconScaleIn, falconStagger, falconTap,
 } from '@/templates/falcon/FalconShared';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -302,6 +303,7 @@ export function FalconProductoDetalleView({
         </section>
 
         {/* Recommended */}
+        <ProductoVideo url={producto?.videoUrl} />
         {related.length > 0 && (
           <section className="mx-auto max-w-[1400px] px-4 py-12 lg:px-6">
             <div className="mb-5 flex items-center justify-between rounded-2xl bg-white px-6 py-4 shadow-sm">

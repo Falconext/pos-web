@@ -15,6 +15,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 import ProductModifiersSelector from '@/components/tienda/ProductModifiersSelector';
 import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 import ProductVariantsShopify from '@/components/tienda/ProductVariantsShopify';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const PROSE_CLASSES = [
   'text-sm text-gray-600 leading-relaxed break-words overflow-hidden w-full',
@@ -870,6 +871,12 @@ export default function ProductoDetalle() {
       {producto.descripcionLarga && (
         <div className="max-w-7xl mx-auto px-5 md:px-8 mb-10">
           <ClassicDescripcion descripcionLarga={producto.descripcionLarga} />
+        </div>
+      )}
+
+      {producto.videoUrl && (
+        <div className="max-w-7xl mx-auto px-5 md:px-8 mb-10">
+          <ProductoVideo url={producto.videoUrl} />
         </div>
       )}
 

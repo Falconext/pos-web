@@ -20,6 +20,7 @@ import {
 import { ProductRail, OfferCountdown, soonestOfferEnd, storeChannels, getName, type Channels } from '@/templates/retail/VitrinaSections';
 import { mix, vtEase, vtHeroText, vtStagger } from '@/templates/retail/motion';
 import { recordViewed, useViewedProducts } from '@/templates/retail/VitrinaExtras';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const optionsOf = (p: any): { nombre: string; valores: string[] }[] => (Array.isArray(p?.opcionesAtributos) ? p.opcionesAtributos : []);
@@ -74,7 +75,11 @@ export function VitrinaProductoDetalleView({ tienda, slug, producto, related = [
   const stock = activeVariant ? Number(activeVariant.stock || 0) : Number(producto?.stock ?? 0);
   // Con presentación, el stock se mide en unidades base: para vender un rollo
   // de 12 m tienen que quedar 12, no 1.
-  const alcanzaStock = stock >= unidadesPorCompra;
+  // Con "acepto pedidos de productos agotados" el negocio trabaja por encargo:
+  // el stock deja de frenar la compra y el pedido entra igual (el backend aplica
+  // la misma regla, así que nadie puede saltársela desde el navegador).
+  const aceptaSinStock = Boolean((tienda as any)?.tiendaVentaSinStock);
+  const alcanzaStock = aceptaSinStock || stock >= unidadesPorCompra;
   const isOut = hasVariants ? allSelected && !alcanzaStock : !alcanzaStock;
   const canAdd = hasVariants ? allSelected && !!activeVariant && alcanzaStock : alcanzaStock;
   const price = presSel
@@ -254,7 +259,13 @@ export function VitrinaProductoDetalleView({ tienda, slug, producto, related = [
 
               <motion.div variants={vtHeroText} className="mt-5 inline-flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: isOut ? t.muted : stock <= 5 && (!hasVariants || allSelected) ? t.accentInk : t.primaryInk }}>
                 <Icon icon={isOut ? 'solar:close-circle-linear' : 'solar:check-circle-linear'} width={17} />
-                {hasVariants && !allSelected ? `Elige ${String(missing || 'una opción').toLowerCase()} para ver disponibilidad` : isOut ? 'Sin stock en esta opción' : stock <= 5 ? `¡Quedan ${stock}!` : 'Disponible'}
+                {hasVariants && !allSelected
+                  ? `Elige ${String(missing || 'una opción').toLowerCase()} para ver disponibilidad`
+                  : isOut
+                    ? 'Sin stock en esta opción'
+                    : stock < unidadesPorCompra
+                      ? 'Bajo pedido'
+                      : stock <= 5 ? `¡Quedan ${stock}!` : 'Disponible'}
               </motion.div>
 
               <motion.div variants={vtHeroText} ref={ctaRef} className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -424,7 +435,12 @@ function DetailTabs({ t, producto, tienda, ch, marca, categoria, sku }: { t: The
       </div>
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={active} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3, ease: vtEase }} className="py-8">
-          {active === 'desc' && <p className="max-w-3xl whitespace-pre-line text-[14.5px] leading-[1.75]" style={{ color: mix(t.ink, 78, t.bg) }}>{description}</p>}
+          {active === 'desc' && (
+            <div className="max-w-3xl">
+              <p className="whitespace-pre-line text-[14.5px] leading-[1.75]" style={{ color: mix(t.ink, 78, t.bg) }}>{description}</p>
+              <ProductoVideo url={producto?.videoUrl} borde={t.line} />
+            </div>
+          )}
           {active === 'spec' && (
             <dl className="max-w-3xl overflow-hidden rounded-2xl border bg-white" style={{ borderColor: t.line }}>
               {rows.map(([k, v], i) => (

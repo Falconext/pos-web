@@ -9,6 +9,7 @@ import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { AUR, AurCartModal, AurFooter, AurHeader, AurProductCard, AurProductImage, AurWhatsAppFab, aurFont, aurPrimary, waLink, withAlpha } from '@/templates/joyeria/AurumParts';
 import { aurCard, aurFade, aurPage, aurSection, aurStagger, aurTap, aurViewport } from '@/templates/joyeria/motion';
 import { getFashionColorImage } from '@/templates/urbano/fashionVariants';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -401,6 +402,7 @@ export function AurumProductoDetalleView({
         </motion.section>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={aurViewport} variants={aurSection} className="mt-16">
             <div className="mb-8 text-center">

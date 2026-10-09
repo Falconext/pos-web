@@ -7,6 +7,7 @@ import { getProductPricing, withPricing, withPricingList } from '@/templates/sha
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { MOTO, MotoCartModal, MotoFooter, MotoHeader, MotoProductCard, MotoProductImage, MotoWhatsAppFab, money, motoFont, motoPrimary, waLink, withAlpha } from '@/templates/motos/MotosParts';
 import { motoCard, motoFade, motoPage, motoSection, motoStagger, motoTap, motoViewport } from '@/templates/motos/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -281,6 +282,7 @@ export function MotosProductoDetalleView({
         </motion.section>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={motoViewport} variants={motoSection} className="mt-16">
             <div className="mb-8 text-center">

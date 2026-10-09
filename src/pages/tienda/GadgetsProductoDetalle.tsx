@@ -12,6 +12,7 @@ import { useFavoritosStore } from '@/zustand/favoritos';
 import { useCompareStore } from '@/zustand/compare';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { withPricing, withPricingList } from '@/templates/shared/pricing';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -658,6 +659,8 @@ export default function GadgetsProductoDetalle() {
                   {producto.descripcion}
                 </p>
               )}
+
+              <ProductoVideo url={producto?.videoUrl} />
 
               <ProductModifiersSelector modifiers={modificadoresProducto} selections={selecciones} onChange={setSelecciones} />
 

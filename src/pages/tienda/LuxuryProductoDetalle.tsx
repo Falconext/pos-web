@@ -8,6 +8,7 @@ import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import { LUX, LuxuryFooter, LuxuryHeader, LuxuryProductCard, LuxuryProductImage, luxFont, luxPrimary, withAlpha } from '@/templates/luxury/LuxuryParts';
 import { luxCard, luxFade, luxPage, luxSection, luxStagger, luxTap, luxViewport } from '@/templates/luxury/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -241,6 +242,7 @@ export function LuxuryProductoDetalleView({
         </motion.section>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={luxViewport} variants={luxSection} className="mt-16">
             <div className="mb-8 text-center">

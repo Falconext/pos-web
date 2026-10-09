@@ -11,6 +11,7 @@ import { APICULTURA_BANNER, ApiculturaFooter, ApiculturaHeader, ApiculturaProduc
 import ApiculturaVariantSelector from '@/templates/apicultura/ApiculturaVariantSelector';
 import { buildVariantCartItem, findApiculturaVariant, getApiculturaVariantData } from '@/templates/apicultura/variantUtils';
 import { honeyCard, honeyEase, honeyHover, honeyPage, honeySection, honeyStagger, honeyTap, honeyViewport } from '@/templates/apicultura/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const honeyPattern = {
@@ -379,6 +380,7 @@ export default function ApiculturaProductoDetalle() {
           </div>
         </motion.section>
 
+        <ProductoVideo url={producto?.videoUrl} />
         {related.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={honeyViewport} variants={honeySection} className="mt-16 border-t border-yellow-100 pt-12">
             <div className="mb-7 flex items-end justify-between">

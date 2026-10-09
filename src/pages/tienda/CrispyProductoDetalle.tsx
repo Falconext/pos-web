@@ -8,6 +8,7 @@ import { useFavoritosStore } from '@/zustand/favoritos';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { FOOD, FoodCartModal, FoodProductCard, FoodProductImage, FoodShell, foodFont, foodPrimary, waLink } from '@/templates/comida-app/CrispyParts';
 import { foodPage, foodSection, foodStagger, foodTap, foodViewport } from '@/templates/comida-app/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -127,6 +128,7 @@ export function CrispyProductoDetalleView({
         </div>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section variants={foodSection} initial="hidden" whileInView="show" viewport={foodViewport} className="mt-6 px-4">
             <h2 className="mb-3 text-[17px] font-extrabold" style={{ color: FOOD.ink }}>También te puede gustar</h2>

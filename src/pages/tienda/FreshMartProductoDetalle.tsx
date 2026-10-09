@@ -8,6 +8,7 @@ import { getApiculturaVariantData, findApiculturaVariant, optionValueAvailable, 
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { FM, FmCartModal, FmFooter, FmHeader, FmProductCard, FmProductImage, FmWhatsAppFab, StarRating, fmFont, fmPrimary, waLink } from '@/templates/supermercado/FreshMartParts';
 import { fmCard, fmFade, fmPage, fmSection, fmStagger, fmTap, fmViewport } from '@/templates/supermercado/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -182,6 +183,7 @@ export function FreshMartProductoDetalleView({
           </div>
         </motion.section>
 
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={fmViewport} variants={fmSection} className="mt-12">
             <div className="mb-6"><p className="text-[12px] font-bold" style={{ color: FM.green }}>Te puede interesar</p><h2 className="mt-1 text-2xl font-extrabold" style={{ fontFamily: FM.display, color: FM.ink }}>Productos relacionados</h2></div>

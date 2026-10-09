@@ -17,6 +17,7 @@ import {
 } from '@/templates/urbano/fashionVariants';
 import { VELO, VeloCartModal, VeloFooter, VeloHeader, VeloProductCard, VeloProductImage, VeloStars, VeloWhatsAppFab, veloFont, veloPrimary, waLink, withAlpha } from '@/templates/bicicletas/BicicletasParts';
 import { veloCard, veloFade, veloPage, veloSection, veloStagger, veloTap, veloViewport } from '@/templates/bicicletas/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -452,6 +453,7 @@ export function BicicletasProductoDetalleView({
         </motion.section>
 
         {/* Relacionados */}
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={veloViewport} variants={veloSection} className="mt-16">
             <div className="mb-8 text-center">

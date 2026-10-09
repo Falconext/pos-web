@@ -15,6 +15,7 @@ import { getProductPricing, withPricing, withPricingList } from '@/templates/sha
 import { mayeCard, mayePage, mayeSection, mayeStagger, mayeTap, mayeViewport } from '@/lib/motion/maye';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { parsePastedPairs } from '@/lib/pastedSpecs';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 type MayeTab = 'description' | 'specifications' | 'reviews';
 
@@ -568,6 +569,7 @@ export default function MayeProductoDetalle() {
           </div>
         </motion.section>
 
+        <ProductoVideo url={producto?.videoUrl} />
         {related.length > 0 && (
           <motion.section className="mt-14" variants={mayeSection} initial="initial" whileInView="animate" viewport={mayeViewport}>
             <div className="mb-7 flex items-end justify-between gap-4">

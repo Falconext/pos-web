@@ -8,6 +8,7 @@ import AutopartesCartModal from '@/components/tienda/AutopartesCartModal';
 import ProductCardGromuse from '@/components/tienda/ProductCardGromuse';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { withPricing, withPricingList } from '@/templates/shared/pricing';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -336,6 +337,7 @@ export default function AutopartesProductoDetalle() {
                 </div>
 
                 {/* Related Products */}
+                <ProductoVideo url={producto?.videoUrl} />
                 {related.length > 0 && (
                     <div className="mt-20">
                         <h2 className="text-2xl font-black text-gray-900 uppercase tracking-widest mb-8 border-l-4 pl-4" style={{ borderColor: cp }}>

@@ -47,6 +47,11 @@ export const RETAIL_IMG = {
 
 const INK = '#1B1D1C';
 /** Texto sobre un color: el que dé MÁS contraste WCAG (blanco vs tinta). Evita blanco sobre amarillos/pasteles. */
+/** Color de texto de los botones elegido a mano en el editor, si lo hay. */
+function textoBoton(diseno: any): string | null {
+  const v = String(diseno?.colorBotonTexto || '').trim();
+  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(v) ? v : null;
+}
 function onColor(bg: string): string {
   const L = luminance(bg);
   if (L === null) return '#FFFFFF';
@@ -87,8 +92,12 @@ export function vitrinaTheme(diseno: any) {
     accentSoft: mix(accent, 14, '#FFFFFF'),
     /** Fondo de las fotos de producto (blanco puro para mix-blend-multiply). */
     card: '#FFFFFF',
-    onPrimary: onColor(primary),
-    onAccent: onColor(accent),
+    // El color del texto sobre los botones se calcula buscando el mayor
+    // contraste, pero con un azul o un amarillo vivos eso devuelve tinta oscura
+    // y la marca suele querer blanco. `colorBotonTexto` permite imponerlo desde
+    // el editor; si no lo fijaron, se sigue calculando.
+    onPrimary: textoBoton(diseno) ?? onColor(primary),
+    onAccent: textoBoton(diseno) ?? onColor(accent),
     star: '#F2A93B',
     font: `'Nunito Sans', 'Segoe UI', system-ui, sans-serif`,
     serif: `'DM Serif Display', Georgia, 'Times New Roman', serif`,

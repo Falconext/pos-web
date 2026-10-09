@@ -9,6 +9,7 @@ import { getProductPricing, withPricing, withPricingList } from '@/templates/sha
 import { readableText } from '@/templates/shared/color';
 import ConstruccionCartModal from '@/templates/construccion/ConstruccionCartModal';
 import { ConstruccionFooter } from '@/templates/construccion/ConstruccionHomePage';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -414,6 +415,7 @@ export function ConstruccionProductoDetalleView({
           </div>
         </section>
 
+        <ProductoVideo url={producto?.videoUrl} />
         {related.length > 0 && (
           <motion.section variants={fadeUp} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.25 }} className="mt-16">
             <div className="mb-7 flex items-end justify-between border-b-4 pb-4" style={{ borderColor: cp }}>

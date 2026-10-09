@@ -59,6 +59,26 @@ export const ProductRichDescription: React.FC<{ vm: ViewProps }> = ({ vm }) => {
 
                 {descTiendaOpen && (
                     <div className="px-4 pb-4 border-t border-rose-100 dark:border-rose-900/30 pt-4 bg-rose-50/30 dark:bg-rose-950/5">
+                        {/* Video del producto: quien vende por WhatsApp suele grabarse
+                            mostrando el producto real, y ese video convence más que una
+                            foto. Antes el enlace se pegaba dentro de la descripción y
+                            salía como texto muerto en la tienda. */}
+                        <div className="mb-4">
+                            <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">
+                                Video del producto (opcional)
+                            </label>
+                            <input
+                                type="url"
+                                name="videoUrl"
+                                value={(formValues as any)?.videoUrl || ''}
+                                onChange={(e) => setFormValues({ ...formValues, videoUrl: e.target.value } as any)}
+                                placeholder="Pega el enlace de TikTok, YouTube o Instagram"
+                                className="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-[#1E293B] px-3 py-2.5 text-sm text-gray-900 dark:text-white outline-none focus:border-rose-400"
+                            />
+                            <p className="mt-1 text-[11px] leading-4 text-gray-500 dark:text-gray-400">
+                                Se muestra como reproductor en la ficha de tu tienda, sin que el cliente tenga que salir a otra app.
+                            </p>
+                        </div>
                         <style>{`
                             .quill-container .ql-container {
                                 min-height: 250px !important;

@@ -8,6 +8,7 @@ import { getApiculturaVariantData, findApiculturaVariant, optionValueAvailable, 
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroProductImage, GroWhatsAppFab, StarRating, groFont, groPrimary, waLink } from '@/templates/abarrotes/GroginParts';
 import { groCard, groFade, groPage, groSection, groStagger, groTap, groViewport } from '@/templates/abarrotes/motion';
+import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -274,6 +275,7 @@ export function GroginProductoDetalleView({
           </div>
         </motion.section>
 
+        <ProductoVideo url={producto?.videoUrl} />
         {relatedFiltered.length > 0 && (
           <motion.section initial="hidden" whileInView="show" viewport={groViewport} variants={groSection} className="mt-12">
             <div className="mb-6">
