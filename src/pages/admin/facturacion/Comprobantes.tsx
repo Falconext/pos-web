@@ -1,6 +1,7 @@
 
 import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
 import Input from "@/components/Input";
+import AvisoIncidenciaSunat, { type IncidenciaSunat } from "@/components/AvisoIncidenciaSunat";
 import DataTable from "@/components/Datatable";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import Pagination from "@/components/Pagination";
@@ -99,7 +100,28 @@ const Comprobantes = () => {
     const { getInvoice, invoice, resetInvoice, cancelInvoice, completePay, discardInvoice, conciliarInvoice, verificarSunat, reemitirInvoice }: IInvoicesState = useInvoiceStore();
     const { success } = useAlertStore();
     const [configFormato, setConfigFormato] = useState<null | 'FACTURA' | 'BOLETA'>(null);
+    /**
+     * Aviso de que SUNAT no está respondiendo. Se consulta acá, en la pantalla
+     * donde el empresario ve el "Fallido Envío" en rojo y se asusta: es el
+     * momento en que reemite o anula, que es justo lo que rompe correlativos.
+     * Solo cuenta los atascados por red, así que el aviso se apaga solo en
+     * cuanto el reenvío automático los saca de la cola.
+     */
+    const [incidenciaSunat, setIncidenciaSunat] = useState<IncidenciaSunat | null>(null);
     const [invoicesList, setInvoicesList] = useState<IInvoices[]>([]);
+
+    useEffect(() => {
+        let vivo = true;
+        const consultar = async () => {
+            try {
+                const resp: any = await get('comprobante/incidencia-sunat');
+                if (vivo) setIncidenciaSunat(resp?.data ?? resp ?? null);
+            } catch { /* el aviso es informativo: si falla, no molestamos */ }
+        };
+        consultar();
+        const id = setInterval(consultar, 120000);
+        return () => { vivo = false; clearInterval(id); };
+    }, []);
     const [totalInvoicesList, setTotalInvoicesList] = useState(0);
     const [invoicesLoading, setInvoicesLoading] = useState(false);
     const requestIdRef = useRef(0);
@@ -797,6 +819,8 @@ const Comprobantes = () => {
                     </button>
                 </div>
             )}
+
+            <AvisoIncidenciaSunat incidencia={incidenciaSunat} />
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
