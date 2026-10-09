@@ -1,4 +1,5 @@
 import { useState, useEffect, type ChangeEvent } from 'react';
+import { iniciarPixel, rastrear } from '@/utils/metaPixel';
 import { BRAND } from '@/lib/branding';
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
@@ -320,6 +321,21 @@ export default function Checkout() {
 
     const freeDeliveryThreshold = configEnvio?.envioGratisDesdeSoles || 0;
     const subtotal = calcularSubtotal();
+
+    // Llegar al checkout es la señal que de verdad le importa a una campaña:
+    // marca a quien estuvo a un paso de comprar. Una sola vez al entrar.
+    useEffect(() => {
+        if (!tienda?.metaPixelId) return;
+        iniciarPixel(tienda.metaPixelId);
+        rastrear('InitiateCheckout', {
+            value: Number(subtotal) || 0,
+            currency: 'PEN',
+            num_items: carritoState?.length ?? 0,
+        });
+        // Solo depende del pixel: el importe cambia al editar el carrito y no
+        // queremos un evento por cada cambio de cantidad.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [tienda?.metaPixelId]);
     // Mercado Pago rechaza cobros menores a S/ 5 ("Invalid value for
     // transaction_amount"): por debajo de ese monto la opción no se ofrece.
     const MP_MINIMO_SOLES = 5;

@@ -20,6 +20,7 @@ import { templateRegistry } from '@/templates/registry';
 import { useAuthStore } from '@/zustand/auth';
 import StoreLiveEditorDrawer from '@/components/tienda/StoreLiveEditorDrawer';
 import StoreWhatsAppButton from '@/components/tienda/StoreWhatsAppButton';
+import { datosDeProducto, iniciarPixel, rastrear } from '@/utils/metaPixel';
 
 import StoreSidebar from '@/components/tienda/StoreSidebar';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
@@ -230,7 +231,12 @@ export default function TiendaPublica() {
   const cargarTienda = async () => {
     try {
       const { data } = await axios.get(`${BASE_URL}/public/store/${slug}`);
-      setTienda(withStorePurchaseWhatsapp(data.data || data));
+      const info = data.data || data;
+      setTienda(withStorePurchaseWhatsapp(info));
+      // El pixel se monta con los datos de la tienda, no en el index.html:
+      // cada empresa tiene el suyo y muchas no tienen ninguno.
+      iniciarPixel(info?.metaPixelId);
+      rastrear('PageView');
     } catch (error) {
       console.error('Error al cargar tienda:', error);
     }
@@ -390,6 +396,9 @@ export default function TiendaPublica() {
   };
 
   const agregarAlCarritoDirecto = (producto: any, modificadores?: any[]) => {
+    // Va aquí y no en cada tarjeta: todas las plantillas terminan pasando por
+    // esta función, así que ninguna se queda sin medir.
+    rastrear('AddToCart', datosDeProducto({ ...producto, cantidad: 1 }));
     const itemId = modificadores?.length
       ? `${producto.id}-${Date.now()}` // ID único si tiene modificadores
       : producto.id;
