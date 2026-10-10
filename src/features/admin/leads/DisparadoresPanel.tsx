@@ -36,6 +36,7 @@ export function DisparadoresPanel() {
   const [config, setConfig] = useState<ConfigDisparadores | null>(null)
   const [cargando, setCargando] = useState(true)
   const [estado, setEstado] = useState<EstadoDisparo | ''>('')
+  const [altaPlantillas, setAltaPlantillas] = useState(false)
 
   const cargar = useCallback(async () => {
     try {
@@ -71,6 +72,38 @@ export function DisparadoresPanel() {
     }
   }
 
+  /**
+   * Da de alta las plantillas en la cuenta de WhatsApp del negocio.
+   *
+   * Es el paso que faltaba para que los avisos de 25 y 45 días puedan salir:
+   * fuera de la ventana de 24 h Meta solo entrega plantillas aprobadas, y la
+   * aprobación la da Meta, no nosotros. El botón las CREA; la aprobación
+   * tarda, y las comerciales más.
+   */
+  const crearPlantillas = async () => {
+    setAltaPlantillas(true)
+    try {
+      const r = await disparosService.crearPlantillas()
+      const partes = [
+        r.creadas.length ? `${r.creadas.length} enviadas a aprobación` : '',
+        r.existentes.length ? `${r.existentes.length} ya estaban` : '',
+        r.errores.length ? `${r.errores.length} con error` : '',
+      ].filter(Boolean)
+      alert(
+        `Plantillas: ${partes.join(', ')}. Meta tarda en aprobarlas; hasta entonces los avisos fuera de 24 h no salen.`,
+        r.errores.length ? 'warning' : 'success',
+      )
+    } catch (e: any) {
+      alert(
+        e?.response?.data?.message ??
+          'No se pudieron dar de alta las plantillas',
+        'error',
+      )
+    } finally {
+      setAltaPlantillas(false)
+    }
+  }
+
   const darDeBaja = async (d: Disparo) => {
     try {
       const r = await disparosService.darDeBaja(d.telefono)
@@ -98,6 +131,37 @@ export function DisparadoresPanel() {
 
   return (
     <div className="space-y-5">
+      {/* El requisito que nadie adivina: sin plantillas aprobadas, los avisos
+          que caen fuera de la ventana de 24 h no salen. Va arriba porque es
+          lo primero que hay que hacer, una sola vez. */}
+      <div className="flex flex-col gap-3 rounded-2xl border border-indigo-200 bg-indigo-50/60 p-4 sm:flex-row sm:items-center dark:border-indigo-900/40 dark:bg-indigo-900/10">
+        <Icon
+          icon="solar:document-add-bold-duotone"
+          className="text-2xl text-indigo-500"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-black text-gray-900 dark:text-white">
+            Plantillas de WhatsApp
+          </p>
+          <p className="text-[11px] text-gray-600 dark:text-gray-400">
+            Un aviso que sale más de 24 horas después del último mensaje del
+            cliente solo puede ir como plantilla aprobada por Meta. Dalas de
+            alta una vez; la aprobación la da Meta y tarda (las comerciales,
+            más). Hasta que aprueben, esos avisos no se envían y acá abajo
+            dice por qué.
+          </p>
+        </div>
+        <button
+          type="button"
+          data-testid="btn-plantillas"
+          onClick={crearPlantillas}
+          disabled={altaPlantillas}
+          className="h-10 flex-shrink-0 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white hover:bg-indigo-700 disabled:opacity-60"
+        >
+          {altaPlantillas ? 'Enviando…' : 'Dar de alta las plantillas'}
+        </button>
+      </div>
+
       {/* Qué está encendido y qué cuesta */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-[#111827]">
         <div className="mb-3 flex items-center gap-2">

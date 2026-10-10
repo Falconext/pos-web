@@ -268,6 +268,31 @@ export const disparosService = {
       .post(`/leads/crm/disparadores/${id}/enviar`, {})
       .then(datos<{ enviado: boolean; motivo?: string; via?: string }>),
 
+  /**
+   * Da de alta las plantillas de la IA de Ventas en la WABA del negocio.
+   *
+   * Sin esto, los avisos que caen fuera de la ventana de 24 h no pueden
+   * salir: Meta solo entrega plantillas aprobadas. Es idempotente, así que
+   * tocarlo dos veces no duplica nada.
+   */
+  crearPlantillas: () =>
+    apiClient
+      .post('/whatsapp/plantillas-ia-ventas', {})
+      .then(
+        datos<{ creadas: string[]; existentes: string[]; errores: string[] }>,
+      ),
+
+  /**
+   * 33.1 — avisar a quien pidió un producto que no había y ya volvió.
+   *
+   * El backend vuelve a mirar la disponibilidad antes de programar nada: no
+   * se puede avisar de algo que sigue agotado.
+   */
+  avisarProductoDisponible: (productoId: number) =>
+    apiClient
+      .post(`/leads/crm/disparadores/producto/${productoId}/volvio`, {})
+      .then(datos<{ avisados: number; motivo?: string }>),
+
   darDeBaja: (telefono: string) =>
     apiClient
       .post(`/leads/crm/disparadores/baja/${encodeURIComponent(telefono)}`, {})
