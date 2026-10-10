@@ -9,10 +9,12 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-const postMock = jest.fn(() =>
+const postMock = jest.fn((_url: string, _body?: unknown) =>
     Promise.resolve({ data: { data: { registradas: 1, evidencias: [] } } }),
 );
-const deleteMock = jest.fn(() => Promise.resolve({ data: { code: 1 } }));
+const deleteMock = jest.fn((_url: string) =>
+    Promise.resolve({ data: { code: 1 } }),
+);
 const alertMock = jest.fn();
 let rolActual = 'USUARIO_EMPRESA';
 
@@ -30,7 +32,9 @@ jest.mock('@/zustand/alert', () => ({
 }));
 jest.mock('@/zustand/auth', () => ({
     __esModule: true,
-    useAuthStore: (sel: any) => sel({ rol: rolActual }),
+    // Misma forma que el store real: el rol está en `auth`, no en la raíz.
+    // Con el mock plano, el test pasaba y en producción el rol era undefined.
+    useAuthStore: (sel: any) => sel({ auth: { rol: rolActual } }),
 }));
 jest.mock('@iconify/react', () => ({ Icon: () => null }));
 // La conversión real necesita canvas, que jsdom no tiene; su matemática se

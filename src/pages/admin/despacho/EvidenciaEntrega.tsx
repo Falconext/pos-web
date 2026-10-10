@@ -9,7 +9,7 @@ import { useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
 import apiClient from '@/utils/apiClient';
-import { useAlertStore } from '@/zustand/alert';
+import useAlertStore from '@/zustand/alert';
 import { useAuthStore } from '@/zustand/auth';
 import { prepararFoto } from '@/utils/fotoParaSubir';
 
@@ -49,7 +49,7 @@ export function EvidenciaEntrega({
     onEntregado,
 }: Props) {
     const { alert } = useAlertStore();
-    const rol = useAuthStore((s) => s.rol);
+    const rol = useAuthStore((s) => s.auth?.rol);
     const puedeAnular = rol === 'ADMIN_EMPRESA' || rol === 'ADMIN_SISTEMA';
 
     const inputRef = useRef<HTMLInputElement>(null);

@@ -12,7 +12,7 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useProductModalViewModel } from '../useProductModalViewModel';
-import { useAlertStore } from '@/zustand/alert';
+import useAlertStore from '@/zustand/alert';
 import { disparosService } from '@/services/crm.service';
 
 type ViewProps = ReturnType<typeof useProductModalViewModel>;

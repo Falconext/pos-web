@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
-import { useAlertStore } from '@/zustand/alert'
+import useAlertStore from '@/zustand/alert'
 import { crmService, type ReporteBi } from '@/services/crm.service'
 
 const soles = (n: number) => `S/ ${Number(n ?? 0).toFixed(2)}`

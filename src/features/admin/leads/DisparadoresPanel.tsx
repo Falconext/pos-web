@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
 import moment from 'moment'
-import { useAlertStore } from '@/zustand/alert'
+import useAlertStore from '@/zustand/alert'
 import {
   disparosService,
   DISPARO_META,

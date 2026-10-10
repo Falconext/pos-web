@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
 import moment from 'moment'
-import { useAlertStore } from '@/zustand/alert'
+import useAlertStore from '@/zustand/alert'
 import {
   crmService,
   ETAPA_META,
