@@ -1,6 +1,13 @@
 import { Icon } from '@iconify/react';
 import { useNavigate } from 'react-router-dom';
 
+import {
+    calcularDescuento,
+    enlaceDePedido,
+    mensajeDePedido,
+    soles,
+} from '@/utils/reglasDescuento';
+
 interface ShoppingCartModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -28,9 +35,19 @@ export default function ShoppingCartModal({
 
     if (!isOpen) return null;
 
-    const calcularSubtotal = () => {
-        return carrito.reduce((sum, item) => sum + Number(item.precioUnitario) * Number(item.cantidad || 1), 0);
-    };
+    // Los tramos llegan con los datos de la tienda: cada empresa tiene los
+    // suyos y el cálculo es el mismo que hace la IA en el chat, para que los
+    // dos sitios no puedan decir números distintos.
+    const calculo = calcularDescuento(
+        carrito.map((i) => ({ precioUnitario: i.precioUnitario, cantidad: i.cantidad || 1 })),
+        // Envío 0: en la web todavía no se sabe el distrito, y el envío solo
+        // SUMA al total. Así el carrito nunca promete un descuento que el chat
+        // no vaya a dar; como mucho se queda corto y el cliente se lleva una
+        // sorpresa buena. Al revés sería fatal: prometer S/ 20 y cobrar S/ 10.
+        0,
+        tienda?.reglasDescuento,
+    );
+    const whatsappTienda: string | undefined = tienda?.whatsappTienda;
 
     return (
         <div className="fixed inset-0 z-[999999] flex justify-end">
@@ -150,9 +167,25 @@ export default function ShoppingCartModal({
                         <div className="rounded-2xl border border-gray-100 bg-[#FAFBFC] p-4 mb-3">
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-600 font-medium text-sm">Subtotal</span>
-                                <span className="font-black text-2xl text-[#1A1A1A] leading-none">S/ {calcularSubtotal().toFixed(2)}</span>
+                                <span className="font-black text-2xl text-[#1A1A1A] leading-none">{soles(calculo.subtotal)}</span>
                             </div>
+                            {calculo.descuento > 0 && (
+                                <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
+                                    <span className="text-emerald-700 font-medium text-sm">Descuento por pack</span>
+                                    <span className="font-bold text-emerald-700">−{soles(calculo.descuento)}</span>
+                                </div>
+                            )}
                         </div>
+                        {/* El empujón al siguiente tramo solo sale cuando el monto
+                            YA alcanza: decirle "te falta 1" cuando también le
+                            faltan S/ 70 es empujarlo a una compra que no esperaba. */}
+                        {calculo.faltaParaSiguiente && (
+                            <p className="text-center text-xs text-emerald-700 bg-emerald-50 rounded-lg py-2 mb-3">
+                                Con {calculo.faltaParaSiguiente.unidades} producto
+                                {calculo.faltaParaSiguiente.unidades > 1 ? 's' : ''} más llegas al
+                                descuento de {soles(calculo.faltaParaSiguiente.descuento)}
+                            </p>
+                        )}
                         <button
                             onClick={onCheckout}
                             className="w-full bg-[#FF9903] text-white py-3 font-bold text-sm hover:bg-[#E08500] transition-all shadow-sm hover:shadow-md rounded-xl flex items-center justify-center gap-2 group"
@@ -160,6 +193,20 @@ export default function ShoppingCartModal({
                             <span>Ir a Pagar</span>
                             <Icon icon="solar:arrow-right-linear" className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </button>
+                        {/* Mucha gente prefiere cerrar por chat antes que llenar un
+                            formulario. El pedido va escrito para que el asistente
+                            lo retome sin que el cliente lo repita. */}
+                        {whatsappTienda && (
+                            <a
+                                href={enlaceDePedido(whatsappTienda, mensajeDePedido(carrito, calculo))}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="mt-2 w-full border border-[#25D366] text-[#128C7E] py-3 font-bold text-sm hover:bg-[#25D366]/10 transition-all rounded-xl flex items-center justify-center gap-2"
+                            >
+                                <Icon icon="ic:baseline-whatsapp" className="w-5 h-5" />
+                                <span>Pedir por WhatsApp</span>
+                            </a>
+                        )}
                         <p className="text-center text-[11px] text-gray-500 mt-2.5">
                             Impuestos y envío calculados al finalizar
                         </p>
