@@ -140,9 +140,20 @@ describe('el pedido que se manda al chat', () => {
   });
 
   it('el enlace va al número de la tienda y lleva el pedido escrito', () => {
-    const url = enlaceDePedido('+51 925 085 731', 'PEDIDO WEB\n2x Moringa');
-    expect(url.startsWith('https://wa.me/51925085731?text=')).toBe(true);
+    const url = enlaceDePedido('+51 915 947 349', 'PEDIDO WEB\n2x Moringa');
+    expect(url.startsWith('https://wa.me/51915947349?text=')).toBe(true);
     expect(decodeURIComponent(url.split('text=')[1])).toContain('2x Moringa');
+  });
+
+  it('le pone el código de país al número guardado sin él', () => {
+    // El campo del panel sugiere "+51 …", pero quien escriba solo los 9
+    // dígitos generaba un enlace a un número inexistente, sin dar error.
+    expect(enlaceDePedido('915947349', 'hola')).toContain('wa.me/51915947349');
+    expect(enlaceDePedido('915 947 349', 'hola')).toContain('wa.me/51915947349');
+  });
+
+  it('y no se lo duplica al que ya lo trae', () => {
+    expect(enlaceDePedido('51915947349', 'hola')).toContain('wa.me/51915947349');
   });
 });
 
