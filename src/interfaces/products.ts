@@ -114,6 +114,10 @@ export type IProduct = {
 
 
 export type IFormProduct = {
+    /** Para la IA de Ventas: qué se le puede prometer al cliente. */
+    disponibilidad?: 'INMEDIATA' | 'BAJO_PEDIDO' | 'NO_DISPONIBLE';
+    /** Empuje frente a productos equivalentes (1 media, 2 alta, 3 muy alta). */
+    prioridadVenta?: number;
   productoId: number
   descripcion: string,
   categoriaNombre: string

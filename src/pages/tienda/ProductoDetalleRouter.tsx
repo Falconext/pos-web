@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { datosDeProducto, iniciarPixel, rastrear } from '@/utils/metaPixel';
 import type { ComponentType } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
@@ -75,7 +76,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
 };
 
 export default function ProductoDetalleRouter() {
-  const { slug } = useParams();
+  const { slug, id } = useParams();
   const [searchParams] = useSearchParams();
   const previewPlantillaId = searchParams.get('previewPlantilla');
   useStorePreviewNavigation(previewPlantillaId);
@@ -93,10 +94,15 @@ export default function ProductoDetalleRouter() {
       .then((res) => {
         const tienda = res.data.data || res.data;
         setPlantillaId(tienda?.diseno?.plantillaId || '');
+        // El ViewContent va aquí y no en cada página de detalle: hay 25
+        // plantillas distintas y, puesto en cada una, alguna se quedaría sin
+        // medir y nadie se daría cuenta hasta leer un informe raro.
+        iniciarPixel(tienda?.metaPixelId);
+        if (id) rastrear('ViewContent', datosDeProducto({ id }));
       })
       .catch(() => setPlantillaId(''))
       .finally(() => setLoading(false));
-  }, [slug, previewPlantillaId]);
+  }, [slug, id, previewPlantillaId]);
 
   if (loading) {
     return (

@@ -1607,6 +1607,16 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             formValues?.porcentajeProvision != null
               ? Number(formValues?.porcentajeProvision)
               : undefined,
+          // Para la IA de Ventas. El payload se arma campo por campo, así que
+          // un campo nuevo del formulario que no se liste acá se pierde en
+          // silencio: el usuario lo cambia, ve "guardado" y no cambió nada.
+          disponibilidad: (formValues as any)?.disponibilidad || undefined,
+          // "Normal" es 0 en la pantalla, pero el backend solo acepta 1-3: se
+          // manda sin el campo, que es lo que significa "sin preferencia".
+          prioridadVenta:
+            Number((formValues as any)?.prioridadVenta) >= 1
+              ? Number((formValues as any).prioridadVenta)
+              : undefined,
           preciosMayorista: Array.isArray(formValues?.preciosMayorista)
             ? formValues.preciosMayorista.map((p) => ({
                 cantidadMinima: Number(p.cantidadMinima),
@@ -1805,6 +1815,16 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           porcentajeVenta: Number(formValues?.porcentajeVenta ?? 100),
           porcentajeProvision: Number(formValues?.porcentajeProvision ?? 0),
           localizacion: formValues?.localizacion || "",
+          // Para la IA de Ventas. El payload se arma campo por campo, así que
+          // un campo nuevo del formulario que no se liste acá se pierde en
+          // silencio: el usuario lo cambia, ve "guardado" y no cambió nada.
+          disponibilidad: (formValues as any)?.disponibilidad || undefined,
+          // "Normal" es 0 en la pantalla, pero el backend solo acepta 1-3: se
+          // manda sin el campo, que es lo que significa "sin preferencia".
+          prioridadVenta:
+            Number((formValues as any)?.prioridadVenta) >= 1
+              ? Number((formValues as any).prioridadVenta)
+              : undefined,
           preciosMayorista: Array.isArray(formValues?.preciosMayorista)
             ? formValues.preciosMayorista.map((p) => ({
                 cantidadMinima: Number(p.cantidadMinima),
