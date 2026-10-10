@@ -6,6 +6,9 @@ import Button from '@/components/Button'
 import InputPro from '@/components/InputPro'
 import Modal from '@/components/Modal'
 import { useLeadsViewModel } from './useLeadsViewModel'
+import { EmbudoBoard } from './EmbudoBoard'
+import { BiPanel } from './BiPanel'
+import { Ficha360 } from './Ficha360'
 import {
   ESTADOS_KANBAN,
   ESTADO_META,
@@ -19,8 +22,17 @@ import type {
   TipoLeadDocumento,
 } from '@/services/leads.service'
 
+type Vista = 'conversaciones' | 'embudo' | 'analitica'
+
+const VISTAS: { id: Vista; label: string; icon: string }[] = [
+  { id: 'conversaciones', label: 'Conversaciones', icon: 'solar:chat-round-dots-bold-duotone' },
+  { id: 'embudo', label: 'Embudo', icon: 'solar:filter-bold-duotone' },
+  { id: 'analitica', label: 'Analítica', icon: 'solar:chart-2-bold-duotone' },
+]
+
 export default function LeadsView() {
   const vm = useLeadsViewModel()
+  const [vista, setVista] = useState<Vista>('conversaciones')
 
   return (
     <div className="min-h-screen px-2 pb-4 dark:bg-[#0A0D14]">
@@ -69,6 +81,33 @@ export default function LeadsView() {
         </div>
       )}
 
+      {/* Conmutador de vistas */}
+      <div className="mb-4 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800/60 w-fit">
+        {VISTAS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVista(v.id)}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors ${
+              vista === v.id
+                ? 'bg-white text-indigo-600 shadow-sm dark:bg-[#111827] dark:text-indigo-400'
+                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
+          >
+            <Icon icon={v.icon} className="text-base" />
+            {v.label}
+          </button>
+        ))}
+      </div>
+
+      {vista === 'embudo' && <EmbudoBoard onVerCliente={vm.setFicha360} />}
+      {vista === 'analitica' && <BiPanel />}
+      {vm.ficha360 && (
+        <Ficha360 telefono={vm.ficha360} onCerrar={() => vm.setFicha360(null)} />
+      )}
+
+      {vista === 'conversaciones' && (
+        <>
       {/* Resumen por estado */}
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {ESTADOS_KANBAN.map((estado) => {
@@ -158,6 +197,11 @@ export default function LeadsView() {
         <ChatPanel vm={vm} />
       </Modal>
 
+        </>
+      )}
+
+      {/* Los modales viven fuera de la vista: "Configurar" y "Entrenar" se
+          abren desde el encabezado, que está en las tres pestañas. */}
       {/* Modal de configuración */}
       <Modal
         isOpenModal={vm.configOpen}
@@ -308,6 +352,17 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                 {nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)}
               </p>
               <p className="mt-0.5 truncate text-xs text-gray-400">{conv.telefonoProspecto}</p>
+              {/* La ficha 360° se abre desde el chat, que es donde surge la
+                  pregunta: "¿este cliente ya me compró?", "¿esto ya lo pidió
+                  antes?". Buscarla en otra pantalla es no mirarla. */}
+              <button
+                type="button"
+                onClick={() => vm.setFicha360(conv.telefonoProspecto)}
+                className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:underline dark:text-indigo-400"
+              >
+                <Icon icon="solar:clipboard-list-bold-duotone" width={12} />
+                Ver su historial
+              </button>
               {meta && (
                 <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                   <span

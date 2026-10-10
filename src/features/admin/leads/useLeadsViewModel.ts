@@ -46,6 +46,7 @@ export function useLeadsViewModel() {
 
   // Entrenamiento (RAG).
   const [entrenarOpen, setEntrenarOpen] = useState(false)
+  const [ficha360, setFicha360] = useState<string | null>(null)
   const [documentos, setDocumentos] = useState<LeadDocumento[]>([])
   const [loadingDocs, setLoadingDocs] = useState(false)
   const [guardandoDoc, setGuardandoDoc] = useState(false)
@@ -323,6 +324,10 @@ export function useLeadsViewModel() {
     setConfigOpen,
     entrenarOpen,
     setEntrenarOpen,
+    /// Teléfono cuya ficha 360° está abierta. Vive acá y no en la vista
+    /// porque se abre desde dos sitios: el tablero del embudo y el chat.
+    ficha360,
+    setFicha360,
     documentos,
     loadingDocs,
     guardandoDoc,
