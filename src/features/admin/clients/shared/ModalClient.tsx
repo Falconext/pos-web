@@ -283,6 +283,11 @@ export default function ModalClient({
                             <Select defaultValue={formValues?.persona} error={''} isSearch options={persons} id="persona" name="personaName" value="" onChange={handleChangeSelect} icon="clarity:box-plot-line" isIcon label="Persona" />
                         )}
 
+                        {/* Alias: el vendedor rara vez recuerda el RUC o la razón social
+                            exacta, pero sí el apodo. Se busca igual que el nombre, tanto
+                            en este listado como al crear un comprobante. */}
+                        <InputPro autocomplete="off" error={''} value={formValues?.alias ?? ''} name="alias" onChange={handleChange} isLabel label="Alias (opcional) — cómo lo llamas al buscarlo" />
+
                         {/* Dirección */}
                         <InputPro autocomplete="off" error={errors.direccion} value={formValues?.direccion} name="direccion" onChange={handleChange} isLabel label="Dirección" />
 

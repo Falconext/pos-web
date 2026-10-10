@@ -15,6 +15,7 @@ export const ALL_COLUMNS = [
 export const INITIAL_FORM: IFormClient = {
     id: 0,
     nombre: '',
+    alias: '',
     nroDoc: '',
     direccion: '',
     departamento: '',

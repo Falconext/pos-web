@@ -28,7 +28,7 @@ export interface IClientsState {
 // Solo estos campos acepta el DTO del backend; el resto (id, estado,
 // tipoDocumentoId, empresaId, tipoDocumento, etc.) son de UI/relación y deben omitirse.
 const CLIENTE_PAYLOAD_KEYS = [
-    'nombre', 'tipoDoc', 'nroDoc', 'direccion', 'email', 'telefono',
+    'nombre', 'alias', 'tipoDoc', 'nroDoc', 'direccion', 'email', 'telefono',
     'ubigeo', 'departamento', 'provincia', 'distrito', 'persona',
     'grupoSanguineo', 'alergias', 'fechaNacimiento', 'medicoTratanteId',
     'esAgenteRetencion',
