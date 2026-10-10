@@ -8,6 +8,7 @@ import Modal from '@/components/Modal'
 import { useLeadsViewModel } from './useLeadsViewModel'
 import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
+import { DisparadoresPanel } from './DisparadoresPanel'
 import { Ficha360 } from './Ficha360'
 import {
   ESTADOS_KANBAN,
@@ -22,12 +23,13 @@ import type {
   TipoLeadDocumento,
 } from '@/services/leads.service'
 
-type Vista = 'conversaciones' | 'embudo' | 'analitica'
+type Vista = 'conversaciones' | 'embudo' | 'analitica' | 'avisos'
 
 const VISTAS: { id: Vista; label: string; icon: string }[] = [
   { id: 'conversaciones', label: 'Conversaciones', icon: 'solar:chat-round-dots-bold-duotone' },
   { id: 'embudo', label: 'Embudo', icon: 'solar:filter-bold-duotone' },
   { id: 'analitica', label: 'Analítica', icon: 'solar:chart-2-bold-duotone' },
+  { id: 'avisos', label: 'Avisos', icon: 'solar:bell-bold-duotone' },
 ]
 
 export default function LeadsView() {
@@ -102,6 +104,7 @@ export default function LeadsView() {
 
       {vista === 'embudo' && <EmbudoBoard onVerCliente={vm.setFicha360} />}
       {vista === 'analitica' && <BiPanel />}
+      {vista === 'avisos' && <DisparadoresPanel />}
       {vm.ficha360 && (
         <Ficha360 telefono={vm.ficha360} onCerrar={() => vm.setFicha360(null)} />
       )}

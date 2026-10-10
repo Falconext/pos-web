@@ -202,6 +202,151 @@ export const crmService = {
       .then(datos<{ telefono: string; nombre: string; parecido: number }[]>),
 }
 
+// ── F — disparadores y re-engagement ────────────────────────────────────
+
+export type TipoDisparo =
+  | 'VUELTA_DISPONIBILIDAD'
+  | 'RECUPERAR_COTIZACION'
+  | 'CARRITO_EN_ESPERA'
+  | 'POST_ENTREGA'
+  | 'RECOMPRA'
+  | 'REACTIVACION'
+
+export type EstadoDisparo =
+  | 'PROGRAMADO'
+  | 'ENVIADO'
+  | 'CANCELADO'
+  | 'OMITIDO'
+  | 'FALLIDO'
+
+export interface Disparo {
+  id: number
+  tipo: TipoDisparo
+  telefono: string
+  referencia: string
+  programadoPara: string
+  estado: EstadoDisparo
+  motivo: string | null
+  plantilla: string | null
+  textoEnviado: string | null
+  enviadoEn: string | null
+}
+
+export interface ListadoDisparos {
+  disparos: Disparo[]
+  porEstado: { estado: EstadoDisparo; total: number }[]
+  bajas: number
+}
+
+export interface ConfigDisparadores {
+  activos: TipoDisparo[]
+  demorasHoras?: Partial<Record<TipoDisparo, number>>
+  horaDesde: number
+  horaHasta: number
+  topeMarketing: number
+  topeMarketingDias: number
+}
+
+export const disparosService = {
+  listar: (f: { estado?: string; tipo?: string } = {}) => {
+    const q = new URLSearchParams()
+    if (f.estado) q.set('estado', f.estado)
+    if (f.tipo) q.set('tipo', f.tipo)
+    const qs = q.toString()
+    return apiClient
+      .get(`/leads/crm/disparadores${qs ? `?${qs}` : ''}`)
+      .then(datos<ListadoDisparos>)
+  },
+
+  config: () =>
+    apiClient
+      .get('/leads/crm/disparadores/config')
+      .then(datos<ConfigDisparadores>),
+
+  enviarAhora: (id: number) =>
+    apiClient
+      .post(`/leads/crm/disparadores/${id}/enviar`, {})
+      .then(datos<{ enviado: boolean; motivo?: string; via?: string }>),
+
+  darDeBaja: (telefono: string) =>
+    apiClient
+      .post(`/leads/crm/disparadores/baja/${encodeURIComponent(telefono)}`, {})
+      .then(datos<{ dadoDeBaja: boolean; cancelados: number }>),
+}
+
+/**
+ * Qué es cada disparador, dicho como lo entiende el dueño del negocio, y qué
+ * le cuesta. La diferencia entre UTILITY y MARKETING no es cosmética: la de
+ * marketing se paga más, cuenta para el tope y exige el pie de baja.
+ */
+export const DISPARO_META: Record<
+  TipoDisparo,
+  { label: string; detalle: string; icon: string; marketing: boolean }
+> = {
+  VUELTA_DISPONIBILIDAD: {
+    label: 'Volvió a estar disponible',
+    detalle: 'Avisa a quien lo pidió cuando entra stock de algo que no había.',
+    icon: 'solar:box-bold-duotone',
+    marketing: false,
+  },
+  RECUPERAR_COTIZACION: {
+    label: 'Cotización sin cerrar',
+    detalle: 'A las 3 horas, si cotizó y no respondió. Se cancela si contesta.',
+    icon: 'solar:document-text-bold-duotone',
+    marketing: false,
+  },
+  CARRITO_EN_ESPERA: {
+    label: 'Dijo que avisaba luego',
+    detalle: 'A la mañana siguiente, cuando posterga la compra.',
+    icon: 'solar:cart-large-bold-duotone',
+    marketing: false,
+  },
+  POST_ENTREGA: {
+    label: 'Reseña post-entrega',
+    detalle: '24 horas después de la entrega confirmada.',
+    icon: 'solar:star-bold-duotone',
+    marketing: false,
+  },
+  RECOMPRA: {
+    label: 'Recompra a los 25 días',
+    detalle: 'Para lo que se consume cada mes. Solo si el producto está disponible.',
+    icon: 'solar:refresh-bold-duotone',
+    marketing: true,
+  },
+  REACTIVACION: {
+    label: 'Reactivación a los 45 días',
+    detalle: 'A quien ya compró y lleva 45 días sin escribir.',
+    icon: 'solar:user-hand-up-bold-duotone',
+    marketing: true,
+  },
+}
+
+export const ESTADO_DISPARO_META: Record<
+  EstadoDisparo,
+  { label: string; chip: string }
+> = {
+  PROGRAMADO: {
+    label: 'Por salir',
+    chip: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300',
+  },
+  ENVIADO: {
+    label: 'Enviado',
+    chip: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  },
+  CANCELADO: {
+    label: 'Ya no aplicaba',
+    chip: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  },
+  OMITIDO: {
+    label: 'No se envió',
+    chip: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
+  },
+  FALLIDO: {
+    label: 'Falló',
+    chip: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  },
+}
+
 /** Nombre y color de cada etapa. El orden es el del anexo del cliente. */
 export const ETAPA_META: Record<
   EtapaCrm,
