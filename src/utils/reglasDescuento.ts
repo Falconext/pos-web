@@ -153,8 +153,16 @@ export function mensajeDePedido(
   return lineas.join('\n');
 }
 
-/** El enlace de WhatsApp con el pedido ya escrito. */
+/**
+ * El enlace de WhatsApp con el pedido ya escrito.
+ *
+ * Se le antepone el código de país si no lo trae: el campo del panel sugiere
+ * "+51 999 999 999", pero quien escriba solo los 9 dígitos generaba un enlace
+ * a un número inexistente, y el fallo es mudo — WhatsApp abre y dice que ese
+ * número no existe, y el negocio nunca se entera de los pedidos que perdió.
+ */
 export function enlaceDePedido(numero: string, mensaje: string): string {
-  const limpio = String(numero || '').replace(/\D/g, '');
+  const digitos = String(numero || '').replace(/\D/g, '');
+  const limpio = digitos.startsWith('51') ? digitos : `51${digitos}`;
   return `https://wa.me/${limpio}?text=${encodeURIComponent(mensaje)}`;
 }
