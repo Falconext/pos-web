@@ -21,6 +21,7 @@ import { ProductRail, OfferCountdown, soonestOfferEnd, storeChannels, getName, t
 import { mix, stEase, stHeroText, stStagger } from '@/templates/zapatos/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const optionsOf = (p: any): { nombre: string; valores: string[] }[] => (Array.isArray(p?.opcionesAtributos) ? p.opcionesAtributos : []);
 
@@ -57,8 +58,8 @@ export function StrideProductoDetalleView({ tienda, slug, producto, related = []
   const activeVariant = useMemo(() => (hasVariants ? findFashionVariant(producto, selection) : null), [producto, selection, hasVariants]);
   const allSelected = hasVariants ? options.every((o) => !!selection[o.nombre]) : true;
   const stock = activeVariant ? Number(activeVariant.stock || 0) : Number(producto?.stock ?? 0);
-  const isOut = hasVariants ? allSelected && stock <= 0 : stock <= 0;
-  const canAdd = hasVariants ? allSelected && !!activeVariant && stock > 0 : stock > 0;
+  const isOut = hasVariants ? allSelected && sinStock(stock) : sinStock(stock);
+  const canAdd = hasVariants ? allSelected && !!activeVariant && !sinStock(stock) : !sinStock(stock);
   const price = activeVariant ? Number(activeVariant.precioUnitario || pricing.precioFinal) : pricing.precioFinal;
   const showStrike = !activeVariant && pricing.enOferta;
   const missing = hasVariants ? options.find((o) => !selection[o.nombre])?.nombre : '';
@@ -198,9 +199,9 @@ export function StrideProductoDetalleView({ tienda, slug, producto, related = []
                 </motion.div>
               ))}
 
-              <motion.div variants={stHeroText} className="mt-5 inline-flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: isOut ? t.muted : stock <= 5 && (!hasVariants || allSelected) ? t.accent : t.primaryInk }}>
+              <motion.div variants={stHeroText} className="mt-5 inline-flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: isOut ? t.muted : pocasUnidades(stock) && (!hasVariants || allSelected) ? t.accent : t.primaryInk }}>
                 <Icon icon={isOut ? 'solar:close-circle-linear' : 'solar:check-circle-linear'} width={17} />
-                {hasVariants && !allSelected ? `Elige ${String(missing || 'una opción').toLowerCase()} para ver disponibilidad` : isOut ? 'Sin stock en esta opción' : stock <= 5 ? `¡Quedan ${stock}!` : 'Disponible'}
+                {hasVariants && !allSelected ? `Elige ${String(missing || 'una opción').toLowerCase()} para ver disponibilidad` : isOut ? 'Sin stock en esta opción' : pocasUnidades(stock) ? `¡Quedan ${stock}!` : 'Disponible'}
               </motion.div>
 
               <motion.div variants={stHeroText} ref={ctaRef} className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -459,7 +460,7 @@ export default function StrideProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         window.scrollTo({ top: 0 });

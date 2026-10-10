@@ -8,6 +8,7 @@ import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { mix, ndEase } from './motion';
 
+import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 /**
  * Piezas base de la plantilla Mueblería (Nórdica): tema, header, footer, tarjeta y carrito.
  * Regla de la plantilla: nada inventado. Si un dato no existe en la tienda, la UI se oculta.
@@ -322,7 +323,7 @@ export function NordicaFooter({ tienda, slug, diseno, t, categories, navigate }:
 export function NordicaProductCard({ producto, slug, t, onOpen, onAdd }: { producto: any; slug: string; t: Theme; onOpen: () => void; onAdd: (qty: number) => void }) {
   const pricing = getProductPricing(producto);
   const stock = Number(producto?.stock ?? 1);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const colors = getFashionColors(producto).slice(0, 4);
   const subtitle = nameOf(producto?.categoria) || nameOf(producto?.marca);
@@ -333,7 +334,7 @@ export function NordicaProductCard({ producto, slug, t, onOpen, onAdd }: { produ
       <div className="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
         {pricing.enOferta && <span className="rounded-[4px] px-2 py-1 text-[10.5px] font-semibold" style={{ background: t.accent, color: t.onAccent }}>-{pricing.porcentajeDescuento}%</span>}
         {isOut ? <span className="rounded-[4px] bg-stone-800 px-2 py-1 text-[10.5px] font-semibold text-white">Agotado</span>
-          : !hasVariants && stock <= 5 ? <span className="rounded-[4px] bg-white/90 px-2 py-1 text-[10.5px] font-semibold" style={{ color: t.ink }}>Últimas {stock}</span> : null}
+          : !hasVariants && pocasUnidades(stock) ? <span className="rounded-[4px] bg-white/90 px-2 py-1 text-[10.5px] font-semibold" style={{ color: t.ink }}>Últimas {stock}</span> : null}
       </div>
       <div className="absolute right-3 top-3 z-10 [&_button:nth-child(n+2)]:opacity-0 [&_button]:transition-opacity group-hover:[&_button:nth-child(n+2)]:opacity-100 [@media(hover:none)]:[&_button:nth-child(n+2)]:opacity-100" onClick={(e) => e.stopPropagation()}>
         <ProductCardActions producto={producto} slug={slug} cp={t.primary} />

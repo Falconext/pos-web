@@ -18,6 +18,7 @@ import { MIN, MinCartModal, MinFooter, MinHeader, MinProductCard, MinProductImag
 import { minFade, minPage, minSection, minStagger, minViewport } from '@/templates/moda-minimal/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -132,8 +133,8 @@ export function ModaMinimalProductoDetalleView({
   const allSelected = hasVariants ? options.every((o) => !!selection[o.nombre]) : true;
 
   const variantStock = activeVariant ? Number(activeVariant.stock || 0) : Number(producto?.stock ?? 12);
-  const outOfStock = hasVariants ? (allSelected ? variantStock <= 0 : false) : Number(producto?.stock ?? 12) <= 0;
-  const canAdd = hasVariants ? (allSelected && variantStock > 0) : !outOfStock;
+  const outOfStock = hasVariants ? (allSelected ? sinStock(variantStock) : false) : sinStock(Number(producto?.stock ?? 12));
+  const canAdd = hasVariants ? (allSelected && !sinStock(variantStock)) : !outOfStock;
 
   const displayPrice = activeVariant ? Number(activeVariant.precioUnitario || 0) : pricing.precioFinal;
   const showStrike = !activeVariant && pricing.enOferta;
@@ -501,7 +502,7 @@ export default function ModaMinimalProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         const category = catOf(product);

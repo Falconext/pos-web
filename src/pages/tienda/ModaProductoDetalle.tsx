@@ -23,6 +23,7 @@ import {
 } from '@/templates/urbano/fashionVariants';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 // Animación de deslizamiento (slide) de la imagen principal en mobile/desktop.
@@ -226,7 +227,7 @@ export default function ModaProductoDetalle() {
         const prod = withPricing(prodRes.data.data || prodRes.data);
         const tiendaData = tiendaRes.data.data || tiendaRes.data;
         setProducto(prod);
-        setTienda(tiendaData);
+        setTienda(recordarVentaSinStock(tiendaData));
         const defaultVariantSelection = getDefaultVariantSelection(prod);
         const defaultVariant = findFashionVariant(prod, defaultVariantSelection);
         const defaultColor = defaultVariantSelection[getVariantOptionNames(prod).color];
@@ -502,7 +503,7 @@ export default function ModaProductoDetalle() {
   const finalPrice = price + precioExtra;
   const currentStock = Number(varianteActiva?.stock ?? producto?.stock ?? 0);
   const isUnavailableVariant = Array.isArray(producto.variantes) && producto.variantes.length > 0 && !varianteActiva;
-  const isOutOfStock = isUnavailableVariant || currentStock <= 0;
+  const isOutOfStock = isUnavailableVariant || sinStock(currentStock);
   const esServicio = String(producto?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
   const ratingCount = reviewSummary.ratingCount || Number(producto.ratingCount || 0);
   const starRating = ratingCount > 0 ? Number(reviewSummary.ratingAvg || producto.ratingAvg || 0) : 0;

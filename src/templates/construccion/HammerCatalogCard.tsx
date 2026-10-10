@@ -5,6 +5,7 @@ import { getProductPricing } from '@/templates/shared/pricing';
 import { readableText } from '@/templates/shared/color';
 import ProductCardActions from '@/components/tienda/ProductCardActions';
 
+import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 const fmt = (value: number) => `S/ ${Number(value || 0).toFixed(2)}`;
 
 function renderStars(rating: number, count: number) {
@@ -52,8 +53,8 @@ export default function HammerCatalogCard({ producto, cp, cta, slug, onOpen, onA
   const rating = Number(producto?.ratingAvg || producto?.ratingPromedio || producto?.promedioRating || 0);
   const ratingCount = Number(producto?.ratingCount || producto?.reviewsCount || producto?.totalReviews || 0);
   const stock = Number(producto?.stock ?? 1);
-  const isOutOfStock = stock <= 0;
-  const lowStock = !isOutOfStock && stock <= 5;
+  const isOutOfStock = sinStock(stock);
+  const lowStock = !isOutOfStock && pocasUnidades(stock);
   const idSeed = Number(producto?.id || 1);
 
   const [qty, setQty] = useState(1);

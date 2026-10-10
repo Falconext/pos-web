@@ -10,6 +10,7 @@ import { SPA, SpaFooter, SpaHeader, SpaProductCard, SpaProductImage, SpaWhatsApp
 import { spaCard, spaFade, spaPage, spaSection, spaStagger, spaTap, spaViewport } from '@/templates/spa/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -59,7 +60,7 @@ export function SpaProductoDetalleView({
   const marca = marcaOf(producto);
   const categoria = catOf(producto);
   const stock = Number(producto?.stock ?? 12);
-  const outOfStock = stock <= 0;
+  const outOfStock = sinStock(stock);
   const desc = producto?.detalle || producto?.descripcionCorta ||
     'Un producto de belleza cuidadosamente seleccionado para tu rutina de cuidado personal. Calidad profesional para resultados que se notan y se sienten.';
   const ratingAvg = Number(producto?.ratingAvg || producto?.ratingPromedio || 0);
@@ -312,7 +313,7 @@ export default function SpaProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         const category = catOf(product);

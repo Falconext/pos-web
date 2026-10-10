@@ -11,6 +11,7 @@ import { aurCard, aurFade, aurPage, aurSection, aurStagger, aurTap, aurViewport 
 import { getFashionColorImage } from '@/templates/urbano/fashionVariants';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -208,7 +209,7 @@ export function AurumProductoDetalleView({
     ? { precioFinal: selectedVariant.precioFinal, precioRegular: selectedVariant.precioRegular, enOferta: selectedVariant.enOferta, porcentajeDescuento: selectedVariant.porcentajeDescuento }
     : pricing;
   const stock = hasVariants ? Number(selectedVariant?.stock ?? 0) : Number(producto?.stock ?? 12);
-  const outOfStock = stock <= 0;
+  const outOfStock = sinStock(stock);
 
   const extraImages = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra : [];
   const gallery = [getImg(producto), ...extraImages].filter(Boolean);
@@ -473,7 +474,7 @@ export default function AurumProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         const category = catOf(product);

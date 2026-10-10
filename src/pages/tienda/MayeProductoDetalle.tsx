@@ -17,6 +17,7 @@ import { useFavoritosStore } from '@/zustand/favoritos';
 import { parsePastedPairs } from '@/lib/pastedSpecs';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 type MayeTab = 'description' | 'specifications' | 'reviews';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
@@ -72,7 +73,7 @@ export default function MayeProductoDetalle() {
       try {
         const res = await axios.get(`${BASE_URL}/public/store/${slug}`);
         const data = res.data.data || res.data;
-        setTienda(data);
+        setTienda(recordarVentaSinStock(data));
 
         const catRes = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
@@ -193,7 +194,7 @@ export default function MayeProductoDetalle() {
   const comparePrice = pricing.enOferta ? pricing.precioRegular : 0;
   const hasDiscount = pricing.enOferta;
   const discount = pricing.porcentajeDescuento;
-  const isOutOfStock = Number(producto.stock ?? 0) <= 0;
+  const isOutOfStock = sinStock(Number(producto.stock ?? 0));
   const fichaTecnica = producto?.fichaTecnica;
   // Texto "pegado" desde el admin (tiene prioridad si el comerciante lo cargó).
   const pastedEspec = parsePastedPairs(producto?.atributosTecnicos?.__especificacionesTexto);

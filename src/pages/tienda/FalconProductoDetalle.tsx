@@ -13,6 +13,7 @@ import {
 } from '@/templates/falcon/FalconShared';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const COLOR_MAP: Record<string, string> = {
@@ -94,7 +95,7 @@ export function FalconProductoDetalleView({
   const [zoom, setZoom] = useState({ x: 50, y: 50, active: false });
 
   const stock = Number(producto?.stock ?? 10);
-  const outOfStock = stock <= 0;
+  const outOfStock = sinStock(stock);
   const name = producto?.descripcion || producto?.nombre || 'Producto';
   const rawLarga = String(producto?.descripcionLarga || '');
   const descHasHtml = hasHtmlMarkup(rawLarga);
@@ -232,7 +233,7 @@ export function FalconProductoDetalleView({
             </div>
 
             {/* Stock */}
-            {!outOfStock && stock <= 20 && (
+            {!outOfStock && pocasUnidades(stock, 20) && (
               <div className="mt-6">
                 <p className="text-sm font-semibold text-[#151515]">¡Apúrate! Solo quedan <span style={{ color: green }}>{stock}</span> en stock.</p>
                 <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-gray-100"><div className="h-full rounded-full bg-[#e11d48]" style={{ width: `${stockPct}%` }} /></div>
@@ -390,7 +391,7 @@ export default function FalconProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         const category = product.categoria?.nombre || product.categoria;

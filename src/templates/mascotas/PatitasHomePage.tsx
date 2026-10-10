@@ -17,6 +17,7 @@ import {
 import { SectionHeader, ProductRail, GridSkeleton, RealReviews, storeChannels, getName, hasImage, categoryIcon, type OpenFn, type AddFn } from './PatitasSections';
 import { mix, ptEase, ptHeroText, ptItem, ptReveal, ptStagger, ptViewport } from './motion';
 
+import { sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const HOME_PAGE_SIZE = 30; // límite de productos que carga [slug].tsx para el home
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -235,7 +236,7 @@ function Bundles({ t, diseno, slug, wa }: { t: Theme; diseno: any; slug: string;
           const price = Number(c.precioCombo || 0);
           const pct = Number(c.descuentoPorcentaje) > 0 ? Math.round(Number(c.descuentoPorcentaje)) : regular > price && regular > 0 ? Math.round((1 - price / regular) * 100) : 0;
           const img = c.imagenUrl || c.items?.find((it: any) => it?.producto?.imagenUrl)?.producto?.imagenUrl;
-          const out = c.stock !== null && c.stock !== undefined && Number(c.stock) <= 0;
+          const out = c.stock !== null && c.stock !== undefined && sinStock(Number(c.stock));
           const until = c.fechaFin ? new Date(c.fechaFin) : null;
           const bg = badgeBg[i % badgeBg.length];
           return (

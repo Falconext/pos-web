@@ -11,6 +11,7 @@ import ConstruccionCartModal from '@/templates/construccion/ConstruccionCartModa
 import { ConstruccionFooter } from '@/templates/construccion/ConstruccionHomePage';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const getName = (item: any) => (typeof item === 'string' ? item : item?.nombre || item?.name || '');
@@ -219,7 +220,7 @@ export function ConstruccionProductoDetalleView({
   const images = [producto?.imagenUrl, ...extraImages].filter(Boolean);
   const activeSrc = images[activeImage] || producto?.imagenUrl;
   const stock = Number(producto?.stock || 0);
-  const isOutOfStock = stock <= 0;
+  const isOutOfStock = sinStock(stock);
   const marca = producto?.marca?.nombre || producto?.marca || 'Marca propia';
   const categoria = producto?.categoria?.nombre || producto?.categoria || 'Accesorios';
   const rating = Number(producto?.ratingAvg || producto?.ratingPromedio || producto?.promedioRating || 0);
@@ -524,7 +525,7 @@ export default function ConstruccionProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
 

@@ -11,6 +11,7 @@ import { useParams } from 'react-router-dom';
 import { AddedToast, FreeShippingProgress, SearchBox, announceAdded } from './VitrinaExtras';
 import { mix } from './motion';
 
+import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 /**
  * Piezas base de la plantilla Retail (Vitrina): tema, header, footer, tarjeta y carrito.
  * Regla de la plantilla: nada inventado. Si un dato no existe en la tienda, la UI se oculta.
@@ -410,7 +411,7 @@ export function VitrinaFooter({ tienda, slug, diseno, t, categories, navigate }:
 export function VitrinaProductCard({ producto, slug, t, onOpen, onAdd, compact = false }: { producto: any; slug: string; t: Theme; onOpen: () => void; onAdd: (qty: number) => void; compact?: boolean }) {
   const pricing = getProductPricing(producto);
   const stock = Number(producto?.stock ?? 1);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const colors = getFashionColors(producto).slice(0, 4);
   const [qty, setQty] = useState(1);
@@ -422,7 +423,7 @@ export function VitrinaProductCard({ producto, slug, t, onOpen, onAdd, compact =
         <div className="absolute left-2 top-2 z-10 flex flex-col items-start gap-1">
           {pricing.enOferta && <span className="rounded-md px-2 py-0.5 text-[11px] font-extrabold" style={{ background: t.accent, color: t.onAccent }}>-{pricing.porcentajeDescuento}%</span>}
           {isOut ? <span className="rounded-md bg-stone-800 px-2 py-0.5 text-[10.5px] font-bold text-white">Agotado</span>
-            : !hasVariants && stock <= 5 ? <span className="rounded-md bg-white/95 px-2 py-0.5 text-[10.5px] font-bold shadow-sm" style={{ color: t.accentInk }}>¡Quedan {stock}!</span> : null}
+            : !hasVariants && pocasUnidades(stock) ? <span className="rounded-md bg-white/95 px-2 py-0.5 text-[10.5px] font-bold shadow-sm" style={{ color: t.accentInk }}>¡Quedan {stock}!</span> : null}
         </div>
         <div className="absolute right-1.5 top-1.5 z-10 [&_button:nth-child(n+2)]:opacity-0 [&_button]:transition-opacity group-hover:[&_button:nth-child(n+2)]:opacity-100 [@media(hover:none)]:[&_button:nth-child(n+2)]:opacity-100" onClick={(e) => e.stopPropagation()}>
           <ProductCardActions producto={producto} slug={slug} cp={t.primary} />

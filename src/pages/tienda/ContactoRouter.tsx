@@ -30,6 +30,7 @@ import VitrinaContactPage from '@/templates/retail/VitrinaContactPage';
 import ElanContactPage from '@/templates/moda-elegante/ElanContactPage';
 import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
+import { recordarVentaSinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 export default function ContactoRouter() {
@@ -50,7 +51,7 @@ export default function ContactoRouter() {
       setLoading(true);
       try {
         const storeRes = await axios.get(`${BASE_URL}/public/store/${slug}`);
-        setTienda(storeRes.data?.data || storeRes.data);
+        setTienda(recordarVentaSinStock(storeRes.data?.data || storeRes.data));
         const catRes = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
         setCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
       } finally {

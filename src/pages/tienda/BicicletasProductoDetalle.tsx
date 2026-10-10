@@ -19,6 +19,7 @@ import { VELO, VeloCartModal, VeloFooter, VeloHeader, VeloProductCard, VeloProdu
 import { veloCard, veloFade, veloPage, veloSection, veloStagger, veloTap, veloViewport } from '@/templates/bicicletas/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -97,7 +98,7 @@ export function BicicletasProductoDetalleView({
     ? { precioFinal: variantPrice, precioRegular: Math.max(pricing.precioRegular, variantPrice), enOferta: pricing.enOferta && pricing.precioRegular > variantPrice, porcentajeDescuento: pricing.enOferta && pricing.precioRegular > variantPrice ? Math.round(((pricing.precioRegular - variantPrice) / pricing.precioRegular) * 100) : 0 }
     : pricing;
   const stock = activeVariant ? Number(activeVariant.stock ?? 0) : Number(producto?.stock ?? 12);
-  const outOfStock = hasVariants ? (!!activeVariant && stock <= 0) : stock <= 0;
+  const outOfStock = hasVariants ? (!!activeVariant && sinStock(stock)) : sinStock(stock);
 
   // Galería: SIEMPRE todas las imágenes (cada una etiquetada con su color) a un
   // costado. Al elegir un color se salta a su imagen y se resalta; cada miniatura
@@ -524,7 +525,7 @@ export default function BicicletasProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         const category = catOf(product);

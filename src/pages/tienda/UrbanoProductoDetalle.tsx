@@ -24,6 +24,7 @@ import {
 } from '@/templates/urbano/fashionVariants';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 // Animación de deslizamiento (slide) de la imagen principal en mobile/desktop.
@@ -105,7 +106,7 @@ export default function UrbanoProductoDetalle() {
         const prod = withPricing(prodRes.data.data || prodRes.data);
         const tiendaData = tiendaRes.data.data || tiendaRes.data;
         setProducto(prod);
-        setTienda(tiendaData);
+        setTienda(recordarVentaSinStock(tiendaData));
         setReviews([]);
         setReviewSummary({
           ratingAvg: Number(prod.ratingAvg || prod.ratingPromedio || prod.promedioRating || 0),
@@ -306,7 +307,7 @@ export default function UrbanoProductoDetalle() {
   const finalPrice = variantPrice + precioExtra;
   const currentStock = Number(varianteActiva?.stock ?? producto?.stock ?? 0);
   const isUnavailableVariant = Array.isArray(producto.variantes) && producto.variantes.length > 0 && !varianteActiva;
-  const isOutOfStock = isUnavailableVariant || currentStock <= 0;
+  const isOutOfStock = isUnavailableVariant || sinStock(currentStock);
   const cartCount = carrito.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
   const extraImages = Array.isArray(producto.imagenes)
     ? producto.imagenes

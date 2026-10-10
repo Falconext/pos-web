@@ -21,6 +21,7 @@ import { ProductRail, OfferCountdown, soonestOfferEnd, storeChannels, getName, t
 import { mix, blEase, blHeroText, blStagger } from '@/templates/maquillaje/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const optionsOf = (p: any): { nombre: string; valores: string[] }[] => (Array.isArray(p?.opcionesAtributos) ? p.opcionesAtributos : []);
 
@@ -57,8 +58,8 @@ export function BlushProductoDetalleView({ tienda, slug, producto, related = [],
   const activeVariant = useMemo(() => (hasVariants ? findFashionVariant(producto, selection) : null), [producto, selection, hasVariants]);
   const allSelected = hasVariants ? options.every((o) => !!selection[o.nombre]) : true;
   const stock = activeVariant ? Number(activeVariant.stock || 0) : Number(producto?.stock ?? 0);
-  const isOut = hasVariants ? allSelected && stock <= 0 : stock <= 0;
-  const canAdd = hasVariants ? allSelected && !!activeVariant && stock > 0 : stock > 0;
+  const isOut = hasVariants ? allSelected && sinStock(stock) : sinStock(stock);
+  const canAdd = hasVariants ? allSelected && !!activeVariant && !sinStock(stock) : !sinStock(stock);
   const price = activeVariant ? Number(activeVariant.precioUnitario || pricing.precioFinal) : pricing.precioFinal;
   const showStrike = !activeVariant && pricing.enOferta;
   const missing = hasVariants ? options.find((o) => !selection[o.nombre])?.nombre : '';
@@ -203,8 +204,8 @@ export function BlushProductoDetalleView({ tienda, slug, producto, related = [],
               ))}
 
               <motion.div variants={blHeroText} className="mt-6 inline-flex items-center gap-2 text-[12px]" style={{ color: isOut ? t.muted : t.ink }}>
-                <span className="h-2 w-2 rounded-full" style={{ background: isOut ? mix(t.ink, 25, '#fff') : stock <= 5 && (!hasVariants || allSelected) ? t.primary : '#3FA36B' }} />
-                {hasVariants && !allSelected ? `Elige ${String(missing || 'una opción').toLowerCase()} para ver disponibilidad` : isOut ? 'Sin stock en esta opción' : stock <= 5 ? `Quedan ${stock} unidades` : 'Disponible'}
+                <span className="h-2 w-2 rounded-full" style={{ background: isOut ? mix(t.ink, 25, '#fff') : pocasUnidades(stock) && (!hasVariants || allSelected) ? t.primary : '#3FA36B' }} />
+                {hasVariants && !allSelected ? `Elige ${String(missing || 'una opción').toLowerCase()} para ver disponibilidad` : isOut ? 'Sin stock en esta opción' : pocasUnidades(stock) ? `Quedan ${stock} unidades` : 'Disponible'}
               </motion.div>
 
               <motion.div variants={blHeroText} ref={ctaRef} className="mt-4 flex flex-col gap-3 sm:flex-row">
@@ -465,7 +466,7 @@ export default function BlushProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         window.scrollTo({ top: 0 });

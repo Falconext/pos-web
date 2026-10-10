@@ -5,6 +5,7 @@ import { AnimatePresence, motion, type TargetAndTransition, type Variants } from
 import { getProductPricing } from '@/templates/shared/pricing';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 
+import { sinStock } from '@/templates/shared/ventaSinStock';
 export const GREEN = '#1a8d4e';
 
 // True si el color es muy claro (poco contraste sobre fondo blanco).
@@ -196,7 +197,7 @@ export function FalconProductCard({
   const desc = plainText(producto?.detalle || producto?.descripcionCorta || producto?.descripcionLarga || '') ||
     'Lorem ipsum dolor sit amet consectetur. Est morbi cum bibendum id eleifend...';
   const reviews = Number(producto?.numReviews || producto?.reviews || 1);
-  const outOfStock = Number(producto?.stock ?? 1) <= 0;
+  const outOfStock = sinStock(Number(producto?.stock ?? 1));
 
   return (
     <motion.article
@@ -679,7 +680,7 @@ export function FalconCompareModal({ isOpen, onClose, items, onRemove, onRemoveA
   const rows: [string, (p: any) => React.ReactNode][] = [
     ['Descripción', (p) => <span className="text-gray-500">{(plainText(p?.detalle || p?.descripcionLarga || '') || 'Lorem ipsum dolor sit amet consectetur. Est morbi cum bibendum id eleifend ultrices enim nec. Vit...').slice(0, 110)}...</span>],
     ['Colección', (p) => catOf(p) || '—'],
-    ['Disponibilidad', (p) => Number(p?.stock ?? 1) > 0 ? <span className="font-bold" style={{ color: green }}>En stock</span> : <span className="font-bold text-[#e11d48]">Agotado</span>],
+    ['Disponibilidad', (p) => !sinStock(Number(p?.stock ?? 1)) ? <span className="font-bold" style={{ color: green }}>En stock</span> : <span className="font-bold text-[#e11d48]">Agotado</span>],
     ['Tipo de producto', (p) => catOf(p) || 'Accesorios'],
     ['Proveedor', (p) => p?.marca?.nombre || p?.marca || p?.vendor || 'Falcon'],
     ['SKU', (p) => p?.codigo || p?.sku || '—'],

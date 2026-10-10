@@ -8,6 +8,7 @@ import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { elEase, mix } from './motion';
 
+import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 /**
  * Piezas base de la plantilla Moda Elegante (Élan): tema, barra de anuncios, header, footer,
  * tarjeta y carrito. Regla de la plantilla: nada inventado. Si un dato no existe en la tienda, la UI se oculta.
@@ -364,7 +365,7 @@ export function ElanFooter({ tienda, slug, diseno, t, categories, navigate }: an
 export function ElanProductCard({ producto, slug, t, onOpen, onAdd, fit = 'cover' }: { producto: any; slug: string; t: Theme; onOpen: () => void; onAdd: (qty: number) => void; fit?: 'cover' | 'contain' }) {
   const pricing = getProductPricing(producto);
   const stock = Number(producto?.stock ?? 1);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const colors = getFashionColors(producto).slice(0, 5);
   const extra = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra.map((x: any) => (typeof x === 'string' ? x : x?.url || x?.imagenUrl)).find((u: any) => u && u !== producto?.imagenUrl) : null;
@@ -388,7 +389,7 @@ export function ElanProductCard({ producto, slug, t, onOpen, onAdd, fit = 'cover
         <div className="absolute left-3 top-3 z-10 flex flex-col items-start gap-1.5">
           {pricing.enOferta && <span className="px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ background: t.accent, color: t.onAccent }}>-{pricing.porcentajeDescuento}%</span>}
           {isOut ? <span className="bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: t.ink }}>Agotado</span>
-            : !hasVariants && stock <= 3 ? <span className="bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: t.ink }}>Últimas {stock}</span> : null}
+            : !hasVariants && pocasUnidades(stock, 3) ? <span className="bg-white/95 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: t.ink }}>Últimas {stock}</span> : null}
         </div>
         <div className="absolute right-2 top-2 z-10 [&_button:nth-child(n+2)]:opacity-0 [&_button]:transition-opacity group-hover:[&_button:nth-child(n+2)]:opacity-100 [@media(hover:none)]:[&_button:nth-child(n+2)]:hidden" onClick={(e) => e.stopPropagation()}>
           <ProductCardActions producto={producto} slug={slug} cp={t.primary} />

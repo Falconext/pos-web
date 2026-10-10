@@ -35,6 +35,7 @@ import ModaCartModal from '@/components/tienda/ModaCartModal';
 import MayeCatalogoPage from '@/templates/maye/MayeCatalogoPage';
 import { templateRegistry } from '@/templates/registry';
 
+import { recordarVentaSinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 export default function Catalogo() {
@@ -157,7 +158,7 @@ export default function Catalogo() {
     const cargarTienda = async () => {
         try {
             const { data } = await axios.get(`${BASE_URL}/public/store/${slug}`);
-            setTienda(data.data || data);
+            setTienda(recordarVentaSinStock(data.data || data));
         } catch { }
     };
 

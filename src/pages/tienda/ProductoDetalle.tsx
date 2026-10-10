@@ -17,6 +17,7 @@ import ShoppingCartModal from '@/components/tienda/ShoppingCartModal';
 import ProductVariantsShopify from '@/components/tienda/ProductVariantsShopify';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock, limiteCantidad } from '@/templates/shared/ventaSinStock';
 const PROSE_CLASSES = [
   'text-sm text-gray-600 leading-relaxed break-words overflow-hidden w-full',
   '[&_h1]:text-xl [&_h1]:font-black [&_h1]:text-gray-900 [&_h1]:mb-3 [&_h1]:mt-5',
@@ -177,7 +178,7 @@ export default function ProductoDetalle() {
         ]);
         const prod = withPricing(prodRes.data.data || prodRes.data);
         setProducto(prod);
-        setTienda(tiendaRes.data.data || tiendaRes.data);
+        setTienda(recordarVentaSinStock(tiendaRes.data.data || tiendaRes.data));
         if (prod.imagenUrl) setSelectedImage(prod.imagenUrl);
 
         // Preseleccionar primera variante si existe
@@ -280,7 +281,7 @@ export default function ProductoDetalle() {
 
   const precioBaseActual = varianteActiva ? Number(varianteActiva.precioUnitario || 0) : Number(producto?.precioUnitario || 0);
   const stockActual = varianteActiva ? (varianteActiva.stock || 0) : (producto?.stock || 0);
-  const isOutOfStock = stockActual <= 0;
+  const isOutOfStock = sinStock(stockActual);
   const precioFinal = precioBaseActual + precioExtra;
 
   const handleVarianteChange = (nombre: string, valor: string) => {
@@ -809,7 +810,7 @@ export default function ProductoDetalle() {
               <div className="w-full md:flex-1 flex items-center justify-between bg-[#F3F4F6] rounded-xl px-4 py-2.5 order-1 md:order-none">
                 <button onClick={() => setCantidad(Math.max(1, cantidad - 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">-</button>
                 <span className="font-bold text-sm text-gray-900">{cantidad}</span>
-                <button onClick={() => setCantidad(Math.min(stockActual || 99, cantidad + 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">+</button>
+                <button onClick={() => setCantidad(Math.min(limiteCantidad(stockActual), cantidad + 1))} className="text-gray-500 hover:text-black hover:bg-white rounded-md w-7 h-7 flex items-center justify-center transition-colors font-bold">+</button>
               </div>
 
               <div className="flex gap-3 md:contents w-full order-2 md:order-none">

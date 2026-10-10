@@ -10,6 +10,7 @@ import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { withPricing, withPricingList } from '@/templates/shared/pricing';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const QUILL_PROSE = [
@@ -46,7 +47,7 @@ export default function AutopartesProductoDetalle() {
             try {
                 const res = await axios.get(`${BASE_URL}/public/store/${slug}`);
                 const data = res.data.data || res.data;
-                setTienda(data);
+                setTienda(recordarVentaSinStock(data));
                 
                 // Categories
                 const catRes = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
@@ -156,7 +157,7 @@ export default function AutopartesProductoDetalle() {
     if (!producto) return null;
 
     const images = [producto.imagenUrl, ...(producto.imagenesExtra || [])].filter(Boolean);
-    const isOutOfStock = Number(producto.stock) <= 0;
+    const isOutOfStock = sinStock(Number(producto.stock));
     const price = Number(producto.precioUnitario).toFixed(2);
     const original = Number(producto.precioOriginal || 0).toFixed(2);
     const hasDiscount = Number(original) > Number(price);

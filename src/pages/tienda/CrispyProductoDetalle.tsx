@@ -10,6 +10,7 @@ import { FOOD, FoodCartModal, FoodProductCard, FoodProductImage, FoodShell, food
 import { foodPage, foodSection, foodStagger, foodTap, foodViewport } from '@/templates/comida-app/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
 const getImg = (p: any) => p?.imagenUrl || p?.imagen || '';
@@ -44,7 +45,7 @@ export function CrispyProductoDetalleView({
   const name = nameOf(producto);
   const categoria = catOf(producto);
   const stock = Number(producto?.stock ?? 20);
-  const outOfStock = stock <= 0;
+  const outOfStock = sinStock(stock);
   const rating = Number(producto?.ratingAvg || 0) || 4.8;
   const reviews = Number(producto?.ratingCount || 0);
   const desc = producto?.descripcionLarga ? htmlToText(producto.descripcionLarga) : (producto?.detalle || producto?.descripcionCorta || 'Delicioso, recién preparado y listo para disfrutar. Ingredientes frescos y mucho sabor en cada bocado.');
@@ -196,7 +197,7 @@ export default function CrispyProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         const category = catOf(product);

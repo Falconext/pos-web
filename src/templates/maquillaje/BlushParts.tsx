@@ -8,6 +8,7 @@ import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { blEase, mix } from './motion';
 
+import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 /**
  * Piezas base de la plantilla Maquillaje (Blush): tema, header, footer, tarjeta y carrito.
  * Regla de la plantilla: nada inventado. Si un dato no existe en la tienda, la UI se oculta.
@@ -323,7 +324,7 @@ export function BlushFooter({ tienda, slug, diseno, t, categories, navigate }: a
 export function BlushProductCard({ producto, slug, t, onOpen, onAdd }: { producto: any; slug: string; t: Theme; onOpen: () => void; onAdd: (qty: number) => void }) {
   const pricing = getProductPricing(producto);
   const stock = Number(producto?.stock ?? 1);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const colors = getFashionColors(producto);
   const category = nameOf(producto?.categoria);
@@ -335,7 +336,7 @@ export function BlushProductCard({ producto, slug, t, onOpen, onAdd }: { product
         <div className="absolute left-2.5 top-2.5 z-10 flex flex-col items-start gap-1.5">
           {pricing.enOferta && <span className="px-2 py-1 text-[9.5px] font-semibold uppercase tracking-[0.14em]" style={{ background: t.accent, color: t.onAccent }}>-{pricing.porcentajeDescuento}%</span>}
           {isOut ? <span className="bg-white/90 px-2 py-1 text-[9.5px] font-semibold uppercase tracking-[0.14em]" style={{ color: t.muted }}>Agotado</span>
-            : !hasVariants && stock <= 5 ? <span className="bg-white/90 px-2 py-1 text-[9.5px] font-semibold uppercase tracking-[0.14em]" style={{ color: t.ink }}>Últimas {stock}</span> : null}
+            : !hasVariants && pocasUnidades(stock) ? <span className="bg-white/90 px-2 py-1 text-[9.5px] font-semibold uppercase tracking-[0.14em]" style={{ color: t.ink }}>Últimas {stock}</span> : null}
         </div>
         <div className="absolute right-2 top-2 z-10 [&_button:nth-child(n+2)]:opacity-0 [&_button]:transition-opacity group-hover:[&_button:nth-child(n+2)]:opacity-100 [@media(hover:none)]:[&_button:nth-child(n+2)]:opacity-100" onClick={(e) => e.stopPropagation()}>
           <ProductCardActions producto={producto} slug={slug} cp={t.accent} />

@@ -9,6 +9,7 @@ import { MOTO, MotoCartModal, MotoFooter, MotoHeader, MotoProductCard, MotoProdu
 import { motoCard, motoFade, motoPage, motoSection, motoStagger, motoTap, motoViewport } from '@/templates/motos/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const getImg = (p: any) => p?.imagenUrl || p?.imagen || '';
@@ -57,7 +58,7 @@ export function MotosProductoDetalleView({
   const marca = marcaOf(producto);
   const categoria = catOf(producto);
   const stock = Number(producto?.stock ?? 6);
-  const outOfStock = stock <= 0;
+  const outOfStock = sinStock(stock);
   const desc = producto?.detalle || producto?.descripcionCorta ||
     'Una moto pensada para el día a día: torque instantáneo, autonomía real y mantenimiento mínimo. Entrega lista para rodar, con garantía oficial y respaldo de taller propio.';
   const ratingAvg = Number(producto?.ratingAvg || producto?.ratingPromedio || 0);
@@ -353,7 +354,7 @@ export default function MotosProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         const category = catOf(product);

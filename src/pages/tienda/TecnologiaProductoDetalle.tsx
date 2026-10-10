@@ -12,6 +12,7 @@ import TiendaFloatingButtons from '@/components/tienda/TiendaFloatingButtons';
 import { parsePastedPairs } from '@/lib/pastedSpecs';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock, limiteCantidad } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 export default function TecnologiaProductoDetalle() {
@@ -31,7 +32,7 @@ export default function TecnologiaProductoDetalle() {
             try {
                 const res = await axios.get(`${BASE_URL}/public/store/${slug}`);
                 const data = res.data.data || res.data;
-                setTienda(data);
+                setTienda(recordarVentaSinStock(data));
                 
                 // Categories
                 const catRes = await axios.get(`${BASE_URL}/public/store/${slug}/categories`);
@@ -164,7 +165,7 @@ export default function TecnologiaProductoDetalle() {
     const extraImages = Array.isArray(producto.imagenesExtra) ? producto.imagenesExtra : [];
     const images = [producto.imagenUrl, ...extraImages].filter(Boolean);
     const stock = Number(producto.stock || 0);
-    const isOutOfStock = stock <= 0;
+    const isOutOfStock = sinStock(stock);
     const price = Number(producto.precioUnitario || 0);
     const originalPrice = Number(producto.precioOriginal || producto.precioRegular || 0);
     const hasDiscount = Boolean(producto.enOferta) && originalPrice > price;
@@ -301,7 +302,7 @@ export default function TecnologiaProductoDetalle() {
                             <div className="flex h-[60px] items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 sm:w-40">
                                 <button onClick={() => setQty(Math.max(1, qty - 1))} className="flex h-10 w-10 items-center justify-center rounded-xl text-2xl font-black text-gray-500 hover:bg-gray-100 hover:text-gray-900">-</button>
                                 <span className="text-base font-black text-gray-900">{qty}</span>
-                                <button onClick={() => setQty(isOutOfStock ? qty : (stock > 0 ? Math.min(stock, qty + 1) : qty + 1))} className="flex h-10 w-10 items-center justify-center rounded-xl text-2xl font-black text-gray-500 hover:bg-gray-100 hover:text-gray-900">+</button>
+                                <button onClick={() => setQty(isOutOfStock ? qty : Math.min(limiteCantidad(stock), qty + 1))} className="flex h-10 w-10 items-center justify-center rounded-xl text-2xl font-black text-gray-500 hover:bg-gray-100 hover:text-gray-900">+</button>
                             </div>
                             <button
                                 disabled={isOutOfStock}

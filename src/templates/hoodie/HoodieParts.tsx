@@ -8,6 +8,7 @@ import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { mix, hdEase } from './motion';
 
+import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 /**
  * Plantilla Hoodie (Drop culture): streetwear de alto contraste.
  * Hueso + bloques negros + acento ácido; Anton (display), Space Grotesk (texto), JetBrains Mono (etiquetas).
@@ -301,7 +302,7 @@ export function HdFooter({ tienda, slug, diseno, t, categories, navigate }: any)
 export function HdProductCard({ producto, slug, t, onOpen, onAdd, index }: { producto: any; slug: string; t: Theme; onOpen: () => void; onAdd: (qty: number) => void; index?: number }) {
   const pricing = getProductPricing(producto);
   const stock = Number(producto?.stock ?? 1);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const colors = getFashionColors(producto).slice(0, 5);
   const extra = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra.map((x: any) => (typeof x === 'string' ? x : x?.url)).filter(Boolean) : [];
@@ -322,7 +323,7 @@ export function HdProductCard({ producto, slug, t, onOpen, onAdd, index }: { pro
         <div className="absolute left-0 top-0 z-10 flex flex-col items-start">
           {pricing.enOferta && <span className="px-2 py-1 text-[11px] font-bold" style={mono(t, { background: t.accent, color: t.onAccent })}>-{pricing.porcentajeDescuento}%</span>}
           {isOut ? <span className="px-2 py-1 text-[11px] font-bold uppercase" style={mono(t, { background: t.ink, color: '#fff' })}>Agotado</span>
-            : !hasVariants && stock <= 5 ? <span className="px-2 py-1 text-[11px] font-bold uppercase" style={mono(t, { background: t.ink, color: '#fff' })}>Últimas {stock}</span> : null}
+            : !hasVariants && pocasUnidades(stock) ? <span className="px-2 py-1 text-[11px] font-bold uppercase" style={mono(t, { background: t.ink, color: '#fff' })}>Últimas {stock}</span> : null}
         </div>
         <div className="absolute right-2 top-2 z-10 [&_button]:!rounded-none [&_button]:!shadow-none [&_button:nth-child(n+2)]:opacity-0 [&_button]:transition-opacity group-hover:[&_button:nth-child(n+2)]:opacity-100 [@media(hover:none)]:[&_button:nth-child(n+2)]:opacity-100" style={{ ['--tw-border-opacity' as any]: 1 }} onClick={(e) => e.stopPropagation()}>
           <ProductCardActions producto={producto} slug={slug} cp={t.primary} />

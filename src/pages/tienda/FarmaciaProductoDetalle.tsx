@@ -18,6 +18,7 @@ import { ProductRail, OfferCountdown, buildServices, soonestOfferEnd, storeChann
 import { fmEase, fmHeroText, fmStagger, mix } from '@/templates/farmacia/motion';
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
+import { recordarVentaSinStock, sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const nameOf = (v: any): string => (v && typeof v === 'object' ? v.nombre || v.descripcion || '' : typeof v === 'string' ? v : '');
@@ -42,7 +43,7 @@ export function FarmaciaProductoDetalleView({ tienda, slug, producto, related = 
     return Array.from(new Set([producto?.imagenUrl, ...extra].filter(Boolean))) as string[];
   }, [producto]);
   const stock = Number(producto?.stock || 0);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const marca = nameOf(producto?.marca);
   const categoria = nameOf(producto?.categoria);
   const unidad = nameOf(producto?.unidadMedida);
@@ -79,7 +80,7 @@ export function FarmaciaProductoDetalleView({ tienda, slug, producto, related = 
 
   const stockTone = isOut
     ? { bg: '#F1F5F9', fg: '#64748B', icon: 'solar:close-circle-bold', text: 'Sin stock por ahora' }
-    : stock <= 10
+    : pocasUnidades(stock, 10)
       ? { bg: '#FEF3C7', fg: '#B45309', icon: 'solar:danger-triangle-bold', text: `¡Quedan solo ${stock} unidades!` }
       : { bg: mix(t.primary, 10), fg: t.primary, icon: 'solar:check-circle-bold', text: `Disponible · ${stock} unidades` };
 
@@ -450,7 +451,7 @@ export default function FarmaciaProductoDetalle() {
         ]);
         const store = storeRes.data.data || storeRes.data;
         const product = withPricing(productRes.data.data || productRes.data);
-        setTienda(store);
+        setTienda(recordarVentaSinStock(store));
         setAllCategories(Array.isArray(catRes.data?.data) ? catRes.data.data : []);
         setProducto(product);
         window.scrollTo({ top: 0 });

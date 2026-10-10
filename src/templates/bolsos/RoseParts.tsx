@@ -9,6 +9,7 @@ import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { mix, rsEase } from './motion';
 
+import { sinStock } from '@/templates/shared/ventaSinStock';
 /**
  * Piezas base de la plantilla Bolsos (Rosé): tema, header, footer, tarjeta y carrito.
  * Regla de la plantilla: nada inventado. Si un dato no existe en la tienda, la UI se oculta.
@@ -371,7 +372,7 @@ export function RoseFooter({ tienda, slug, diseno, t, categories, navigate }: an
 export function RoseProductCard({ producto, slug, t, onOpen, onAdd }: { producto: any; slug: string; t: Theme; onOpen: () => void; onAdd: (qty: number) => void }) {
   const pricing = getProductPricing(producto);
   const stock = Number(producto?.stock ?? 1);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const colors = getFashionColors(producto).slice(0, 4);
   const [qty, setQty] = useState(1);

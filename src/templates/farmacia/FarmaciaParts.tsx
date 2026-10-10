@@ -6,6 +6,7 @@ import { readableText } from '@/templates/shared/color';
 import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 
+import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 // ── Design tokens (paleta verde médico "MediCare", editable vía Personalizar) ──
 export const fmMoney = (v: any) => `S/ ${Number(v || 0).toFixed(2)}`;
 export const editable = (v: any, fallback: string) => String(v || '').trim() || fallback;
@@ -217,7 +218,7 @@ export function FarmaciaProductCard({ producto, slug, t, onOpen, onAdd, compact 
   const rating = Number(producto?.ratingAvg || producto?.ratingPromedio || 0);
   const ratingCount = Number(producto?.ratingCount || producto?.reviewsCount || 0);
   const stock = Number(producto?.stock ?? 1);
-  const isOut = stock <= 0;
+  const isOut = sinStock(stock);
   const hasVariants = Array.isArray(producto?.variantes) && producto.variantes.length > 0;
   const [qty, setQty] = useState(1);
   const availPct = Math.max(6, Math.min(100, (stock / Math.max(stock, 60)) * 100));
@@ -254,7 +255,7 @@ export function FarmaciaProductCard({ producto, slug, t, onOpen, onAdd, compact 
       <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
         {pricing.enOferta && <span className="rounded-full px-2.5 py-1 text-[10px] font-black text-white" style={{ background: t.accent, color: t.onAccent }}>-{pricing.porcentajeDescuento}%</span>}
         {isOut ? <span className="rounded-full bg-gray-800 px-2.5 py-1 text-[10px] font-black text-white">Agotado</span>
-          : stock <= 5 ? <span className="rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-black text-white">¡Últimas {stock}!</span> : null}
+          : pocasUnidades(stock) ? <span className="rounded-full bg-rose-500 px-2.5 py-1 text-[10px] font-black text-white">¡Últimas {stock}!</span> : null}
       </div>
       <div className="absolute right-2 top-2 z-10 hidden group-hover:block">
         <ProductCardActions producto={producto} slug={slug} cp={t.primary} />
