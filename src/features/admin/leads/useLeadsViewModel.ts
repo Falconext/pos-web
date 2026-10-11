@@ -306,15 +306,15 @@ export function useLeadsViewModel() {
     try {
       const doc = await api.reindexarDocumento(id)
       setDocumentos((prev) => prev.map((d) => (d.id === id ? doc : d)))
-      alert(
+      alertStore.alert(
         doc.estado === 'INDEXADO'
           ? 'Documento entrenado'
           : 'Reintentando… si vuelve a fallar, revisa la cuota de Gemini',
         doc.estado === 'INDEXADO' ? 'success' : 'warning',
       )
     } catch (e: any) {
-      alert(
-        e?.response?.data?.message ?? 'No se pudo reintentar',
+      alertStore.alert(
+        e?.response?.data?.message ?? e?.message ?? 'No se pudo reintentar',
         'error',
       )
     }
