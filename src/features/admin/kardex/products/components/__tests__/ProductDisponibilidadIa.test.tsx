@@ -45,14 +45,24 @@ beforeEach(() => {
 });
 
 describe('los tres estados de disponibilidad', () => {
-  it('muestra los tres y marca el actual', () => {
+  it('muestra los CUATRO que pidió el negocio', () => {
     const { vm } = vmFalso({ disponibilidad: 'BAJO_PEDIDO' });
     render(<ProductDisponibilidadIa vm={vm} />);
-    expect(screen.getByTestId('disp-INMEDIATA')).toBeInTheDocument();
-    expect(screen.getByTestId('disp-BAJO_PEDIDO')).toBeInTheDocument();
-    expect(screen.getByTestId('disp-NO_DISPONIBLE')).toBeInTheDocument();
+    for (const e of ['INMEDIATA', 'BAJO_PEDIDO', 'NO_DISPONIBLE', 'NO_COMERCIAL']) {
+      expect(screen.getByTestId(`disp-${e}`)).toBeInTheDocument();
+    }
     // Y explica qué hace la IA con el estado elegido.
-    expect(screen.getByText(/deriva a un asesor para fijar la fecha/i)).toBeInTheDocument();
+    expect(screen.getByText(/sin prometer fecha/i)).toBeInTheDocument();
+  });
+
+  it('distingue agotado de descontinuado, que es la diferencia que importa', () => {
+    // Agotado puede volver y se avisa; descontinuado no, y prometer un aviso
+    // sería una promesa que nadie va a cumplir.
+    const { vm } = vmFalso({ disponibilidad: 'NO_DISPONIBLE' });
+    render(<ProductDisponibilidadIa vm={vm} />);
+    expect(screen.getByTestId('disp-NO_DISPONIBLE')).toHaveTextContent('Agotado');
+    expect(screen.getByTestId('disp-NO_COMERCIAL')).toHaveTextContent('Descontinuado');
+    expect(screen.getByText(/puede volver. Se avisa a quien lo pidió/i)).toBeInTheDocument();
   });
 
   it('un producto sin valor guardado se asume disponible', () => {
@@ -76,17 +86,17 @@ describe('los tres estados de disponibilidad', () => {
     const { vm, cambios } = vmFalso();
     render(<ProductDisponibilidadIa vm={vm} />);
     expect(screen.queryByRole('spinbutton')).toBeNull();
-    fireEvent.click(screen.getByTestId('prio-3'));
-    expect(cambios).toEqual([{ name: 'prioridadVenta', value: '3' }]);
+    fireEvent.click(screen.getByTestId('prio-4'));
+    expect(cambios).toEqual([{ name: 'prioridadVenta', value: '4' }]);
   });
 
-  it('ofrece las cuatro opciones y ninguna fuera de rango', () => {
+  it('ofrece los cuatro niveles del negocio más "sin preferencia"', () => {
     const { vm } = vmFalso();
     render(<ProductDisponibilidadIa vm={vm} />);
-    for (const v of [0, 1, 2, 3]) {
+    for (const v of [0, 1, 2, 3, 4]) {
       expect(screen.getByTestId(`prio-${v}`)).toBeInTheDocument();
     }
-    expect(screen.queryByTestId('prio-4')).toBeNull();
+    expect(screen.queryByTestId('prio-5')).toBeNull();
   });
 });
 

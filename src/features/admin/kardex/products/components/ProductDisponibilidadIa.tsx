@@ -34,28 +34,37 @@ const OPCIONES: {
   },
   {
     valor: 'BAJO_PEDIDO',
-    label: 'Bajo pedido',
-    detalle: 'La IA deriva a un asesor para fijar la fecha.',
+    label: 'Bajo reserva',
+    detalle: 'Se consigue; la IA lo ofrece sin prometer fecha.',
     icon: 'solar:calendar-bold-duotone',
     clases:
       'border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800/50 dark:bg-amber-900/20 dark:text-amber-300',
   },
   {
     valor: 'NO_DISPONIBLE',
-    label: 'No disponible',
-    detalle: 'La IA no lo ofrece ni manda avisos sobre él.',
+    label: 'Agotado',
+    detalle: 'Sin stock, pero puede volver. Se avisa a quien lo pidió.',
     icon: 'solar:close-circle-bold-duotone',
     clases:
       'border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-800/50 dark:bg-rose-900/20 dark:text-rose-300',
   },
+  {
+    valor: 'NO_COMERCIAL',
+    label: 'Descontinuado',
+    detalle: 'Ya no se vende. No se ofrece ni se promete aviso.',
+    icon: 'solar:forbidden-circle-bold-duotone',
+    clases:
+      'border-slate-400 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300',
+  },
 ];
 
-/** Los únicos valores que acepta el backend (1 media, 2 alta, 3 muy alta). */
+/** Los cuatro niveles que pidió el negocio, más "sin preferencia". */
 const PRIORIDADES: { valor: number; label: string }[] = [
-  { valor: 0, label: 'Normal' },
-  { valor: 1, label: 'Media' },
-  { valor: 2, label: 'Alta' },
-  { valor: 3, label: 'Muy alta' },
+  { valor: 0, label: 'Sin preferencia' },
+  { valor: 1, label: 'Baja' },
+  { valor: 2, label: 'Media' },
+  { valor: 3, label: 'Alta' },
+  { valor: 4, label: 'Muy alta' },
 ];
 
 export const ProductDisponibilidadIa: React.FC<{ vm: ViewProps }> = ({ vm }) => {
@@ -109,7 +118,7 @@ export const ProductDisponibilidadIa: React.FC<{ vm: ViewProps }> = ({ vm }) => 
         Para la IA de Ventas
       </p>
 
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5">
         {OPCIONES.map((o) => (
           <button
             key={o.valor}
@@ -155,7 +164,7 @@ export const ProductDisponibilidadIa: React.FC<{ vm: ViewProps }> = ({ vm }) => 
         <p className="mb-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300">
           Empuje al ofrecerlo
         </p>
-        <div className="grid grid-cols-4 gap-1.5">
+        <div className="grid grid-cols-5 gap-1">
           {PRIORIDADES.map((p) => (
             <button
               key={p.valor}
