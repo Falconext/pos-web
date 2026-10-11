@@ -16,7 +16,7 @@ const alertMock = jest.fn()
 
 jest.mock('@/utils/apiClient', () => ({
   __esModule: true,
-  default: { get: (u: string) => getMock(u), post: (u: string, b: unknown) => postMock(u, b) },
+  default: { get: (u: string) => getMock(u), post: (u: string, b: unknown, o?: unknown) => postMock(u, b, o) },
 }))
 jest.mock('@/zustand/alert', () => ({
   __esModule: true,
@@ -130,6 +130,18 @@ describe('cuando falla de verdad', () => {
     )
   })
 })
+
+describe('la llamada aguanta lo que tarda Meta', () => {
+  it('pide más tiempo que el resto: varias plantillas no entran en 12 s', async () => {
+    // Pasó en producción: el servidor creó las 7 y el navegador cortó a los
+    // 12 segundos, diciéndole al usuario que había fallado algo que funcionó.
+    postMock.mockResolvedValue({ data: { data: { creadas: [], existentes: [], errores: [] } } });
+    await apretar();
+    await waitFor(() => expect(postMock).toHaveBeenCalled());
+    const opciones = postMock.mock.calls[0][2] as { timeout?: number } | undefined;
+    expect(opciones?.timeout).toBeGreaterThanOrEqual(30000);
+  });
+});
 
 describe('una respuesta incompleta', () => {
   it('ya no revienta y lo dice en vez de culpar al alta', async () => {

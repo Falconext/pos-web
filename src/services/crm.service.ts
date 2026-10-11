@@ -277,7 +277,10 @@ export const disparosService = {
    */
   crearPlantillas: () =>
     apiClient
-      .post('/whatsapp/plantillas-ia-ventas', {})
+      // Más tiempo que el resto: son varias llamadas a Meta y con el timeout
+      // normal el navegador cortaba una petición que el servidor sí terminaba,
+      // y le decía al usuario que había fallado algo que funcionó.
+      .post('/whatsapp/plantillas-ia-ventas', {}, { timeout: 60000 })
       .then(
         datos<{ creadas: string[]; existentes: string[]; errores: string[] }>,
       ),
