@@ -203,6 +203,15 @@ export async function crearDocumento(body: {
   return r.data
 }
 
+/**
+ * Reintenta indexar un documento que quedó en error, sin borrarlo ni volver
+ * a subirlo. El texto ya está guardado: solo se rehacen los embeddings.
+ */
+export async function reindexarDocumento(id: number): Promise<LeadDocumento> {
+  const { data } = await apiClient.post(`/leads/entrenamiento/${id}/reindexar`, {})
+  return (data?.data ?? data) as LeadDocumento
+}
+
 export async function eliminarDocumento(id: number): Promise<void> {
   const r = await del(`/leads/entrenamiento/${id}`)
   if (!r.success) throw new Error(r.error || 'Error al eliminar el documento')

@@ -297,6 +297,29 @@ export function useLeadsViewModel() {
     }
   }
 
+  /**
+   * Reintenta indexar un documento que quedó en error. Antes la única salida
+   * era borrarlo y volver a subirlo, y con un PDF largo eso es rehacer el
+   * trabajo por un fallo que casi siempre es pasajero.
+   */
+  const reindexarDocumento = async (id: number) => {
+    try {
+      const doc = await api.reindexarDocumento(id)
+      setDocumentos((prev) => prev.map((d) => (d.id === id ? doc : d)))
+      alert(
+        doc.estado === 'INDEXADO'
+          ? 'Documento entrenado'
+          : 'Reintentando… si vuelve a fallar, revisa la cuota de Gemini',
+        doc.estado === 'INDEXADO' ? 'success' : 'warning',
+      )
+    } catch (e: any) {
+      alert(
+        e?.response?.data?.message ?? 'No se pudo reintentar',
+        'error',
+      )
+    }
+  }
+
   const eliminarDocumento = async (id: number) => {
     try {
       await api.eliminarDocumento(id)
@@ -346,6 +369,7 @@ export function useLeadsViewModel() {
       abrirEntrenar,
       crearDocumento,
       eliminarDocumento,
+      reindexarDocumento,
     },
   }
 }
