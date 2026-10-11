@@ -756,7 +756,12 @@ function EntrenarPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
         ) : (
           <div className="space-y-2">
             {vm.documentos.map((d) => (
-              <DocRow key={d.id} d={d} onDelete={() => vm.actions.eliminarDocumento(d.id)} />
+              <DocRow
+                key={d.id}
+                d={d}
+                onDelete={() => vm.actions.eliminarDocumento(d.id)}
+                onReintentar={() => vm.actions.reindexarDocumento(d.id)}
+              />
             ))}
           </div>
         )}
@@ -765,7 +770,15 @@ function EntrenarPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
   )
 }
 
-function DocRow({ d, onDelete }: { d: LeadDocumento; onDelete: () => void }) {
+function DocRow({
+  d,
+  onDelete,
+  onReintentar,
+}: {
+  d: LeadDocumento
+  onDelete: () => void
+  onReintentar: () => void
+}) {
   const estadoMeta: Record<string, { label: string; cls: string; icon: string }> = {
     INDEXADO: {
       label: 'Entrenado',
@@ -799,6 +812,19 @@ function DocRow({ d, onDelete }: { d: LeadDocumento; onDelete: () => void }) {
           {d._count ? ` · ${d._count.fragmentos} fragmentos` : ''}
         </p>
       </div>
+      {/* Un documento en error no tenía salida: había que borrarlo y volver a
+          subirlo. El texto ya está guardado, así que reintentar basta. */}
+      {d.estado === 'ERROR' && (
+        <button
+          type="button"
+          onClick={onReintentar}
+          data-testid={`reintentar-${d.id}`}
+          className="rounded-lg px-2 py-1 text-xs font-bold text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
+          title="Volver a entrenar este documento"
+        >
+          Reintentar
+        </button>
+      )}
       <button
         type="button"
         onClick={onDelete}
