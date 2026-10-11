@@ -208,8 +208,9 @@ export async function crearDocumento(body: {
  * a subirlo. El texto ya está guardado: solo se rehacen los embeddings.
  */
 export async function reindexarDocumento(id: number): Promise<LeadDocumento> {
-  const { data } = await apiClient.post(`/leads/entrenamiento/${id}/reindexar`, {})
-  return (data?.data ?? data) as LeadDocumento
+  const r = await post<LeadDocumento>(`/leads/entrenamiento/${id}/reindexar`, {})
+  if (!r.success) throw new Error(r.error || 'No se pudo reintentar')
+  return r.data as LeadDocumento
 }
 
 export async function eliminarDocumento(id: number): Promise<void> {
