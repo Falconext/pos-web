@@ -84,19 +84,52 @@ export function DisparadoresPanel() {
     setAltaPlantillas(true)
     try {
       const r = await disparosService.crearPlantillas()
+      // Tolerante con la forma de la respuesta: antes, cualquier campo que
+      // faltara reventaba acá y el usuario veía "no se pudieron dar de alta"
+      // sin saber que en realidad el problema era otro.
+      const creadas = r?.creadas ?? []
+      const existentes = r?.existentes ?? []
+      const errores = r?.errores ?? []
+
       const partes = [
-        r.creadas.length ? `${r.creadas.length} enviadas a aprobación` : '',
-        r.existentes.length ? `${r.existentes.length} ya estaban` : '',
-        r.errores.length ? `${r.errores.length} con error` : '',
+        creadas.length ? `${creadas.length} enviadas a aprobación` : '',
+        existentes.length ? `${existentes.length} ya estaban` : '',
       ].filter(Boolean)
-      alert(
-        `Plantillas: ${partes.join(', ')}. Meta tarda en aprobarlas; hasta entonces los avisos fuera de 24 h no salen.`,
-        r.errores.length ? 'warning' : 'success',
-      )
+
+      if (errores.length) {
+        // Los motivos de Meta importan: casi siempre dicen exactamente qué
+        // corregir. Contarlos y esconderlos no ayuda a nadie.
+        alert(
+          [
+            partes.length ? `Plantillas: ${partes.join(', ')}.` : '',
+            `${errores.length} con error:`,
+            ...errores.slice(0, 4),
+          ]
+            .filter(Boolean)
+            .join(' '),
+          'warning',
+        )
+      } else if (!creadas.length && !existentes.length) {
+        alert(
+          'Meta no devolvió ninguna plantilla. Revisa que la cuenta de WhatsApp Business siga conectada.',
+          'warning',
+        )
+      } else {
+        alert(
+          `Plantillas: ${partes.join(', ')}. Meta tarda en aprobarlas; hasta entonces los avisos fuera de 24 h no salen.`,
+          'success',
+        )
+      }
     } catch (e: any) {
+      // Un "no se pudo" sin motivo es un reclamo que nadie puede atender.
+      const delServidor = e?.response?.data?.message
+      const codigo = e?.response?.status
       alert(
-        e?.response?.data?.message ??
-          'No se pudieron dar de alta las plantillas',
+        delServidor
+          ? String(delServidor)
+          : codigo
+            ? `El servidor respondió ${codigo} al dar de alta las plantillas.`
+            : `No se pudo contactar al servidor: ${e?.message ?? 'error desconocido'}`,
         'error',
       )
     } finally {
