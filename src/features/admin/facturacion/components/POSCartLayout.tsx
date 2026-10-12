@@ -37,12 +37,25 @@ const esAfectacionGratuitaCode = (codigo: any): boolean => {
 const presentacionesDe = (item: any, vm: any) => {
     const catalogo = vm?.products || vm?.filteredProducts || [];
     const producto = catalogo.find((p: any) => Number(p?.id) === Number(item?.id));
+    // El catálogo guarda los precios en la moneda NATIVA del producto. La línea
+    // trae en `tipoCambio` el factor con que se la llevó a la moneda del
+    // documento, así que los precios del catálogo pasan por el mismo factor:
+    // de lo contrario una factura en dólares cobraría el número en soles.
+    const factor = Number(item?.tipoCambio) > 0 ? Number(item.tipoCambio) : 1;
+    // Precio de la unidad suelta. Se prefiere el que la línea guardó al pasar a
+    // paquete, porque ya viene con la conversión y el precio de lote aplicados;
+    // el del catálogo es el respaldo.
+    const precioUnidad = Number(item?.precioUnidadSuelta) > 0
+        ? Number(item.precioUnidadSuelta)
+        : getPkgUnits(item) === 1
+            ? Number(item?.precioBase ?? item?.precioUnitario ?? 0)
+            : Number(producto?.precioUnitario ?? 0) * factor;
     const base = {
         clave: '',
         nombre: 'UNIDAD',
         unidades: 1,
         // Precio TOTAL de la presentación: el de la unidad suelta es el del producto.
-        precio: Number(producto?.precioUnitario ?? item?.precioUnitario ?? 0),
+        precio: precioUnidad,
     };
     const paquetes = (Array.isArray(producto?.paquetes) ? producto.paquetes : [])
         .map((paq: any) => {
@@ -53,7 +66,7 @@ const presentacionesDe = (item: any, vm: any) => {
                 unidades,
                 // Sin precio propio, el paquete vale unidades × precio unitario.
                 precio: Number(paq?.precioPaquete) > 0
-                    ? Number(paq.precioPaquete)
+                    ? Number(paq.precioPaquete) * factor
                     : base.precio * unidades,
             };
         });
@@ -103,8 +116,17 @@ const PresentacionSelect = ({ item, index, vm }: { item: any; index: number; vm:
             unidadesPorPaquete: destino.unidades,
             // El precio de la línea va POR UNIDAD: cantidad × precio da el total
             // de la presentación, que es como lo espera el comprobante.
+            //
+            // `precioBase` manda: `calculateLineItem` recalcula con
+            // `getApplicablePrice`, que lee `precioBase ?? precioUnitario`. Si acá
+            // solo se tocara `precioUnitario`, el recálculo lo pisaría con el precio
+            // de la unidad suelta y el six-pack de S/ 40 se cobraría 6 × 10 = S/ 60.
+            precioBase: destino.precio / destino.unidades,
             precioUnitario: destino.precio / destino.unidades,
             precioOrigen: esPaquete ? 'PAQUETE' : 'UNIDAD',
+            // Se guarda el precio de la unidad suelta para poder volver a él sin
+            // releer el catálogo (que está en la moneda nativa).
+            precioUnidadSuelta: opciones[0].precio,
             descripcion: esPaquete ? destino.nombre : (item.descripcionBase || item.descripcion),
             // Se guarda el nombre del producto suelto para poder volver a él.
             descripcionBase: item.descripcionBase || (esPaquete ? item.descripcion : item.descripcion),
@@ -116,13 +138,16 @@ const PresentacionSelect = ({ item, index, vm }: { item: any; index: number; vm:
     };
 
     return (
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
             <select
                 value={actual.clave}
                 onChange={(e) => cambiar(e.target.value)}
                 data-testid={`presentacion-${index}`}
-                title="Cambiar la presentación en que se vende"
-                className="h-7 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 text-[11px] font-bold text-gray-700 dark:text-gray-200 outline-none"
+                title={`Presentación: ${actual.nombre}. Cambiarla recalcula precio y stock.`}
+                // Los alias de paquete que pone el cliente pueden ser largos
+                // ("SIX PACK LATAS DE CERVEZA PILSEN"): se acota el ancho y el
+                // nombre completo queda en el title y al desplegar.
+                className="h-7 max-w-[150px] truncate rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 text-[11px] font-bold leading-none text-gray-700 dark:text-gray-200 outline-none"
             >
                 {opciones.map((o) => (
                     <option key={o.clave || 'base'} value={o.clave}>
@@ -404,8 +429,8 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                 {/* Cantidad — justo debajo de la descripción.
                                     En líneas de paquete el stepper opera en PACKS
                                     (±unidadesPorPaquete por dentro). */}
-                                <div className="mt-2 flex w-fit items-center gap-2">
-                                    <div className="flex items-center bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
+                                <div className="mt-2 flex w-full flex-wrap items-center gap-2">
+                                    <div className="flex shrink-0 items-center bg-gray-100 dark:bg-slate-800 rounded-lg p-1">
                                         <button
                                             onClick={() => {
                                                 const paso = getPkgUnits(item);

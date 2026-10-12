@@ -55,12 +55,19 @@ const montarVm = (over: any = {}) => ({
     avisarSobreventa: false,
     updateProductInvoice: jest.fn(),
     handleDeleteProductByIndex: jest.fn(),
-    // El real recalcula totales; acá solo interesa la cantidad que recibe.
-    calculateLineItem: (item: any, cantidad: number) => ({
-        cantidad,
-        precioUnitario: item.precioUnitario,
-        total: (Number(item.precioUnitario) * cantidad).toFixed(2),
-    }),
+    /**
+     * Replica al real, incluido el detalle que importa: el precio NO sale de
+     * `precioUnitario` sino de `getApplicablePrice`, que lee
+     * `precioBase ?? precioUnitario`.
+     *
+     * La primera versión de este mock devolvía `item.precioUnitario` tal cual.
+     * Pasaba en verde mientras en pantalla el six-pack de S/ 40 se cobraba
+     * S/ 60: el mock era más amable que la función que simulaba.
+     */
+    calculateLineItem: (item: any, cantidad: number) => {
+        const precioUnitario = Number(item.precioBase ?? item.precioUnitario ?? 0);
+        return { cantidad, precioUnitario, total: (precioUnitario * cantidad).toFixed(2) };
+    },
     ...over,
 });
 
@@ -88,6 +95,30 @@ describe('selector de presentación en la línea', () => {
         expect(Number(actualizado.precioUnitario)).toBeCloseTo(7.5, 4);
         expect(actualizado.esPaquete).toBe(true);
         expect(actualizado.unidadesPorPaquete).toBe(6);
+    });
+
+    it('el total del six-pack es su precio, no 6 × el de la unidad', () => {
+        const vm = montarVm();
+        fireEvent.change(montar(vm), { target: { value: 'SP-84' } });
+
+        const [, actualizado] = vm.updateProductInvoice.mock.calls[0];
+        // Lo que de verdad vio el cliente en pantalla: cobraba 6 × 6 = 36 en vez
+        // de 45 porque `precioBase` seguía siendo el de la unidad y el recálculo
+        // pisaba el precio del pack.
+        expect(Number(actualizado.total)).toBeCloseTo(45, 2);
+        expect(Number(actualizado.precioBase)).toBeCloseTo(7.5, 4);
+    });
+
+    it('en un documento en otra moneda convierte el precio del paquete', () => {
+        // Línea traída a dólares con TC 3.8: el catálogo sigue en soles.
+        const vm = montarVm({
+            productsInvoice: [linea({ precioUnitario: 6 / 3.8, precioBase: 6 / 3.8, tipoCambio: 1 / 3.8 })],
+        });
+        fireEvent.change(montar(vm), { target: { value: 'SP-84' } });
+
+        const [, actualizado] = vm.updateProductInvoice.mock.calls[0];
+        // 45 soles / 3.8 = 11.84 dólares el pack → 1.974 por unidad.
+        expect(Number(actualizado.total)).toBeCloseTo(45 / 3.8, 2);
     });
 
     it('conserva la cantidad en presentaciones: 1 six-pack son 6 unidades', () => {
