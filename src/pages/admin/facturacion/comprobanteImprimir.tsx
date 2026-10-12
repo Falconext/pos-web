@@ -320,11 +320,14 @@ console.log(formValues)
             data-print-root=""
             data-size={size}
             aria-hidden={isScreenHidden}
-            className={isScreenHidden ? 'pointer-events-none opacity-0 fixed -left-[200vw] top-0 z-[-1]' : 'bg-[#fff]'}
+            className={isScreenHidden ? 'pointer-events-none opacity-0 fixed -left-[200vw] top-0 z-[-1]' : 'bg-[#fff] text-black'}
+            // `colorScheme: light` evita que el navegador pinte en oscuro lo que
+            // dibuja él (scrollbars, bordes de controles) dentro del papel.
+            style={{ colorScheme: 'light' }}
         >
             <div
                 ref={componentRef || localComponentRef}
-                className={`bg-[#fff] py-0 text-sm ${size === 'TICKET' ? 'px-4 pt-3 pb-2' : 'px-5 pt-5 pb-10'}`}
+                className={`bg-[#fff] text-black py-0 text-sm ${size === 'TICKET' ? 'px-4 pt-3 pb-2' : 'px-5 pt-5 pb-10'}`}
                 style={{
                     width: size === 'TICKET' ? '80mm' : (size === 'A5' ? '148mm' : '210mm'),
                     margin: '0 auto',
