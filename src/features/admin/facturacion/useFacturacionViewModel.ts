@@ -3252,6 +3252,10 @@ export const useFacturacionViewModel = () => {
         comprobantesGenerar, receiptsToNote,
         categories, clients,
         filteredProducts: usaLotesFarmacia ? farmaciaProductos : products,
+        // Catálogo SIN filtrar: lo usa el selector de presentación del carrito,
+        // que tiene que seguir funcionando aunque el usuario busque otra cosa
+        // después de agregar la línea (`filteredProducts` se vacía al buscar).
+        products,
         filteredCombos,
         catalogItems,
         // Al cotizar va en true: el carrito y los modales no deben bloquear por stock.

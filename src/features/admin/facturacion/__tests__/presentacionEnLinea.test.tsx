@@ -146,6 +146,19 @@ describe('selector de presentación en la línea', () => {
         expect(vm.updateProductInvoice).toHaveBeenCalled();
     });
 
+    /**
+     * El ViewModel real expone el catálogo como `filteredProducts`, no como
+     * `products`. La primera versión de este test mockeó `products` y pasó en
+     * verde mientras en la pantalla el desplegable no aparecía nunca: el mock
+     * había codificado una suposición equivocada en vez de la forma real.
+     */
+    it('funciona con la forma real del ViewModel (filteredProducts)', () => {
+        const vm = montarVm({ products: undefined, filteredProducts: [PRODUCTO] });
+        const select = montar(vm);
+        expect(Array.from(select.options).map((o) => o.textContent))
+            .toEqual(['UNIDAD', 'SIX PACK', 'CAJA']);
+    });
+
     it('un producto sin paquetes no muestra desplegable', () => {
         const vm = montarVm({ products: [{ ...PRODUCTO, paquetes: [] }] });
         render(<POSCartLayout vm={vm} />);

@@ -35,7 +35,8 @@ const esAfectacionGratuitaCode = (codigo: any): boolean => {
  * cambia el precio de un paquete, el carrito no siga ofreciendo el viejo.
  */
 const presentacionesDe = (item: any, vm: any) => {
-    const producto = (vm?.products || []).find((p: any) => Number(p?.id) === Number(item?.id));
+    const catalogo = vm?.products || vm?.filteredProducts || [];
+    const producto = catalogo.find((p: any) => Number(p?.id) === Number(item?.id));
     const base = {
         clave: '',
         nombre: 'UNIDAD',
