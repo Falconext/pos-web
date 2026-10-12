@@ -3,6 +3,7 @@ import { useCajaStore } from '../../../../zustand/caja';
 import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
 import { Icon } from '@iconify/react';
+import apiClient from '@/utils/apiClient';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import ModalConfirm from '@/components/ModalConfirm';
@@ -164,41 +165,60 @@ const CajaControl: React.FC = () => {
     }
 
     /**
+     * Lo que debería haber en el cajón, a partir del estado de un turno.
+     *
+     * Efectivo esperado = monto inicial + ventas en efectivo − egresos (gastos
+     * del turno) + transferencias recibidas de otra sede − transferencias
+     * enviadas a otra sede.
+     *
+     * Sirve igual para el turno de hoy y para uno pendiente: la diferencia está
+     * en de dónde sale el estado, no en la cuenta.
+     */
+    const calcularEsperado = (estado: any) => {
+        const mediosPago = estado?.ventasDelDia?.mediosPago ?? {};
+        const montoInicial = Number(estado?.movimiento?.montoInicial || 0);
+        const egresos = Number(estado?.totalEgresos || 0);
+        const transferenciasRecibidas = Number(estado?.totalTransferenciasRecibidas || 0);
+        const transferenciasEnviadas = Number(estado?.totalTransferenciasEnviadas || 0);
+        return {
+            montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos + transferenciasRecibidas - transferenciasEnviadas),
+            montoYape: Number(mediosPago.YAPE || 0),
+            montoPlin: Number(mediosPago.PLIN || 0),
+            montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0),
+            montoTarjeta: Number(mediosPago.TARJETA || 0),
+        };
+    };
+
+    const EN_CERO = { montoEfectivo: 0, montoYape: 0, montoPlin: 0, montoTransferencia: 0, montoTarjeta: 0 };
+    const FORM_VACIO = { montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' };
+
+    /**
      * Cuadrar un turno que quedó abierto de un día anterior.
      *
-     * No se precarga "lo esperado": `estadoCaja` trae las ventas de HOY y
-     * mostrarlas como referencia de un turno del martes sería mentirle al que
-     * está contando el cajón. El esperado y la diferencia reales los calcula el
-     * backend con la ventana de ESE día.
+     * El esperado se le pide al backend para ESE turno: `estadoCaja` trae las
+     * ventas de HOY, y mostrarlas como referencia de un turno del viernes sería
+     * mentirle a quien está contando el cajón.
      */
-    const handleOpenCierrePendiente = (t: { id: number; fecha: string }) => {
+    const handleOpenCierrePendiente = async (t: { id: number; fecha: string }) => {
         setTurnoPendiente(t);
-        setEsperadoCierre({ montoEfectivo: 0, montoYape: 0, montoPlin: 0, montoTransferencia: 0, montoTarjeta: 0 });
-        setFormCierre({ montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' });
+        setEsperadoCierre(EN_CERO);
+        setFormCierre(FORM_VACIO);
         setShowCierre(true);
+        try {
+            const { data } = await apiClient.get(`/caja/turno-pendiente/${t.id}/estado`);
+            setEsperadoCierre(calcularEsperado(data?.data ?? data));
+        } catch {
+            // Sin el esperado se puede cuadrar igual: el backend lo recalcula al
+            // cerrar. Lo que no se puede es inventarlo con los números de hoy.
+        }
     };
 
     const handleOpenCierre = () => {
         setTurnoPendiente(null);
         if (estadoCaja && estadoCaja.ventasDelDia) {
-            const { mediosPago } = estadoCaja.ventasDelDia;
-            const montoInicial = Number(estadoCaja.movimiento?.montoInicial || 0);
-            // Efectivo esperado = monto inicial + ventas en efectivo − egresos
-            // (gastos del turno) + transferencias recibidas de otra sede −
-            // transferencias enviadas a otra sede.
-            const egresos = Number(estadoCaja.totalEgresos || 0);
-            const transferenciasRecibidas = Number(estadoCaja.totalTransferenciasRecibidas || 0);
-            const transferenciasEnviadas = Number(estadoCaja.totalTransferenciasEnviadas || 0);
-
-            setEsperadoCierre({
-                montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos + transferenciasRecibidas - transferenciasEnviadas),
-                montoYape: Number(mediosPago.YAPE || 0),
-                montoPlin: Number(mediosPago.PLIN || 0),
-                montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0),
-                montoTarjeta: Number(mediosPago.TARJETA || 0),
-            });
+            setEsperadoCierre(calcularEsperado(estadoCaja));
         }
-        setFormCierre({ montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' });
+        setFormCierre(FORM_VACIO);
         setShowCierre(true);
     };
 
@@ -213,10 +233,9 @@ const CajaControl: React.FC = () => {
             montoTarjeta: esperadoCierre.montoTarjeta.toFixed(2),
         }));
     };
-    const HintEsperado = ({ monto }: { monto: number }) =>
-        turnoPendiente ? null : (
-            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Según el sistema: {formatCurrency(monto)}</p>
-        );
+    const HintEsperado = ({ monto }: { monto: number }) => (
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Según el sistema: {formatCurrency(monto)}</p>
+    );
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -568,9 +587,7 @@ const CajaControl: React.FC = () => {
 
                         <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t dark:border-slate-800 flex justify-end gap-3">
                             <button onClick={() => setShowCierre(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Cancelar</button>
-                            {!turnoPendiente && (
-                                <button type="button" onClick={usarMontosDelSistema} title="Copia los montos que calcula el sistema; úsalo solo si ya contaste y coincide" className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors">Usar montos del sistema</button>
-                            )}
+                            <button type="button" onClick={usarMontosDelSistema} title="Copia los montos que calcula el sistema; úsalo solo si ya contaste y coincide" className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors">Usar montos del sistema</button>
                             <Button onClick={() => setConfirmCierre(true)} className="bg-amber-500 text-white hover:bg-amber-600 border-none">
                                 <Icon icon="solar:shield-warning-bold" className="mr-1" />
                                 Revisar y Cerrar
