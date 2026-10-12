@@ -326,10 +326,10 @@ const CajaControl: React.FC = () => {
                                         onClick={() => handleOpenCierrePendiente({ id: t.id, fecha: t.fecha })}
                                         title={`Cuadrar este turno · ${[t.sede, t.usuario, t.turno].filter(Boolean).join(' · ')}`}
                                         data-testid={`cerrar-turno-${t.id}`}
-                                        className="px-2 py-0.5 rounded-lg bg-white/70 dark:bg-slate-800/60 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-white dark:hover:bg-slate-800 transition-colors inline-flex items-center gap-1"
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
                                     >
-                                        <Icon icon="solar:safe-circle-bold" className="text-xs" />
-                                        {fechaCorta(t.fecha)}
+                                        <Icon icon="solar:safe-circle-bold" className="text-sm" />
+                                        Cerrar turno del {fechaCorta(t.fecha)}
                                     </button>
                                 ))}
                                 {estadoCaja!.pendientesDeCierre!.length > 6 && (
