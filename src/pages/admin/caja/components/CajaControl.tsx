@@ -34,6 +34,9 @@ const CajaControl: React.FC = () => {
 
     const [showApertura, setShowApertura] = useState(false);
     const [showCierre, setShowCierre] = useState(false);
+    // Turno de un día anterior que se está cuadrando. null = el turno de hoy,
+    // que es el caso de siempre.
+    const [turnoPendiente, setTurnoPendiente] = useState<{ id: number; fecha: string } | null>(null);
     const [showGasto, setShowGasto] = useState(false);
     const [showTransferencia, setShowTransferencia] = useState(false);
     const [confirmCierre, setConfirmCierre] = useState(false);
@@ -114,6 +117,7 @@ const CajaControl: React.FC = () => {
 
     const handleCerrarCaja = async () => {
         const result = await cerrarCaja({
+            ...(turnoPendiente ? { aperturaId: turnoPendiente.id } : {}),
             montoEfectivo: parseFloat(String(formCierre.montoEfectivo)) || 0,
             montoYape: parseFloat(String(formCierre.montoYape)) || 0,
             montoPlin: parseFloat(String(formCierre.montoPlin)) || 0,
@@ -124,6 +128,7 @@ const CajaControl: React.FC = () => {
         if (result.success) {
             setShowCierre(false);
             setConfirmCierre(false);
+            setTurnoPendiente(null);
             setFormCierre({
                 montoEfectivo: '',
                 montoYape: '',
@@ -158,7 +163,23 @@ const CajaControl: React.FC = () => {
         return <div className="p-8 flex justify-center"><Icon icon="eos-icons:loading" className="text-3xl text-blue-600" /></div>;
     }
 
+    /**
+     * Cuadrar un turno que quedó abierto de un día anterior.
+     *
+     * No se precarga "lo esperado": `estadoCaja` trae las ventas de HOY y
+     * mostrarlas como referencia de un turno del martes sería mentirle al que
+     * está contando el cajón. El esperado y la diferencia reales los calcula el
+     * backend con la ventana de ESE día.
+     */
+    const handleOpenCierrePendiente = (t: { id: number; fecha: string }) => {
+        setTurnoPendiente(t);
+        setEsperadoCierre({ montoEfectivo: 0, montoYape: 0, montoPlin: 0, montoTransferencia: 0, montoTarjeta: 0 });
+        setFormCierre({ montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' });
+        setShowCierre(true);
+    };
+
     const handleOpenCierre = () => {
+        setTurnoPendiente(null);
         if (estadoCaja && estadoCaja.ventasDelDia) {
             const { mediosPago } = estadoCaja.ventasDelDia;
             const montoInicial = Number(estadoCaja.movimiento?.montoInicial || 0);
@@ -192,9 +213,10 @@ const CajaControl: React.FC = () => {
             montoTarjeta: esperadoCierre.montoTarjeta.toFixed(2),
         }));
     };
-    const HintEsperado = ({ monto }: { monto: number }) => (
-        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Según el sistema: {formatCurrency(monto)}</p>
-    );
+    const HintEsperado = ({ monto }: { monto: number }) =>
+        turnoPendiente ? null : (
+            <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">Según el sistema: {formatCurrency(monto)}</p>
+        );
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -294,17 +316,21 @@ const CajaControl: React.FC = () => {
                                     : `Tienes ${estadoCaja!.pendientesDeCierre!.length} turnos anteriores sin cerrar`}
                             </p>
                             <p className="text-xs text-amber-700/80 dark:text-amber-300/70 mt-0.5">
-                                Sus ventas y gastos sí están contabilizados, pero esos días quedaron sin arqueo: nadie contó el efectivo del cajón.
+                                Sus ventas y gastos sí están contabilizados, pero esos días quedaron sin arqueo: nadie contó el efectivo del cajón. Toca una fecha para cuadrarla.
                             </p>
                             <div className="flex flex-wrap gap-1.5 mt-2">
                                 {estadoCaja!.pendientesDeCierre!.slice(0, 6).map((t) => (
-                                    <span
+                                    <button
                                         key={t.id}
-                                        title={[t.sede, t.usuario, t.turno].filter(Boolean).join(' · ')}
-                                        className="px-2 py-0.5 rounded-lg bg-white/70 dark:bg-slate-800/60 text-[11px] font-bold text-amber-700 dark:text-amber-300"
+                                        type="button"
+                                        onClick={() => handleOpenCierrePendiente({ id: t.id, fecha: t.fecha })}
+                                        title={`Cuadrar este turno · ${[t.sede, t.usuario, t.turno].filter(Boolean).join(' · ')}`}
+                                        data-testid={`cerrar-turno-${t.id}`}
+                                        className="px-2 py-0.5 rounded-lg bg-white/70 dark:bg-slate-800/60 text-[11px] font-bold text-amber-700 dark:text-amber-300 hover:bg-white dark:hover:bg-slate-800 transition-colors inline-flex items-center gap-1"
                                     >
+                                        <Icon icon="solar:safe-circle-bold" className="text-xs" />
                                         {fechaCorta(t.fecha)}
-                                    </span>
+                                    </button>
                                 ))}
                                 {estadoCaja!.pendientesDeCierre!.length > 6 && (
                                     <span className="px-2 py-0.5 text-[11px] font-bold text-amber-700/70 dark:text-amber-300/70">
@@ -444,9 +470,14 @@ const CajaControl: React.FC = () => {
                     <div className="bg-white dark:bg-[#111827] rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border dark:border-slate-800">
                         <div className="bg-slate-50 dark:bg-slate-900 p-6 border-b border-gray-100 dark:border-slate-800">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <Icon icon="solar:safe-circle-bold" className="text-red-500" /> Cierre de Turno
+                                <Icon icon="solar:safe-circle-bold" className="text-red-500" />
+                                {turnoPendiente ? `Cuadrar el turno del ${fechaCorta(turnoPendiente.fecha)}` : 'Cierre de Turno'}
                             </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Cuenta el dinero y escribe lo que hay de verdad. Debajo de cada campo va lo que el sistema espera, solo como referencia.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {turnoPendiente
+                                    ? 'Es un turno de un día anterior que quedó sin cerrar. Escribe lo que había en el cajón al terminar ESE día; el sistema calcula la diferencia contra lo que debió haber y deja anotado que se cuadró tarde.'
+                                    : 'Cuenta el dinero y escribe lo que hay de verdad. Debajo de cada campo va lo que el sistema espera, solo como referencia.'}
+                            </p>
                         </div>
                         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2">
@@ -537,7 +568,9 @@ const CajaControl: React.FC = () => {
 
                         <div className="p-4 bg-gray-50 dark:bg-slate-900 border-t dark:border-slate-800 flex justify-end gap-3">
                             <button onClick={() => setShowCierre(false)} className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors">Cancelar</button>
-                            <button type="button" onClick={usarMontosDelSistema} title="Copia los montos que calcula el sistema; úsalo solo si ya contaste y coincide" className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors">Usar montos del sistema</button>
+                            {!turnoPendiente && (
+                                <button type="button" onClick={usarMontosDelSistema} title="Copia los montos que calcula el sistema; úsalo solo si ya contaste y coincide" className="px-4 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-colors">Usar montos del sistema</button>
+                            )}
                             <Button onClick={() => setConfirmCierre(true)} className="bg-amber-500 text-white hover:bg-amber-600 border-none">
                                 <Icon icon="solar:shield-warning-bold" className="mr-1" />
                                 Revisar y Cerrar
