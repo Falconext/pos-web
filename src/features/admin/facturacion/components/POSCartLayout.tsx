@@ -138,16 +138,17 @@ const PresentacionSelect = ({ item, index, vm }: { item: any; index: number; vm:
     };
 
     return (
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="mt-2 flex w-full min-w-0 items-center gap-1.5">
             <select
                 value={actual.clave}
                 onChange={(e) => cambiar(e.target.value)}
                 data-testid={`presentacion-${index}`}
                 title={`Presentación: ${actual.nombre}. Cambiarla recalcula precio y stock.`}
                 // Los alias de paquete que pone el cliente pueden ser largos
-                // ("SIX PACK LATAS DE CERVEZA PILSEN"): se acota el ancho y el
-                // nombre completo queda en el title y al desplegar.
-                className="h-7 max-w-[150px] truncate rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 text-[11px] font-bold leading-none text-gray-700 dark:text-gray-200 outline-none"
+                // ("SIX PACK LATAS DE CERVEZA PILSEN"), así que el selector va en
+                // su propia fila y toma el ancho de la tarjeta: la cajera tiene
+                // que poder leer qué presentación está vendiendo sin desplegarlo.
+                className="h-7 min-w-0 flex-1 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 text-[11px] font-bold leading-none text-gray-700 dark:text-gray-200 outline-none"
             >
                 {opciones.map((o) => (
                     <option key={o.clave || 'base'} value={o.clave}>
@@ -465,13 +466,13 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                             <Icon icon="solar:add-circle-linear" width={18} />
                                         </button>
                                     </div>
-                                    <PresentacionSelect item={item} index={index} vm={vm} />
                                     {getPkgUnits(item) > 1 && (
                                         <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md whitespace-nowrap">
                                             = {Number(item.cantidad)} unid.
                                         </span>
                                     )}
                                 </div>
+                                <PresentacionSelect item={item} index={index} vm={vm} />
                             </div>{/* /descripción */}
 
                             {/* Precio + acciones (derecha de la fila 1) */}
