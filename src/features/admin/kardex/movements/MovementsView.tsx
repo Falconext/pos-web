@@ -15,6 +15,7 @@ import { get } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import { MOTIVOS_INGRESO, MOTIVOS_SALIDA } from '../products/motivoAjusteStock';
 
+import { etiquetaProducto } from './etiquetaProducto';
 /**
  * Los motivos que se pueden filtrar. Se comparan contra el `concepto` del
  * movimiento, que arranca con esta misma frase.
@@ -222,8 +223,13 @@ export default function MovementsView() {
                                         onClick={() => actions.selectProduct(p)}
                                         className="w-full text-left px-4 py-3 hover:bg-blue-50 dark:hover:bg-slate-700 text-sm border-b border-gray-50 dark:border-slate-700 last:border-b-0 transition-colors"
                                     >
-                                        <div className="font-medium text-gray-800 dark:text-gray-200">{p.descripcion}</div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">{p.codigo} • {p?.unidadMedida?.nombre}</div>
+                                        <div className="font-medium text-gray-800 dark:text-gray-200">{etiquetaProducto(p)}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                            {p.codigo} • {p?.unidadMedida?.nombre}
+                                            {/* Elegir el modelo trae los movimientos de todas sus
+                                                tallas; elegir una talla, solo los de esa. */}
+                                            {p.productoPadreId ? ' • variante' : ''}
+                                        </div>
                                     </button>
                                 ))}
                             </div>

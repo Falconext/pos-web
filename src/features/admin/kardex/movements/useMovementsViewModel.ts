@@ -9,6 +9,7 @@ import useAlertStore from '@/zustand/alert';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { IMovementsViewModelState, MovimientoKardex, TIPOS_MOVIMIENTO } from './MovementsModel';
+import { etiquetaProducto } from './etiquetaProducto';
 
 export const useMovementsViewModel = () => {
     // Stores
@@ -89,7 +90,12 @@ export const useMovementsViewModel = () => {
     // Search Products
     useEffect(() => {
         if (debouncedProductQuery && debouncedProductQuery.trim().length >= 2) {
-            getAllProducts({ page: 1, limit: 10, search: debouncedProductQuery });
+            // `incluirVariantes` trae las tallas y colores, que son productos
+            // hijos y por defecto el catálogo esconde. Sin esto solo se podía
+            // elegir el modelo y no "Victoria Azul talla 35", que es el caso que
+            // reportó el cliente. El límite sube porque un modelo de calzado se
+            // lleva solo una decena de filas con sus tallas.
+            getAllProducts({ page: 1, limit: 25, search: debouncedProductQuery, incluirVariantes: true });
             setState(prev => ({ ...prev, showSuggestions: true }));
         } else {
             setState(prev => ({ ...prev, showSuggestions: false }));
@@ -177,7 +183,7 @@ export const useMovementsViewModel = () => {
     const selectProduct = (p: any) => {
         setState(prev => ({
             ...prev,
-            productQuery: `${p.codigo} - ${p.descripcion}`,
+            productQuery: `${p.codigo} - ${etiquetaProducto(p)}`,
             showSuggestions: false,
             filters: { ...prev.filters, productoId: String(p.id) }
         }));
@@ -226,7 +232,7 @@ export const useMovementsViewModel = () => {
 
         return {
         fecha: formatDate(item.fecha),
-        producto: item.producto.descripcion,
+        producto: etiquetaProducto(item.producto),
         sede: item.sede?.nombre ?? '-',
         tipo: item.tipoMovimiento,
         concepto: conceptoFormatted,
