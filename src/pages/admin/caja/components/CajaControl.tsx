@@ -192,6 +192,16 @@ const CajaControl: React.FC = () => {
     const EN_CERO = { montoEfectivo: 0, montoYape: 0, montoPlin: 0, montoTransferencia: 0, montoTarjeta: 0 };
     const FORM_VACIO = { montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' };
 
+    /** Los montos del sistema, listos para el formulario. */
+    const formDesdeEsperado = (esp: typeof EN_CERO, observaciones = '') => ({
+        montoEfectivo: esp.montoEfectivo.toFixed(2),
+        montoYape: esp.montoYape.toFixed(2),
+        montoPlin: esp.montoPlin.toFixed(2),
+        montoTransferencia: esp.montoTransferencia.toFixed(2),
+        montoTarjeta: esp.montoTarjeta.toFixed(2),
+        observaciones,
+    });
+
     /**
      * Cuadrar un turno que quedó abierto de un día anterior.
      *
@@ -206,7 +216,9 @@ const CajaControl: React.FC = () => {
         setShowCierre(true);
         try {
             const { data } = await apiClient.get(`/caja/turno-pendiente/${t.id}/estado`);
-            setEsperadoCierre(calcularEsperado(data?.data ?? data));
+            const esperado = calcularEsperado(data?.data ?? data);
+            setEsperadoCierre(esperado);
+            setFormCierre(formDesdeEsperado(esperado));
         } catch {
             // Sin el esperado se puede cuadrar igual: el backend lo recalcula al
             // cerrar. Lo que no se puede es inventarlo con los números de hoy.
@@ -216,9 +228,12 @@ const CajaControl: React.FC = () => {
     const handleOpenCierre = () => {
         setTurnoPendiente(null);
         if (estadoCaja && estadoCaja.ventasDelDia) {
-            setEsperadoCierre(calcularEsperado(estadoCaja));
+            const esperado = calcularEsperado(estadoCaja);
+            setEsperadoCierre(esperado);
+            setFormCierre(formDesdeEsperado(esperado));
+        } else {
+            setFormCierre(FORM_VACIO);
         }
-        setFormCierre(FORM_VACIO);
         setShowCierre(true);
     };
 
