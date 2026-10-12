@@ -141,7 +141,10 @@ export function InventorySearchBox({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-100"
+        /* `border-0` no sobra: @tailwindcss/forms le pone 1px gris a todo input
+           sin `type`, y ese borde quedaba dibujado DENTRO del recuadro de la
+           caja, con el aspecto de un doble marco. */
+        className="w-full border-0 bg-transparent text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-100"
       />
     </label>
   );
