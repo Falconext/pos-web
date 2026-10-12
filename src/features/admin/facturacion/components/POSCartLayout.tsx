@@ -27,6 +27,117 @@ const esAfectacionGratuitaCode = (codigo: any): boolean => {
     return (n >= 11 && n <= 16) || n === 21 || (n >= 31 && n <= 37);
 };
 
+/**
+ * Las presentaciones en que se puede vender un producto: la unidad suelta y
+ * cada paquete configurado (`ProductoCodigoBarras`).
+ *
+ * Se leen del catálogo por id y no de la propia línea para que, si alguien
+ * cambia el precio de un paquete, el carrito no siga ofreciendo el viejo.
+ */
+const presentacionesDe = (item: any, vm: any) => {
+    const producto = (vm?.products || []).find((p: any) => Number(p?.id) === Number(item?.id));
+    const base = {
+        clave: '',
+        nombre: 'UNIDAD',
+        unidades: 1,
+        // Precio TOTAL de la presentación: el de la unidad suelta es el del producto.
+        precio: Number(producto?.precioUnitario ?? item?.precioUnitario ?? 0),
+    };
+    const paquetes = (Array.isArray(producto?.paquetes) ? producto.paquetes : [])
+        .map((paq: any) => {
+            const unidades = Math.max(2, Number(paq?.unidadesPorPaquete) || 2);
+            return {
+                clave: String(paq?.codigo ?? ''),
+                nombre: String(paq?.alias || `PAQUETE x${unidades}`).toUpperCase(),
+                unidades,
+                // Sin precio propio, el paquete vale unidades × precio unitario.
+                precio: Number(paq?.precioPaquete) > 0
+                    ? Number(paq.precioPaquete)
+                    : base.precio * unidades,
+            };
+        });
+    return [base, ...paquetes];
+};
+
+/**
+ * Cambiar la presentación de una línea ya agregada (UNIDAD ↔ PACK ↔ CAJA).
+ *
+ * Antes había que borrar la línea y volver a agregar el producto desde la
+ * tarjeta correcta del catálogo: la cajera que se equivocaba de presentación
+ * perdía la línea entera.
+ *
+ * La cantidad se conserva EN PRESENTACIONES, no en unidades: 1 caja pasa a ser
+ * 1 unidad, no 12. Es lo que espera quien está mirando "1" en la pantalla.
+ */
+const PresentacionSelect = ({ item, index, vm }: { item: any; index: number; vm: any }) => {
+    const opciones = presentacionesDe(item, vm);
+    // Con una sola presentación el desplegable no agrega nada.
+    if (opciones.length < 2) return null;
+
+    const unidadesActuales = getPkgUnits(item);
+    const actual = opciones.find((o) => o.unidades === unidadesActuales) ?? opciones[0];
+    const cantidadEnPresentaciones = Number(item.cantidad) / unidadesActuales;
+    const stockEnPresentacion = item?.stock !== undefined
+        ? Number(item.stock) / (actual.unidades || 1)
+        : null;
+
+    const cambiar = (clave: string) => {
+        const destino = opciones.find((o) => o.clave === clave);
+        if (!destino || destino.unidades === unidadesActuales) return;
+
+        const unidades = Math.round(cantidadEnPresentaciones * destino.unidades * 10000) / 10000;
+        const esServicioLinea = String(item?.atributosTecnicos?.tipoProducto || '').toUpperCase() === 'SERVICIO';
+        if (!esServicioLinea && item.stock !== undefined && Number(item.stock) < unidades && !vm.permitirVentaSinStock) {
+            useAlertStore.getState().alert(
+                `Solo hay ${item.stock} unidades de ${String(item.descripcion || 'este producto').toUpperCase()}`,
+                'warning',
+            );
+            return;
+        }
+
+        const esPaquete = destino.unidades > 1;
+        const lineaConPresentacion = {
+            ...item,
+            esPaquete,
+            unidadesPorPaquete: destino.unidades,
+            // El precio de la línea va POR UNIDAD: cantidad × precio da el total
+            // de la presentación, que es como lo espera el comprobante.
+            precioUnitario: destino.precio / destino.unidades,
+            precioOrigen: esPaquete ? 'PAQUETE' : 'UNIDAD',
+            descripcion: esPaquete ? destino.nombre : (item.descripcionBase || item.descripcion),
+            // Se guarda el nombre del producto suelto para poder volver a él.
+            descripcionBase: item.descripcionBase || (esPaquete ? item.descripcion : item.descripcion),
+        };
+        vm.updateProductInvoice(index, {
+            ...lineaConPresentacion,
+            ...vm.calculateLineItem(lineaConPresentacion, unidades),
+        });
+    };
+
+    return (
+        <div className="flex items-center gap-1.5">
+            <select
+                value={actual.clave}
+                onChange={(e) => cambiar(e.target.value)}
+                data-testid={`presentacion-${index}`}
+                title="Cambiar la presentación en que se vende"
+                className="h-7 rounded-md border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-1.5 text-[11px] font-bold text-gray-700 dark:text-gray-200 outline-none"
+            >
+                {opciones.map((o) => (
+                    <option key={o.clave || 'base'} value={o.clave}>
+                        {o.nombre}
+                    </option>
+                ))}
+            </select>
+            {stockEnPresentacion !== null && (
+                <span className="rounded-md bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-500 dark:bg-slate-800 dark:text-gray-400 whitespace-nowrap">
+                    Stock {stockEnPresentacion.toFixed(stockEnPresentacion % 1 === 0 ? 0 : 3)}
+                </span>
+            )}
+        </div>
+    );
+};
+
 const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) => {
     const factor = getPkgUnits(item);
     const displayQty = Number(item.cantidad) / factor;
@@ -328,9 +439,10 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                             <Icon icon="solar:add-circle-linear" width={18} />
                                         </button>
                                     </div>
+                                    <PresentacionSelect item={item} index={index} vm={vm} />
                                     {getPkgUnits(item) > 1 && (
                                         <span className="text-[10px] font-bold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 px-2 py-0.5 rounded-md whitespace-nowrap">
-                                            pack{Number(item.cantidad) / getPkgUnits(item) !== 1 ? 's' : ''} · = {Number(item.cantidad)} unid.
+                                            = {Number(item.cantidad)} unid.
                                         </span>
                                     )}
                                 </div>
