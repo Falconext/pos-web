@@ -18,6 +18,7 @@ import QRCode from 'qrcode'
 import { Calendar } from "@/components/Date";
 import Select from "@/components/Select";
 import { get, post } from "@/utils/fetch";
+import { AvisoHuecosCorrelativo } from "./AvisoHuecosCorrelativo";
 import ModalConfirm from "@/components/ModalConfirm";
 import { useNavigate } from "react-router-dom";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -803,6 +804,8 @@ const Comprobantes = () => {
                     </button>
                 </div>
             </div>
+
+            <AvisoHuecosCorrelativo />
 
             {soloPendientesSunat && (
                 <div className="mb-4 flex items-center gap-2 px-4 py-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-900/40 rounded-xl max-w-fit">
