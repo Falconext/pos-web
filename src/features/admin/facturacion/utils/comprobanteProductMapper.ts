@@ -54,6 +54,11 @@ export const mapDetalleToInvoiceProduct = (detalle: any) => {
     atributosTecnicos: firstValue(detalle?.atributosTecnicos, producto?.atributosTecnicos, undefined),
     imagenUrl,
     imagenUrlDisplay: firstValue(detalle?.imagenUrlDisplay, producto?.imagenUrlDisplay, imagenUrl),
+    // El detalle guardado NO tiene código: solo `productoId`. El del producto
+    // llega en la respuesta pero se perdía acá, y la columna CÓDIGO del A4
+    // salía con un guion en todas las líneas.
+    codigo: firstValue(detalle?.codigo, producto?.codigo, undefined),
+    codigoBarras: firstValue(detalle?.codigoBarras, producto?.codigoBarras, undefined),
     ...(numerosSerie ? { numerosSerie } : {}),
   };
 };

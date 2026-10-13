@@ -732,23 +732,27 @@ console.log(formValues)
                                 )}
 
                                 {/* Product Table */}
-                                <div className="w-full mb-4" style={{ fontSize: px('productos') }}>
-                                    {/* Table Header */}
-                                    <div className="flex bg-gray-300 text-black font-bold border border-gray-400 py-1">
-                                        <div className="w-[8%] text-center border-r border-gray-400">CÓDIGO</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">CANT.</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
-                                        {includeProductImages && <div className="w-[10%] text-center border-r border-gray-400">IMAGEN</div>}
-                                        {/* <div className="w-[10%] text-center border-r border-gray-400">CÓDIGO</div> */}
-                                        <div className={`flex-1 text-center border-r border-gray-400 px-2`}>DESCRIPCIÓN</div>
-                                        {/* <div className="w-[10%] text-center border-r border-gray-400">V.UNIT.</div> */}
-                                        {/* <div className="w-[8%] text-center border-r border-gray-400">IGV.</div> */}
-                                        <div className="w-[9%] text-center border-r border-gray-400">MONEDA</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">{sinIgv ? 'V.UNIT.' : 'P.UNIT.'}</div>
-                                        <div className="w-[10%] text-center">{sinIgv ? 'V.VENTA' : 'TOTAL'}</div>
-                                    </div>
-
-                                    {/* Table Body */}
+                                {/* Tabla REAL, no divs con flex: así el navegador repite el
+                                    <thead> en cada página al imprimir y no parte una fila por
+                                    la mitad. Con divs, a partir de la segunda hoja las líneas
+                                    salían sin encabezado y no se sabía qué columna era cuál. */}
+                                <table
+                                    className="w-full mb-4"
+                                    style={{ fontSize: px('productos'), tableLayout: 'fixed', borderCollapse: 'collapse' }}
+                                >
+                                    <thead className="bg-gray-300 text-black font-bold">
+                                        <tr className="border border-gray-400">
+                                            <th className="w-[8%] text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
+                                            <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
+                                            <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
+                                            {includeProductImages && <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
+                                            <th className="text-center border-r border-gray-400 px-2 py-1 font-bold">DESCRIPCIÓN</th>
+                                            <th className="w-[9%] text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
+                                            <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">{sinIgv ? 'V.UNIT.' : 'P.UNIT.'}</th>
+                                            <th className="w-[10%] text-center py-1 font-bold">{sinIgv ? 'V.VENTA' : 'TOTAL'}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                     {productsInvoice?.map((item: any, i: number) => {
                                         const cant = Number(item?.cantidad || 0);
                                         // Precio final (ya con descuento) para el importe de la línea.
@@ -767,29 +771,27 @@ console.log(formValues)
                                         const totalItem = totalBruto * f;
 
                                         return (
-                                            <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
-                                                <div className="w-[8%] text-center border-r border-gray-300 py-1">{item?.codigoBarras || item?.codigo || item?.producto?.codigoBarras || item?.producto?.codigo || '-'}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
+                                            <tr key={i} className="border-b border-l border-r border-gray-300" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{item?.codigoBarras || item?.codigo || item?.producto?.codigoBarras || item?.producto?.codigo || '-'}</td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{formatCantidad(cant)}</td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</td>
                                                 {includeProductImages && (
-                                                    <div className="w-[10%] flex justify-center items-center border-r border-gray-300 py-1">
-                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover" alt="" /> : '-'}
-                                                    </div>
+                                                    <td className="text-center border-r border-gray-300 py-1 align-top">
+                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover inline-block" alt="" /> : '-'}
+                                                    </td>
                                                 )}
-                                                {/* <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.codigo || '-'}</div> */}
-                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1" style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
+                                                <td className="text-left border-r border-gray-300 px-2 py-1 align-top" style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
                                                     {descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}
                                                     {esGratis && <span className="ml-1 font-bold text-[9px]">[GRATIS]</span>}
-                                                </div>
-                                                {/* <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit / 1.18).toFixed(2)}</div> */}
-                                                {/* <div className="w-[8%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit - (pUnit / 1.18)).toFixed(2)}</div> */}
-                                                <div className="w-[9%] text-center border-r border-gray-300 py-1">{monedaSimbolo}</div>
-                                                <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
-                                                <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
-                                            </div>
+                                                </td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{monedaSimbolo}</td>
+                                                <td className="text-right border-r border-gray-300 px-1 py-1 align-top">{pUnit.toFixed(2)}</td>
+                                                <td className="text-right px-1 py-1 align-top">{totalItem.toFixed(2)}</td>
+                                            </tr>
                                         )
                                     })}
-                                </div>
+                                    </tbody>
+                                </table>
 
                                 {/* Total in Words & Footer Section */}
                                 {fc('sonTexto').visible && (
