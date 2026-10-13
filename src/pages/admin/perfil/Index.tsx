@@ -1003,6 +1003,24 @@ export default function PerfilIndex() {
                                         {vm.savingControlFlag === 'requiereCajaParaEmitir' && <p className="text-xs text-sky-600 dark:text-sky-400 mt-1">Guardando configuración...</p>}
                                     </div>
                                 </label>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-sky-100 dark:border-sky-900/30 bg-sky-50/40 dark:bg-sky-900/10 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).cajaPrellenarMontosCierre)}
+                                        disabled={vm.savingControlFlag === 'cajaPrellenarMontosCierre'}
+                                        onChange={(e) => vm.handleControlFlagToggle('cajaPrellenarMontosCierre', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-sky-600 dark:text-sky-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-sky-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Al cerrar caja, traer los montos del sistema</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            El formulario de cierre viene con el efectivo, Yape, Plin, tarjeta y transferencia ya calculados por el sistema: la cajera solo revisa y guarda. Para negocios que no arquean y se guían del sistema.
+                                        </p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Apágalo si quieres un arqueo real: los campos salen vacíos, la persona cuenta el cajón y escribe lo que encontró, y la diferencia contra lo esperado significa algo.
+                                        </p>
+                                    </div>
+                                </label>
                                 <label className="flex items-start gap-3 p-3 rounded-lg border border-rose-100 dark:border-rose-900/30 bg-rose-50/40 dark:bg-rose-900/10 cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">
                                     <input
                                         type="checkbox"

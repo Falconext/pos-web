@@ -31,7 +31,19 @@ const CajaControl: React.FC = () => {
         clearError,
     } = useCajaStore();
     const { sedes, listarSedes } = useSedesStore();
-    const { sedeActiva } = useAuthStore();
+    const { sedeActiva, auth } = useAuthStore();
+    /**
+     * Si el cierre arranca con los montos del sistema o en blanco.
+     *
+     * Lo eligió cada negocio en Configuración → Ventas y caja. Prellenado, la
+     * cajera revisa y guarda: sirve donde no arquean y se guían del sistema.
+     * En blanco, cuenta el cajón y escribe lo que encontró, y recién ahí la
+     * diferencia contra lo esperado significa algo.
+     *
+     * Por defecto prendido: es como venía funcionando.
+     */
+    const prellenarCierre =
+        ((auth as any)?.empresa?.cajaPrellenarMontosCierre ?? true) !== false;
 
     const [showApertura, setShowApertura] = useState(false);
     const [showCierre, setShowCierre] = useState(false);
@@ -217,8 +229,10 @@ const CajaControl: React.FC = () => {
         try {
             const { data } = await apiClient.get(`/caja/turno-pendiente/${t.id}/estado`);
             const esperado = calcularEsperado(data?.data ?? data);
+            // El esperado se guarda igual aunque no se prellene: es la
+            // referencia contra la que se compara lo declarado.
             setEsperadoCierre(esperado);
-            setFormCierre(formDesdeEsperado(esperado));
+            if (prellenarCierre) setFormCierre(formDesdeEsperado(esperado));
         } catch {
             // Sin el esperado se puede cuadrar igual: el backend lo recalcula al
             // cerrar. Lo que no se puede es inventarlo con los números de hoy.
@@ -230,7 +244,7 @@ const CajaControl: React.FC = () => {
         if (estadoCaja && estadoCaja.ventasDelDia) {
             const esperado = calcularEsperado(estadoCaja);
             setEsperadoCierre(esperado);
-            setFormCierre(formDesdeEsperado(esperado));
+            setFormCierre(prellenarCierre ? formDesdeEsperado(esperado) : FORM_VACIO);
         } else {
             setFormCierre(FORM_VACIO);
         }
