@@ -396,7 +396,7 @@ export default function ProductsView() {
                             skeletonCount={vm.itemsPerPage > 0 ? Math.min(vm.itemsPerPage, 12) : 8}
                             products={productsSource}
                             onEdit={(p) => actions.handleGetProduct({ ...p, productoId: p.id })}
-                            onDelete={(p) => actions.handleOpenDelete({ ...p, productoId: p.id })}
+                            onDelete={vm.puedeCrearOEliminar ? (p: any) => actions.handleOpenDelete({ ...p, productoId: p.id }) : undefined}
                             onToggleState={(p) => actions.handleToggleClientState({ ...p, productoId: p.id })}
                             onUploadImage={(p) => { actions.setUploadTarget({ id: p.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); }}
                         />
@@ -571,14 +571,14 @@ export default function ProductsView() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 font-[400] mt-1">Gestiona tu inventario de {vm.labels.titulo.toLowerCase()}</p>
                 </div>
                 <div className="flex w-full sm:w-auto gap-3">
-                    <Button
+                    {vm.puedeCrearOEliminar && <Button
                         color="secondary"
                         onClick={actions.openNewProduct}
                         className="w-full sm:w-auto flex items-center justify-center gap-2 !bg-violet-600 !text-white shadow-md shadow-violet-200 border-none"
                     >
                         <Icon icon="solar:add-circle-bold" className="text-lg" />
                         {vm.labels.nuevoBtn}
-                    </Button>
+                    </Button>}
                 </div>
             </div>
 
@@ -709,7 +709,7 @@ export default function ProductsView() {
                                                 eligen cuáles etiquetar y cuántas etiquetas de cada uno. */}
                                             {item('mdi:barcode', 'text-violet-500', 'Etiquetas de código de barras', () => setEtiquetasIds(productsSource.map((p: any) => p.id)))}
                                             {item('solar:export-bold', 'text-green-500', 'Exportar productos', () => actions.exportProducts())}
-                                            {item('solar:import-bold', 'text-blue-500', 'Importar desde Excel', () => vm.fileInputRef.current?.click())}
+                                            {vm.puedeCrearOEliminar && item('solar:import-bold', 'text-blue-500', 'Importar desde Excel', () => vm.fileInputRef.current?.click())}
                                             {item('solar:file-download-bold', 'text-amber-500', 'Descargar modelo (guía)', async () => {
                                                 const baseUrl = (import.meta.env.VITE_API_URL as string) || '';
                                                 const resp = await fetch(`${baseUrl}/productos/plantilla`, {
@@ -823,9 +823,9 @@ export default function ProductsView() {
                                         <span>{(rowBase as any).disponibleEnSede === false ? `Asignar a ${vm.selectedSedeName ?? 'esta sede'}` : `Quitar de ${vm.selectedSedeName ?? 'esta sede'}`}</span>
                                     </button>
                                 )}
-                                <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-700">
+                                {vm.puedeCrearOEliminar && <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-700">
                                     <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
-                                </button>
+                                </button>}
                             </>
                         );
                     })()}
