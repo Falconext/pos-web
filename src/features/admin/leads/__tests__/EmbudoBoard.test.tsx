@@ -230,3 +230,67 @@ describe('el comprobante de pago', () => {
     prompt.mockRestore()
   })
 })
+
+describe('arrastrar una tarjeta entre columnas', () => {
+  /** Monta el tablero con un pedido en DIAGNOSTICADO y devuelve su tarjeta. */
+  const montarConPedido = async () => {
+    getMock.mockResolvedValue(
+      tablero({
+        columnas: ETAPAS.map((etapa) => ({
+          etapa,
+          etiqueta: ETAPA_META[etapa].label,
+          total: etapa === 'DIAGNOSTICADO' ? 1 : 0,
+          pedidos: etapa === 'DIAGNOSTICADO' ? [pedido(92)] : [],
+        })),
+      }),
+    )
+    const { container } = render(<EmbudoBoard />)
+    await waitFor(() => expect(screen.getByText('CLIENTE 92')).toBeInTheDocument())
+    const tarjeta = container.querySelector('[draggable="true"]') as HTMLElement
+    const columna = (label: string) =>
+      screen.getByText(label).closest('section') as HTMLElement
+    return { tarjeta, columna }
+  }
+
+  const arrastrar = (el: HTMLElement) =>
+    fireEvent.dragStart(el, { dataTransfer: { setData: jest.fn(), effectAllowed: '' } })
+
+  it('suelta en una etapa que se puede mover a mano', async () => {
+    const { tarjeta, columna } = await montarConPedido()
+    arrastrar(tarjeta)
+    fireEvent.drop(columna('Cotizado'), { dataTransfer: { getData: () => '' } })
+
+    await waitFor(() =>
+      expect(patchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/embudo/92'),
+        expect.objectContaining({ etapa: 'COTIZADO' }),
+      ),
+    )
+  })
+
+  it('no deja soltar en EN_RUTA ni ENTREGADO: eso lo pone la logística', async () => {
+    // Son las dos etapas fuera de ETAPAS_MANUALES; ponerlas a mano
+    // desincronizaría el envío con el courier.
+    const { tarjeta, columna } = await montarConPedido()
+    arrastrar(tarjeta)
+    fireEvent.drop(columna('En ruta'), { dataTransfer: { getData: () => '' } })
+    fireEvent.drop(columna('Entregado'), { dataTransfer: { getData: () => '' } })
+
+    expect(patchMock).not.toHaveBeenCalled()
+  })
+
+  it('soltar en la misma columna no llama al servidor', async () => {
+    const { tarjeta, columna } = await montarConPedido()
+    arrastrar(tarjeta)
+    fireEvent.drop(columna('Diagnosticado'), { dataTransfer: { getData: () => '' } })
+
+    expect(patchMock).not.toHaveBeenCalled()
+  })
+
+  it('sin arrastre previo, un drop suelto no mueve nada', async () => {
+    const { columna } = await montarConPedido()
+    fireEvent.drop(columna('Cotizado'), { dataTransfer: { getData: () => '' } })
+
+    expect(patchMock).not.toHaveBeenCalled()
+  })
+})

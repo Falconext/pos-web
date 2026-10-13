@@ -49,6 +49,9 @@ export function EmbudoBoard({ onVerCliente }: Props) {
     pago: ComprobantePagoLead
     pedido: PedidoEnEmbudo
   } | null>(null)
+  // Qué tarjeta se está arrastrando: lo sabe el tablero porque la columna que
+  // recibe el drop no es la misma que inició el arrastre.
+  const [arrastrando, setArrastrando] = useState<PedidoEnEmbudo | null>(null)
 
   const cargar = useCallback(async () => {
     try {
@@ -143,6 +146,8 @@ export function EmbudoBoard({ onVerCliente }: Props) {
             onMover={mover}
             onVerVoucher={(pago, pedido) => setVoucher({ pago, pedido })}
             onVerCliente={onVerCliente}
+            arrastrando={arrastrando}
+            onArrastrar={setArrastrando}
           />
         ))}
       </div>
@@ -166,18 +171,50 @@ function Columna({
   onMover,
   onVerVoucher,
   onVerCliente,
+  arrastrando,
+  onArrastrar,
 }: {
   col: ColumnaEmbudo
   moviendo: number | null
   onMover: (p: PedidoEnEmbudo, e: EtapaCrm) => void
   onVerVoucher: (pago: ComprobantePagoLead, pedido: PedidoEnEmbudo) => void
   onVerCliente?: (telefono: string) => void
+  arrastrando: PedidoEnEmbudo | null
+  onArrastrar: (p: PedidoEnEmbudo | null) => void
 }) {
   const meta = ETAPA_META[col.etapa]
+  const [encima, setEncima] = useState(false)
+  // Solo se puede soltar donde el backend acepta un movimiento a mano, y nunca
+  // sobre la columna de la que salió la tarjeta.
+  const aceptaDrop =
+    !!arrastrando &&
+    ETAPAS_MANUALES.includes(col.etapa) &&
+    !col.pedidos.some((p) => p.id === arrastrando.id)
+
   return (
     // Mismo armado que el tablero de Conversaciones: la columna lleva el fondo
     // y las tarjetas van blancas encima.
-    <section className="flex min-h-[9rem] w-[248px] flex-shrink-0 flex-col rounded-2xl bg-gray-100/80 dark:bg-slate-900/60">
+    <section
+      onDragOver={(e) => {
+        if (!aceptaDrop) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        setEncima(true)
+      }}
+      onDragLeave={() => setEncima(false)}
+      onDrop={(e) => {
+        setEncima(false)
+        if (!aceptaDrop || !arrastrando) return
+        e.preventDefault()
+        onMover(arrastrando, col.etapa)
+        onArrastrar(null)
+      }}
+      className={`flex min-h-[9rem] w-[248px] flex-shrink-0 flex-col rounded-2xl transition-colors duration-150 ${
+        encima && aceptaDrop
+          ? 'bg-violet-100 ring-2 ring-violet-400 dark:bg-violet-900/30 dark:ring-violet-600'
+          : 'bg-gray-100/80 dark:bg-slate-900/60'
+      } ${arrastrando && !aceptaDrop ? 'opacity-50' : ''}`}
+    >
       <header className="flex items-center gap-2 px-3 py-2.5">
         <span className={`h-2 w-2 flex-none rounded-full ${meta.acento}`} />
         <h3 className="truncate text-sm font-semibold text-gray-700 dark:text-gray-200">
@@ -203,6 +240,7 @@ function Columna({
             onMover={onMover}
             onVerVoucher={onVerVoucher}
             onVerCliente={onVerCliente}
+            onArrastrar={onArrastrar}
           />
         ))}
         {col.total > col.pedidos.length && (
@@ -222,6 +260,7 @@ function Tarjeta({
   onMover,
   onVerVoucher,
   onVerCliente,
+  onArrastrar,
 }: {
   pedido: PedidoEnEmbudo
   etapa: EtapaCrm
@@ -229,12 +268,31 @@ function Tarjeta({
   onMover: (p: PedidoEnEmbudo, e: EtapaCrm) => void
   onVerVoucher: (pago: ComprobantePagoLead, pedido: PedidoEnEmbudo) => void
   onVerCliente?: (telefono: string) => void
+  onArrastrar: (p: PedidoEnEmbudo | null) => void
 }) {
   const [abierto, setAbierto] = useState(false)
   const pendiente = pedido.comprobantesPago?.[0]
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-2.5 transition-colors duration-150 hover:border-violet-300 dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-700">
+    <div
+      // Arrastrar es un atajo, no el único camino: el menú "Mover" sigue ahí
+      // para quien usa teclado o pantalla táctil, donde el drag nativo no va.
+      draggable={!ocupado}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        // Se viaja el id y la etapa de origen para poder descartar el drop
+        // sobre la misma columna sin ir al servidor.
+        e.dataTransfer.setData(
+          'application/x-pedido',
+          JSON.stringify({ id: pedido.id, desde: etapa }),
+        )
+        onArrastrar(pedido)
+      }}
+      onDragEnd={() => onArrastrar(null)}
+      className={`rounded-xl border border-gray-200 bg-white p-2.5 transition-colors duration-150 hover:border-violet-300 dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-700 ${
+        ocupado ? 'opacity-50' : 'cursor-grab active:cursor-grabbing'
+      }`}
+    >
       <button
         type="button"
         onClick={() => onVerCliente?.(pedido.telefonoProspecto)}
