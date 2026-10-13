@@ -1021,6 +1021,24 @@ export default function PerfilIndex() {
                                         </p>
                                     </div>
                                 </label>
+                                <label className="mt-3 flex items-start gap-3 p-3 rounded-lg border border-sky-100 dark:border-sky-900/30 bg-sky-50/40 dark:bg-sky-900/10 cursor-pointer hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        checked={Boolean((perfil.empresa as any).permitirStockNegativo)}
+                                        disabled={vm.savingControlFlag === 'permitirStockNegativo'}
+                                        onChange={(e) => vm.handleControlFlagToggle('permitirStockNegativo', e.target.checked)}
+                                        className="mt-1 w-4 h-4 text-sky-600 dark:text-sky-500 rounded border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-sky-500"
+                                    />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Permitir stock negativo</p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Si vendes algo sin tener stock, el saldo queda en negativo (−1 = “debo una unidad”) y se corrige solo cuando ingresa la compra. Actívalo si llevas inventario: sin esto el descuento se pierde y el stock queda inflado para siempre.
+                                        </p>
+                                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                                            Déjalo apagado si facturas siempre contra stock en cero y no registras compras: ahí el negativo solo sería ruido.
+                                        </p>
+                                    </div>
+                                </label>
                                 <label className="flex items-start gap-3 p-3 rounded-lg border border-rose-100 dark:border-rose-900/30 bg-rose-50/40 dark:bg-rose-900/10 cursor-pointer hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-colors">
                                     <input
                                         type="checkbox"
