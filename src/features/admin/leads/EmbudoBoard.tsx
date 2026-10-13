@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
 import moment from 'moment'
+import { formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
 import useAlertStore from '@/zustand/alert'
 import {
   crmService,
@@ -23,6 +25,19 @@ import {
 interface Props {
   /** Abre la ficha 360° del cliente. */
   onVerCliente?: (telefono: string) => void
+}
+
+/**
+ * "hace 16 horas" en vez de "16 hours ago".
+ *
+ * `moment` arranca en inglés si nadie le fija el idioma, y acá nadie se lo
+ * fijaba: el tablero mostraba las antigüedades en inglés dentro de un panel que
+ * está todo en español. Se usa `date-fns`, que ya viene con el locale cargado
+ * en este archivo, en vez de arrastrar el paquete de idiomas de moment.
+ */
+function fechaRelativa(valor: string | Date | null | undefined): string {
+  if (!valor) return ''
+  return formatDistanceToNow(new Date(valor), { addSuffix: true, locale: es })
 }
 
 export function EmbudoBoard({ onVerCliente }: Props) {
@@ -160,20 +175,22 @@ function Columna({
 }) {
   const meta = ETAPA_META[col.etapa]
   return (
-    <div className="w-[248px] flex-shrink-0">
-      <div className="mb-2 flex items-center gap-2 px-1">
-        <span className={`h-2 w-2 rounded-full ${meta.acento}`} />
-        <span className="text-xs font-black uppercase tracking-wide text-gray-600 dark:text-gray-300">
+    // Mismo armado que el tablero de Conversaciones: la columna lleva el fondo
+    // y las tarjetas van blancas encima.
+    <section className="flex min-h-[9rem] w-[248px] flex-shrink-0 flex-col rounded-2xl bg-gray-100/80 dark:bg-slate-900/60">
+      <header className="flex items-center gap-2 px-3 py-2.5">
+        <span className={`h-2 w-2 flex-none rounded-full ${meta.acento}`} />
+        <h3 className="truncate text-sm font-semibold text-gray-700 dark:text-gray-200">
           {meta.label}
-        </span>
-        <span className="ml-auto rounded-md bg-gray-100 px-1.5 text-[11px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        </h3>
+        <span className="ml-auto flex-none text-xs font-semibold text-gray-400 dark:text-gray-500">
           {col.total}
         </span>
-      </div>
+      </header>
 
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2 px-2 pb-2">
         {col.pedidos.length === 0 && (
-          <p className="rounded-xl border border-dashed border-gray-200 py-6 text-center text-[11px] text-gray-400 dark:border-gray-800">
+          <p className="flex flex-1 items-center justify-center pb-4 text-xs text-gray-400 dark:text-gray-600">
             Vacío
           </p>
         )}
@@ -194,7 +211,7 @@ function Columna({
           </p>
         )}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -217,7 +234,7 @@ function Tarjeta({
   const pendiente = pedido.comprobantesPago?.[0]
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-2.5 dark:border-gray-800 dark:bg-[#111827]">
+    <div className="rounded-xl border border-gray-200 bg-white p-2.5 transition-colors duration-150 hover:border-violet-300 dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-700">
       <button
         type="button"
         onClick={() => onVerCliente?.(pedido.telefonoProspecto)}
@@ -242,7 +259,7 @@ function Tarjeta({
 
       <div className="mt-2 flex items-center justify-between">
         <span className="text-[10px] text-gray-400">
-          {moment(pedido.etapaEn).fromNow()}
+          {fechaRelativa(pedido.etapaEn)}
         </span>
         <button
           type="button"
