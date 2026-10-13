@@ -5,7 +5,8 @@ import { useState } from "react";
 interface CardRestauranteProps {
     products: IProduct[];
     onEdit: (product: any) => void;
-    onDelete: (product: any) => void;
+    /** Sin handler no se muestra el botón: el usuario tiene restringida la baja. */
+    onDelete?: (product: any) => void;
     onToggleState: (product: any) => void;
     onUploadImage: (product: any) => void;
     loading?: boolean;
@@ -131,13 +132,13 @@ const CardRestaurante = ({ products, onEdit, onDelete, onToggleState, onUploadIm
                                 >
                                     <Icon icon="mdi:power" width={20} height={20} />
                                 </button>
-                                <button
+                                {onDelete && <button
                                     onClick={() => onDelete(product)}
                                     className="p-1.5 rounded hover:bg-red-50 text-red-500"
                                     title="Eliminar"
                                 >
                                     <Icon icon="mdi:trash-outline" width={20} height={20} />
-                                </button>
+                                </button>}
                             </div>
                         </div>
                     </div>

@@ -18,6 +18,7 @@ import {
   iniciales,
 } from './LeadsModel'
 import type {
+  EstadoLeadProspecto,
   LeadProspecto,
   LeadDocumento,
   TipoLeadDocumento,
@@ -111,31 +112,6 @@ export default function LeadsView() {
 
       {vista === 'conversaciones' && (
         <>
-      {/* Resumen por estado */}
-      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        {ESTADOS_KANBAN.map((estado) => {
-          const meta = ESTADO_META[estado]
-          return (
-            <div
-              key={estado}
-              className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#111827]"
-            >
-              <div className="flex items-center gap-2">
-                <span className={`flex h-8 w-8 items-center justify-center rounded-lg ${meta.badge}`}>
-                  <Icon icon={meta.icon} width={18} />
-                </span>
-                <span className={`text-xs font-semibold uppercase tracking-wide ${meta.header}`}>
-                  {meta.label}
-                </span>
-              </div>
-              <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">
-                {vm.resumen[estado] ?? 0}
-              </p>
-            </div>
-          )
-        })}
-      </div>
-
       {/* Búsqueda */}
       <div className="mb-4 max-w-md">
         <InputPro
@@ -146,46 +122,23 @@ export default function LeadsView() {
         />
       </div>
 
-      {/* Kanban */}
+      {/* Tablero.
+          El resumen por estado que vivía acá arriba repetía el mismo número que
+          la cabecera de cada columna: se dejó uno solo, el de la columna. */}
       {vm.isLoading ? (
         <div className="flex items-center justify-center py-20 text-gray-400">
           <Icon icon="svg-spinners:180-ring" width={32} />
         </div>
       ) : (
         <div className="flex gap-4 overflow-x-auto pb-4">
-          {ESTADOS_KANBAN.map((estado) => {
-            const meta = ESTADO_META[estado]
-            const items = vm.porEstado(estado)
-            return (
-              <div key={estado} className="flex w-72 flex-none flex-col">
-                <div className="mb-2 flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`h-2.5 w-2.5 rounded-full ${meta.dot}`} />
-                    <span className={`text-sm font-semibold ${meta.header}`}>
-                      {meta.label}
-                    </span>
-                  </div>
-                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-slate-800 dark:text-gray-400">
-                    {items.length}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2.5">
-                  {items.length === 0 && (
-                    <div className="rounded-xl border border-dashed border-gray-200 py-8 text-center text-xs text-gray-400 dark:border-slate-800">
-                      Sin prospectos
-                    </div>
-                  )}
-                  {items.map((p) => (
-                    <ProspectoCard
-                      key={p.id}
-                      p={p}
-                      onClick={() => vm.actions.abrirConversacion(p.conversacionId)}
-                    />
-                  ))}
-                </div>
-              </div>
-            )
-          })}
+          {ESTADOS_KANBAN.map((estado) => (
+            <ColumnaKanban
+              key={estado}
+              estado={estado}
+              items={vm.porEstado(estado)}
+              onAbrir={(p) => vm.actions.abrirConversacion(p.conversacionId)}
+            />
+          ))}
         </div>
       )}
 
@@ -269,6 +222,63 @@ function SwitchIa({
   )
 }
 
+/**
+ * Una columna del tablero.
+ *
+ * La columna tiene fondo propio y las tarjetas van blancas encima: así se lee
+ * dónde termina un estado y empieza el otro sin necesidad de separadores, que
+ * es lo que pasaba antes cuando las columnas vacías se veían como un hueco.
+ */
+function ColumnaKanban({
+  estado,
+  items,
+  onAbrir,
+}: {
+  estado: EstadoLeadProspecto
+  items: LeadProspecto[]
+  onAbrir: (p: LeadProspecto) => void
+}) {
+  const meta = ESTADO_META[estado]
+  return (
+    <section className="flex min-h-[9rem] w-[19rem] flex-none flex-col rounded-2xl bg-gray-100/80 dark:bg-slate-900/60">
+      <header className="flex items-center justify-between gap-2 px-3 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className={`h-2 w-2 flex-none rounded-full ${meta.dot}`} />
+          <h3 className="truncate text-sm font-semibold text-gray-700 dark:text-gray-200">
+            {meta.label}
+          </h3>
+          <span className="flex-none text-xs font-semibold text-gray-400 dark:text-gray-500">
+            {items.length}
+          </span>
+        </div>
+      </header>
+      <div className="flex flex-col gap-2 px-2 pb-2">
+        {items.length === 0 ? (
+          // Una columna vacía mantiene su altura: si colapsa, el tablero queda
+          // desparejo y cuesta leer que ese estado existe y está en cero.
+          <p className="flex flex-1 items-center justify-center pb-4 text-xs text-gray-400 dark:text-gray-600">
+            Sin prospectos
+          </p>
+        ) : (
+          items.map((p) => (
+            <ProspectoCard key={p.id} p={p} onClick={() => onAbrir(p)} />
+          ))
+        )}
+      </div>
+    </section>
+  )
+}
+
+/** Fila de metadato de la tarjeta: ícono chico + texto, como en el tablero. */
+function MetaFila({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+      <Icon icon={icon} width={14} className="flex-none text-gray-400 dark:text-gray-500" />
+      <span className="truncate">{children}</span>
+    </div>
+  )
+}
+
 function ProspectoCard({
   p,
   onClick,
@@ -277,47 +287,79 @@ function ProspectoCard({
   onClick: () => void
 }) {
   const meta = ESTADO_META[p.estado]
+  // La fecha que le importa al vendedor es la del último movimiento, no la del
+  // alta: le dice si el prospecto se está enfriando.
+  const ultimaActividad = p.actualizadoEn
+    ? format(new Date(p.actualizadoEn), "d 'de' MMM", { locale: es })
+    : null
+
   return (
-    <button
-      type="button"
+    <article
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="group w-full rounded-xl border border-gray-100 bg-white p-3 text-left shadow-sm transition hover:border-violet-200 hover:shadow-md dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-900/50"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        }
+      }}
+      className="cursor-pointer rounded-xl border border-gray-200 bg-white p-3 text-left transition-colors duration-150 hover:border-violet-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-700"
     >
-      <div className="flex items-start gap-2.5">
-        <span className={`flex h-9 w-9 flex-none items-center justify-center rounded-lg text-xs font-bold ${meta.badge}`}>
-          {iniciales(p.nombreProspecto, p.telefonoProspecto)}
+      {/* Píldoras de estado: temperatura y puntaje BANT. */}
+      <div className="mb-2 flex items-center gap-1.5">
+        <span
+          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ${meta.badge}`}
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+          {meta.label}
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
-            {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
-          </p>
-          <p className="truncate text-xs text-gray-400">{p.telefonoProspecto}</p>
-        </div>
-        <div className="flex flex-col items-end">
-          <span className={`text-sm font-extrabold ${colorPuntaje(p.puntaje)}`}>
-            {p.puntaje}
-          </span>
-          <span className="text-[10px] text-gray-400">score</span>
-        </div>
+        <span
+          className={`rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-semibold dark:bg-slate-800 ${colorPuntaje(p.puntaje)}`}
+          title="Puntaje BANT"
+        >
+          {p.puntaje}
+        </span>
       </div>
+
+      <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+        {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
+      </h4>
+
       {p.resumen && (
-        <p className="mt-2 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
           {p.resumen}
         </p>
       )}
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        {p.cotizacion && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
-            <Icon icon="solar:document-text-bold" width={11} /> {p.cotizacion.codigo}
-          </span>
+
+      <div className="mt-2 flex flex-col gap-1">
+        {ultimaActividad && (
+          <MetaFila icon="solar:calendar-minimalistic-linear">{ultimaActividad}</MetaFila>
         )}
+        {p.cotizacion && (
+          <MetaFila icon="solar:document-text-linear">{p.cotizacion.codigo}</MetaFila>
+        )}
+        {p.proximaAccion && (
+          <MetaFila icon="solar:flag-linear">{p.proximaAccion}</MetaFila>
+        )}
+      </div>
+
+      {/* Pie: quién es y qué pasa con la IA. */}
+      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5 dark:border-slate-800">
+        <span
+          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${meta.badge}`}
+          title={p.telefonoProspecto}
+        >
+          {iniciales(p.nombreProspecto, p.telefonoProspecto)}
+        </span>
         {!p.botActivo && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-orange-100 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-            <Icon icon="solar:pause-bold" width={11} /> IA pausada
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-600 dark:text-orange-400">
+            <Icon icon="solar:pause-bold" width={12} />
+            IA pausada
           </span>
         )}
       </div>
-    </button>
+    </article>
   )
 }
 

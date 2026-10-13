@@ -3,6 +3,7 @@ import { useCajaStore } from '../../../../zustand/caja';
 import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
 import { Icon } from '@iconify/react';
+import apiClient from '@/utils/apiClient';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import ModalConfirm from '@/components/ModalConfirm';
@@ -34,6 +35,9 @@ const CajaControl: React.FC = () => {
 
     const [showApertura, setShowApertura] = useState(false);
     const [showCierre, setShowCierre] = useState(false);
+    // Turno de un día anterior que se está cuadrando. null = el turno de hoy,
+    // que es el caso de siempre.
+    const [turnoPendiente, setTurnoPendiente] = useState<{ id: number; fecha: string } | null>(null);
     const [showGasto, setShowGasto] = useState(false);
     const [showTransferencia, setShowTransferencia] = useState(false);
     const [confirmCierre, setConfirmCierre] = useState(false);
@@ -114,6 +118,7 @@ const CajaControl: React.FC = () => {
 
     const handleCerrarCaja = async () => {
         const result = await cerrarCaja({
+            ...(turnoPendiente ? { aperturaId: turnoPendiente.id } : {}),
             montoEfectivo: parseFloat(String(formCierre.montoEfectivo)) || 0,
             montoYape: parseFloat(String(formCierre.montoYape)) || 0,
             montoPlin: parseFloat(String(formCierre.montoPlin)) || 0,
@@ -124,6 +129,7 @@ const CajaControl: React.FC = () => {
         if (result.success) {
             setShowCierre(false);
             setConfirmCierre(false);
+            setTurnoPendiente(null);
             setFormCierre({
                 montoEfectivo: '',
                 montoYape: '',
@@ -158,26 +164,76 @@ const CajaControl: React.FC = () => {
         return <div className="p-8 flex justify-center"><Icon icon="eos-icons:loading" className="text-3xl text-blue-600" /></div>;
     }
 
-    const handleOpenCierre = () => {
-        if (estadoCaja && estadoCaja.ventasDelDia) {
-            const { mediosPago } = estadoCaja.ventasDelDia;
-            const montoInicial = Number(estadoCaja.movimiento?.montoInicial || 0);
-            // Efectivo esperado = monto inicial + ventas en efectivo − egresos
-            // (gastos del turno) + transferencias recibidas de otra sede −
-            // transferencias enviadas a otra sede.
-            const egresos = Number(estadoCaja.totalEgresos || 0);
-            const transferenciasRecibidas = Number(estadoCaja.totalTransferenciasRecibidas || 0);
-            const transferenciasEnviadas = Number(estadoCaja.totalTransferenciasEnviadas || 0);
+    /**
+     * Lo que debería haber en el cajón, a partir del estado de un turno.
+     *
+     * Efectivo esperado = monto inicial + ventas en efectivo − egresos (gastos
+     * del turno) + transferencias recibidas de otra sede − transferencias
+     * enviadas a otra sede.
+     *
+     * Sirve igual para el turno de hoy y para uno pendiente: la diferencia está
+     * en de dónde sale el estado, no en la cuenta.
+     */
+    const calcularEsperado = (estado: any) => {
+        const mediosPago = estado?.ventasDelDia?.mediosPago ?? {};
+        const montoInicial = Number(estado?.movimiento?.montoInicial || 0);
+        const egresos = Number(estado?.totalEgresos || 0);
+        const transferenciasRecibidas = Number(estado?.totalTransferenciasRecibidas || 0);
+        const transferenciasEnviadas = Number(estado?.totalTransferenciasEnviadas || 0);
+        return {
+            montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos + transferenciasRecibidas - transferenciasEnviadas),
+            montoYape: Number(mediosPago.YAPE || 0),
+            montoPlin: Number(mediosPago.PLIN || 0),
+            montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0),
+            montoTarjeta: Number(mediosPago.TARJETA || 0),
+        };
+    };
 
-            setEsperadoCierre({
-                montoEfectivo: Math.max(0, montoInicial + Number(mediosPago.EFECTIVO || 0) - egresos + transferenciasRecibidas - transferenciasEnviadas),
-                montoYape: Number(mediosPago.YAPE || 0),
-                montoPlin: Number(mediosPago.PLIN || 0),
-                montoTransferencia: Number(mediosPago.TRANSFERENCIA || 0),
-                montoTarjeta: Number(mediosPago.TARJETA || 0),
-            });
+    const EN_CERO = { montoEfectivo: 0, montoYape: 0, montoPlin: 0, montoTransferencia: 0, montoTarjeta: 0 };
+    const FORM_VACIO = { montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' };
+
+    /** Los montos del sistema, listos para el formulario. */
+    const formDesdeEsperado = (esp: typeof EN_CERO, observaciones = '') => ({
+        montoEfectivo: esp.montoEfectivo.toFixed(2),
+        montoYape: esp.montoYape.toFixed(2),
+        montoPlin: esp.montoPlin.toFixed(2),
+        montoTransferencia: esp.montoTransferencia.toFixed(2),
+        montoTarjeta: esp.montoTarjeta.toFixed(2),
+        observaciones,
+    });
+
+    /**
+     * Cuadrar un turno que quedó abierto de un día anterior.
+     *
+     * El esperado se le pide al backend para ESE turno: `estadoCaja` trae las
+     * ventas de HOY, y mostrarlas como referencia de un turno del viernes sería
+     * mentirle a quien está contando el cajón.
+     */
+    const handleOpenCierrePendiente = async (t: { id: number; fecha: string }) => {
+        setTurnoPendiente(t);
+        setEsperadoCierre(EN_CERO);
+        setFormCierre(FORM_VACIO);
+        setShowCierre(true);
+        try {
+            const { data } = await apiClient.get(`/caja/turno-pendiente/${t.id}/estado`);
+            const esperado = calcularEsperado(data?.data ?? data);
+            setEsperadoCierre(esperado);
+            setFormCierre(formDesdeEsperado(esperado));
+        } catch {
+            // Sin el esperado se puede cuadrar igual: el backend lo recalcula al
+            // cerrar. Lo que no se puede es inventarlo con los números de hoy.
         }
-        setFormCierre({ montoEfectivo: '', montoYape: '', montoPlin: '', montoTransferencia: '', montoTarjeta: '', observaciones: '' });
+    };
+
+    const handleOpenCierre = () => {
+        setTurnoPendiente(null);
+        if (estadoCaja && estadoCaja.ventasDelDia) {
+            const esperado = calcularEsperado(estadoCaja);
+            setEsperadoCierre(esperado);
+            setFormCierre(formDesdeEsperado(esperado));
+        } else {
+            setFormCierre(FORM_VACIO);
+        }
         setShowCierre(true);
     };
 
@@ -294,17 +350,21 @@ const CajaControl: React.FC = () => {
                                     : `Tienes ${estadoCaja!.pendientesDeCierre!.length} turnos anteriores sin cerrar`}
                             </p>
                             <p className="text-xs text-amber-700/80 dark:text-amber-300/70 mt-0.5">
-                                Sus ventas y gastos sí están contabilizados, pero esos días quedaron sin arqueo: nadie contó el efectivo del cajón.
+                                Sus ventas y gastos sí están contabilizados, pero esos días quedaron sin arqueo: nadie contó el efectivo del cajón. Toca una fecha para cuadrarla.
                             </p>
                             <div className="flex flex-wrap gap-1.5 mt-2">
                                 {estadoCaja!.pendientesDeCierre!.slice(0, 6).map((t) => (
-                                    <span
+                                    <button
                                         key={t.id}
-                                        title={[t.sede, t.usuario, t.turno].filter(Boolean).join(' · ')}
-                                        className="px-2 py-0.5 rounded-lg bg-white/70 dark:bg-slate-800/60 text-[11px] font-bold text-amber-700 dark:text-amber-300"
+                                        type="button"
+                                        onClick={() => handleOpenCierrePendiente({ id: t.id, fecha: t.fecha })}
+                                        title={`Cuadrar este turno · ${[t.sede, t.usuario, t.turno].filter(Boolean).join(' · ')}`}
+                                        data-testid={`cerrar-turno-${t.id}`}
+                                        className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-[11px] font-black text-white shadow-sm transition-colors hover:bg-amber-600 dark:bg-amber-600 dark:hover:bg-amber-500"
                                     >
-                                        {fechaCorta(t.fecha)}
-                                    </span>
+                                        <Icon icon="solar:safe-circle-bold" className="text-sm" />
+                                        Cerrar turno del {fechaCorta(t.fecha)}
+                                    </button>
                                 ))}
                                 {estadoCaja!.pendientesDeCierre!.length > 6 && (
                                     <span className="px-2 py-0.5 text-[11px] font-bold text-amber-700/70 dark:text-amber-300/70">
@@ -444,9 +504,14 @@ const CajaControl: React.FC = () => {
                     <div className="bg-white dark:bg-[#111827] rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border dark:border-slate-800">
                         <div className="bg-slate-50 dark:bg-slate-900 p-6 border-b border-gray-100 dark:border-slate-800">
                             <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <Icon icon="solar:safe-circle-bold" className="text-red-500" /> Cierre de Turno
+                                <Icon icon="solar:safe-circle-bold" className="text-red-500" />
+                                {turnoPendiente ? `Cuadrar el turno del ${fechaCorta(turnoPendiente.fecha)}` : 'Cierre de Turno'}
                             </h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Cuenta el dinero y escribe lo que hay de verdad. Debajo de cada campo va lo que el sistema espera, solo como referencia.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                {turnoPendiente
+                                    ? 'Es un turno de un día anterior que quedó sin cerrar. Escribe lo que había en el cajón al terminar ESE día; el sistema calcula la diferencia contra lo que debió haber y deja anotado que se cuadró tarde.'
+                                    : 'Cuenta el dinero y escribe lo que hay de verdad. Debajo de cada campo va lo que el sistema espera, solo como referencia.'}
+                            </p>
                         </div>
                         <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2">

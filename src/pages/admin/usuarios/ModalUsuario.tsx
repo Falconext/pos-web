@@ -8,6 +8,8 @@ import { useModulosStore, IModulo } from '@/zustand/modulos';
 import useAlertStore from '@/zustand/alert';
 import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
+import { useDebounce } from '@/hooks/useDebounce';
+import { get } from '@/utils/fetch';
 
 interface Props {
   isOpen: boolean;
@@ -27,6 +29,16 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
   // backend ignora el campo si lo manda un no-admin, igual que con '*').
   const actorEsAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
 
+  /**
+   * El correo es la llave con la que se entra al sistema, así que no puede
+   * repetirse en toda la plataforma: si otro negocio ya dio de alta a
+   * vendedor1@gmail.com, aquí ya no se puede. Antes eso se descubría recién al
+   * pulsar Guardar, con el formulario entero lleno; ahora se avisa al escribir.
+   */
+  const [emailOcupado, setEmailOcupado] = useState('');
+
+  const [verificandoEmail, setVerificandoEmail] = useState(false);
+
   const [formData, setFormData] = useState<IFormUsuario>({
     nombre: '',
     email: '',
@@ -43,6 +55,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     convertirEnSupervisor: false,
     noPermitirVentaProductosGratuitos: false,
     restringirTransferenciasASuSede: false,
+    bloquearCrearEliminarProductos: false,
     puedeAnularComprobantes: false,
   });
 
@@ -57,6 +70,40 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
       getAllModulos(false, productoEmpresa);
     }
   }, [isOpen, listarSedes, getAllModulos, productoEmpresa]);
+
+  // Se espera a que deje de escribir: si no, se consultaría letra por letra.
+  const emailDebounced = useDebounce(formData.email, 500);
+
+  useEffect(() => {
+    const correo = emailDebounced.trim();
+    // Mientras el correo no esté completo no se pregunta nada: avisar "ocupado"
+    // a medio escribir sería ruido, no ayuda.
+    if (!isOpen || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      setEmailOcupado('');
+      return;
+    }
+    // Al editar, su propio correo no cuenta como ocupado.
+    if (isEdit && user?.email && correo.toLowerCase() === user.email.toLowerCase()) {
+      setEmailOcupado('');
+      return;
+    }
+    let vigente = true;
+    setVerificandoEmail(true);
+    const params = new URLSearchParams({ email: correo });
+    if (isEdit && user?.id) params.set('usuarioId', String(user.id));
+    get(`usuario/email-disponible?${params}`)
+      .then((resp: any) => {
+        if (!vigente) return;
+        const libre = resp?.data?.disponible ?? resp?.disponible ?? true;
+        setEmailOcupado(libre ? '' : correo);
+      })
+      // Si la consulta falla no se bloquea el formulario: el backend vuelve a
+      // validar al guardar, así que un problema de red no deja al empresario
+      // sin poder crear el usuario.
+      .catch(() => { if (vigente) setEmailOcupado(''); })
+      .finally(() => { if (vigente) setVerificandoEmail(false); });
+    return () => { vigente = false; };
+  }, [emailDebounced, isOpen, isEdit, user?.id, user?.email]);
 
   useEffect(() => {
     if (user && isEdit) {
@@ -80,6 +127,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
         convertirEnSupervisor: user.convertirEnSupervisor ?? false,
         noPermitirVentaProductosGratuitos: user.noPermitirVentaProductosGratuitos ?? false,
         restringirTransferenciasASuSede: user.restringirTransferenciasASuSede ?? false,
+        bloquearCrearEliminarProductos: (user as any).bloquearCrearEliminarProductos ?? false,
         puedeAnularComprobantes: user.puedeAnularComprobantes ?? false,
       });
     } else {
@@ -210,6 +258,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     { key: 'convertirEnSupervisor', icon: 'solar:eye-scan-bold-duotone', label: 'Convertir en Supervisor', descripcion: 'Ve el Dashboard y Reportes de TODAS sus sedes asignadas, no solo la activa.' },
     { key: 'noPermitirVentaProductosGratuitos', icon: 'solar:forbidden-circle-bold-duotone', label: 'No permitir venta de productos gratuitos', descripcion: 'Bloquea agregar al carrito una línea con precio S/ 0.' },
     { key: 'restringirTransferenciasASuSede', icon: 'solar:transfer-horizontal-bold-duotone', label: 'Restringir transferencias solo a sus sedes', descripcion: 'Solo podrá transferir stock hacia las sedes que tiene asignadas.' },
+    { key: 'bloquearCrearEliminarProductos', icon: 'solar:box-bold-duotone', label: 'No permitir agregar ni eliminar productos', descripcion: 'No podrá dar de alta ni borrar productos del inventario. Sí podrá seguir vendiéndolos y editando los que ya existen.' },
   ];
 
   const handlePermisoAvanzadoToggle = (key: keyof IFormUsuario) => {
@@ -230,6 +279,8 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
     if (!formData.email.trim()) newErrors.email = 'El email es obligatorio';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'El email no es válido';
+    // El backend lo rechazaría igual; esto evita que se pierda el formulario.
+    else if (emailOcupado) newErrors.email = 'Ese correo ya está en uso por otra empresa.';
     if (formData.dni?.trim() && !/^\d{8}$/.test(formData.dni)) newErrors.dni = 'El DNI debe tener 8 dígitos';
     if (formData.celular?.trim() && !/^\d{9}$/.test(formData.celular)) newErrors.celular = 'El celular debe tener 9 dígitos';
     if (!isEdit && !formData.password) newErrors.password = 'La contraseña es obligatoria';
@@ -349,7 +400,19 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputPro type="text" name="nombre" value={formData.nombre} onChange={handleInputChange} label="Nombre completo" isLabel error={errors.nombre} placeholder="Juan Pérez García" />
+            {/* El input y su aviso van en la MISMA celda del grid: sueltos, el
+                aviso contaba como celda propia y aparecía debajo del nombre. */}
+            <div>
             <InputPro type="email" name="email" value={formData.email} onChange={handleInputChange} label="Correo electrónico" isLabel error={errors.email} placeholder="usuario@empresa.com" />
+            {verificandoEmail && !errors.email && !emailOcupado && (
+              <p className="mt-1 text-[11px] leading-4 text-slate-400">Comprobando…</p>
+            )}
+            {emailOcupado && !errors.email && (
+              <p className="mt-1 text-[11px] leading-4 text-amber-600 dark:text-amber-400">
+                Ya está en uso por otra empresa. Usa otro correo de esa persona.
+              </p>
+            )}
+            </div>
             <InputPro type="text" name="dni" value={formData.dni} onChange={handleInputChange} label="DNI" isLabel error={errors.dni} placeholder="12345678" maxLength={8} />
             <InputPro type="text" name="celular" value={formData.celular} onChange={handleInputChange} label="Celular" isLabel error={errors.celular} placeholder="987654321" maxLength={9} />
             <InputPro type="number" name="comisionGlobal" value={formData.comisionGlobal || ''} onChange={handleInputChange} label="Comisión Global (%)" isLabel placeholder="Ej: 5" min="0" max="100" />

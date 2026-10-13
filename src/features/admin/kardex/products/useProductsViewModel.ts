@@ -122,6 +122,10 @@ export const useProductsViewModel = () => {
     const COLUMNAS_ECOMMERCE = ['Tienda'];
     // Restricción por usuario: ocultar columnas que revelan el costo.
     const ocultarCosto = !!(auth as any)?.ocultarPrecioCosto;
+    // Restricción por usuario: sin alta ni baja de productos. El backend la
+    // hace cumplir igual; acá solo se esconden los accesos para que la cajera
+    // no choque contra un error después de llenar todo el formulario.
+    const puedeCrearOEliminar = !(auth as any)?.bloquearCrearEliminarProductos;
     const COLUMNAS_COSTO = ['Costo', 'Valor Inventario'];
 
     const allColumns = useMemo(() => {
@@ -938,6 +942,7 @@ export const useProductsViewModel = () => {
         isCodigoBarrasEnabled,
         safeVisibleColumns,
         ocultarCosto,
+        puedeCrearOEliminar,
         stockSort,
         // Cambio rápido de categoría desde la tabla
         categories,

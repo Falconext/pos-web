@@ -58,6 +58,7 @@ export interface IUsuario {
   convertirEnSupervisor?: boolean;
   noPermitirVentaProductosGratuitos?: boolean;
   restringirTransferenciasASuSede?: boolean;
+  bloquearCrearEliminarProductos?: boolean;
   puedeAnularComprobantes?: boolean;
 }
 
@@ -81,6 +82,7 @@ export interface IFormUsuario {
   convertirEnSupervisor?: boolean;
   noPermitirVentaProductosGratuitos?: boolean;
   restringirTransferenciasASuSede?: boolean;
+  bloquearCrearEliminarProductos?: boolean;
   puedeAnularComprobantes?: boolean;
 }
 

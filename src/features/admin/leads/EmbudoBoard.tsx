@@ -8,6 +8,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
 import moment from 'moment'
+import { formatDistanceToNow } from 'date-fns'
+import { es } from 'date-fns/locale'
 import useAlertStore from '@/zustand/alert'
 import {
   crmService,
@@ -25,6 +27,19 @@ interface Props {
   onVerCliente?: (telefono: string) => void
 }
 
+/**
+ * "hace 16 horas" en vez de "16 hours ago".
+ *
+ * `moment` arranca en inglés si nadie le fija el idioma, y acá nadie se lo
+ * fijaba: el tablero mostraba las antigüedades en inglés dentro de un panel que
+ * está todo en español. Se usa `date-fns`, que ya viene con el locale cargado
+ * en este archivo, en vez de arrastrar el paquete de idiomas de moment.
+ */
+function fechaRelativa(valor: string | Date | null | undefined): string {
+  if (!valor) return ''
+  return formatDistanceToNow(new Date(valor), { addSuffix: true, locale: es })
+}
+
 export function EmbudoBoard({ onVerCliente }: Props) {
   const { alert } = useAlertStore()
   const [tablero, setTablero] = useState<Tablero | null>(null)
@@ -34,6 +49,9 @@ export function EmbudoBoard({ onVerCliente }: Props) {
     pago: ComprobantePagoLead
     pedido: PedidoEnEmbudo
   } | null>(null)
+  // Qué tarjeta se está arrastrando: lo sabe el tablero porque la columna que
+  // recibe el drop no es la misma que inició el arrastre.
+  const [arrastrando, setArrastrando] = useState<PedidoEnEmbudo | null>(null)
 
   const cargar = useCallback(async () => {
     try {
@@ -128,6 +146,8 @@ export function EmbudoBoard({ onVerCliente }: Props) {
             onMover={mover}
             onVerVoucher={(pago, pedido) => setVoucher({ pago, pedido })}
             onVerCliente={onVerCliente}
+            arrastrando={arrastrando}
+            onArrastrar={setArrastrando}
           />
         ))}
       </div>
@@ -151,29 +171,63 @@ function Columna({
   onMover,
   onVerVoucher,
   onVerCliente,
+  arrastrando,
+  onArrastrar,
 }: {
   col: ColumnaEmbudo
   moviendo: number | null
   onMover: (p: PedidoEnEmbudo, e: EtapaCrm) => void
   onVerVoucher: (pago: ComprobantePagoLead, pedido: PedidoEnEmbudo) => void
   onVerCliente?: (telefono: string) => void
+  arrastrando: PedidoEnEmbudo | null
+  onArrastrar: (p: PedidoEnEmbudo | null) => void
 }) {
   const meta = ETAPA_META[col.etapa]
+  const [encima, setEncima] = useState(false)
+  // Solo se puede soltar donde el backend acepta un movimiento a mano, y nunca
+  // sobre la columna de la que salió la tarjeta.
+  const aceptaDrop =
+    !!arrastrando &&
+    ETAPAS_MANUALES.includes(col.etapa) &&
+    !col.pedidos.some((p) => p.id === arrastrando.id)
+
   return (
-    <div className="w-[248px] flex-shrink-0">
-      <div className="mb-2 flex items-center gap-2 px-1">
-        <span className={`h-2 w-2 rounded-full ${meta.acento}`} />
-        <span className="text-xs font-black uppercase tracking-wide text-gray-600 dark:text-gray-300">
+    // Mismo armado que el tablero de Conversaciones: la columna lleva el fondo
+    // y las tarjetas van blancas encima.
+    <section
+      onDragOver={(e) => {
+        if (!aceptaDrop) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+        setEncima(true)
+      }}
+      onDragLeave={() => setEncima(false)}
+      onDrop={(e) => {
+        setEncima(false)
+        if (!aceptaDrop || !arrastrando) return
+        e.preventDefault()
+        onMover(arrastrando, col.etapa)
+        onArrastrar(null)
+      }}
+      className={`flex min-h-[9rem] w-[248px] flex-shrink-0 flex-col rounded-2xl transition-colors duration-150 ${
+        encima && aceptaDrop
+          ? 'bg-violet-100 ring-2 ring-violet-400 dark:bg-violet-900/30 dark:ring-violet-600'
+          : 'bg-gray-100/80 dark:bg-slate-900/60'
+      } ${arrastrando && !aceptaDrop ? 'opacity-50' : ''}`}
+    >
+      <header className="flex items-center gap-2 px-3 py-2.5">
+        <span className={`h-2 w-2 flex-none rounded-full ${meta.acento}`} />
+        <h3 className="truncate text-sm font-semibold text-gray-700 dark:text-gray-200">
           {meta.label}
-        </span>
-        <span className="ml-auto rounded-md bg-gray-100 px-1.5 text-[11px] font-bold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+        </h3>
+        <span className="ml-auto flex-none text-xs font-semibold text-gray-400 dark:text-gray-500">
           {col.total}
         </span>
-      </div>
+      </header>
 
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2 px-2 pb-2">
         {col.pedidos.length === 0 && (
-          <p className="rounded-xl border border-dashed border-gray-200 py-6 text-center text-[11px] text-gray-400 dark:border-gray-800">
+          <p className="flex flex-1 items-center justify-center pb-4 text-xs text-gray-400 dark:text-gray-600">
             Vacío
           </p>
         )}
@@ -186,6 +240,7 @@ function Columna({
             onMover={onMover}
             onVerVoucher={onVerVoucher}
             onVerCliente={onVerCliente}
+            onArrastrar={onArrastrar}
           />
         ))}
         {col.total > col.pedidos.length && (
@@ -194,7 +249,7 @@ function Columna({
           </p>
         )}
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -205,6 +260,7 @@ function Tarjeta({
   onMover,
   onVerVoucher,
   onVerCliente,
+  onArrastrar,
 }: {
   pedido: PedidoEnEmbudo
   etapa: EtapaCrm
@@ -212,12 +268,31 @@ function Tarjeta({
   onMover: (p: PedidoEnEmbudo, e: EtapaCrm) => void
   onVerVoucher: (pago: ComprobantePagoLead, pedido: PedidoEnEmbudo) => void
   onVerCliente?: (telefono: string) => void
+  onArrastrar: (p: PedidoEnEmbudo | null) => void
 }) {
   const [abierto, setAbierto] = useState(false)
   const pendiente = pedido.comprobantesPago?.[0]
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-2.5 dark:border-gray-800 dark:bg-[#111827]">
+    <div
+      // Arrastrar es un atajo, no el único camino: el menú "Mover" sigue ahí
+      // para quien usa teclado o pantalla táctil, donde el drag nativo no va.
+      draggable={!ocupado}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move'
+        // Se viaja el id y la etapa de origen para poder descartar el drop
+        // sobre la misma columna sin ir al servidor.
+        e.dataTransfer.setData(
+          'application/x-pedido',
+          JSON.stringify({ id: pedido.id, desde: etapa }),
+        )
+        onArrastrar(pedido)
+      }}
+      onDragEnd={() => onArrastrar(null)}
+      className={`rounded-xl border border-gray-200 bg-white p-2.5 transition-colors duration-150 hover:border-violet-300 dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-700 ${
+        ocupado ? 'opacity-50' : 'cursor-grab active:cursor-grabbing'
+      }`}
+    >
       <button
         type="button"
         onClick={() => onVerCliente?.(pedido.telefonoProspecto)}
@@ -242,7 +317,7 @@ function Tarjeta({
 
       <div className="mt-2 flex items-center justify-between">
         <span className="text-[10px] text-gray-400">
-          {moment(pedido.etapaEn).fromNow()}
+          {fechaRelativa(pedido.etapaEn)}
         </span>
         <button
           type="button"
