@@ -741,6 +741,17 @@ console.log(formValues)
                                     style={{ fontSize: px('productos'), tableLayout: 'fixed', borderCollapse: 'collapse' }}
                                 >
                                     <thead className="bg-gray-300 text-black font-bold">
+                                        {/* Fila separadora: en impresión el navegador repite TODO el
+                                            <thead> en cada hoja, así que es la única forma de dejar
+                                            aire encima de la tabla cuando arranca en la página 2.
+                                            Va transparente y sin bordes: solo ocupa alto. */}
+                                        <tr aria-hidden="true">
+                                            <th
+                                                colSpan={includeProductImages ? 8 : 7}
+                                                className="p-0"
+                                                style={{ height: '14px', background: 'transparent', border: 'none' }}
+                                            />
+                                        </tr>
                                         <tr className="border border-gray-400">
                                             {/* CÓDIGO al 18%: el código más largo del cliente
                                                 (W69S55BOC700S, 13 caracteres) mide 108px y al 13%
@@ -1172,6 +1183,17 @@ console.log(formValues)
                                     style={{ fontSize: px('productos'), tableLayout: 'fixed', borderCollapse: 'collapse' }}
                                 >
                                     <thead className="bg-gray-300 text-black font-bold">
+                                        {/* Fila separadora: en impresión el navegador repite TODO el
+                                            <thead> en cada hoja, así que es la única forma de dejar
+                                            aire encima de la tabla cuando arranca en la página 2.
+                                            Va transparente y sin bordes: solo ocupa alto. */}
+                                        <tr aria-hidden="true">
+                                            <th
+                                                colSpan={includeProductImages ? 8 : 7}
+                                                className="p-0"
+                                                style={{ height: '14px', background: 'transparent', border: 'none' }}
+                                            />
+                                        </tr>
                                         <tr className="border border-gray-400">
                                             {/* Antes era N° (el número de línea). El cliente necesita el
                                                 CÓDIGO del producto, que es con lo que lo busca en su
