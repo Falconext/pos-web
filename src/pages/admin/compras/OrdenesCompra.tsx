@@ -734,49 +734,65 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
                             <tbody>
                                 {detalles.map((d, i) => (
                                     <tr key={i} className="border-t border-gray-50 dark:border-slate-800">
-                                        <td className="py-2 pr-2 font-semibold text-gray-800 dark:text-gray-100">
-                                            {d.descripcion}
-                                            {!d.productoId && <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">libre</span>}
-                                            {d.gravado === false && aplicaIgv && <span title="Producto exonerado/inafecto: no lleva IGV" className="ml-2 rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">sin IGV</span>}
-                                        </td>
-                                        {/* Con una caja elegida, estos dos campos hablan
-                                            de CAJAS: cuántas se le piden al proveedor y
-                                            cuánto cuesta cada una. Lo que se guarda sigue
-                                            siendo en unidades, para que recibir la orden
-                                            no tenga que convertir nada. */}
-                                        <td className="py-2 pr-2">
+                                        {/* La presentación va DEBAJO del nombre, no dentro
+                                            de la columna Cant.: describe al producto, no a
+                                            la cantidad. Metida ahí quedaba espachurrada
+                                            sobre el número y con el texto cortado
+                                            ("SIXPACK CE"), y la fila se leía mal. */}
+                                        <td className="py-2 pr-3 align-top">
+                                            <div className="font-semibold text-gray-800 dark:text-gray-100">
+                                                {d.descripcion}
+                                                {!d.productoId && <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">libre</span>}
+                                                {d.gravado === false && aplicaIgv && <span title="Producto exonerado/inafecto: no lleva IGV" className="ml-2 rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">sin IGV</span>}
+                                            </div>
                                             {(d._paquetes?.length ?? 0) > 0 && (
-                                                <select
-                                                    value={d.unidadesPorPaquete ?? ''}
-                                                    onChange={(e) => cambiarPresentacion(i, e.target.value)}
-                                                    className={`${inputCls} !py-1 !text-[11px] mb-1`}
-                                                >
-                                                    <option value="">Unidad</option>
-                                                    {(d._paquetes ?? []).map((pq: any) => (
-                                                        <option key={pq.codigo} value={pq.unidadesPorPaquete}>
-                                                            {(pq.alias || 'Paquete')} (x{pq.unidadesPorPaquete})
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                                                    <select
+                                                        value={d.unidadesPorPaquete ?? ''}
+                                                        onChange={(e) => cambiarPresentacion(i, e.target.value)}
+                                                        aria-label="Presentación"
+                                                        className="max-w-[220px] rounded-lg border border-gray-200 bg-white px-2 py-1 text-[11px] font-medium text-gray-700 outline-none transition focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-200"
+                                                    >
+                                                        <option value="">Por unidad</option>
+                                                        {(d._paquetes ?? []).map((pq: any) => (
+                                                            <option key={pq.codigo} value={pq.unidadesPorPaquete}>
+                                                                {(pq.alias || 'Paquete')} (x{pq.unidadesPorPaquete})
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {Number(d.unidadesPorPaquete) > 1 && (
+                                                        <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                                                            {d.cantidad} unidades · {mon} {Number(d.precioUnitario).toFixed(4)} c/u
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </td>
+                                        {/* Con una caja elegida, estos dos campos hablan de
+                                            CAJAS: cuántas se le piden al proveedor y cuánto
+                                            cuesta cada una. Lo que se guarda sigue siendo en
+                                            unidades, para que recibir la orden no tenga que
+                                            convertir nada. El rótulo lo dice, porque si no,
+                                            quien quiere 5 cajas escribe 5 y pide 5 sueltas. */}
+                                        <td className="py-2 pr-2 align-top">
+                                            {Number(d.unidadesPorPaquete) > 1 && (
+                                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">Cajas</p>
                                             )}
                                             <input type="number" min="0.001" value={ordenEnCajas(d.cantidad, d.precioUnitario, d.unidadesPorPaquete).cajas} onChange={(e) => actualizarDetalle(i, 'cantidad', e.target.value)} className={`${inputCls} !py-1.5`} />
-                                            {Number(d.unidadesPorPaquete) > 1 && (
-                                                <p className="mt-1 text-[10px] text-violet-700 dark:text-violet-300">= {d.cantidad} unidades</p>
-                                            )}
                                         </td>
-                                        <td className="py-2 pr-2">
+                                        <td className="py-2 pr-2 align-top">
+                                            {Number(d.unidadesPorPaquete) > 1 && (
+                                                <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600 dark:text-violet-400">Por caja</p>
+                                            )}
                                             <input type="number" min="0" step="0.01" value={ordenEnCajas(d.cantidad, d.precioUnitario, d.unidadesPorPaquete).costoPorPaquete} onChange={(e) => actualizarDetalle(i, 'precioUnitario', e.target.value)} className={`${inputCls} !py-1.5`} />
-                                            {Number(d.unidadesPorPaquete) > 1 && (
-                                                <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">{mon} {Number(d.precioUnitario).toFixed(4)} c/u</p>
-                                            )}
                                         </td>
-                                        <td className="py-2 text-right font-bold text-gray-900 dark:text-white">{mon} {(d.cantidad * d.precioUnitario).toFixed(2)}</td>
+                                        <td className="py-2 text-right align-top font-bold text-gray-900 dark:text-white">{mon} {(d.cantidad * d.precioUnitario).toFixed(2)}</td>
                                         {aplicaIgv && (
-                                            <td className="py-2 text-right font-black text-gray-900 dark:text-white" title={d.gravado === false ? 'Producto sin IGV' : 'Costo de la línea con IGV incluido'}>
+                                            <td className="py-2 text-right align-top font-black text-gray-900 dark:text-white" title={d.gravado === false ? 'Producto sin IGV' : 'Costo de la línea con IGV incluido'}>
                                                 {mon} {((d.cantidad * d.precioUnitario) * (d.gravado === false || igvIncluido ? 1 : 1.18)).toFixed(2)}
                                             </td>
                                         )}
-                                        <td className="py-2 text-right">
+                                        <td className="py-2 text-right align-top">
                                             <button type="button" onClick={() => setDetalles((prev) => prev.filter((_, j) => j !== i))} className="text-gray-300 transition hover:text-rose-500">
                                                 <Icon icon="solar:trash-bin-trash-bold" className="text-base" />
                                             </button>
