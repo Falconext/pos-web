@@ -747,15 +747,15 @@ console.log(formValues)
                                         iguales. El colgroup manda sin importar eso. */}
                                     <colgroup>
                                         <col style={{ width: '18%' }} />
-                                        <col style={{ width: '5%' }} />
                                         <col style={{ width: '6%' }} />
+                                        <col style={{ width: '7%' }} />
                                         {includeProductImages && <col style={{ width: '9%' }} />}
-                                        <col style={{ width: includeProductImages ? '39%' : '48%' }} />
-                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: includeProductImages ? '34%' : '43%' }} />
+                                        <col style={{ width: '8%' }} />
                                         <col style={{ width: '9%' }} />
                                         <col style={{ width: '9%' }} />
                                     </colgroup>
-                                    <thead className="bg-gray-300 text-black font-bold">
+                                    <thead className="text-black font-bold">
                                         {/* Fila separadora: en impresión el navegador repite TODO el
                                             <thead> en cada hoja, así que es la única forma de dejar
                                             aire encima de la tabla cuando arranca en la página 2.
@@ -778,7 +778,12 @@ console.log(formValues)
                                                 lo que sobraba, y con el código al 18% quedaba tan
                                                 angosta que cada línea se partía en 6 y el documento
                                                 pasaba de 2 hojas a 4. Las numéricas solo muestran
-                                                "1", "NIU", "S/" y un importe: no necesitan más. */}
+                                                "1", "NIU" y un importe, pero el ancho lo manda el
+                                                TÍTULO, que es más largo que el dato.
+                                                MONEDA es la excepción: aunque solo muestre "S/",
+                                                manda el ancho del TÍTULO. Con `table-layout: fixed`
+                                                la celda no recorta lo que se desborda, así que al
+                                                5% la palabra MONEDA se montaba encima de P.UNIT. */}
                                             <th className="text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
                                             <th className="text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
                                             <th className="text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
@@ -1210,15 +1215,15 @@ console.log(formValues)
                                         iguales. El colgroup manda sin importar eso. */}
                                     <colgroup>
                                         <col style={{ width: '18%' }} />
-                                        <col style={{ width: '5%' }} />
                                         <col style={{ width: '6%' }} />
+                                        <col style={{ width: '7%' }} />
                                         {includeProductImages && <col style={{ width: '9%' }} />}
-                                        <col style={{ width: includeProductImages ? '39%' : '48%' }} />
-                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: includeProductImages ? '34%' : '43%' }} />
+                                        <col style={{ width: '8%' }} />
                                         <col style={{ width: '9%' }} />
                                         <col style={{ width: '9%' }} />
                                     </colgroup>
-                                    <thead className="bg-gray-300 text-black font-bold">
+                                    <thead className="text-black font-bold">
                                         {/* Fila separadora: en impresión el navegador repite TODO el
                                             <thead> en cada hoja, así que es la única forma de dejar
                                             aire encima de la tabla cuando arranca en la página 2.
@@ -1241,7 +1246,12 @@ console.log(formValues)
                                                 lo que sobraba, y con el código al 18% quedaba tan
                                                 angosta que cada línea se partía en 6 y el documento
                                                 pasaba de 2 hojas a 4. Las numéricas solo muestran
-                                                "1", "NIU", "S/" y un importe: no necesitan más. */}
+                                                "1", "NIU" y un importe, pero el ancho lo manda el
+                                                TÍTULO, que es más largo que el dato.
+                                                MONEDA es la excepción: aunque solo muestre "S/",
+                                                manda el ancho del TÍTULO. Con `table-layout: fixed`
+                                                la celda no recorta lo que se desborda, así que al
+                                                5% la palabra MONEDA se montaba encima de P.UNIT. */}
                                             <th className="text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
                                             <th className="text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
                                             <th className="text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
