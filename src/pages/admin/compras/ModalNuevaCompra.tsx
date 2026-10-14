@@ -437,11 +437,18 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                     return {
                         id: v.id,
                         value: `${v.codigo} - ${p.descripcion}${label ? ' (' + label + ')' : ''} (Stock: ${v.stock ?? 0})`,
+                        // La variante suele no tener foto propia: cae a la del modelo.
+                        imagenUrl: v.imagenUrlDisplay || v.imagenUrl || p.imagenUrlDisplay || p.imagenUrl || null,
                         data: { ...v, descripcion: `${p.descripcion}${label ? ' - ' + label : ''}` },
                     };
                 });
             }
-            return [{ id: p.id, value: `${p.codigo} - ${p.descripcion} (Stock: ${p.stock})`, data: p }];
+            return [{
+                id: p.id,
+                value: `${p.codigo} - ${p.descripcion} (Stock: ${p.stock})`,
+                imagenUrl: p.imagenUrlDisplay || p.imagenUrl || null,
+                data: p,
+            }];
         }));
     }, [products]);
 
@@ -494,7 +501,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                 ...currentItem,
                 productoId: prod.id,
                 descripcion,
-                precioUnitario: costo || 0,
+                // A 2 decimales: el costo promedio del producto llega con la
+                // precisión de la división (5.08230566037735) y en la casilla
+                // se veía así. Es una sugerencia que el usuario pisa con lo que
+                // dice la boleta, no un dato que haya que conservar entero.
+                precioUnitario: Number((Number(costo) || 0).toFixed(2)),
                 _gravado: gravado,
             } as any);
         }
@@ -525,7 +536,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         const prodBase: any = products.find(p => p.id === currentItem.productoId)
             ?? (products as any[]).flatMap(p => p.variantes || []).find((v: any) => v.id === currentItem.productoId);
         const baseDescripcion = (currentItem.descripcion || '').replace(/\s*\(\d+ paq\. x\d+\)$/, '');
-        const costoUnit = Number(prodBase?.costoUnitario) || Number(currentItem.precioUnitario) || 0;
+        const costoUnit = Number(
+            (Number(prodBase?.costoUnitario) || Number(currentItem.precioUnitario) || 0).toFixed(2),
+        );
         if (codigo === 'UNIDAD') {
             setCurrentItem(prev => ({
                 ...prev,
@@ -1634,7 +1647,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                             <span>Ítem libre <span className="text-gray-400">— algo que no está en tu catálogo (consumo, flete, servicio)</span></span>
                         </label>
                         <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800">
-                            <div className={paquetesManual.length > 0 ? "col-span-3" : "col-span-4"}>
+                            <div className={paquetesManual.length > 0 ? "col-span-4" : "col-span-5"}>
                                 {itemLibre ? (
                                     <InputPro
                                         autocomplete="off"
@@ -1662,7 +1675,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                 )}
                             </div>
                             {paquetesManual.length > 0 && (
-                            <div className="col-span-2">
+                            <div className="col-span-3">
                                 <Select
                                     label="Presentación"
                                     name="presentacionManual"
@@ -1686,10 +1699,14 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                 significado y el rótulo tiene que decirlo: si sigue
                                 diciendo "Cantidad" y "Costo Unit.", quien quiere 2
                                 cajas escribe 2 y compra 2 unidades. */}
-                            <div className="col-span-2">
+                            {/* La fila completa el ancho en los dos casos: con la
+                                presentación visible 4+3+2+3, y sin ella 5+3+4. Antes
+                                quedaban tres columnas vacías a la derecha cuando se
+                                elegía una caja. */}
+                            <div className={paquetesManual.length > 0 ? "col-span-2" : "col-span-3"}>
                                 <InputPro autocomplete="off" type="number" label={paqueteManualElegido ? "N° de paquetes" : "Cantidad"} name="cantidad" value={currentItem.cantidad} onChange={(e) => setCurrentItem({ ...currentItem, cantidad: Number(e.target.value) })} isLabel />
                             </div>
-                            <div className="col-span-2">
+                            <div className={paquetesManual.length > 0 ? "col-span-3" : "col-span-4"}>
                                 <InputPro autocomplete="off" type="number" label={paqueteManualElegido ? "Costo por paquete" : "Costo Unit."} name="precioUnitario" value={currentItem.precioUnitario} onChange={(e) => setCurrentItem({ ...currentItem, precioUnitario: Number(e.target.value) })} isLabel />
                             </div>
                             {/* El desglose a la vista, igual que en el escaneo: es
@@ -1703,11 +1720,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                             </div>
                             )}
                             {tieneGestionLotes && (
-                            <div className="col-span-2">
+                            <div className="col-span-4">
                                 <InputPro autocomplete="off" label={esRubroFarmaceutico ? "Lote *" : "Lote (Opc.)"} name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
                             </div>
                             )}
-                            <div className="col-span-2">
+                            <div className={tieneGestionLotes ? "col-span-4" : "col-span-6"}>
                                 <Calendar
                                     text="Venc. (Opc.)"
                                     placeholder="F. vencimiento"
@@ -1720,7 +1737,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                     }}
                                 />
                             </div>
-                            <div className="col-span-2">
+                            <div className={tieneGestionLotes ? "col-span-4" : "col-span-6"}>
                                 <Button outline color="black" onClick={addItem} className="w-full justify-center !bg-violet-600 !text-white !border-none shadow-md shadow-violet-200 hover:opacity-90">
                                     Agregar
                                     <Icon width={25} icon="solar:add-circle-bold" className="ml-2" />

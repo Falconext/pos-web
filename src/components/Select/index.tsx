@@ -37,6 +37,12 @@ interface IProps {
 interface IOption {
     id: number
     value: string
+    /**
+     * Miniatura del elemento. Opcional: el select la pinta solo si la opción la
+     * trae, así que ningún select existente cambia de aspecto. En un catálogo
+     * de cientos de productos, la foto se reconoce antes que el código.
+     */
+    imagenUrl?: string | null
 }
 
 const Select = ({
@@ -106,9 +112,13 @@ const Select = ({
                 handleGetData(debounceSearch, () => setIsLoading(false));
             }
         } else {
+            // Se conserva `imagenUrl`: el mapeo rehacía la opción con solo id y
+            // value, así que cualquier campo extra se perdía antes de llegar al
+            // render. Estaba repetido en tres sitios y los tres lo descartaban.
             setOptionsSearch(options?.length ? options.map((item: any) => ({
                 id: item?.id?.toString(),
-                value: item?.value
+                value: item?.value,
+                imagenUrl: item?.imagenUrl ?? null,
             })) : []);
         }
     }, [debounceSearch]);
@@ -120,6 +130,7 @@ const Select = ({
                 ? options.map((item: any, index: number) => ({
                     id: item?.id?.toString() || `fallback-${index}`, // Fallback if id is undefined
                     value: item?.value,
+                    imagenUrl: item?.imagenUrl ?? null,
                 }))
                 : []
         );
@@ -129,7 +140,8 @@ const Select = ({
     useEffect(() => {
         setOptionsSearch(options?.length ? options.map((item: any) => ({
             id: item?.id?.toString(),
-            value: item?.value
+            value: item?.value,
+            imagenUrl: item?.imagenUrl ?? null,
         })) : []);
     }, [options, defaultValue]);
 
@@ -214,7 +226,22 @@ const Select = ({
                         className={index === selectedOptionIndex ? `${styles.selected} ? ${styles.selectedOption}` : ''}
                         onClick={() => setValueOption(item, name, id)}
                     >
-                        <p>{item.value}</p>
+                        {item.imagenUrl ? (
+                            <span className="flex items-center gap-2">
+                                <img
+                                    src={item.imagenUrl}
+                                    alt=""
+                                    loading="lazy"
+                                    className="h-7 w-7 shrink-0 rounded object-cover bg-gray-100 dark:bg-slate-800"
+                                    // Un enlace roto no debe dejar el ícono de imagen
+                                    // partida al lado de cada producto.
+                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                                />
+                                <span className="min-w-0 flex-1">{item.value}</span>
+                            </span>
+                        ) : (
+                            <p>{item.value}</p>
+                        )}
                     </li>
                 ))
             ) : (
