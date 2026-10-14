@@ -30,19 +30,35 @@ interface Previa {
 
 export default function ModalEliminarEmpresa({ empresa, onCancelar, onConfirmar }: Props) {
     const [previa, setPrevia] = useState<Previa | null>(null);
+    const [errorPrevia, setErrorPrevia] = useState<string | null>(null);
+    const [errorBorrado, setErrorBorrado] = useState<string | null>(null);
     const [cargando, setCargando] = useState(false);
     const [rucEscrito, setRucEscrito] = useState('');
     const [eliminando, setEliminando] = useState(false);
 
     useEffect(() => {
         setPrevia(null);
+        setErrorPrevia(null);
+        setErrorBorrado(null);
         setRucEscrito('');
         if (!empresa) return;
         let vigente = true;
         setCargando(true);
         get(`empresa/${empresa.id}/eliminar/previsualizar`)
-            .then((r: any) => { if (vigente) setPrevia(r?.data ?? r); })
-            .catch(() => { /* sin previa igual se puede borrar: el backend valida */ })
+            .then((r: any) => {
+                if (!vigente) return;
+                // `get` NO lanza cuando falla: devuelve { success:false, error }.
+                // La primera version hacia `r?.data ?? r` y le pasaba ese objeto
+                // al render, que reventaba al leer `totalFilas` de algo que no
+                // era la previa. Paso de verdad: la empresa ya no existia, el
+                // backend respondio 404 y el modal se cayo entero.
+                const datos = r?.data;
+                if (r?.success === false || typeof datos?.totalFilas !== 'number') {
+                    setErrorPrevia(r?.error || 'No se pudo revisar la informacion de esta empresa.');
+                    return;
+                }
+                setPrevia(datos);
+            })
             .finally(() => { if (vigente) setCargando(false); });
         return () => { vigente = false; };
     }, [empresa?.id]);
@@ -75,6 +91,10 @@ export default function ModalEliminarEmpresa({ empresa, onCancelar, onConfirmar 
                         comprobantes. */}
                     {cargando ? (
                         <p className="text-sm text-gray-500 dark:text-gray-400">Revisando qué información tiene…</p>
+                    ) : errorPrevia ? (
+                        <div className="rounded-xl bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-800 dark:text-amber-200">
+                            {errorPrevia}
+                        </div>
                     ) : previa ? (
                         <div>
                             <p className="text-sm text-gray-700 dark:text-gray-300">
@@ -114,6 +134,12 @@ export default function ModalEliminarEmpresa({ empresa, onCancelar, onConfirmar 
                     )}
                 </div>
 
+                {errorBorrado && (
+                    <div className="mx-5 mb-4 rounded-xl bg-rose-50 dark:bg-rose-950/30 p-3 text-sm text-rose-800 dark:text-rose-200">
+                        {errorBorrado}
+                    </div>
+                )}
+
                 <div className="flex justify-end gap-2 border-t border-gray-100 dark:border-slate-800 p-4">
                     <Button variant="default" onClick={onCancelar} disabled={eliminando}>Cancelar</Button>
                     <Button
@@ -121,7 +147,19 @@ export default function ModalEliminarEmpresa({ empresa, onCancelar, onConfirmar 
                         disabled={!puedeBorrar || eliminando}
                         onClick={async () => {
                             setEliminando(true);
-                            try { await onConfirmar(rucEscrito.trim()); } finally { setEliminando(false); }
+                            setErrorBorrado(null);
+                            try {
+                                await onConfirmar(rucEscrito.trim());
+                            } catch (e: any) {
+                                // Sin esto el fallo salia como "Uncaught (in promise)"
+                                // en la consola y el modal se quedaba igual, como si
+                                // no hubiera pasado nada.
+                                setErrorBorrado(
+                                    e?.response?.data?.message || e?.message || 'No se pudo eliminar la empresa.',
+                                );
+                            } finally {
+                                setEliminando(false);
+                            }
                         }}
                     >
                         {eliminando ? 'Eliminando…' : 'Eliminar definitivamente'}
