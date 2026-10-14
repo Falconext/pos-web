@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
-import { get } from '@/utils/fetch';
+import apiClient from '@/utils/apiClient';
 
 /**
  * Confirmación para eliminar una empresa.
@@ -44,20 +44,31 @@ export default function ModalEliminarEmpresa({ empresa, onCancelar, onConfirmar 
         if (!empresa) return;
         let vigente = true;
         setCargando(true);
-        get(`empresa/${empresa.id}/eliminar/previsualizar`)
-            .then((r: any) => {
+        // Timeout propio: la previa recorre más de cien tablas y con los 12 s
+        // por defecto salía "timeout" en vez de los números.
+        apiClient
+            .get(`/empresa/${empresa.id}/eliminar/previsualizar`, { timeout: 120_000 })
+            .then((resp: any) => {
                 if (!vigente) return;
+                const r = resp?.data;
                 // `get` NO lanza cuando falla: devuelve { success:false, error }.
                 // La primera version hacia `r?.data ?? r` y le pasaba ese objeto
                 // al render, que reventaba al leer `totalFilas` de algo que no
                 // era la previa. Paso de verdad: la empresa ya no existia, el
                 // backend respondio 404 y el modal se cayo entero.
                 const datos = r?.data;
-                if (r?.success === false || typeof datos?.totalFilas !== 'number') {
-                    setErrorPrevia(r?.error || 'No se pudo revisar la informacion de esta empresa.');
+                if (typeof datos?.totalFilas !== 'number') {
+                    setErrorPrevia(r?.message || 'No se pudo revisar la informacion de esta empresa.');
                     return;
                 }
                 setPrevia(datos);
+            })
+            .catch((e: any) => {
+                if (vigente) {
+                    setErrorPrevia(
+                        e?.response?.data?.message || e?.message || 'No se pudo revisar la informacion de esta empresa.',
+                    );
+                }
             })
             .finally(() => { if (vigente) setCargando(false); });
         return () => { vigente = false; };

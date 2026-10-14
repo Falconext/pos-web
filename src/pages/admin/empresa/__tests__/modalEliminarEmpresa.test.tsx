@@ -1,8 +1,8 @@
 /**
  * El modal de eliminar empresa frente a respuestas que no son la vista previa.
  *
- * `get()` de `utils/fetch` NO lanza cuando la petición falla: devuelve
- * `{ success: false, error }`. La primera versión de este modal hacía
+ * La primera versión usaba `get()` de `utils/fetch`, que NO lanza cuando la
+ * petición falla: devuelve `{ success: false, error }`. El modal hacía
  * `r?.data ?? r` y le entregaba ese objeto al render, que reventaba al leer
  * `totalFilas` de algo que no era la previa:
  *
@@ -22,7 +22,10 @@ jest.mock('@/components/Button', () => ({
 }));
 
 const getMock = jest.fn();
-jest.mock('@/utils/fetch', () => ({ get: (...a: any[]) => getMock(...a) }));
+jest.mock('@/utils/apiClient', () => ({
+    __esModule: true,
+    default: { get: (...a: any[]) => getMock(...a) },
+}));
 
 import ModalEliminarEmpresa from '../ModalEliminarEmpresa';
 
@@ -37,7 +40,7 @@ beforeEach(() => getMock.mockReset());
 
 describe('cuando la vista previa no se puede traer', () => {
     it('muestra el error en vez de caerse', async () => {
-        getMock.mockResolvedValue({ success: false, error: 'Empresa no encontrada' });
+        getMock.mockRejectedValue({ response: { data: { message: 'Empresa no encontrada' } } });
         pintar();
         expect(await screen.findByText('Empresa no encontrada')).toBeInTheDocument();
         // Lo importante: el modal sigue en pie.
@@ -47,7 +50,7 @@ describe('cuando la vista previa no se puede traer', () => {
     it('tampoco se cae si la respuesta llega con otra forma', async () => {
         // Un wrapper distinto, un 500 que devuelve HTML, un campo renombrado:
         // nada de eso debe tumbar la pantalla.
-        getMock.mockResolvedValue({ cualquierCosa: true });
+        getMock.mockResolvedValue({ data: { cualquierCosa: true } });
         pintar();
         await waitFor(() => expect(screen.getByText('Eliminar empresa')).toBeInTheDocument());
         expect(screen.queryByText(/Se eliminarán/)).not.toBeInTheDocument();
@@ -57,14 +60,16 @@ describe('cuando la vista previa no se puede traer', () => {
 describe('cuando la vista previa llega bien', () => {
     beforeEach(() => {
         getMock.mockResolvedValue({
-            success: true,
             data: {
-                totalFilas: 317,
-                tablasAfectadas: 12,
-                detalle: [
-                    { tabla: 'Notificacion', filas: 189 },
-                    { tabla: 'ResellerMovimiento', filas: 98 },
-                ],
+                code: 1,
+                data: {
+                    totalFilas: 317,
+                    tablasAfectadas: 12,
+                    detalle: [
+                        { tabla: 'Notificacion', filas: 189 },
+                        { tabla: 'ResellerMovimiento', filas: 98 },
+                    ],
+                },
             },
         });
     });
@@ -77,7 +82,11 @@ describe('cuando la vista previa llega bien', () => {
 });
 
 describe('la confirmación por RUC', () => {
-    beforeEach(() => getMock.mockResolvedValue({ success: true, data: { totalFilas: 0, tablasAfectadas: 0, detalle: [] } }));
+    beforeEach(() =>
+        getMock.mockResolvedValue({
+            data: { code: 1, data: { totalFilas: 0, tablasAfectadas: 0, detalle: [] } },
+        }),
+    );
 
     it('el botón está bloqueado hasta escribir el RUC exacto', async () => {
         pintar();

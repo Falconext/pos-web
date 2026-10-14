@@ -440,7 +440,16 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
     try {
       // El RUC viaja como confirmación: el backend lo exige porque esto borra
       // más de cien tablas y no se deshace.
-      await apiClient.delete(`/empresa/${id}`, { params: ruc ? { ruc } : {} });
+      //
+      // Timeout propio de 3 minutos. Con los 12 s por defecto, el navegador
+      // abortaba la petición mientras el servidor SEGUÍA borrando: la pantalla
+      // mostraba "timeout of 12000ms exceeded" y la empresa terminaba
+      // eliminada igual. En una acción irreversible, decir que falló cuando
+      // funcionó es el peor resultado posible.
+      await apiClient.delete(`/empresa/${id}`, {
+        params: ruc ? { ruc } : {},
+        timeout: 180_000,
+      });
 
       // Remover la empresa de la lista
       const { empresas } = get();
