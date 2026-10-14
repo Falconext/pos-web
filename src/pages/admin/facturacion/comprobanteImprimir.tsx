@@ -740,6 +740,21 @@ console.log(formValues)
                                     className="w-full mb-4"
                                     style={{ fontSize: px('productos'), tableLayout: 'fixed', borderCollapse: 'collapse' }}
                                 >
+                                    {/* Los anchos van en <colgroup> y no en los <th>: con
+                                        `table-layout: fixed` el navegador los toma de la PRIMERA
+                                        fila, y la primera es la separadora (una sola celda que
+                                        abarca todo), así que repartía las columnas en partes
+                                        iguales. El colgroup manda sin importar eso. */}
+                                    <colgroup>
+                                        <col style={{ width: '18%' }} />
+                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: '6%' }} />
+                                        {includeProductImages && <col style={{ width: '9%' }} />}
+                                        <col style={{ width: includeProductImages ? '39%' : '48%' }} />
+                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: '9%' }} />
+                                        <col style={{ width: '9%' }} />
+                                    </colgroup>
                                     <thead className="bg-gray-300 text-black font-bold">
                                         {/* Fila separadora: en impresión el navegador repite TODO el
                                             <thead> en cada hoja, así que es la única forma de dejar
@@ -758,14 +773,20 @@ console.log(formValues)
                                                 la celda daba 80px útiles, así que se cortaba. El
                                                 espacio sale de CANT. y UNIDAD, que tenían 10% para
                                                 mostrar "1" y "UNIDAD"; la descripción no pierde. */}
-                                            <th className="w-[18%] text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
-                                            <th className="w-[6%] text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
-                                            <th className="w-[8%] text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
-                                            {includeProductImages && <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
+                                            {/* Anchos explícitos en TODAS las columnas: dejar la
+                                                descripción sin ancho hacía que el navegador le diera
+                                                lo que sobraba, y con el código al 18% quedaba tan
+                                                angosta que cada línea se partía en 6 y el documento
+                                                pasaba de 2 hojas a 4. Las numéricas solo muestran
+                                                "1", "NIU", "S/" y un importe: no necesitan más. */}
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
+                                            {includeProductImages && <th className="text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
                                             <th className="text-center border-r border-gray-400 px-2 py-1 font-bold">DESCRIPCIÓN</th>
-                                            <th className="w-[7%] text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
-                                            <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">{sinIgv ? 'V.UNIT.' : 'P.UNIT.'}</th>
-                                            <th className="w-[10%] text-center py-1 font-bold">{sinIgv ? 'V.VENTA' : 'TOTAL'}</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">{sinIgv ? 'V.UNIT.' : 'P.UNIT.'}</th>
+                                            <th className="text-center py-1 font-bold">{sinIgv ? 'V.VENTA' : 'TOTAL'}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1182,6 +1203,21 @@ console.log(formValues)
                                     className="w-full mb-3"
                                     style={{ fontSize: px('productos'), tableLayout: 'fixed', borderCollapse: 'collapse' }}
                                 >
+                                    {/* Los anchos van en <colgroup> y no en los <th>: con
+                                        `table-layout: fixed` el navegador los toma de la PRIMERA
+                                        fila, y la primera es la separadora (una sola celda que
+                                        abarca todo), así que repartía las columnas en partes
+                                        iguales. El colgroup manda sin importar eso. */}
+                                    <colgroup>
+                                        <col style={{ width: '18%' }} />
+                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: '6%' }} />
+                                        {includeProductImages && <col style={{ width: '9%' }} />}
+                                        <col style={{ width: includeProductImages ? '39%' : '48%' }} />
+                                        <col style={{ width: '5%' }} />
+                                        <col style={{ width: '9%' }} />
+                                        <col style={{ width: '9%' }} />
+                                    </colgroup>
                                     <thead className="bg-gray-300 text-black font-bold">
                                         {/* Fila separadora: en impresión el navegador repite TODO el
                                             <thead> en cada hoja, así que es la única forma de dejar
@@ -1200,14 +1236,20 @@ console.log(formValues)
                                                 almacén; el número de orden no se usaba para nada. Mismos
                                                 anchos que el formato de nota de venta, para que los dos
                                                 papeles salgan iguales. */}
-                                            <th className="w-[18%] text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
-                                            <th className="w-[6%] text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
-                                            <th className="w-[8%] text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
-                                            {includeProductImages && <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
+                                            {/* Anchos explícitos en TODAS las columnas: dejar la
+                                                descripción sin ancho hacía que el navegador le diera
+                                                lo que sobraba, y con el código al 18% quedaba tan
+                                                angosta que cada línea se partía en 6 y el documento
+                                                pasaba de 2 hojas a 4. Las numéricas solo muestran
+                                                "1", "NIU", "S/" y un importe: no necesitan más. */}
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
+                                            {includeProductImages && <th className="text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
                                             <th className="text-center border-r border-gray-400 px-2 py-1 font-bold">DESCRIPCIÓN</th>
-                                            <th className="w-[7%] text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
-                                            <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">P.UNIT.</th>
-                                            <th className="w-[10%] text-center py-1 font-bold">TOTAL</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">P.UNIT.</th>
+                                            <th className="text-center py-1 font-bold">TOTAL</th>
                                         </tr>
                                     </thead>
                                     <tbody>
