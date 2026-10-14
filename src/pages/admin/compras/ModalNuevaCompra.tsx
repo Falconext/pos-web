@@ -519,6 +519,17 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     // IGV" (que convierte las líneas ya agregadas por su cuenta). El stock y el
     // kardex siempre van en unidades base, así que la cantidad se expande a
     // unidades — consistente con el flujo de escaneo.
+    /** Foto del producto elegido, para pintarla también en el select de presentación. */
+    const imagenProductoActual = (() => {
+        const prod: any = products.find(p => p.id === currentItem.productoId)
+            ?? (products as any[]).flatMap(p => p.variantes || []).find((v: any) => v.id === currentItem.productoId);
+        if (!prod) return null;
+        if (prod.imagenUrlDisplay || prod.imagenUrl) return prod.imagenUrlDisplay || prod.imagenUrl;
+        // Una variante (talla/color) suele no tener foto propia: cae a la del modelo.
+        const padre: any = (products as any[]).find(p => (p.variantes || []).some((v: any) => v.id === prod.id));
+        return padre?.imagenUrlDisplay || padre?.imagenUrl || null;
+    })();
+
     // Paquete elegido en la fila manual (null = Unidad) y su desglose a unidades.
     const paqueteManualElegido = presentacionManual !== 'UNIDAD'
         ? paquetesManual.find((pq: any) => pq.codigo === presentacionManual) ?? null
@@ -1686,11 +1697,16 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                 <Select
                                     label="Presentación"
                                     name="presentacionManual"
+                                    // La presentación también muestra foto: la unidad
+                                    // lleva la del producto y cada caja la suya, con
+                                    // la del producto de respaldo cuando el paquete no
+                                    // tiene imagen propia.
                                     options={[
-                                        { id: 'UNIDAD', value: 'Unidad' },
+                                        { id: 'UNIDAD', value: 'Unidad', imagenUrl: imagenProductoActual },
                                         ...paquetesManual.map((pq: any) => ({
                                             id: pq.codigo,
                                             value: `${pq.alias || 'Paquete'} (x${pq.unidadesPorPaquete})`,
+                                            imagenUrl: pq.imagenUrlDisplay || pq.imagenUrl || imagenProductoActual,
                                         })),
                                     ]}
                                     onChange={(id) => onPresentacionManualChange(String(id))}

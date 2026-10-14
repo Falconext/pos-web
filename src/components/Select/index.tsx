@@ -237,25 +237,27 @@ const Select = ({
                             ref={(el) => { if (activa && el) el.scrollIntoView({ block: 'nearest' }); }}
                             onClick={() => setValueOption(item, name, id)}
                         >
-                            {item.imagenUrl !== undefined ? (
+                            {/* La fila con miniatura solo cuando HAY imagen. El
+                                mapeo interno normaliza el campo a null, así que
+                                comparar con undefined pintaba el recuadro vacío en
+                                todos los selects del sistema. */}
+                            {item.imagenUrl ? (
                                 <span className={styles.option__conImagen}>
                                     {/* El recuadro se dibuja siempre, haya foto o no: si
                                         apareciera solo a veces, el texto bailaría de
                                         izquierda a derecha entre opciones. */}
                                     <span className={styles.option__miniatura}>
-                                        {item.imagenUrl ? (
-                                            <img
-                                                src={item.imagenUrl}
-                                                alt=""
-                                                loading="lazy"
-                                                decoding="async"
-                                                onError={(e) => {
-                                                    // Un enlace roto dejaría el ícono de imagen
-                                                    // partida al lado de cada producto.
-                                                    (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-                                                }}
-                                            />
-                                        ) : null}
+                                        <img
+                                            src={item.imagenUrl}
+                                            alt=""
+                                            loading="lazy"
+                                            decoding="async"
+                                            onError={(e) => {
+                                                // Un enlace roto dejaría el ícono de imagen
+                                                // partida al lado de cada producto.
+                                                (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                                            }}
+                                        />
                                     </span>
                                     <span className={styles.option__texto}>{item.value}</span>
                                 </span>
