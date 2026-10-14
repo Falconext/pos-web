@@ -1036,7 +1036,15 @@ const ComprobantesInformales = () => {
                                         handleCloseMenu();
                                     }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30">
                                         <Icon icon="mdi:clipboard-arrow-right-outline" width={16} height={16} />
-                                        <span>Convertir a Nota de venta</span>
+                                        {/* "Hacer…" y no "Convertir a…": el menú da 126px de
+                                            ancho útil para el texto y "Convertir a Nota de venta"
+                                            mide 143px, así que envolvía en dos líneas y el botón
+                                            quedaba de 48px de alto contra los 32px del resto —
+                                            además de verse centrado, porque un <button> centra el
+                                            texto y eso solo se nota cuando hay dos líneas.
+                                            "Hacer Nota de venta" mide 116px y es el mismo verbo
+                                            que "Hacer Boleta", que ya está en este menú. */}
+                                        <span>Hacer Nota de venta</span>
                                     </button>
                                 </>
                             )}
