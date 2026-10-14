@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from 'react';
+import ModalEliminarEmpresa from './ModalEliminarEmpresa';
 import { useEmpresaIndexViewModel, type GrupoCliente, type Severidad } from '@/features/admin/empresa/useEmpresaIndexViewModel';
 import { Icon } from '@iconify/react/dist/iconify.js';
 import DataTable from '@/components/Datatable';
@@ -500,9 +501,21 @@ const EmpresasIndex = () => {
       )}
 
       <ModalConfirm isOpenModal={vm.isOpenModalConfirm} setIsOpenModal={vm.setIsOpenModalConfirm}
-        title={vm.selectedEmpresa?.accion === 'eliminar' ? 'Eliminar Empresa' : `${vm.selectedEmpresa?.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'} Empresa`}
-        information={vm.selectedEmpresa?.accion === 'eliminar' ? `⚠️ Esta acción eliminará PERMANENTEMENTE la empresa "${vm.selectedEmpresa?.['Razon Social']}". Esta acción NO se puede deshacer.` : `¿Estás seguro que deseas ${vm.selectedEmpresa?.estado === 'ACTIVO' ? 'desactivar' : 'activar'} la empresa "${vm.selectedEmpresa?.['Razon Social']}"?`}
+        title={`${vm.selectedEmpresa?.estado === 'ACTIVO' ? 'Desactivar' : 'Activar'} Empresa`}
+        information={`¿Estás seguro que deseas ${vm.selectedEmpresa?.estado === 'ACTIVO' ? 'desactivar' : 'activar'} la empresa "${vm.selectedEmpresa?.['Razon Social']}"?`}
         confirmSubmit={vm.confirmAction}
+      />
+      {/* Eliminar va por su propio modal: pide el RUC escrito y muestra cuántos
+          registros se pierden. Con un solo clic era demasiado fácil borrar la
+          empresa equivocada de una tabla con decenas de filas. */}
+      <ModalEliminarEmpresa
+        empresa={vm.empresaAEliminar ? {
+          id: vm.empresaAEliminar.id,
+          razonSocial: vm.empresaAEliminar['Razon Social'],
+          ruc: vm.empresaAEliminar['RUC'],
+        } : null}
+        onCancelar={vm.cancelarEliminacion}
+        onConfirmar={vm.confirmarEliminacion}
       />
       <EmpresaFormModal open={vm.openEmpresaModal} mode={vm.empresaModalMode} empresaId={vm.empresaEditingId} onClose={() => vm.setOpenEmpresaModal(false)} onSaved={alGuardarEmpresa} />
       <EmpresaDrawer empresa={vm.drawerEmpresa} onClose={() => vm.setDrawerEmpresa(null)} />

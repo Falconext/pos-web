@@ -252,7 +252,7 @@ interface EmpresasState {
   listarSeriesEmpresa: (id: number) => Promise<EmpresaSerieConfig[]>;
   guardarSeriesEmpresa: (id: number, series: EmpresaSerieConfig[]) => Promise<EmpresaSerieConfig[]>;
   cambiarEstadoEmpresa: (id: number, estado: 'ACTIVO' | 'INACTIVO') => Promise<void>;
-  eliminarEmpresa: (id: number) => Promise<void>;
+  eliminarEmpresa: (id: number, ruc?: string) => Promise<void>;
   obtenerMiEmpresa: () => Promise<void>;
   actualizarMiEmpresa: (data: Partial<UpdateEmpresaDto>) => Promise<Empresa>;
 
@@ -435,10 +435,12 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
     }
   },
 
-  eliminarEmpresa: async (id: number) => {
+  eliminarEmpresa: async (id: number, ruc?: string) => {
     set({ loading: true, error: null });
     try {
-      await apiClient.delete(`/empresa/${id}`);
+      // El RUC viaja como confirmación: el backend lo exige porque esto borra
+      // más de cien tablas y no se deshace.
+      await apiClient.delete(`/empresa/${id}`, { params: ruc ? { ruc } : {} });
 
       // Remover la empresa de la lista
       const { empresas } = get();

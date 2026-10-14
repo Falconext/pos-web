@@ -198,12 +198,20 @@ export const useEmpresaIndexViewModel = (): any => {
     const handleSearch = (e: any) => { setSearchTerm(e.target.value); setCurrentPageState(1); };
     const handleEdit = (empresa: any) => { setEmpresaEditingId(empresa.id); setEmpresaModalMode('edit'); setOpenEmpresaModal(true); };
     const handleToggleState = (empresa: any) => { setSelectedEmpresa({ ...empresa, accion: 'cambiarEstado' }); setIsOpenModalConfirm(true); };
-    const handleDelete = (empresa: any) => { setSelectedEmpresa({ ...empresa, accion: 'eliminar' }); setIsOpenModalConfirm(true); };
+    // Eliminar tiene su propio modal: pide el RUC escrito y muestra qué se
+    // pierde. El ModalConfirm genérico se queda para activar/desactivar.
+    const [empresaAEliminar, setEmpresaAEliminar] = useState<any | null>(null);
+    const handleDelete = (empresa: any) => setEmpresaAEliminar(empresa);
+    const cancelarEliminacion = () => setEmpresaAEliminar(null);
+    const confirmarEliminacion = async (ruc: string) => {
+        if (!empresaAEliminar) return;
+        await eliminarEmpresa(empresaAEliminar.id, ruc);
+        setEmpresaAEliminar(null);
+    };
 
     const confirmAction = async () => {
         if (!selectedEmpresa) return;
         if (selectedEmpresa.accion === 'cambiarEstado') await cambiarEstadoEmpresa(selectedEmpresa.id, selectedEmpresa.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO');
-        else if (selectedEmpresa.accion === 'eliminar') await eliminarEmpresa(selectedEmpresa.id);
         setIsOpenModalConfirm(false); setSelectedEmpresa(null);
     };
 
@@ -402,5 +410,5 @@ export const useEmpresaIndexViewModel = (): any => {
     const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') =>
         setVencimientoFiltro((prev) => (prev === valor ? '' : valor));
 
-    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, handleToggleOnboarding, onboardingGuardando, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
+    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, empresaAEliminar, cancelarEliminacion, confirmarEliminacion, handleToggleOnboarding, onboardingGuardando, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
 };
