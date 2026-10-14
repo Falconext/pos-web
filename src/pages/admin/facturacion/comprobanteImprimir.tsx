@@ -1173,12 +1173,17 @@ console.log(formValues)
                                 >
                                     <thead className="bg-gray-300 text-black font-bold">
                                         <tr className="border border-gray-400">
-                                            <th className="w-[8%] text-center border-r border-gray-400 py-1 font-bold">N°</th>
-                                            <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
-                                            <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
+                                            {/* Antes era N° (el número de línea). El cliente necesita el
+                                                CÓDIGO del producto, que es con lo que lo busca en su
+                                                almacén; el número de orden no se usaba para nada. Mismos
+                                                anchos que el formato de nota de venta, para que los dos
+                                                papeles salgan iguales. */}
+                                            <th className="w-[18%] text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
+                                            <th className="w-[6%] text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
+                                            <th className="w-[8%] text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
                                             {includeProductImages && <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
                                             <th className="text-center border-r border-gray-400 px-2 py-1 font-bold">DESCRIPCIÓN</th>
-                                            <th className="w-[9%] text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
+                                            <th className="w-[7%] text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
                                             <th className="w-[10%] text-center border-r border-gray-400 py-1 font-bold">P.UNIT.</th>
                                             <th className="w-[10%] text-center py-1 font-bold">TOTAL</th>
                                         </tr>
@@ -1197,7 +1202,12 @@ console.log(formValues)
 
                                         return (
                                             <tr key={i} className="border-b border-l border-r border-gray-300" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
-                                                <td className="text-center border-r border-gray-300 py-1 align-top">{i + 1}</td>
+                                                <td
+                                                    className="text-center border-r border-gray-300 py-1 align-top px-1"
+                                                    style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}
+                                                >
+                                                    {item?.codigoBarras || item?.codigo || item?.producto?.codigoBarras || item?.producto?.codigo || '-'}
+                                                </td>
                                                 <td className="text-center border-r border-gray-300 py-1 align-top">{formatCantidad(cant)}</td>
                                                 <td className="text-center border-r border-gray-300 py-1 align-top">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</td>
                                                 {includeProductImages && (
