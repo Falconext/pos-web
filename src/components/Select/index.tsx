@@ -206,6 +206,7 @@ const Select = ({
 
     const dropdownContent = isOpen && dropdownPos ? ReactDOM.createPortal(
         <motion.ul
+            role="listbox"
             ref={dropdownRef}
             animate={{ opacity: 1, y: 0 }}
             initial={{ opacity: 0, y: -8 }}
@@ -220,33 +221,53 @@ const Select = ({
             className={styles.content__listOptions}
         >
             {resultsOptions?.length > 0 ? (
-                resultsOptions.map((item: IOption, index: number) => (
-                    <li
-                        key={item.id || `option-${index}`}
-                        className={index === selectedOptionIndex ? `${styles.selected} ? ${styles.selectedOption}` : ''}
-                        onClick={() => setValueOption(item, name, id)}
-                    >
-                        {item.imagenUrl ? (
-                            <span className="flex items-center gap-2">
-                                <img
-                                    src={item.imagenUrl}
-                                    alt=""
-                                    loading="lazy"
-                                    className="h-7 w-7 shrink-0 rounded object-cover bg-gray-100 dark:bg-slate-800"
-                                    // Un enlace roto no debe dejar el ícono de imagen
-                                    // partida al lado de cada producto.
-                                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-                                />
-                                <span className="min-w-0 flex-1">{item.value}</span>
-                            </span>
-                        ) : (
-                            <p>{item.value}</p>
-                        )}
-                    </li>
-                ))
+                resultsOptions.map((item: IOption, index: number) => {
+                    const activa = index === selectedOptionIndex;
+                    return (
+                        <li
+                            key={item.id || `option-${index}`}
+                            role="option"
+                            aria-selected={activa}
+                            // La condición escribía `${styles.selected} ? ${styles.selectedOption}`:
+                            // `styles.selected` no existe, así que el elemento quedaba
+                            // con las clases literales "undefined" y "?".
+                            className={activa ? styles.selectedOption : undefined}
+                            // Con el teclado, la opción marcada tiene que quedar a la
+                            // vista: en una lista de 20 productos se bajaba "a ciegas".
+                            ref={(el) => { if (activa && el) el.scrollIntoView({ block: 'nearest' }); }}
+                            onClick={() => setValueOption(item, name, id)}
+                        >
+                            {item.imagenUrl !== undefined ? (
+                                <span className={styles.option__conImagen}>
+                                    {/* El recuadro se dibuja siempre, haya foto o no: si
+                                        apareciera solo a veces, el texto bailaría de
+                                        izquierda a derecha entre opciones. */}
+                                    <span className={styles.option__miniatura}>
+                                        {item.imagenUrl ? (
+                                            <img
+                                                src={item.imagenUrl}
+                                                alt=""
+                                                loading="lazy"
+                                                decoding="async"
+                                                onError={(e) => {
+                                                    // Un enlace roto dejaría el ícono de imagen
+                                                    // partida al lado de cada producto.
+                                                    (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                                                }}
+                                            />
+                                        ) : null}
+                                    </span>
+                                    <span className={styles.option__texto}>{item.value}</span>
+                                </span>
+                            ) : (
+                                <p>{item.value}</p>
+                            )}
+                        </li>
+                    );
+                })
             ) : (
-                <li className="p-2" key="no-results">
-                    No se encontraron más resultados
+                <li className={styles.option__vacia} key="no-results" aria-disabled="true">
+                    Sin coincidencias. Prueba con el código o con menos palabras.
                 </li>
             )}
         </motion.ul>,

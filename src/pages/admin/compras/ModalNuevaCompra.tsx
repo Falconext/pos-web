@@ -536,9 +536,16 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         const prodBase: any = products.find(p => p.id === currentItem.productoId)
             ?? (products as any[]).flatMap(p => p.variantes || []).find((v: any) => v.id === currentItem.productoId);
         const baseDescripcion = (currentItem.descripcion || '').replace(/\s*\(\d+ paq\. x\d+\)$/, '');
-        const costoUnit = Number(
-            (Number(prodBase?.costoUnitario) || Number(currentItem.precioUnitario) || 0).toFixed(2),
-        );
+        // Dos valores a propósito. El EXACTO es el costo promedio real del
+        // producto, con todos sus decimales; el redondeado es solo lo que se
+        // muestra en la casilla de costo unitario.
+        //
+        // El costo del paquete se calcula con el exacto: redondear primero y
+        // multiplicar después daba S/ 35.97 donde la caja cuesta S/ 35.98, y
+        // ese es el número que el empresario compara contra su boleta.
+        const costoUnitExacto =
+            Number(prodBase?.costoUnitario) || Number(currentItem.precioUnitario) || 0;
+        const costoUnit = Number(costoUnitExacto.toFixed(2));
         if (codigo === 'UNIDAD') {
             setCurrentItem(prev => ({
                 ...prev,
@@ -561,7 +568,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         // probándolo.
         const esGravadoProd = esGravadoAfectacion(prodBase?.tipoAfectacionIGV);
         const costoCajaConIgv = Number(
-            ((esGravadoProd ? costoUnit * 1.18 : costoUnit) * unidades).toFixed(2),
+            ((esGravadoProd ? costoUnitExacto * 1.18 : costoUnitExacto) * unidades).toFixed(2),
         );
         setCurrentItem(prev => ({
             ...prev,
