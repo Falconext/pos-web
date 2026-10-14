@@ -1,4 +1,5 @@
 import moment from 'moment';
+import { anchosTablaProductos } from '@/features/admin/facturacion/utils/anchosTablaProductos';
 import React, { useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { BRAND } from '@/lib/branding';
@@ -121,6 +122,10 @@ const ComprobantePrintPage = ({
     // ticket los resuelve ticketPx. Ver sizeOverride en cotizFormatoElementos.
     const fc = (key: string) => elemCfg(formatoConfig, key, esFormatoFiscal, size === 'A5' ? 'A5' : undefined);
     const px = (key: string) => `${fc(key).size}px`;
+    // Anchos de la tabla de productos. Dependen de la hoja: los títulos miden
+    // lo mismo en píxeles en A4 y A5, pero la tabla de A5 es un 31% más
+    // angosta, así que con el reparto de A4 "MONEDA" se montaba sobre P.UNIT.
+    const anchosCol = anchosTablaProductos(size, includeProductImages);
     // Ticket: tamaño configurado escalado a la base del ticket (ver ticketPx).
     const tpx = (key: string, base?: number) => `${ticketPx(formatoConfig, key, esFormatoFiscal, base)}px`;
     // Perfil → Configuración → "Mostrar la marca del sistema": pie de marca en todos los formatos.
@@ -746,14 +751,14 @@ console.log(formValues)
                                         abarca todo), así que repartía las columnas en partes
                                         iguales. El colgroup manda sin importar eso. */}
                                     <colgroup>
-                                        <col style={{ width: '18%' }} />
-                                        <col style={{ width: '6%' }} />
-                                        <col style={{ width: '7%' }} />
-                                        {includeProductImages && <col style={{ width: '9%' }} />}
-                                        <col style={{ width: includeProductImages ? '34%' : '43%' }} />
-                                        <col style={{ width: '8%' }} />
-                                        <col style={{ width: '9%' }} />
-                                        <col style={{ width: '9%' }} />
+                                        <col style={{ width: `${anchosCol.codigo}%` }} />
+                                        <col style={{ width: `${anchosCol.cantidad}%` }} />
+                                        <col style={{ width: `${anchosCol.unidad}%` }} />
+                                        {includeProductImages && <col style={{ width: `${anchosCol.imagen}%` }} />}
+                                        <col style={{ width: `${anchosCol.descripcion}%` }} />
+                                        <col style={{ width: `${anchosCol.moneda}%` }} />
+                                        <col style={{ width: `${anchosCol.precioUnitario}%` }} />
+                                        <col style={{ width: `${anchosCol.total}%` }} />
                                     </colgroup>
                                     <thead className="text-black font-bold">
                                         {/* Fila separadora: en impresión el navegador repite TODO el
@@ -1214,14 +1219,14 @@ console.log(formValues)
                                         abarca todo), así que repartía las columnas en partes
                                         iguales. El colgroup manda sin importar eso. */}
                                     <colgroup>
-                                        <col style={{ width: '18%' }} />
-                                        <col style={{ width: '6%' }} />
-                                        <col style={{ width: '7%' }} />
-                                        {includeProductImages && <col style={{ width: '9%' }} />}
-                                        <col style={{ width: includeProductImages ? '34%' : '43%' }} />
-                                        <col style={{ width: '8%' }} />
-                                        <col style={{ width: '9%' }} />
-                                        <col style={{ width: '9%' }} />
+                                        <col style={{ width: `${anchosCol.codigo}%` }} />
+                                        <col style={{ width: `${anchosCol.cantidad}%` }} />
+                                        <col style={{ width: `${anchosCol.unidad}%` }} />
+                                        {includeProductImages && <col style={{ width: `${anchosCol.imagen}%` }} />}
+                                        <col style={{ width: `${anchosCol.descripcion}%` }} />
+                                        <col style={{ width: `${anchosCol.moneda}%` }} />
+                                        <col style={{ width: `${anchosCol.precioUnitario}%` }} />
+                                        <col style={{ width: `${anchosCol.total}%` }} />
                                     </colgroup>
                                     <thead className="text-black font-bold">
                                         {/* Fila separadora: en impresión el navegador repite TODO el
