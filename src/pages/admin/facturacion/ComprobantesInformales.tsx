@@ -1018,10 +1018,17 @@ const ComprobantesInformales = () => {
                                 Va aparte de "Convertir a Factura/Boleta" porque el destino no
                                 es un documento fiscal: la nota sigue siendo informal y después
                                 puede formalizarse con el mismo menú. El stock ya lo descontó
-                                la OT al emitirse, así que la nota no lo vuelve a tocar. */}
+                                la OT al emitirse, así que la nota no lo vuelve a tocar.
+
+                                Solo con la orden COBRADA. El taller cobra el saldo al entregar
+                                el trabajo, que es cuando pide la nota: cobrar primero deja el
+                                ingreso en caja a la hora y por el monto reales. El saldo se
+                                registra en Gestión de Pagos. (Esto no aplica a la conversión a
+                                Factura/Boleta: ahí el crédito pendiente se traslada a propósito.) */}
                             {String(item?.tipoDoc) === 'OT'
                                 && row.estadoEnvioSunat !== 'ANULADO'
-                                && !item?.convertidoA && (
+                                && !item?.convertidoA
+                                && Number(item?.saldo ?? 0) <= 0 && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                     <button type="button" onClick={() => {
