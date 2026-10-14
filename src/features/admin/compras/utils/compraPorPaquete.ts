@@ -121,3 +121,44 @@ export const desglosePorPaquete = (
     total: Number((cajas * porPaquete).toFixed(2)),
   };
 };
+
+/**
+ * La misma idea, pero para la ORDEN de compra, donde no hay IGV de por medio.
+ *
+ * La orden guarda la cantidad en unidades (igual que el stock, para que
+ * recibirla no tenga que convertir nada) y el precio por unidad. Pero al
+ * proveedor se le pide en cajas: "5 cajas de 6", no "30 unidades". Estas dos
+ * funciones traducen entre lo que se guarda y lo que se escribe en pantalla.
+ *
+ * No tocan el IGV a propósito: el precio de la orden ya está en el modo que
+ * eligió la orden (neto o con IGV), y dividir entre las unidades no cambia ese
+ * modo.
+ */
+export const ordenEnCajas = (
+  cantidadEnUnidades: number,
+  precioUnitario: number,
+  unidadesPorPaquete?: number | null,
+): { cajas: number; costoPorPaquete: number } => {
+  const unidades = Math.max(1, Number(unidadesPorPaquete) || 1);
+  return {
+    cajas: Number(cantidadEnUnidades) / unidades,
+    costoPorPaquete: Number((Number(precioUnitario) * unidades).toFixed(2)),
+  };
+};
+
+export const ordenDesdeCajas = (
+  cajas: number,
+  costoPorPaquete: number,
+  unidadesPorPaquete?: number | null,
+): { cantidad: number; precioUnitario: number } => {
+  const unidades = Math.max(1, Number(unidadesPorPaquete) || 1);
+  const n = Math.max(0, Number(cajas) || 0);
+  return {
+    cantidad: n * unidades,
+    // 4 decimales por lo mismo que en la compra: a 2 decimales una caja de 24
+    // mueve el total lo suficiente como para no cuadrar con el proveedor.
+    precioUnitario: Number(
+      ((Math.max(0, Number(costoPorPaquete) || 0)) / unidades).toFixed(4),
+    ),
+  };
+};

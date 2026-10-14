@@ -16,6 +16,8 @@ import {
   expandirPaqueteAUnidades,
   etiquetaDePaquete,
   desglosePorPaquete,
+  ordenEnCajas,
+  ordenDesdeCajas,
 } from '../utils/compraPorPaquete';
 
 // Caja de 6 cervezas a S/ 36 (precio final del proveedor, IGV incluido).
@@ -134,5 +136,84 @@ describe('las dos funciones cuentan la misma historia', () => {
 describe('costoUnitarioDesdePaquete por separado', () => {
   it('sin unidades devuelve 0 en vez de Infinity', () => {
     expect(costoUnitarioDesdePaquete(36, 0, { esGravado: true, compraIncluyeIgv: true })).toBe(0);
+  });
+});
+
+/**
+ * La ORDEN de compra: pedirle al proveedor "5 cajas de 6", no "30 unidades".
+ *
+ * La orden guarda la cantidad en unidades igual que el stock —así recibirla no
+ * convierte nada— pero en pantalla se escribe en cajas. Estas dos funciones
+ * son la traducción, y tienen que ser inversas una de la otra: si no, abrir
+ * una orden y guardarla sin tocar nada le cambiaría las cantidades.
+ */
+describe('la orden de compra, en cajas', () => {
+  it('5 cajas de 6 a S/ 36 se guardan como 30 unidades a S/ 6', () => {
+    expect(ordenDesdeCajas(5, 36, 6)).toEqual({ cantidad: 30, precioUnitario: 6 });
+  });
+
+  it('y se vuelven a leer como 5 cajas a S/ 36', () => {
+    expect(ordenEnCajas(30, 6, 6)).toEqual({ cajas: 5, costoPorPaquete: 36 });
+  });
+
+  it('ida y vuelta no mueve la orden', () => {
+    // Abrir una orden y guardarla sin tocar nada no puede cambiar lo pedido.
+    const guardado = ordenDesdeCajas(5, 36, 6);
+    const vista = ordenEnCajas(guardado.cantidad, guardado.precioUnitario, 6);
+    expect(ordenDesdeCajas(vista.cajas, vista.costoPorPaquete, 6)).toEqual(guardado);
+  });
+
+  it('sin caja (pedido por unidad) no toca nada', () => {
+    expect(ordenDesdeCajas(7, 12.5, null)).toEqual({ cantidad: 7, precioUnitario: 12.5 });
+    expect(ordenEnCajas(7, 12.5, null)).toEqual({ cajas: 7, costoPorPaquete: 12.5 });
+  });
+
+  it('no mete el IGV de por medio: el precio ya está en el modo de la orden', () => {
+    // A diferencia de la compra, acá dividir entre las unidades no cambia si
+    // el precio es neto o con IGV: sigue siendo el mismo modo.
+    expect(ordenDesdeCajas(1, 118, 2).precioUnitario).toBe(59);
+  });
+
+  it('guarda 4 decimales en el costo por unidad', () => {
+    // Caja de 24 a S/ 100: a 2 decimales el total deja de cuadrar con el
+    // proveedor.
+    expect(ordenDesdeCajas(1, 100, 24).precioUnitario).toBeCloseTo(4.1667, 4);
+  });
+});
+
+describe('cambiar de presentación en la orden', () => {
+  /** Lo que hace la pantalla al elegir otra caja en una línea ya puesta. */
+  const cambiarPresentacion = (
+    linea: { cantidad: number; precioUnitario: number; unidadesPorPaquete?: number | null },
+    unidadesNuevas: number,
+  ) => {
+    const { cajas } = ordenEnCajas(linea.cantidad, linea.precioUnitario, linea.unidadesPorPaquete);
+    return {
+      cantidad: cajas * unidadesNuevas,
+      precioUnitario: linea.precioUnitario,
+      unidadesPorPaquete: unidadesNuevas > 1 ? unidadesNuevas : null,
+    };
+  };
+
+  it('de Unidad a caja de 6 NO cambia el costo por unidad', () => {
+    // Conservar el costo del PAQUETE parece lo simétrico y está mal: S/ 5.08 la
+    // unidad se tomaba como el precio de la caja y el costo por unidad caía a
+    // S/ 0.85 sin que nadie lo tocara. Lo vi en pantalla antes de arreglarlo.
+    const r = cambiarPresentacion({ cantidad: 1, precioUnitario: 5.08 }, 6);
+    expect(r.precioUnitario).toBe(5.08);
+    expect(r.cantidad).toBe(6);
+  });
+
+  it('conserva las cajas pedidas, no las unidades', () => {
+    // 5 cajas de 6 y me paso a cajas de 12: sigo queriendo 5 cajas.
+    const r = cambiarPresentacion({ cantidad: 30, precioUnitario: 6, unidadesPorPaquete: 6 }, 12);
+    expect(r.cantidad).toBe(60);
+    expect(r.precioUnitario).toBe(6);
+  });
+
+  it('volver a Unidad deja la línea en unidades sueltas', () => {
+    const r = cambiarPresentacion({ cantidad: 30, precioUnitario: 6, unidadesPorPaquete: 6 }, 1);
+    expect(r.cantidad).toBe(5);
+    expect(r.unidadesPorPaquete).toBeNull();
   });
 });
