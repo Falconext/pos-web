@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ordenEnCajas, ordenDesdeCajas } from '@/features/admin/compras/utils/compraPorPaquete';
 import ModalCurvaTallas from './ModalCurvaTallas';
 import { sePideEnCurva } from './curvaDeTallas';
 import { Icon } from '@iconify/react';
@@ -22,6 +23,15 @@ interface DetalleOC {
     precioUnitario: number;
     /** false = producto exonerado/inafecto: la línea no lleva IGV. */
     gravado?: boolean;
+    /**
+     * Tamaño de la caja que se le pide al proveedor. `cantidad` y
+     * `precioUnitario` SIEMPRE van en unidades: esto solo dice de qué tamaño
+     * era la caja, para mostrar la orden en cajas y para que recibirla no
+     * tenga que convertir nada. null = se pide por unidad.
+     */
+    unidadesPorPaquete?: number | null;
+    /** Cajas configuradas del producto. Solo del front: no viaja al backend. */
+    _paquetes?: any[];
 }
 
 /** Afectación IGV (Catálogo 07): solo 10-17 gravado; 20/30/40 sin IGV. Sin dato → gravado. */
@@ -416,6 +426,11 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
             cantidad: Number(d.cantidad),
             precioUnitario: Number(d.precioUnitario),
             gravado: d.producto ? esGravadoAfectacion(d.producto.tipoAfectacionIGV) : true,
+            // Al reabrir una orden pedida por cajas, se vuelve a ver en cajas.
+            unidadesPorPaquete: d.unidadesPorPaquete ?? null,
+            // La orden devuelve las presentaciones como `codigosBarras`; el
+            // buscador de productos las llama `paquetes`. Misma cosa.
+            _paquetes: d.producto?.codigosBarras ?? d.producto?.paquetes ?? [],
         })),
     );
 
@@ -468,6 +483,12 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
             // en la orden al proveedor basta con 2 decimales para que se vea limpio.
             precioUnitario: Number((Number(p.costoPromedio ?? 0) || 0).toFixed(2)),
             gravado: esGravadoAfectacion(p.tipoAfectacionIGV),
+            // Cajas que tiene configuradas el producto, para poder pedirle al
+            // proveedor "5 cajas de 6" en vez de "30 unidades". Se queda en el
+            // front: lo que viaja al backend es la cantidad en unidades más el
+            // tamaño de la caja.
+            _paquetes: Array.isArray(p.paquetes) ? p.paquetes : [],
+            unidadesPorPaquete: null,
         }]);
         setProdQuery('');
         setProdOpts([]);
@@ -489,7 +510,42 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
     };
 
     const actualizarDetalle = (i: number, campo: 'cantidad' | 'precioUnitario', valor: string) => {
-        setDetalles((prev) => prev.map((d, j) => (j === i ? { ...d, [campo]: Number(valor) || 0 } : d)));
+        setDetalles((prev) => prev.map((d, j) => {
+            if (j !== i) return d;
+            const unidades = Number(d.unidadesPorPaquete) || 1;
+            if (unidades <= 1) return { ...d, [campo]: Number(valor) || 0 };
+            // Lo escrito está en cajas; lo guardado va en unidades.
+            const vista = ordenEnCajas(d.cantidad, d.precioUnitario, unidades);
+            const cajas = campo === 'cantidad' ? Number(valor) || 0 : vista.cajas;
+            const costoPaquete = campo === 'precioUnitario' ? Number(valor) || 0 : vista.costoPorPaquete;
+            return { ...d, ...ordenDesdeCajas(cajas, costoPaquete, unidades) };
+        }));
+    };
+
+    /**
+     * Cambiar entre pedir por unidad o por caja.
+     *
+     * Se conservan dos cosas: las CAJAS escritas (quien puso 5 sigue queriendo
+     * 5, no 30 sueltas) y el COSTO POR UNIDAD. Lo que se recalcula es el costo
+     * del paquete, que es lo que depende del tamaño de la caja.
+     *
+     * Conservar el costo del PAQUETE en vez del unitario parece lo simétrico y
+     * está mal: al pasar de Unidad a caja de 6, el precio unitario de S/ 5.08
+     * se tomaba como el de la caja y el costo por unidad caía a S/ 0.85 sin que
+     * nadie lo tocara. Lo vi en pantalla.
+     */
+    const cambiarPresentacion = (i: number, valor: string) => {
+        const unidadesNuevas = Number(valor) || 1;
+        setDetalles((prev) => prev.map((d, j) => {
+            if (j !== i) return d;
+            const { cajas } = ordenEnCajas(d.cantidad, d.precioUnitario, d.unidadesPorPaquete);
+            return {
+                ...d,
+                cantidad: cajas * unidadesNuevas,
+                precioUnitario: d.precioUnitario,
+                unidadesPorPaquete: unidadesNuevas > 1 ? unidadesNuevas : null,
+            };
+        }));
     };
 
     // Con IGV incluido, el total es la suma tal cual y el IGV se extrae de ella.
@@ -516,7 +572,9 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
                 aplicaIgv,
                 igvIncluido: aplicaIgv && igvIncluido,
                 estado: estadoFinal,
-                detalles,
+                // `_paquetes` es solo del front (el catálogo de cajas del
+                // producto): no tiene por qué viajar al backend.
+                detalles: detalles.map(({ _paquetes, ...d }) => d),
             };
             const resp: any = esEdicion
                 ? await put(`compras/ordenes/${orden!.id}`, payload)
@@ -681,11 +739,36 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
                                             {!d.productoId && <span className="ml-2 rounded bg-indigo-100 px-1.5 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-300">libre</span>}
                                             {d.gravado === false && aplicaIgv && <span title="Producto exonerado/inafecto: no lleva IGV" className="ml-2 rounded bg-teal-100 px-1.5 py-0.5 text-[10px] font-bold text-teal-700 dark:bg-teal-900/40 dark:text-teal-300">sin IGV</span>}
                                         </td>
+                                        {/* Con una caja elegida, estos dos campos hablan
+                                            de CAJAS: cuántas se le piden al proveedor y
+                                            cuánto cuesta cada una. Lo que se guarda sigue
+                                            siendo en unidades, para que recibir la orden
+                                            no tenga que convertir nada. */}
                                         <td className="py-2 pr-2">
-                                            <input type="number" min="0.001" value={d.cantidad} onChange={(e) => actualizarDetalle(i, 'cantidad', e.target.value)} className={`${inputCls} !py-1.5`} />
+                                            {(d._paquetes?.length ?? 0) > 0 && (
+                                                <select
+                                                    value={d.unidadesPorPaquete ?? ''}
+                                                    onChange={(e) => cambiarPresentacion(i, e.target.value)}
+                                                    className={`${inputCls} !py-1 !text-[11px] mb-1`}
+                                                >
+                                                    <option value="">Unidad</option>
+                                                    {(d._paquetes ?? []).map((pq: any) => (
+                                                        <option key={pq.codigo} value={pq.unidadesPorPaquete}>
+                                                            {(pq.alias || 'Paquete')} (x{pq.unidadesPorPaquete})
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            <input type="number" min="0.001" value={ordenEnCajas(d.cantidad, d.precioUnitario, d.unidadesPorPaquete).cajas} onChange={(e) => actualizarDetalle(i, 'cantidad', e.target.value)} className={`${inputCls} !py-1.5`} />
+                                            {Number(d.unidadesPorPaquete) > 1 && (
+                                                <p className="mt-1 text-[10px] text-violet-700 dark:text-violet-300">= {d.cantidad} unidades</p>
+                                            )}
                                         </td>
                                         <td className="py-2 pr-2">
-                                            <input type="number" min="0" step="0.01" value={d.precioUnitario} onChange={(e) => actualizarDetalle(i, 'precioUnitario', e.target.value)} className={`${inputCls} !py-1.5`} />
+                                            <input type="number" min="0" step="0.01" value={ordenEnCajas(d.cantidad, d.precioUnitario, d.unidadesPorPaquete).costoPorPaquete} onChange={(e) => actualizarDetalle(i, 'precioUnitario', e.target.value)} className={`${inputCls} !py-1.5`} />
+                                            {Number(d.unidadesPorPaquete) > 1 && (
+                                                <p className="mt-1 text-[10px] text-gray-500 dark:text-gray-400">{mon} {Number(d.precioUnitario).toFixed(4)} c/u</p>
+                                            )}
                                         </td>
                                         <td className="py-2 text-right font-bold text-gray-900 dark:text-white">{mon} {(d.cantidad * d.precioUnitario).toFixed(2)}</td>
                                         {aplicaIgv && (

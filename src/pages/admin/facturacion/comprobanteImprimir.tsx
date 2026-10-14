@@ -1,4 +1,5 @@
 import moment from 'moment';
+import { anchosTablaProductos } from '@/features/admin/facturacion/utils/anchosTablaProductos';
 import React, { useEffect, useRef } from 'react';
 import { useReactToPrint } from 'react-to-print';
 import { BRAND } from '@/lib/branding';
@@ -121,6 +122,10 @@ const ComprobantePrintPage = ({
     // ticket los resuelve ticketPx. Ver sizeOverride en cotizFormatoElementos.
     const fc = (key: string) => elemCfg(formatoConfig, key, esFormatoFiscal, size === 'A5' ? 'A5' : undefined);
     const px = (key: string) => `${fc(key).size}px`;
+    // Anchos de la tabla de productos. Dependen de la hoja: los títulos miden
+    // lo mismo en píxeles en A4 y A5, pero la tabla de A5 es un 31% más
+    // angosta, así que con el reparto de A4 "MONEDA" se montaba sobre P.UNIT.
+    const anchosCol = anchosTablaProductos(size, includeProductImages);
     // Ticket: tamaño configurado escalado a la base del ticket (ver ticketPx).
     const tpx = (key: string, base?: number) => `${ticketPx(formatoConfig, key, esFormatoFiscal, base)}px`;
     // Perfil → Configuración → "Mostrar la marca del sistema": pie de marca en todos los formatos.
@@ -732,23 +737,69 @@ console.log(formValues)
                                 )}
 
                                 {/* Product Table */}
-                                <div className="w-full mb-4" style={{ fontSize: px('productos') }}>
-                                    {/* Table Header */}
-                                    <div className="flex bg-gray-300 text-black font-bold border border-gray-400 py-1">
-                                        <div className="w-[8%] text-center border-r border-gray-400">CÓDIGO</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">CANT.</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
-                                        {includeProductImages && <div className="w-[10%] text-center border-r border-gray-400">IMAGEN</div>}
-                                        {/* <div className="w-[10%] text-center border-r border-gray-400">CÓDIGO</div> */}
-                                        <div className={`flex-1 text-center border-r border-gray-400 px-2`}>DESCRIPCIÓN</div>
-                                        {/* <div className="w-[10%] text-center border-r border-gray-400">V.UNIT.</div> */}
-                                        {/* <div className="w-[8%] text-center border-r border-gray-400">IGV.</div> */}
-                                        <div className="w-[9%] text-center border-r border-gray-400">MONEDA</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">{sinIgv ? 'V.UNIT.' : 'P.UNIT.'}</div>
-                                        <div className="w-[10%] text-center">{sinIgv ? 'V.VENTA' : 'TOTAL'}</div>
-                                    </div>
-
-                                    {/* Table Body */}
+                                {/* Tabla REAL, no divs con flex: así el navegador repite el
+                                    <thead> en cada página al imprimir y no parte una fila por
+                                    la mitad. Con divs, a partir de la segunda hoja las líneas
+                                    salían sin encabezado y no se sabía qué columna era cuál. */}
+                                <table
+                                    className="w-full mb-4"
+                                    style={{ fontSize: px('productos'), tableLayout: 'fixed', borderCollapse: 'collapse' }}
+                                >
+                                    {/* Los anchos van en <colgroup> y no en los <th>: con
+                                        `table-layout: fixed` el navegador los toma de la PRIMERA
+                                        fila, y la primera es la separadora (una sola celda que
+                                        abarca todo), así que repartía las columnas en partes
+                                        iguales. El colgroup manda sin importar eso. */}
+                                    <colgroup>
+                                        <col style={{ width: `${anchosCol.codigo}%` }} />
+                                        <col style={{ width: `${anchosCol.cantidad}%` }} />
+                                        <col style={{ width: `${anchosCol.unidad}%` }} />
+                                        {includeProductImages && <col style={{ width: `${anchosCol.imagen}%` }} />}
+                                        <col style={{ width: `${anchosCol.descripcion}%` }} />
+                                        <col style={{ width: `${anchosCol.moneda}%` }} />
+                                        <col style={{ width: `${anchosCol.precioUnitario}%` }} />
+                                        <col style={{ width: `${anchosCol.total}%` }} />
+                                    </colgroup>
+                                    <thead className="text-black font-bold">
+                                        {/* Fila separadora: en impresión el navegador repite TODO el
+                                            <thead> en cada hoja, así que es la única forma de dejar
+                                            aire encima de la tabla cuando arranca en la página 2.
+                                            Va transparente y sin bordes: solo ocupa alto. */}
+                                        <tr aria-hidden="true">
+                                            <th
+                                                colSpan={includeProductImages ? 8 : 7}
+                                                className="p-0"
+                                                style={{ height: '14px', background: 'transparent', border: 'none' }}
+                                            />
+                                        </tr>
+                                        <tr className="border border-gray-400">
+                                            {/* CÓDIGO al 18%: el código más largo del cliente
+                                                (W69S55BOC700S, 13 caracteres) mide 108px y al 13%
+                                                la celda daba 80px útiles, así que se cortaba. El
+                                                espacio sale de CANT. y UNIDAD, que tenían 10% para
+                                                mostrar "1" y "UNIDAD"; la descripción no pierde. */}
+                                            {/* Anchos explícitos en TODAS las columnas: dejar la
+                                                descripción sin ancho hacía que el navegador le diera
+                                                lo que sobraba, y con el código al 18% quedaba tan
+                                                angosta que cada línea se partía en 6 y el documento
+                                                pasaba de 2 hojas a 4. Las numéricas solo muestran
+                                                "1", "NIU" y un importe, pero el ancho lo manda el
+                                                TÍTULO, que es más largo que el dato.
+                                                MONEDA es la excepción: aunque solo muestre "S/",
+                                                manda el ancho del TÍTULO. Con `table-layout: fixed`
+                                                la celda no recorta lo que se desborda, así que al
+                                                5% la palabra MONEDA se montaba encima de P.UNIT. */}
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
+                                            {includeProductImages && <th className="text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
+                                            <th className="text-center border-r border-gray-400 px-2 py-1 font-bold">DESCRIPCIÓN</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">{sinIgv ? 'V.UNIT.' : 'P.UNIT.'}</th>
+                                            <th className="text-center py-1 font-bold">{sinIgv ? 'V.VENTA' : 'TOTAL'}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                     {productsInvoice?.map((item: any, i: number) => {
                                         const cant = Number(item?.cantidad || 0);
                                         // Precio final (ya con descuento) para el importe de la línea.
@@ -767,29 +818,35 @@ console.log(formValues)
                                         const totalItem = totalBruto * f;
 
                                         return (
-                                            <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
-                                                <div className="w-[8%] text-center border-r border-gray-300 py-1">{item?.codigoBarras || item?.codigo || item?.producto?.codigoBarras || item?.producto?.codigo || '-'}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
+                                            <tr key={i} className="border-b border-l border-r border-gray-300" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                                                {/* Los códigos del cliente llegan a 10-12 caracteres y al 8% quedaban
+                                                    al filo. Con `table-layout: fixed` lo que no entra se sale de la
+                                                    celda, así que además se parte en vez de desbordar. */}
+                                                <td
+                                                    className="text-center border-r border-gray-300 py-1 align-top px-1"
+                                                    style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}
+                                                >
+                                                    {item?.codigoBarras || item?.codigo || item?.producto?.codigoBarras || item?.producto?.codigo || '-'}
+                                                </td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{formatCantidad(cant)}</td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</td>
                                                 {includeProductImages && (
-                                                    <div className="w-[10%] flex justify-center items-center border-r border-gray-300 py-1">
-                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover" alt="" /> : '-'}
-                                                    </div>
+                                                    <td className="text-center border-r border-gray-300 py-1 align-top">
+                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover inline-block" alt="" /> : '-'}
+                                                    </td>
                                                 )}
-                                                {/* <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.codigo || '-'}</div> */}
-                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1" style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
+                                                <td className="text-left border-r border-gray-300 px-2 py-1 align-top" style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
                                                     {descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}
                                                     {esGratis && <span className="ml-1 font-bold text-[9px]">[GRATIS]</span>}
-                                                </div>
-                                                {/* <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit / 1.18).toFixed(2)}</div> */}
-                                                {/* <div className="w-[8%] text-right border-r border-gray-300 px-1 py-1">{round2(pUnit - (pUnit / 1.18)).toFixed(2)}</div> */}
-                                                <div className="w-[9%] text-center border-r border-gray-300 py-1">{monedaSimbolo}</div>
-                                                <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
-                                                <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
-                                            </div>
+                                                </td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{monedaSimbolo}</td>
+                                                <td className="text-right border-r border-gray-300 px-1 py-1 align-top">{pUnit.toFixed(2)}</td>
+                                                <td className="text-right px-1 py-1 align-top">{totalItem.toFixed(2)}</td>
+                                            </tr>
                                         )
                                     })}
-                                </div>
+                                    </tbody>
+                                </table>
 
                                 {/* Total in Words & Footer Section */}
                                 {fc('sonTexto').visible && (
@@ -1150,18 +1207,67 @@ console.log(formValues)
                                         </div>
                                     </div>
                                 )}
-                                <div className="w-full mb-3">
-                                    <div className="flex bg-gray-300 text-black font-bold border border-gray-400 py-1" style={{ fontSize: px('productos') }}>
-                                        <div className="w-[8%] text-center border-r border-gray-400">N°</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">CANT.</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">UNIDAD</div>
-                                        {includeProductImages && <div className="w-[10%] text-center border-r border-gray-400">IMAGEN</div>}
-                                        <div className="flex-1 text-center border-r border-gray-400 px-2">DESCRIPCIÓN</div>
-                                        <div className="w-[9%] text-center border-r border-gray-400">MONEDA</div>
-                                        <div className="w-[10%] text-center border-r border-gray-400">P.UNIT.</div>
-                                        <div className="w-[10%] text-center">TOTAL</div>
-                                    </div>
-
+                                {/* Misma razón que en el formato de nota de venta: con divs el
+                                    navegador no repite el encabezado al cambiar de hoja. */}
+                                <table
+                                    className="w-full mb-3"
+                                    style={{ fontSize: px('productos'), tableLayout: 'fixed', borderCollapse: 'collapse' }}
+                                >
+                                    {/* Los anchos van en <colgroup> y no en los <th>: con
+                                        `table-layout: fixed` el navegador los toma de la PRIMERA
+                                        fila, y la primera es la separadora (una sola celda que
+                                        abarca todo), así que repartía las columnas en partes
+                                        iguales. El colgroup manda sin importar eso. */}
+                                    <colgroup>
+                                        <col style={{ width: `${anchosCol.codigo}%` }} />
+                                        <col style={{ width: `${anchosCol.cantidad}%` }} />
+                                        <col style={{ width: `${anchosCol.unidad}%` }} />
+                                        {includeProductImages && <col style={{ width: `${anchosCol.imagen}%` }} />}
+                                        <col style={{ width: `${anchosCol.descripcion}%` }} />
+                                        <col style={{ width: `${anchosCol.moneda}%` }} />
+                                        <col style={{ width: `${anchosCol.precioUnitario}%` }} />
+                                        <col style={{ width: `${anchosCol.total}%` }} />
+                                    </colgroup>
+                                    <thead className="text-black font-bold">
+                                        {/* Fila separadora: en impresión el navegador repite TODO el
+                                            <thead> en cada hoja, así que es la única forma de dejar
+                                            aire encima de la tabla cuando arranca en la página 2.
+                                            Va transparente y sin bordes: solo ocupa alto. */}
+                                        <tr aria-hidden="true">
+                                            <th
+                                                colSpan={includeProductImages ? 8 : 7}
+                                                className="p-0"
+                                                style={{ height: '14px', background: 'transparent', border: 'none' }}
+                                            />
+                                        </tr>
+                                        <tr className="border border-gray-400">
+                                            {/* Antes era N° (el número de línea). El cliente necesita el
+                                                CÓDIGO del producto, que es con lo que lo busca en su
+                                                almacén; el número de orden no se usaba para nada. Mismos
+                                                anchos que el formato de nota de venta, para que los dos
+                                                papeles salgan iguales. */}
+                                            {/* Anchos explícitos en TODAS las columnas: dejar la
+                                                descripción sin ancho hacía que el navegador le diera
+                                                lo que sobraba, y con el código al 18% quedaba tan
+                                                angosta que cada línea se partía en 6 y el documento
+                                                pasaba de 2 hojas a 4. Las numéricas solo muestran
+                                                "1", "NIU" y un importe, pero el ancho lo manda el
+                                                TÍTULO, que es más largo que el dato.
+                                                MONEDA es la excepción: aunque solo muestre "S/",
+                                                manda el ancho del TÍTULO. Con `table-layout: fixed`
+                                                la celda no recorta lo que se desborda, así que al
+                                                5% la palabra MONEDA se montaba encima de P.UNIT. */}
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CÓDIGO</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">CANT.</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">UNIDAD</th>
+                                            {includeProductImages && <th className="text-center border-r border-gray-400 py-1 font-bold">IMAGEN</th>}
+                                            <th className="text-center border-r border-gray-400 px-2 py-1 font-bold">DESCRIPCIÓN</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">MONEDA</th>
+                                            <th className="text-center border-r border-gray-400 py-1 font-bold">P.UNIT.</th>
+                                            <th className="text-center py-1 font-bold">TOTAL</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
                                     {productsInvoice?.map((item: any, i: number) => {
                                         const cant = Number(item?.cantidad || 0);
                                         // Precio final (ya con descuento) para el importe de la línea.
@@ -1174,16 +1280,21 @@ console.log(formValues)
                                         const totalItem = esGratis ? 0 : Number(item?.total || (pUnitFinal * cant));
 
                                         return (
-                                            <div key={i} className="flex border-b border-l border-r border-gray-300" style={{ fontSize: px('productos') }}>
-                                                <div className="w-[8%] text-center border-r border-gray-300 py-1">{i + 1}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{formatCantidad(cant)}</div>
-                                                <div className="w-[10%] text-center border-r border-gray-300 py-1">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</div>
+                                            <tr key={i} className="border-b border-l border-r border-gray-300" style={{ breakInside: 'avoid', pageBreakInside: 'avoid' }}>
+                                                <td
+                                                    className="text-center border-r border-gray-300 py-1 align-top px-1"
+                                                    style={{ wordBreak: 'break-all', whiteSpace: 'normal' }}
+                                                >
+                                                    {item?.codigoBarras || item?.codigo || item?.producto?.codigoBarras || item?.producto?.codigo || '-'}
+                                                </td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{formatCantidad(cant)}</td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{item?.unidad?.toUpperCase() || item?.unidadMedida?.toUpperCase() || 'NIU'}</td>
                                                 {includeProductImages && (
-                                                    <div className="w-[10%] flex justify-center items-center border-r border-gray-300 py-1">
-                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover" alt="" /> : '-'}
-                                                    </div>
+                                                    <td className="text-center border-r border-gray-300 py-1 align-top">
+                                                        {item.imagenUrl ? <img src={item.imagenUrl} className="w-8 h-8 object-cover inline-block" alt="" /> : '-'}
+                                                    </td>
                                                 )}
-                                                <div className="flex-1 text-left border-r border-gray-300 px-2 py-1">
+                                                <td className="text-left border-r border-gray-300 px-2 py-1 align-top">
                                                     <div style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
                                                         {descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}
                                                         {esGratis && <span className="ml-1 font-bold text-[9px]">[GRATIS]</span>}
@@ -1209,14 +1320,15 @@ console.log(formValues)
                                                             {item.dniPaciente ? ` — Pac. DNI: ${item.dniPaciente}` : ''}
                                                         </div>
                                                     )}
-                                                </div>
-                                                <div className="w-[9%] text-center border-r border-gray-300 py-1">{monedaSimbolo}</div>
-                                                <div className="w-[10%] text-right border-r border-gray-300 px-1 py-1">{pUnit.toFixed(2)}</div>
-                                                <div className="w-[10%] text-right px-1 py-1">{totalItem.toFixed(2)}</div>
-                                            </div>
+                                                </td>
+                                                <td className="text-center border-r border-gray-300 py-1 align-top">{monedaSimbolo}</td>
+                                                <td className="text-right border-r border-gray-300 px-1 py-1 align-top">{pUnit.toFixed(2)}</td>
+                                                <td className="text-right px-1 py-1 align-top">{totalItem.toFixed(2)}</td>
+                                            </tr>
                                         );
                                     })}
-                                </div>
+                                    </tbody>
+                                </table>
 
                                 {fc('sonTexto').visible && (
                                 <div className="border border-black rounded-lg p-2 mb-2 font-bold text-center bg-gray-50" style={{ fontSize: px('sonTexto') }}>

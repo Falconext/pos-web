@@ -36,6 +36,7 @@ import ModalDetalleComprobante from "./ModalDetalleComprobante";
 import ModalImportarNotaVentaLote from "./ModalImportarNotaVentaLote";
 import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCotizacion";
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
+import { datosPagoDeNota } from "@/features/admin/facturacion/utils/datosPagoDeNota";
 import apiClient from "@/utils/apiClient";
 import { EditarDespachoModal } from "@/pages/admin/despacho/EditarDespachoModal";
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
@@ -43,27 +44,6 @@ import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 // Informales que sí se despachan (las cotizaciones no: se convierten primero).
 const TIPOS_ENVIABLES = new Set(['NV', 'TICKET', 'NP', 'OT', 'RH', 'CP']);
 
-/**
- * Datos de cobro y condiciones de la nota, para que el POS los reciba tal cual
- * al EDITARLA o al CONVERTIRLA en boleta/factura. Al convertir no viajaban, así
- * que el POS volvía a pedir el método de pago de cero y perdía el descuento
- * global, la moneda y el crédito de la nota original.
- */
-const datosPagoDeNota = (item: IInvoices) => ({
-    vendedorCampoId: (item as any).vendedorCampoId,
-    vendedorCampoNombre: (item as any).vendedorCampoNombre,
-    medioPago: (item as any).medioPago,
-    paymentDetails: (item as any).paymentDetails,
-    saldo: (item as any).saldo,
-    mtoImpVenta: (item as any).mtoImpVenta,
-    estadoPago: (item as any).estadoPago,
-    mtoDescuentoGlobal: (item as any).mtoDescuentoGlobal,
-    formaPagoTipo: (item as any).formaPagoTipo,
-    fechaVencimientoCredito: (item as any).fechaVencimientoCredito,
-    cuotas: (item as any).cuotas,
-    tipoMoneda: (item as any).tipoMoneda,
-    tipoCambio: (item as any).tipoCambio,
-});
 
 const hasDespachoCompleto = (item: IInvoices) => {
     const despacho = item.envioDespacho;
@@ -1027,6 +1007,44 @@ const ComprobantesInformales = () => {
                                     }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/30">
                                         <Icon icon="mdi:pencil-outline" width={16} height={16} />
                                         <span>Editar comprobante</span>
+                                    </button>
+                                </>
+                            )}
+                            {/* Orden de Trabajo → Nota de venta.
+                                El taller levanta la OT cuando entra el trabajo y recién al
+                                salir quiere la nota, para programar la entrega. Antes había
+                                que tipear la venta de nuevo.
+
+                                Va aparte de "Convertir a Factura/Boleta" porque el destino no
+                                es un documento fiscal: la nota sigue siendo informal y después
+                                puede formalizarse con el mismo menú. El stock ya lo descontó
+                                la OT al emitirse, así que la nota no lo vuelve a tocar.
+
+                                Solo con la orden COBRADA. El taller cobra el saldo al entregar
+                                el trabajo, que es cuando pide la nota: cobrar primero deja el
+                                ingreso en caja a la hora y por el monto reales. El saldo se
+                                registra en Gestión de Pagos. (Esto no aplica a la conversión a
+                                Factura/Boleta: ahí el crédito pendiente se traslada a propósito.) */}
+                            {String(item?.tipoDoc) === 'OT'
+                                && row.estadoEnvioSunat !== 'ANULADO'
+                                && !item?.convertidoA
+                                && Number(item?.saldo ?? 0) <= 0 && (
+                                <>
+                                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                    <button type="button" onClick={() => {
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'NV', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, origenReferencia: `${item.serie}-${String(item.correlativo).padStart(8, '0')}`, cliente: item.cliente, clienteId: item.clienteId, observaciones: item.observaciones, ...datosPagoDeNota(item), productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });
+                                        handleCloseMenu();
+                                    }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-950/30">
+                                        <Icon icon="mdi:clipboard-arrow-right-outline" width={16} height={16} />
+                                        {/* "Hacer…" y no "Convertir a…": el menú da 126px de
+                                            ancho útil para el texto y "Convertir a Nota de venta"
+                                            mide 143px, así que envolvía en dos líneas y el botón
+                                            quedaba de 48px de alto contra los 32px del resto —
+                                            además de verse centrado, porque un <button> centra el
+                                            texto y eso solo se nota cuando hay dos líneas.
+                                            "Hacer Nota de venta" mide 116px y es el mismo verbo
+                                            que "Hacer Boleta", que ya está en este menú. */}
+                                        <span>Hacer Nota de venta</span>
                                     </button>
                                 </>
                             )}

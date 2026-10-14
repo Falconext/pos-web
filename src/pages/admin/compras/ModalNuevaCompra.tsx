@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { costoUnitarioDesdePaquete, expandirPaqueteAUnidades, etiquetaDePaquete, desglosePorPaquete } from '@/features/admin/compras/utils/compraPorPaquete';
 import { BarcodeScannerInput } from "@/components/BarcodeScannerInput";
 import Modal from "@/components/Modal";
 import Button from "@/components/Button";
@@ -165,15 +166,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
 
     // Costo unitario para la línea a partir del costo del paquete CON IGV,
     // según el modo de la compra (con/sin IGV).
-    const costoUnitDesdePaquete = (costoCajaConIgv: number, unidades: number, esGravado: boolean) => {
-        const costoCajaLinea = incluyeIgv || !esGravado
-            ? costoCajaConIgv
-            : costoCajaConIgv / 1.18;
-        return unidades > 0 ? Number((costoCajaLinea / unidades).toFixed(4)) : 0;
-    };
+    const costoUnitDesdePaquete = (costoCajaConIgv: number, unidades: number, esGravado: boolean) =>
+        costoUnitarioDesdePaquete(costoCajaConIgv, unidades, { esGravado, compraIncluyeIgv: incluyeIgv });
 
     const etiquetaPaquete = (base: string, cajas: number, unidades: number) =>
-        unidades > 1 ? `${base} (${cajas} paq. x${unidades})` : base;
+        etiquetaDePaquete(base, cajas, unidades);
 
     // Editor en vivo: cambios en el bloque morado actualizan la línea ya agregada.
     const aplicarPaquete = (cajasStr: string, costoStr: string, unidades: number, esGravado: boolean) => {
@@ -440,11 +437,18 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                     return {
                         id: v.id,
                         value: `${v.codigo} - ${p.descripcion}${label ? ' (' + label + ')' : ''} (Stock: ${v.stock ?? 0})`,
+                        // La variante suele no tener foto propia: cae a la del modelo.
+                        imagenUrl: v.imagenUrlDisplay || v.imagenUrl || p.imagenUrlDisplay || p.imagenUrl || null,
                         data: { ...v, descripcion: `${p.descripcion}${label ? ' - ' + label : ''}` },
                     };
                 });
             }
-            return [{ id: p.id, value: `${p.codigo} - ${p.descripcion} (Stock: ${p.stock})`, data: p }];
+            return [{
+                id: p.id,
+                value: `${p.codigo} - ${p.descripcion} (Stock: ${p.stock})`,
+                imagenUrl: p.imagenUrlDisplay || p.imagenUrl || null,
+                data: p,
+            }];
         }));
     }, [products]);
 
@@ -497,7 +501,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                 ...currentItem,
                 productoId: prod.id,
                 descripcion,
-                precioUnitario: costo || 0,
+                // A 2 decimales: el costo promedio del producto llega con la
+                // precisión de la división (5.08230566037735) y en la casilla
+                // se veía así. Es una sugerencia que el usuario pisa con lo que
+                // dice la boleta, no un dato que haya que conservar entero.
+                precioUnitario: Number((Number(costo) || 0).toFixed(2)),
                 _gravado: gravado,
             } as any);
         }
@@ -511,12 +519,44 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
     // IGV" (que convierte las líneas ya agregadas por su cuenta). El stock y el
     // kardex siempre van en unidades base, así que la cantidad se expande a
     // unidades — consistente con el flujo de escaneo.
+    /** Foto del producto elegido, para pintarla también en el select de presentación. */
+    const imagenProductoActual = (() => {
+        const prod: any = products.find(p => p.id === currentItem.productoId)
+            ?? (products as any[]).flatMap(p => p.variantes || []).find((v: any) => v.id === currentItem.productoId);
+        if (!prod) return null;
+        if (prod.imagenUrlDisplay || prod.imagenUrl) return prod.imagenUrlDisplay || prod.imagenUrl;
+        // Una variante (talla/color) suele no tener foto propia: cae a la del modelo.
+        const padre: any = (products as any[]).find(p => (p.variantes || []).some((v: any) => v.id === prod.id));
+        return padre?.imagenUrlDisplay || padre?.imagenUrl || null;
+    })();
+
+    // Paquete elegido en la fila manual (null = Unidad) y su desglose a unidades.
+    const paqueteManualElegido = presentacionManual !== 'UNIDAD'
+        ? paquetesManual.find((pq: any) => pq.codigo === presentacionManual) ?? null
+        : null;
+    const previaPaqueteManual = paqueteManualElegido
+        ? desglosePorPaquete(
+            currentItem.cantidad,
+            currentItem.precioUnitario,
+            Math.max(1, Number(paqueteManualElegido.unidadesPorPaquete) || 1),
+        )
+        : null;
+
     const onPresentacionManualChange = (codigo: string) => {
         setPresentacionManual(codigo);
         const prodBase: any = products.find(p => p.id === currentItem.productoId)
             ?? (products as any[]).flatMap(p => p.variantes || []).find((v: any) => v.id === currentItem.productoId);
         const baseDescripcion = (currentItem.descripcion || '').replace(/\s*\(\d+ paq\. x\d+\)$/, '');
-        const costoUnit = Number(prodBase?.costoUnitario) || Number(currentItem.precioUnitario) || 0;
+        // Dos valores a propósito. El EXACTO es el costo promedio real del
+        // producto, con todos sus decimales; el redondeado es solo lo que se
+        // muestra en la casilla de costo unitario.
+        //
+        // El costo del paquete se calcula con el exacto: redondear primero y
+        // multiplicar después daba S/ 35.97 donde la caja cuesta S/ 35.98, y
+        // ese es el número que el empresario compara contra su boleta.
+        const costoUnitExacto =
+            Number(prodBase?.costoUnitario) || Number(currentItem.precioUnitario) || 0;
+        const costoUnit = Number(costoUnitExacto.toFixed(2));
         if (codigo === 'UNIDAD') {
             setCurrentItem(prev => ({
                 ...prev,
@@ -529,11 +569,23 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
         const paquete = paquetesManual.find((pq: any) => pq.codigo === codigo);
         if (!paquete) return;
         const unidades = Math.max(1, Number(paquete.unidadesPorPaquete) || 1);
+        // Con un paquete elegido, los dos campos cambian de significado: la
+        // cantidad pasa a ser CAJAS y el costo pasa a ser el de la CAJA. Es lo
+        // que la empresaria sabe al recibir la mercadería, y es lo mismo que ya
+        // preguntaba el escaneo del código de la caja.
+        //
+        // Antes la cantidad seguía siendo en unidades y se autorrellenaba con 6:
+        // quien quería 2 cajas escribía "2" y compraba 2 unidades. Me pasó a mí
+        // probándolo.
+        const esGravadoProd = esGravadoAfectacion(prodBase?.tipoAfectacionIGV);
+        const costoCajaConIgv = Number(
+            ((esGravadoProd ? costoUnitExacto * 1.18 : costoUnitExacto) * unidades).toFixed(2),
+        );
         setCurrentItem(prev => ({
             ...prev,
-            cantidad: unidades,
-            precioUnitario: costoUnit,
-            descripcion: etiquetaPaquete(baseDescripcion, 1, unidades),
+            cantidad: 1,
+            precioUnitario: costoCajaConIgv,
+            descripcion: baseDescripcion,
         }));
     };
 
@@ -877,11 +929,42 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
             return;
         }
 
-        setItems([...items, {
-            ...currentItem,
-            subtotal: currentItem.cantidad * currentItem.precioUnitario,
-            _sinVincular: esItemLibre,
-        }]);
+        // Con una presentación de paquete elegida, lo que hay en pantalla son
+        // CAJAS y COSTO POR CAJA; al almacén entran unidades. La conversión vive
+        // en `expandirPaqueteAUnidades` para poder probarse.
+        const paqueteElegido = presentacionManual !== 'UNIDAD'
+            ? paquetesManual.find((pq: any) => pq.codigo === presentacionManual)
+            : null;
+        if (paqueteElegido) {
+            const unidades = Math.max(1, Number(paqueteElegido.unidadesPorPaquete) || 1);
+            const prodBase: any = products.find(p => p.id === currentItem.productoId)
+                ?? (products as any[]).flatMap(p => p.variantes || []).find((v: any) => v.id === currentItem.productoId);
+            const linea = expandirPaqueteAUnidades({
+                paquetes: currentItem.cantidad,
+                costoPaqueteConIgv: currentItem.precioUnitario,
+                unidadesPorPaquete: unidades,
+                esGravado: esGravadoAfectacion(prodBase?.tipoAfectacionIGV),
+                compraIncluyeIgv: incluyeIgv,
+            });
+            setItems([...items, {
+                ...currentItem,
+                descripcion: etiquetaDePaquete(
+                    (currentItem.descripcion || '').replace(/\s*\(\d+ paq\. x\d+\)$/, ''),
+                    linea.paquetes,
+                    unidades,
+                ),
+                cantidad: linea.cantidad,
+                precioUnitario: linea.precioUnitario,
+                subtotal: linea.subtotal,
+                _sinVincular: false,
+            } as any]);
+        } else {
+            setItems([...items, {
+                ...currentItem,
+                subtotal: currentItem.cantidad * currentItem.precioUnitario,
+                _sinVincular: esItemLibre,
+            }]);
+        }
         setCurrentItem({ productoId: 0, descripcion: '', cantidad: 1, precioUnitario: 0, lote: '', fechaVencimiento: '' });
         setPkg(null);
         setPkgLineKey(null);
@@ -1550,11 +1633,11 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                     </div>
                                     <div className="col-span-6 pb-2">
                                         <p className="text-xs text-violet-700 dark:text-violet-300 font-semibold">
-                                            = {(Math.max(0, Number(pkgCajas) || 0) * pkg.unidades).toLocaleString('es-PE')} unidades
+                                            = {desglosePorPaquete(Number(pkgCajas), Number(pkgCosto), pkg.unidades).unidades.toLocaleString('es-PE')} unidades
                                             {Number(pkgCosto) > 0 && (
-                                                <> a {simbolo} {(Number(pkgCosto) / pkg.unidades).toFixed(2)} c/u
+                                                <> a {simbolo} {desglosePorPaquete(Number(pkgCajas), Number(pkgCosto), pkg.unidades).precioUnitarioConIgv.toFixed(2)} c/u
                                                     <span className="ml-2 px-2 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-200">
-                                                        Total: {simbolo} {(Math.max(0, Number(pkgCajas) || 0) * Number(pkgCosto)).toFixed(2)}
+                                                        Total: {simbolo} {desglosePorPaquete(Number(pkgCajas), Number(pkgCosto), pkg.unidades).total.toFixed(2)}
                                                     </span>
                                                 </>
                                             )}
@@ -1582,7 +1665,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                             <span>Ítem libre <span className="text-gray-400">— algo que no está en tu catálogo (consumo, flete, servicio)</span></span>
                         </label>
                         <div className="grid grid-cols-12 gap-3 mb-4 items-end p-3 rounded-xl border border-gray-100 dark:border-slate-800">
-                            <div className={paquetesManual.length > 0 ? "col-span-3" : "col-span-4"}>
+                            <div className={paquetesManual.length > 0 ? "col-span-4" : "col-span-5"}>
                                 {itemLibre ? (
                                     <InputPro
                                         autocomplete="off"
@@ -1610,15 +1693,20 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                 )}
                             </div>
                             {paquetesManual.length > 0 && (
-                            <div className="col-span-2">
+                            <div className="col-span-3">
                                 <Select
                                     label="Presentación"
                                     name="presentacionManual"
+                                    // La presentación también muestra foto: la unidad
+                                    // lleva la del producto y cada caja la suya, con
+                                    // la del producto de respaldo cuando el paquete no
+                                    // tiene imagen propia.
                                     options={[
-                                        { id: 'UNIDAD', value: 'Unidad' },
+                                        { id: 'UNIDAD', value: 'Unidad', imagenUrl: imagenProductoActual },
                                         ...paquetesManual.map((pq: any) => ({
                                             id: pq.codigo,
                                             value: `${pq.alias || 'Paquete'} (x${pq.unidadesPorPaquete})`,
+                                            imagenUrl: pq.imagenUrlDisplay || pq.imagenUrl || imagenProductoActual,
                                         })),
                                     ]}
                                     onChange={(id) => onPresentacionManualChange(String(id))}
@@ -1630,18 +1718,36 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                 />
                             </div>
                             )}
-                            <div className="col-span-2">
-                                <InputPro autocomplete="off" type="number" label="Cantidad" name="cantidad" value={currentItem.cantidad} onChange={(e) => setCurrentItem({ ...currentItem, cantidad: Number(e.target.value) })} isLabel />
+                            {/* Con un paquete elegido, los dos campos cambian de
+                                significado y el rótulo tiene que decirlo: si sigue
+                                diciendo "Cantidad" y "Costo Unit.", quien quiere 2
+                                cajas escribe 2 y compra 2 unidades. */}
+                            {/* La fila completa el ancho en los dos casos: con la
+                                presentación visible 4+3+2+3, y sin ella 5+3+4. Antes
+                                quedaban tres columnas vacías a la derecha cuando se
+                                elegía una caja. */}
+                            <div className={paquetesManual.length > 0 ? "col-span-2" : "col-span-3"}>
+                                <InputPro autocomplete="off" type="number" label={paqueteManualElegido ? "N° de paquetes" : "Cantidad"} name="cantidad" value={currentItem.cantidad} onChange={(e) => setCurrentItem({ ...currentItem, cantidad: Number(e.target.value) })} isLabel />
                             </div>
-                            <div className="col-span-2">
-                                <InputPro autocomplete="off" type="number" label="Costo Unit." name="precioUnitario" value={currentItem.precioUnitario} onChange={(e) => setCurrentItem({ ...currentItem, precioUnitario: Number(e.target.value) })} isLabel />
+                            <div className={paquetesManual.length > 0 ? "col-span-3" : "col-span-4"}>
+                                <InputPro autocomplete="off" type="number" label={paqueteManualElegido ? "Costo por paquete" : "Costo Unit."} name="precioUnitario" value={currentItem.precioUnitario} onChange={(e) => setCurrentItem({ ...currentItem, precioUnitario: Number(e.target.value) })} isLabel />
                             </div>
+                            {/* El desglose a la vista, igual que en el escaneo: es
+                                la forma de que vea en el momento que lo que escribió
+                                significa lo que cree. */}
+                            {paqueteManualElegido && previaPaqueteManual && (
+                            <div className="col-span-12 -mt-2 text-xs text-violet-700 dark:text-violet-300">
+                                = {previaPaqueteManual.unidades.toLocaleString('es-PE')} unidades a {simbolo} {previaPaqueteManual.precioUnitarioConIgv.toFixed(2)} c/u
+                                <span className="ml-3 font-semibold">Total: {simbolo} {previaPaqueteManual.total.toFixed(2)}</span>
+                                <span className="ml-3 text-gray-500 dark:text-gray-400">Pon el costo final del paquete, tal como sale en la boleta del proveedor (IGV incluido).</span>
+                            </div>
+                            )}
                             {tieneGestionLotes && (
-                            <div className="col-span-2">
+                            <div className="col-span-4">
                                 <InputPro autocomplete="off" label={esRubroFarmaceutico ? "Lote *" : "Lote (Opc.)"} name="lote" value={currentItem.lote} onChange={(e) => setCurrentItem({ ...currentItem, lote: e.target.value })} isLabel />
                             </div>
                             )}
-                            <div className="col-span-2">
+                            <div className={tieneGestionLotes ? "col-span-4" : "col-span-6"}>
                                 <Calendar
                                     text="Venc. (Opc.)"
                                     placeholder="F. vencimiento"
@@ -1654,7 +1760,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                     }}
                                 />
                             </div>
-                            <div className="col-span-2">
+                            <div className={tieneGestionLotes ? "col-span-4" : "col-span-6"}>
                                 <Button outline color="black" onClick={addItem} className="w-full justify-center !bg-violet-600 !text-white !border-none shadow-md shadow-violet-200 hover:opacity-90">
                                     Agregar
                                     <Icon width={25} icon="solar:add-circle-bold" className="ml-2" />

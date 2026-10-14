@@ -252,7 +252,7 @@ interface EmpresasState {
   listarSeriesEmpresa: (id: number) => Promise<EmpresaSerieConfig[]>;
   guardarSeriesEmpresa: (id: number, series: EmpresaSerieConfig[]) => Promise<EmpresaSerieConfig[]>;
   cambiarEstadoEmpresa: (id: number, estado: 'ACTIVO' | 'INACTIVO') => Promise<void>;
-  eliminarEmpresa: (id: number) => Promise<void>;
+  eliminarEmpresa: (id: number, ruc?: string) => Promise<void>;
   obtenerMiEmpresa: () => Promise<void>;
   actualizarMiEmpresa: (data: Partial<UpdateEmpresaDto>) => Promise<Empresa>;
 
@@ -435,10 +435,21 @@ export const useEmpresasStore = create<EmpresasState>((set, get) => ({
     }
   },
 
-  eliminarEmpresa: async (id: number) => {
+  eliminarEmpresa: async (id: number, ruc?: string) => {
     set({ loading: true, error: null });
     try {
-      await apiClient.delete(`/empresa/${id}`);
+      // El RUC viaja como confirmación: el backend lo exige porque esto borra
+      // más de cien tablas y no se deshace.
+      //
+      // Timeout propio de 3 minutos. Con los 12 s por defecto, el navegador
+      // abortaba la petición mientras el servidor SEGUÍA borrando: la pantalla
+      // mostraba "timeout of 12000ms exceeded" y la empresa terminaba
+      // eliminada igual. En una acción irreversible, decir que falló cuando
+      // funcionó es el peor resultado posible.
+      await apiClient.delete(`/empresa/${id}`, {
+        params: ruc ? { ruc } : {},
+        timeout: 180_000,
+      });
 
       // Remover la empresa de la lista
       const { empresas } = get();

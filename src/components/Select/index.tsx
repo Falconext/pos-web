@@ -37,6 +37,12 @@ interface IProps {
 interface IOption {
     id: number
     value: string
+    /**
+     * Miniatura del elemento. Opcional: el select la pinta solo si la opción la
+     * trae, así que ningún select existente cambia de aspecto. En un catálogo
+     * de cientos de productos, la foto se reconoce antes que el código.
+     */
+    imagenUrl?: string | null
 }
 
 const Select = ({
@@ -106,9 +112,13 @@ const Select = ({
                 handleGetData(debounceSearch, () => setIsLoading(false));
             }
         } else {
+            // Se conserva `imagenUrl`: el mapeo rehacía la opción con solo id y
+            // value, así que cualquier campo extra se perdía antes de llegar al
+            // render. Estaba repetido en tres sitios y los tres lo descartaban.
             setOptionsSearch(options?.length ? options.map((item: any) => ({
                 id: item?.id?.toString(),
-                value: item?.value
+                value: item?.value,
+                imagenUrl: item?.imagenUrl ?? null,
             })) : []);
         }
     }, [debounceSearch]);
@@ -120,6 +130,7 @@ const Select = ({
                 ? options.map((item: any, index: number) => ({
                     id: item?.id?.toString() || `fallback-${index}`, // Fallback if id is undefined
                     value: item?.value,
+                    imagenUrl: item?.imagenUrl ?? null,
                 }))
                 : []
         );
@@ -129,7 +140,8 @@ const Select = ({
     useEffect(() => {
         setOptionsSearch(options?.length ? options.map((item: any) => ({
             id: item?.id?.toString(),
-            value: item?.value
+            value: item?.value,
+            imagenUrl: item?.imagenUrl ?? null,
         })) : []);
     }, [options, defaultValue]);
 
@@ -194,6 +206,7 @@ const Select = ({
 
     const dropdownContent = isOpen && dropdownPos ? ReactDOM.createPortal(
         <motion.ul
+            role="listbox"
             ref={dropdownRef}
             animate={{ opacity: 1, y: 0 }}
             initial={{ opacity: 0, y: -8 }}
@@ -208,18 +221,55 @@ const Select = ({
             className={styles.content__listOptions}
         >
             {resultsOptions?.length > 0 ? (
-                resultsOptions.map((item: IOption, index: number) => (
-                    <li
-                        key={item.id || `option-${index}`}
-                        className={index === selectedOptionIndex ? `${styles.selected} ? ${styles.selectedOption}` : ''}
-                        onClick={() => setValueOption(item, name, id)}
-                    >
-                        <p>{item.value}</p>
-                    </li>
-                ))
+                resultsOptions.map((item: IOption, index: number) => {
+                    const activa = index === selectedOptionIndex;
+                    return (
+                        <li
+                            key={item.id || `option-${index}`}
+                            role="option"
+                            aria-selected={activa}
+                            // La condición escribía `${styles.selected} ? ${styles.selectedOption}`:
+                            // `styles.selected` no existe, así que el elemento quedaba
+                            // con las clases literales "undefined" y "?".
+                            className={activa ? styles.selectedOption : undefined}
+                            // Con el teclado, la opción marcada tiene que quedar a la
+                            // vista: en una lista de 20 productos se bajaba "a ciegas".
+                            ref={(el) => { if (activa && el) el.scrollIntoView({ block: 'nearest' }); }}
+                            onClick={() => setValueOption(item, name, id)}
+                        >
+                            {/* La fila con miniatura solo cuando HAY imagen. El
+                                mapeo interno normaliza el campo a null, así que
+                                comparar con undefined pintaba el recuadro vacío en
+                                todos los selects del sistema. */}
+                            {item.imagenUrl ? (
+                                <span className={styles.option__conImagen}>
+                                    {/* El recuadro se dibuja siempre, haya foto o no: si
+                                        apareciera solo a veces, el texto bailaría de
+                                        izquierda a derecha entre opciones. */}
+                                    <span className={styles.option__miniatura}>
+                                        <img
+                                            src={item.imagenUrl}
+                                            alt=""
+                                            loading="lazy"
+                                            decoding="async"
+                                            onError={(e) => {
+                                                // Un enlace roto dejaría el ícono de imagen
+                                                // partida al lado de cada producto.
+                                                (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                                            }}
+                                        />
+                                    </span>
+                                    <span className={styles.option__texto}>{item.value}</span>
+                                </span>
+                            ) : (
+                                <p>{item.value}</p>
+                            )}
+                        </li>
+                    );
+                })
             ) : (
-                <li className="p-2" key="no-results">
-                    No se encontraron más resultados
+                <li className={styles.option__vacia} key="no-results" aria-disabled="true">
+                    Sin coincidencias. Prueba con el código o con menos palabras.
                 </li>
             )}
         </motion.ul>,
