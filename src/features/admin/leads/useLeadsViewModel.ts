@@ -4,6 +4,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import * as api from '@/services/leads.service'
 import type {
   LeadProspecto,
+  LeadConversacion,
   LeadConversacionDetalle,
   ResumenProspectos,
   LeadsConfig,
@@ -32,6 +33,15 @@ export function useLeadsViewModel() {
   })
   const [resumen, setResumen] = useState<ResumenProspectos>(RESUMEN_VACIO)
   const [prospectos, setProspectos] = useState<LeadProspecto[]>([])
+  /**
+   * Chats que no son leads: las pruebas del propio negocio.
+   *
+   * Desde que los números internos quedaron fuera del embudo, esas
+   * conversaciones no tienen prospecto y por lo tanto no salen en ninguna
+   * columna del tablero. Sin esta lista serían invisibles — y quien las creó
+   * no podría ni leerlas ni borrarlas.
+   */
+  const [chatsDePrueba, setChatsDePrueba] = useState<LeadConversacion[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const [search, setSearch] = useState('')
@@ -57,12 +67,14 @@ export function useLeadsViewModel() {
   const cargarProspectos = useCallback(async (silent = false) => {
     if (!silent) setIsLoading(true)
     try {
-      const [pros, res] = await Promise.all([
+      const [pros, res, convs] = await Promise.all([
         api.fetchProspectos({ search: debouncedSearch || undefined }),
         api.fetchResumen(),
+        api.fetchConversaciones().catch(() => [] as LeadConversacion[]),
       ])
       setProspectos(pros)
       setResumen(res)
+      setChatsDePrueba(convs.filter((c) => !c.prospecto))
     } catch (e: any) {
       if (!silent) alertStore.alert(e.message || 'Error al cargar prospectos', 'error')
     } finally {
@@ -127,6 +139,34 @@ export function useLeadsViewModel() {
   const cerrarConversacion = () => {
     convAbiertaRef.current = null
     setConversacion(null)
+  }
+
+  const [borrandoChat, setBorrandoChat] = useState(false)
+
+  /**
+   * Borra el chat abierto para poder volver a probarlo desde cero.
+   *
+   * Lo pide quien prueba la IA: hasta ahora cada prueba quedaba pegada y la
+   * siguiente arrancaba con el historial de la anterior, así que no se podía
+   * volver a ver el saludo inicial ni repetir el mismo flujo.
+   *
+   * Cierra el chat y recarga el tablero: la tarjeta del prospecto se va con
+   * la conversación, y dejarla en pantalla haría creer que el borrado falló.
+   */
+  const borrarConversacion = async (conversacionId: number) => {
+    setBorrandoChat(true)
+    try {
+      await api.eliminarConversacion(conversacionId)
+      cerrarConversacion()
+      await cargarProspectos()
+      alertStore.alert('Chat borrado. Puedes volver a escribir desde cero.', 'success')
+      return true
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo borrar el chat', 'error')
+      return false
+    } finally {
+      setBorrandoChat(false)
+    }
   }
 
   const toggleBot = async (prospectoId: number, activo: boolean) => {
@@ -343,6 +383,8 @@ export function useLeadsViewModel() {
     setSearch,
     conversacion,
     loadingConversacion,
+    borrandoChat,
+    chatsDePrueba,
     configOpen,
     setConfigOpen,
     entrenarOpen,
@@ -361,6 +403,7 @@ export function useLeadsViewModel() {
       recargar: cargarProspectos,
       abrirConversacion,
       cerrarConversacion,
+      borrarConversacion,
       toggleBot,
       enviarMensajeManual,
       convertirCliente,

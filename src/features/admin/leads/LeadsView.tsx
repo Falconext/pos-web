@@ -142,6 +142,40 @@ export default function LeadsView() {
         </div>
       )}
 
+      {/* Las pruebas del propio negocio.
+          Van fuera del tablero a propósito: son chats que no son leads y
+          mezclarlos con los clientes es lo que se vino a arreglar. Pero
+          tampoco pueden ser invisibles — alguien tiene que poder leerlos y
+          borrarlos para volver a probar. */}
+      {!vm.isLoading && vm.chatsDePrueba.length > 0 && (
+        <div className="mb-4 rounded-2xl border border-dashed border-gray-200 p-3 dark:border-slate-700">
+          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-400">
+            <Icon icon="solar:test-tube-bold-duotone" width={13} />
+            Chats de prueba · no cuentan como leads
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {vm.chatsDePrueba.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => vm.actions.abrirConversacion(c.id)}
+                className="inline-flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-left transition hover:bg-gray-100 dark:bg-slate-800/60 dark:hover:bg-slate-800"
+              >
+                <Icon icon="mdi:whatsapp" width={14} className="flex-none text-[#25D366]" />
+                <span className="min-w-0">
+                  <span className="block truncate text-[13px] font-semibold text-gray-700 dark:text-gray-200">
+                    {nombreVisible(c.nombreProspecto, c.telefonoProspecto)}
+                  </span>
+                  <span className="block text-[10px] text-gray-400">
+                    {c.cantidadMensajes} mensaje{c.cantidadMensajes === 1 ? '' : 's'}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Drawer de conversación */}
       <Modal
         isOpenModal={!!vm.conversacion || vm.loadingConversacion}
@@ -450,6 +484,36 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
             <BantBar label="Plazo" valor={prospecto.plazo} max={25} />
           </div>
         )}
+
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <p className="text-[11px] text-gray-400">
+            {conv.mensajes.length} mensaje{conv.mensajes.length === 1 ? '' : 's'}
+            {!prospecto && ' · chat de prueba, no cuenta como lead'}
+          </p>
+          {/* Borrar el chat es lo que permite repetir una prueba desde cero.
+              Pide confirmación porque no se deshace, y dice cuántos mensajes
+              se lleva: no es lo mismo tirar un "hola" que una venta cerrada. */}
+          <button
+            type="button"
+            disabled={vm.borrandoChat}
+            onClick={() => {
+              const n = conv.mensajes.length
+              if (
+                window.confirm(
+                  `Se borrará esta conversación con ${n} mensaje${n === 1 ? '' : 's'}.\n\nEl cliente podrá volver a escribir y la IA lo atenderá desde cero. No se puede deshacer.`,
+                )
+              )
+                vm.actions.borrarConversacion(conv.id)
+            }}
+            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-950/30"
+          >
+            <Icon
+              icon={vm.borrandoChat ? 'svg-spinners:180-ring' : 'solar:trash-bin-trash-bold'}
+              width={14}
+            />
+            {vm.borrandoChat ? 'Borrando…' : 'Borrar chat'}
+          </button>
+        </div>
 
         {prospecto && (
           <div className="mt-3 flex gap-2">

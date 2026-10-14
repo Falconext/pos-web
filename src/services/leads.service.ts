@@ -110,6 +110,25 @@ export async function fetchConversacion(id: number): Promise<LeadConversacionDet
   return r.data
 }
 
+export interface BorradoConversacion {
+  eliminada: boolean
+  telefono: string
+  mensajes: number
+}
+
+/**
+ * Borra la conversación entera. Es lo que permite volver a probar el mismo
+ * flujo desde cero: sin esto, cada prueba arrastra el historial de la
+ * anterior y no se puede ver otra vez el saludo inicial.
+ */
+export async function eliminarConversacion(
+  id: number,
+): Promise<BorradoConversacion> {
+  const r = await del<BorradoConversacion>(`/leads/conversaciones/${id}`)
+  if (!r.success) throw new Error(r.error || 'No se pudo borrar la conversación')
+  return (r.data ?? { eliminada: true, telefono: '', mensajes: 0 })
+}
+
 export async function setBotActivo(
   prospectoId: number,
   activo: boolean,
