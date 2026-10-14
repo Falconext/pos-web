@@ -1,6 +1,6 @@
 import { ChangeEvent, useEffect, useState, useMemo, useRef } from "react";
 import { afectacionPorDefecto } from '@/utils/afectacionIgv';
-import { heredaCredito } from './conversionPago';
+import { heredaCredito, recibidoInicialDeConversion } from './conversionPago';
 import { guardarObservacionesRecordadas, leerObservacionesRecordadas } from '@/utils/observacionesVenta';
 import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
 import { IExtentionsState, useExtentionsStore } from "@/zustand/extentions";
@@ -1140,7 +1140,21 @@ export const useFacturacionViewModel = () => {
                 } else {
                     setIsMixedPayment(false);
                     setPaymentMethod(normMetodo(nvData.medioPago));
-                    if (pagado > 0) setPay(pagado);
+                    // Al CONVERTIR, el "recibido" tiene que cubrir el TOTAL: lo que el
+                    // documento de origen ya cobró más lo que se cobra en este momento.
+                    //
+                    // Precargar solo lo ya cobrado funcionaba mientras el origen
+                    // estuviera pagado entero (pagado === total ⇒ el modal daba
+                    // "Exacto"). Con un cobro parcial —el caso normal de una Orden de
+                    // Trabajo, que casi siempre lleva adelanto— el modal quedaba en
+                    // "FALTA S/ x" y EMITIR bloqueado: no había forma de convertirla.
+                    //
+                    // El backend sigue registrando en caja solo la diferencia, así que
+                    // el adelanto no se cobra dos veces.
+                    const recibidoInicial = recibidoInicialDeConversion(nvData, {
+                        esConversion: Boolean(origenComprobanteId),
+                    });
+                    if (recibidoInicial > 0) setPay(recibidoInicial);
                 }
 
                 // Descuento global (S/) que tenía la nota.
@@ -1185,8 +1199,14 @@ export const useFacturacionViewModel = () => {
                 if (origenComprobanteId && pagado > 0) {
                     const simbolo = String(nvData.tipoMoneda || 'PEN') === 'USD' ? '$' : 'S/';
                     const ref = nvData.origenReferencia ? ` en ${nvData.origenReferencia}` : '';
+                    const porCobrar = Math.max(0, Number(nvData.mtoImpVenta || 0) - pagado);
+                    // Con cobro parcial hay que decir cuánto falta cobrar AHORA: el
+                    // modal muestra el total recibido, no la diferencia, y el cajero
+                    // necesita saber que solo recibe el saldo.
                     useAlertStore.getState().alert(
-                        `Esta venta ya fue cobrada${ref} (${normMetodo(nvData.medioPago)} ${simbolo} ${pagado.toFixed(2)}). El pago queda igual y no se volverá a registrar en caja.`,
+                        porCobrar > 0
+                            ? `Ya se cobró ${simbolo} ${pagado.toFixed(2)}${ref}. Falta cobrar ${simbolo} ${porCobrar.toFixed(2)}: eso es lo único que entra a caja ahora.`
+                            : `Esta venta ya fue cobrada${ref} (${normMetodo(nvData.medioPago)} ${simbolo} ${pagado.toFixed(2)}). El pago queda igual y no se volverá a registrar en caja.`,
                         'warning',
                     );
                 }
