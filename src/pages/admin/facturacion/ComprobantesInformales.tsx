@@ -36,6 +36,7 @@ import ModalDetalleComprobante from "./ModalDetalleComprobante";
 import ModalImportarNotaVentaLote from "./ModalImportarNotaVentaLote";
 import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCotizacion";
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
+import { puedeHacerNotaDeVenta } from '@/features/admin/facturacion/utils/puedeHacerNotaDeVenta';
 import { datosPagoDeNota } from "@/features/admin/facturacion/utils/datosPagoDeNota";
 import apiClient from "@/utils/apiClient";
 import { EditarDespachoModal } from "@/pages/admin/despacho/EditarDespachoModal";
@@ -1020,15 +1021,14 @@ const ComprobantesInformales = () => {
                                 puede formalizarse con el mismo menú. El stock ya lo descontó
                                 la OT al emitirse, así que la nota no lo vuelve a tocar.
 
-                                Solo con la orden COBRADA. El taller cobra el saldo al entregar
-                                el trabajo, que es cuando pide la nota: cobrar primero deja el
-                                ingreso en caja a la hora y por el monto reales. El saldo se
-                                registra en Gestión de Pagos. (Esto no aplica a la conversión a
-                                Factura/Boleta: ahí el crédito pendiente se traslada a propósito.) */}
-                            {String(item?.tipoDoc) === 'OT'
-                                && row.estadoEnvioSunat !== 'ANULADO'
-                                && !item?.convertidoA
-                                && Number(item?.saldo ?? 0) <= 0 && (
+                                También con saldo pendiente. Antes se exigía la orden cobrada
+                                y eso dejaba fuera a quien cobra CONTRAENTREGA: ahí la nota
+                                tiene que existir ANTES de la entrega, porque es con ella que se
+                                programa el envío. Con el saldo en cero el botón nunca aparecía
+                                y el cliente reportaba que "la opción no está habilitada".
+                                El saldo viaja a la nota como cuenta por cobrar, y lo que ya se
+                                cobró en la orden se descuenta para no cobrarlo dos veces. */}
+                            {puedeHacerNotaDeVenta(item, row.estadoEnvioSunat) && (
                                 <>
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                     <button type="button" onClick={() => {
