@@ -74,6 +74,8 @@ import AdminResellers from './pages/admin/sistema/Resellers'
 import CatalogoWebPage from './pages/admin/sistema/CatalogoWebPage'
 import SistemaUsuarios from './pages/admin/sistema/SistemaUsuarios'
 import SistemaFinanzas from './pages/admin/sistema/SistemaFinanzas'
+import SistemaCobros from './pages/admin/sistema/Cobros'
+import MiPlan from './pages/admin/MiPlan'
 import SistemaRubros from './pages/admin/sistema/SistemaRubros'
 import DisenoRubroPage from './pages/admin/sistema/DisenoRubroPage'
 import ResellerLayout from './layouts/ResellerLayout'
@@ -235,6 +237,8 @@ function App() {
           <Route path="sedes" element={<SedesIndex />} />
           <Route path="listas-precio" element={<ListasPrecioIndex />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
+          {/* Su propia suscripción: el empresario ve su plan y sus pagos. */}
+          <Route path="mi-plan" element={<MiPlan />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/template" element={<TemplateTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
@@ -324,6 +328,16 @@ function App() {
             element={
               <RoleRoute allowedRoles={["ADMIN_SISTEMA", "ADMIN_EMPRESA"]} fallbackPath="/administrador">
                 <SistemaFinanzas />
+              </RoleRoute>
+            }
+          />
+          {/* Cobros: solo ADMIN_SISTEMA. Acá se registra plata y se reactivan
+              cuentas, así que no se comparte con ADMIN_EMPRESA como Finanzas. */}
+          <Route
+            path="sistema/cobros"
+            element={
+              <RoleRoute allowedRoles={["ADMIN_SISTEMA"]} fallbackPath="/administrador">
+                <SistemaCobros />
               </RoleRoute>
             }
           />

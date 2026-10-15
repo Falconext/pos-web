@@ -18,6 +18,7 @@ import { contarNovedadesSinVer, hayNovedadesSinVer, marcarNovedadesVistas } from
 import { hayLanzamientoSinVer } from '@/data/lanzamiento'
 import NovedadesModal from '@/components/NovedadesModal'
 import LanzamientoModal from '@/components/LanzamientoModal'
+import AvisoSuscripcion from '@/components/AvisoSuscripcion'
 
 const isDesktopBuild = String(import.meta.env.VITE_FALCONEXT_DESKTOP || '').toLowerCase() === 'true'
 
@@ -444,6 +445,13 @@ export default function AdminLayout() {
                   </NavLink>
                 )}
 
+                {!isDesktopBuild && (
+                  <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/cobros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Cobros de mensualidades">
+                    <Icon icon="solar:bill-list-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Cobros</span>}
+                  </NavLink>
+                )}
+
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/usuarios" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Usuarios del Sistema">
                   <Icon icon="solar:shield-user-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Usuarios Sistema</span>}
@@ -667,6 +675,14 @@ export default function AdminLayout() {
               </span>
             )}
           </button>
+          {/* Su suscripción. Va en el pie del menú, junto a Configuración: se
+              consulta de vez en cuando, no todos los días. */}
+          {auth?.rol === 'ADMIN_EMPRESA' && (
+            <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Mi plan') }} to="/administrador/mi-plan" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Mi plan">
+              <Icon icon="solar:crown-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
+              {!isSidebarCollapsed && <span>Mi plan</span>}
+            </NavLink>
+          )}
           <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración') }} to="/administrador/perfil" className={() => theme.inactiveLink} title="Configuración">
             <Icon icon="solar:settings-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
             {!isSidebarCollapsed && <span>Configuración</span>}
@@ -937,6 +953,9 @@ export default function AdminLayout() {
         </div>
 
         <div className={`flex-1 ${theme.mainPadding} transition-all duration-300`}>
+          {/* Va acá y no en el dashboard: la deuda tiene que acompañarlo en
+              todas las pantallas, no solo en la que entra al abrir sesión. */}
+          <AvisoSuscripcion />
           <Outlet />
         </div>
       </main>
