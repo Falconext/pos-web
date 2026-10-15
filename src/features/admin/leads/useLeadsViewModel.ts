@@ -53,6 +53,15 @@ export function useLeadsViewModel() {
 
   // Modal de configuración de la IA.
   const [configOpen, setConfigOpen] = useState(false)
+  /**
+   * Si la configuración ya llegó del servidor.
+   *
+   * Hasta que llega, `config` tiene el default —todo apagado— y la pantalla
+   * anunciaba en rojo "La IA está desactivada: el bot no responde" en cada
+   * carga, aunque estuviera encendida. Dos segundos de una mentira que
+   * asusta al dueño del negocio.
+   */
+  const [configCargada, setConfigCargada] = useState(false)
 
   // Entrenamiento (RAG).
   const [entrenarOpen, setEntrenarOpen] = useState(false)
@@ -115,7 +124,10 @@ export function useLeadsViewModel() {
   useEffect(() => {
     api
       .fetchConfig()
-      .then(setConfig)
+      .then((c) => {
+        setConfig(c)
+        setConfigCargada(true)
+      })
       .catch(() => {
         /* silencioso: si falla, queda el default off */
       })
@@ -386,6 +398,7 @@ export function useLeadsViewModel() {
     borrandoChat,
     chatsDePrueba,
     configOpen,
+    configCargada,
     setConfigOpen,
     entrenarOpen,
     setEntrenarOpen,

@@ -5,6 +5,7 @@ import { es } from 'date-fns/locale'
 import Button from '@/components/Button'
 import InputPro from '@/components/InputPro'
 import Modal from '@/components/Modal'
+import ModalConfirm from '@/components/ModalConfirm'
 import { useLeadsViewModel } from './useLeadsViewModel'
 import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
@@ -50,10 +51,15 @@ export default function LeadsView() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <SwitchIa
-            activa={vm.config.iaVentasActiva}
-            onChange={vm.actions.toggleIaVentas}
-          />
+          {/* El interruptor aparece cuando sabemos en qué posición va. Un
+              "IA apagada" de dos segundos en cada carga es tan falso como el
+              aviso rojo de abajo. */}
+          {vm.configCargada && (
+            <SwitchIa
+              activa={vm.config.iaVentasActiva}
+              onChange={vm.actions.toggleIaVentas}
+            />
+          )}
           <Button
             color="secondary"
             onClick={() => vm.actions.abrirEntrenar()}
@@ -73,8 +79,11 @@ export default function LeadsView() {
         </div>
       </div>
 
-      {/* Aviso si la IA está apagada */}
-      {!vm.config.iaVentasActiva && (
+      {/* Aviso si la IA está apagada.
+          Solo cuando ya sabemos que lo está: antes salía en cada carga,
+          mientras la configuración viajaba, diciéndole al dueño que su bot no
+          responde cuando sí responde. */}
+      {vm.configCargada && !vm.config.iaVentasActiva && (
         <div className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300">
           <Icon icon="solar:info-circle-bold" className="mt-0.5 text-lg" />
           <span>
@@ -398,6 +407,7 @@ function ProspectoCard({
 }
 
 function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
+  const [confirmarBorrado, setConfirmarBorrado] = useState(false)
   const conv = vm.conversacion
   if (vm.loadingConversacion && !conv) {
     return (
@@ -492,19 +502,13 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
           </p>
           {/* Borrar el chat es lo que permite repetir una prueba desde cero.
               Pide confirmación porque no se deshace, y dice cuántos mensajes
-              se lleva: no es lo mismo tirar un "hola" que una venta cerrada. */}
+              se lleva: no es lo mismo tirar un "hola" que una venta cerrada.
+              Con el ModalConfirm del proyecto y no con window.confirm, que se
+              ve como una alerta del navegador en medio del panel. */}
           <button
             type="button"
             disabled={vm.borrandoChat}
-            onClick={() => {
-              const n = conv.mensajes.length
-              if (
-                window.confirm(
-                  `Se borrará esta conversación con ${n} mensaje${n === 1 ? '' : 's'}.\n\nEl cliente podrá volver a escribir y la IA lo atenderá desde cero. No se puede deshacer.`,
-                )
-              )
-                vm.actions.borrarConversacion(conv.id)
-            }}
+            onClick={() => setConfirmarBorrado(true)}
             className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-950/30"
           >
             <Icon
@@ -514,6 +518,19 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
             {vm.borrandoChat ? 'Borrando…' : 'Borrar chat'}
           </button>
         </div>
+
+        <ModalConfirm
+          isOpenModal={confirmarBorrado}
+          setIsOpenModal={setConfirmarBorrado}
+          title="¿Borrar esta conversación?"
+          information={`Se borrarán los ${conv.mensajes.length} mensaje${conv.mensajes.length === 1 ? '' : 's'} de ${nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)}. Podrá volver a escribir y la IA lo atenderá desde cero. No se puede deshacer.`}
+          confirmText="Borrar chat"
+          confirmLoading={vm.borrandoChat}
+          confirmSubmit={() => {
+            setConfirmarBorrado(false)
+            vm.actions.borrarConversacion(conv.id)
+          }}
+        />
 
         {prospecto && (
           <div className="mt-3 flex gap-2">
