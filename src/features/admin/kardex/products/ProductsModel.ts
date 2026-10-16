@@ -95,6 +95,9 @@ export const initialProductForm: IFormProduct = {
     fechaFinOferta: "",
     // Precios por Mayorista
     preciosMayorista: [],
+    // Límites de venta (vacío = sin límite)
+    precioMinimoVenta: '',
+    precioMaximoVenta: '',
     atributosTecnicos: {},
     opcionesAtributos: [],
     variantesConfig: []

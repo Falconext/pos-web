@@ -1391,6 +1391,44 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                     paquetes={((formValues as any)?.codigosBarrasExtra || []).filter((c: any) => Number(c.unidadesPorPaquete || 1) > 1)}
                                     simbolo={simbolo}
                                 />
+
+                                {/* Piso y techo de venta. Van acá y no dentro de
+                                    cada lista: valen para TODA venta del producto,
+                                    tenga o no precio en alguna lista. */}
+                                <div className="mt-5 border-t border-violet-100 dark:border-violet-900/30 pt-4">
+                                    <h5 className="text-xs font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">
+                                        Límites de venta
+                                    </h5>
+                                    <p className="text-xs text-gray-400 mb-3">
+                                        Aunque el vendedor pueda editar el precio, no podrá salirse de este rango. Vacío = sin límite.
+                                    </p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                                                Precio mínimo ({simbolo})
+                                            </label>
+                                            <input
+                                                type="number" step="0.01" min="0" name="precioMinimoVenta"
+                                                value={(formValues as any)?.precioMinimoVenta ?? ''}
+                                                onChange={handleChange}
+                                                placeholder="Sin mínimo"
+                                                className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1E2435] px-3 py-2 text-sm text-gray-800 dark:text-white outline-none focus:border-violet-400"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">
+                                                Precio máximo ({simbolo})
+                                            </label>
+                                            <input
+                                                type="number" step="0.01" min="0" name="precioMaximoVenta"
+                                                value={(formValues as any)?.precioMaximoVenta ?? ''}
+                                                onChange={handleChange}
+                                                placeholder="Sin máximo"
+                                                className="w-full rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#1E2435] px-3 py-2 text-sm text-gray-800 dark:text-white outline-none focus:border-violet-400"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

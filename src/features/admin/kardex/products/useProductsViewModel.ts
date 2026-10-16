@@ -104,6 +104,8 @@ export const useProductsViewModel = () => {
         tipoAfectacionIGV: afectacionPorDefecto(auth?.empresa as any),
         afectacionNombre: nombreAfectacionPorDefecto(auth?.empresa as any),
         preciosMayorista: [],
+        precioMinimoVenta: '',
+        precioMaximoVenta: '',
     });
     const createEmptyProductErrors = () => ({
         codigo: "",
@@ -585,6 +587,8 @@ export const useProductsViewModel = () => {
                     preciosMayorista: Array.isArray((originalProduct as any).preciosMayorista)
                         ? (originalProduct as any).preciosMayorista
                         : [],
+                    precioMinimoVenta: (originalProduct as any).precioMinimoVenta ?? '',
+                    precioMaximoVenta: (originalProduct as any).precioMaximoVenta ?? '',
                     atributosTecnicos: (originalProduct as any).atributosTecnicos || {},
                     opcionesAtributos: Array.isArray((originalProduct as any).opcionesAtributos)
                         ? (originalProduct as any).opcionesAtributos

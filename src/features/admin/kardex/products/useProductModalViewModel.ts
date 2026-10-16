@@ -8,7 +8,7 @@ import useAlertStore from "@/zustand/alert";
 import { useBrandsStore } from "@/zustand/brands";
 import { useModificadoresStore } from "@/zustand/modificadores";
 import { esRubroFabricacion, useRubroFeatures } from "@/utils/rubro-features";
-import { hasPlanFeature, hasSubPermission, type IUserPermissions } from "@/utils/permissions";
+import { hasPermission, hasPlanFeature, hasSubPermission, type IUserPermissions } from "@/utils/permissions";
 import apiClient from "@/utils/apiClient";
 import { get } from "@/utils/fetch";
 import { faltaMotivo, type TipoAjuste } from './motivoAjusteStock';
@@ -116,6 +116,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
   const tieneTienda = hasPlanFeature(userPermissions, "tieneTienda");
   const tieneGestionLotes = hasPlanFeature(userPermissions, "tieneGestionLotes");
   const tieneDescripcionRica = hasPlanFeature(userPermissions, "tieneDescripcionRica");
+  // "IA de Ventas" es un MÓDULO que se contrata aparte (en el seed está en
+  // MODULOS_NO_AUTOASIGNAR), no una función incluida en los planes. Disponibilidad
+  // y empuje solo los lee esa IA: al negocio que no la tiene no le hacen nada y
+  // solo le ensucian la ficha del producto.
+  const tieneIaVentas = hasPermission(userPermissions, "leads");
   const tieneAnalisisFinancieroAvanzado = hasPlanFeature(userPermissions, "tieneAnalisisFinancieroAvanzado");
   // La casuística por sede solo es útil si la empresa REALMENTE tiene 2+ sedes,
   // no solo por tener la función en el plan. Con una sola sede la sección
@@ -153,6 +158,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
     multiplesSedes: tieneMultiplesSedes,
     autoGenerarImagen: tieneAutoGenerarImagen,
     localizacion: tieneLocalizacion,
+    iaVentas: tieneIaVentas,
   };
 
   const labels = {
@@ -1623,6 +1629,15 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
                 precio: Number(p.precio),
               }))
             : [],
+          // Piso/techo de venta: vacío = sin límite, por eso null y no 0.
+          precioMinimoVenta:
+            formValues.precioMinimoVenta !== '' && formValues.precioMinimoVenta != null
+              ? Number(formValues.precioMinimoVenta)
+              : null,
+          precioMaximoVenta:
+            formValues.precioMaximoVenta !== '' && formValues.precioMaximoVenta != null
+              ? Number(formValues.precioMaximoVenta)
+              : null,
           precioOferta: formValues.precioOferta
             ? Number(formValues.precioOferta)
             : null,

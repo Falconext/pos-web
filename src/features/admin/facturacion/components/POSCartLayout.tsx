@@ -114,6 +114,11 @@ const PresentacionSelect = ({ item, index, vm }: { item: any; index: number; vm:
             ...item,
             esPaquete,
             unidadesPorPaquete: destino.unidades,
+            // Identidad de la presentación elegida ('' = unidad suelta). Sin
+            // esto, al cambiar de lista de precios no había cómo saber QUÉ
+            // presentación reprecia: se miraba `codigoBarras`, que sigue siendo
+            // el del producto, y la lista devolvía el precio de la unidad.
+            presentacionCodigo: destino.clave,
             // El precio de la línea va POR UNIDAD: cantidad × precio da el total
             // de la presentación, que es como lo espera el comprobante.
             //

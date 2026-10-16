@@ -22,6 +22,8 @@ const ProductPriceListsPanel: React.FC<Props> = ({ productoId, paquetes = [], si
     const [expandida, setExpandida] = useState<number | null>(null);
     // clave `${listaId}|${presentacionCodigo}` -> valor del input (string)
     const [precios, setPrecios] = useState<Record<string, string>>({});
+    // Descuento % por lista (aplica a la lista, no a cada presentación).
+    const [descuentos, setDescuentos] = useState<Record<number, string>>({});
 
     const paquetesValidos = useMemo(
         () => (paquetes || []).filter(p => Number(p.unidadesPorPaquete || 1) > 1),
@@ -35,12 +37,17 @@ const ProductPriceListsPanel: React.FC<Props> = ({ productoId, paquetes = [], si
             const data = await itemsDeProducto(productoId);
             setListas(data);
             const init: Record<string, string> = {};
+            const dto: Record<number, string> = {};
             for (const l of data) {
                 for (const it of l.items) {
                     init[`${l.id}|${it.presentacionCodigo || ''}`] = String(it.precioUnitario);
+                    if (it.descuentoPorcentaje != null && !(l.id in dto)) {
+                        dto[l.id] = String(it.descuentoPorcentaje);
+                    }
                 }
             }
             setPrecios(init);
+            setDescuentos(dto);
             setLoading(false);
         };
         cargar();
@@ -50,12 +57,19 @@ const ProductPriceListsPanel: React.FC<Props> = ({ productoId, paquetes = [], si
         setPrecios(prev => ({ ...prev, [`${listaId}|${cod}`]: val }));
 
     const handleGuardar = async () => {
-        const entradas: { listaPrecioId: number; presentacionCodigo?: string; precioUnitario: number }[] = [];
+        const entradas: { listaPrecioId: number; presentacionCodigo?: string; precioUnitario: number; descuentoPorcentaje?: number | null }[] = [];
         for (const [clave, val] of Object.entries(precios)) {
             const num = parseFloat(val);
             if (!val || isNaN(num) || num <= 0) continue; // vacío = no fijar precio en esa lista
             const [listaIdStr, cod] = clave.split('|');
-            entradas.push({ listaPrecioId: Number(listaIdStr), presentacionCodigo: cod || '', precioUnitario: num });
+            const listaId = Number(listaIdStr);
+            const dto = parseFloat(descuentos[listaId] ?? '');
+            entradas.push({
+                listaPrecioId: listaId,
+                presentacionCodigo: cod || '',
+                precioUnitario: num,
+                descuentoPorcentaje: !isNaN(dto) && dto > 0 ? dto : null,
+            });
         }
         setSaving(true);
         const ok = await guardarItemsDeProducto(productoId, entradas);
@@ -103,6 +117,11 @@ const ProductPriceListsPanel: React.FC<Props> = ({ productoId, paquetes = [], si
                                     <span className="text-xs w-32 text-gray-600 dark:text-gray-300">Unidad ({simbolo})</span>
                                     <InputPro name={`p-${l.id}-base`} type="number" step="0.01" placeholder="Precio normal"
                                         value={precios[`${l.id}|`] ?? ''} onChange={(e: any) => setPrecio(l.id, '', e.target.value)} />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs w-32 text-gray-600 dark:text-gray-300">Descuento (%)</span>
+                                    <InputPro name={`d-${l.id}`} type="number" step="0.01" placeholder="Sin descuento"
+                                        value={descuentos[l.id] ?? ''} onChange={(e: any) => setDescuentos(prev => ({ ...prev, [l.id]: e.target.value }))} />
                                 </div>
                                 {paquetesValidos.map(pq => (
                                     <div key={pq.codigo} className="flex items-center gap-2">

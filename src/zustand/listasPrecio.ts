@@ -8,26 +8,48 @@ export interface IListaPrecioItem {
   presentacionCodigo: string;
   precioUnitario: number;
   precioOferta?: number | null;
+  descuentoPorcentaje?: number | null;
 }
 
 export interface IListaPrecio {
   id: number;
   nombre: string;
+  descripcion?: string | null;
   activo: boolean;
   esPorDefecto: boolean;
+  /** Desempate: gana la de `orden` menor. */
+  orden?: number;
   sedeIds: number[];
   usuarioIds: number[];
+  clienteIds?: number[];
+  // Nombres ya resueltos por el backend, para pintar las columnas sin cruzar
+  // tres listados en el front.
+  sedeNombres?: string[];
+  usuarioNombres?: string[];
+  clienteNombres?: string[];
+  clientes?: { id: number; nombre: string }[];
   totalItems?: number;
   items?: IListaPrecioItem[];
 }
 
 export interface IListaPrecioForm {
   nombre: string;
+  descripcion?: string;
   activo?: boolean;
   esPorDefecto?: boolean;
+  orden?: number;
   sedeIds?: number[];
   usuarioIds?: number[];
+  clienteIds?: number[];
   items?: IListaPrecioItem[];
+}
+
+// Lo mínimo que el POS necesita para pintar el selector de lista.
+export interface IListaPrecioOpcion {
+  id: number;
+  nombre: string;
+  descripcion?: string | null;
+  esPorDefecto: boolean;
 }
 
 // Precios de un producto en una lista (panel de la ficha de producto).
@@ -36,7 +58,8 @@ export interface IListaConItemProducto {
   nombre: string;
   esPorDefecto: boolean;
   activo: boolean;
-  items: { presentacionCodigo: string; precioUnitario: number; precioOferta: number | null }[];
+  descripcion?: string | null;
+  items: { presentacionCodigo: string; precioUnitario: number; precioOferta: number | null; descuentoPorcentaje?: number | null }[];
 }
 
 interface IListasPrecioState {
@@ -49,9 +72,17 @@ interface IListasPrecioState {
   eliminar: (id: number) => Promise<void>;
   // Ficha de producto:
   itemsDeProducto: (productoId: number) => Promise<IListaConItemProducto[]>;
+  // POS:
+  aplicables: (clienteId?: number) => Promise<{ listas: IListaPrecioOpcion[]; listaResueltaId: number | null }>;
+  reordenar: (ids: number[]) => Promise<void>;
+  preciosDeLineas: (
+    listaPrecioId: number | null,
+    lineas: { productoId: number; presentacionCodigo?: string }[],
+    sedeId?: number,
+  ) => Promise<{ productoId: number; presentacionCodigo: string; precioUnitario: number | null }[]>;
   guardarItemsDeProducto: (
     productoId: number,
-    entradas: { listaPrecioId: number; presentacionCodigo?: string; precioUnitario: number; precioOferta?: number | null }[],
+    entradas: { listaPrecioId: number; presentacionCodigo?: string; precioUnitario: number; precioOferta?: number | null; descuentoPorcentaje?: number | null }[],
   ) => Promise<boolean>;
 }
 
@@ -129,6 +160,44 @@ export const useListasPrecioStore = create<IListasPrecioState>()(
         useAlertStore.getState().alert(e.message || 'Error al eliminar lista de precio', 'error');
       } finally {
         set({ loading: false });
+      }
+    },
+
+    // El POS las pide al abrir la venta. Silencioso a propósito: si falla, el
+    // selector no se pinta y la venta sigue con la lista que resuelve el
+    // backend — nunca se bloquea al cajero por esto.
+    aplicables: async (clienteId?: number) => {
+      try {
+        const qs = clienteId ? `?clienteId=${clienteId}` : '';
+        const resp: any = await get(`lista-precio/aplicables${qs}`);
+        if (resp.code === 1) return resp.data;
+      } catch { /* sin selector */ }
+      return { listas: [], listaResueltaId: null };
+    },
+
+    reordenar: async (ids) => {
+      try {
+        const resp: any = await put('lista-precio/reordenar', { ids });
+        if (resp.code === 1) {
+          set({ listas: resp.data });
+        }
+      } catch (e: any) {
+        useAlertStore.getState().alert(e.message || 'No se pudo reordenar', 'error');
+        await get_().listar();
+      }
+    },
+
+    preciosDeLineas: async (listaPrecioId, lineas, sedeId) => {
+      if (!lineas.length) return [];
+      try {
+        const resp: any = await post('lista-precio/precios-de-lineas', {
+          listaPrecioId: listaPrecioId ?? undefined,
+          sedeId,
+          lineas,
+        });
+        return resp.code === 1 ? (resp.data?.precios ?? []) : [];
+      } catch {
+        return [];
       }
     },
 
