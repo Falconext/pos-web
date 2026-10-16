@@ -94,7 +94,7 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                                     <ProductWholesalePricing vm={vm} />
                                 </div>
                             )}
-                            <ProductDisponibilidadIa vm={vm} />
+                            {vm.productSections.iaVentas && <ProductDisponibilidadIa vm={vm} />}
                             <ProductRichDescription vm={vm} />
                             <ProductPasteSpecs vm={vm} />
 

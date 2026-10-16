@@ -384,7 +384,7 @@ export const FacturacionNuevoView = () => {
 
                     <div className="mt-3 grid grid-cols-1 gap-2">
                         {/* Cliente — DNI/RUC + Enter lo busca en la empresa o lo crea desde el padrón */}
-                        <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/50">
+                        <div className="flex items-center justify-between gap-2 rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-900/50">
                             <div className="flex min-w-0 flex-1 items-center gap-2">
                                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-300">
                                     <Icon icon={vm.clienteDocLookupLoading ? 'svg-spinners:180-ring' : 'solar:user-linear'} className="text-base" />
@@ -438,7 +438,7 @@ export const FacturacionNuevoView = () => {
                                         inputMode="search"
                                         disabled={vm.clienteDocLookupLoading}
                                         placeholder="DNI, RUC o nombre"
-                                        className="w-full bg-transparent text-sm font-extrabold text-slate-800 outline-none placeholder:font-semibold placeholder:text-slate-400 dark:text-slate-100"
+                                        className="w-full border-0 bg-transparent text-sm font-extrabold text-slate-800 outline-none placeholder:font-semibold placeholder:text-slate-400 dark:text-slate-100"
                                     />
                                     {clienteSearchOpen && clienteSearchTerm.trim().length >= 3 && (clienteSearchResults.length > 0 || showCrearClienteCelular) && (
                                         <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-30 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
@@ -506,7 +506,7 @@ export const FacturacionNuevoView = () => {
                             </div>
                         </div>
                         {/* Comprobante */}
-                        <div className="flex items-center justify-between gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 dark:border-slate-800 dark:bg-slate-900/50">
+                        <div className="flex items-center justify-between gap-2 rounded-2xl bg-slate-50 px-3 py-2 dark:bg-slate-900/50">
                             <div className="flex min-w-0 items-center gap-2">
                                 <div className="grid h-8 w-8 shrink-0 place-items-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-300">
                                     <Icon icon="solar:document-text-linear" className="text-base" />

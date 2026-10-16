@@ -16,6 +16,8 @@ import { useAuthStore } from "@/zustand/auth";
 import { getFormatoImpresionDefault } from "@/utils/formatoImpresion";
 import { useEmpresasStore } from "@/zustand/empresas";
 import { useUsersStore } from "@/zustand/users";
+import { useListasPrecioStore, IListaPrecioOpcion } from "@/zustand/listasPrecio";
+import { lineasReprecificables, precioBaseDeLinea, precioAplicable } from "./reprecioPorLista";
 import { IFormClient } from "@/interfaces/clients";
 import { IFormProduct } from "@/interfaces/products";
 import { formatISO, parse } from 'date-fns';
@@ -475,6 +477,57 @@ export const useFacturacionViewModel = () => {
 
     const [selectedProduct, setSelectProduct] = useState<any>(null);
     const [selectedClient, setSelectedClient] = useState<any>(null);
+
+    // Lista de precios de la venta. El backend ya resuelve una sola (por usuario
+    // o por sede), pero el cajero necesita poder cambiarla a mitad de venta: es
+    // el caso de la licorería con bar, donde el mismo trago vale distinto si se
+    // lo llevan o si se lo toman en la mesa.
+    const { aplicables: cargarListasAplicables, preciosDeLineas } = useListasPrecioStore();
+    const [listasPrecio, setListasPrecio] = useState<IListaPrecioOpcion[]>([]);
+    const [listaPrecioId, setListaPrecioId] = useState<number | null>(null);
+    // El `.then` de abajo corre fuera del render: necesita el valor vigente,
+    // no el capturado cuando se montó el efecto.
+    const listaPrecioIdRef = useRef<number | null>(null);
+    listaPrecioIdRef.current = listaPrecioId;
+    const [repreciandoLista, setRepreciandoLista] = useState(false);
+    // El cajero puede haber elegido una lista a mano; en ese caso su decisión
+    // manda y no se la pisa aunque cambie el cliente.
+    const listaElegidaAMano = useRef(false);
+    // La función de reprecio se declara más abajo (necesita el carrito y
+    // calculateLineItem); se expone por ref para que este efecto la alcance.
+    const reprecifiarCarritoRef = useRef<((id: number | null) => Promise<void>) | null>(null);
+    useEffect(() => {
+        let cancelado = false;
+        cargarListasAplicables(selectedClient?.id).then((r) => {
+            if (cancelado) return;
+            setListasPrecio(r.listas || []);
+            if (listaElegidaAMano.current) return;
+
+            const resuelta = r.listaResueltaId ?? null;
+            const anterior = listaPrecioIdRef.current;
+            if (resuelta === anterior) return;
+
+            setListaPrecioId(resuelta);
+
+            // Al elegir un cliente con precio pactado se avisa: cambiar de
+            // tarifa en silencio es la clase de cosa que se descubre al
+            // cuadrar caja.
+            if (anterior != null && resuelta != null && selectedClient?.id) {
+                const nombre = (r.listas || []).find((l) => l.id === resuelta)?.nombre;
+                if (nombre) {
+                    useAlertStore.getState().alert(
+                        `${selectedClient.nombre} tiene precio pactado: se aplicó la lista "${nombre}".`,
+                        'info',
+                    );
+                }
+            }
+            // Las líneas ya cargadas también tienen que moverse: dejarlas al
+            // precio anterior es cobrar con la tarifa equivocada.
+            void reprecifiarCarritoRef.current?.(resuelta);
+        });
+        return () => { cancelado = true; };
+    }, [selectedClient?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
     const [receiptNoteId, setReceiptNoteId] = useState<string>("01")
     const [pay, setPay] = useState<number>(0);
     const [_change, setChange] = useState<number>(0);
@@ -661,11 +714,13 @@ export const useFacturacionViewModel = () => {
         if (debouncedSearchTerm) params.search = debouncedSearchTerm;
         if (selectedCategoryId !== 0) params.categoriaId = selectedCategoryId;
         if (sedeActiva?.id) params.sedeId = sedeActiva.id;
+        if (listaPrecioId) params.listaPrecioId = listaPrecioId;
+        if (selectedClient?.id) params.clienteId = selectedClient.id;
 
         if (!usaLotesFarmacia) {
             getAllProducts(params, () => { }, true);
         }
-    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia]);
+    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia, listaPrecioId, selectedClient?.id]);
 
     // Farmacia: catálogo con FEFO (reemplaza getAllProducts para rubros regulados)
     useEffect(() => {
@@ -676,6 +731,8 @@ export const useFacturacionViewModel = () => {
         if (sedeActiva?.id) params.set('sedeId', String(sedeActiva.id));
         if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
         if (selectedCategoryId !== 0) params.set('categoriaId', String(selectedCategoryId));
+        if (listaPrecioId) params.set('listaPrecioId', String(listaPrecioId));
+        if (selectedClient?.id) params.set('clienteId', String(selectedClient.id));
         get(`productos/catalogo-farmacia?${params.toString()}`)
             .then((resp: any) => {
                 if (cancelled) return;
@@ -685,7 +742,7 @@ export const useFacturacionViewModel = () => {
             .catch(() => {})
             .finally(() => { if (!cancelled) setFarmaciaLoading(false); });
         return () => { cancelled = true; };
-    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia]);
+    }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia, listaPrecioId, selectedClient?.id]);
 
     const filteredCombos = useMemo(() => {
         const search = String(debouncedSearchTerm || '').trim().toLowerCase();
@@ -1395,6 +1452,71 @@ export const useFacturacionViewModel = () => {
         };
     };
 
+    /**
+     * Cambia la lista de precios de la venta en curso.
+     *
+     * El catálogo se reprecia solo (el fetch lleva `listaPrecioId`), pero las
+     * líneas YA cargadas se quedarían con el precio viejo: ese era el error
+     * caro — pasar de "para llevar" a "para la mesa" y cobrar igual. Acá se
+     * repregunta el precio de cada línea bajo la lista nueva, respetando la
+     * presentación: la unidad busca su precio de unidad y el paquete el suyo.
+     *
+     * Los ítems libres y los combos no tienen precio de lista: se dejan como
+     * están. El resto SÍ se reprecia, incluidas las líneas cuyo precio se
+     * tocó a mano: cambiar de lista es justamente decir "cobra con esta otra
+     * tarifa", y dejar una línea con el precio anterior es el error que esto
+     * viene a evitar.
+     */
+    const handleCambiarListaPrecio = async (nuevaListaId: number | null) => {
+        listaElegidaAMano.current = true;
+        setListaPrecioId(nuevaListaId);
+        await reprecifiarCarrito(nuevaListaId);
+    };
+
+    /**
+     * Pone las líneas ya cargadas al precio de `nuevaListaId`.
+     *
+     * Se llama tanto cuando el cajero cambia de lista a mano como cuando la
+     * lista cambia sola al elegir un cliente con precio pactado: en los dos
+     * casos dejar el carrito al precio anterior es cobrar mal.
+     */
+    const reprecifiarCarrito = async (nuevaListaId: number | null) => {
+        const lineas = lineasReprecificables(productsInvoice || []);
+        if (!lineas.length) return;
+
+        setRepreciandoLista(true);
+        try {
+            const precios = await preciosDeLineas(
+                nuevaListaId,
+                lineas.map((l) => ({ productoId: l.productoId, presentacionCodigo: l.presentacionCodigo })),
+                sedeActiva?.id,
+            );
+            const porClave = new Map(
+                precios.map((p: any) => [`${p.productoId}|${p.presentacionCodigo || ''}`, p.precioUnitario]),
+            );
+
+            for (const l of lineas) {
+                const nuevo = porClave.get(`${l.productoId}|${l.presentacionCodigo}`);
+                if (!precioAplicable(nuevo)) continue;
+                const linea = productsInvoice[l.index];
+                // El backend devuelve el precio de la PRESENTACIÓN: para un
+                // paquete es el precio del pack completo, y la línea guarda el
+                // precio por unidad (ver handleProductClick).
+                const base = precioBaseDeLinea(Number(nuevo), l.uPaquete);
+                // Cada línea guarda total/sale/igv YA calculados: tocar solo
+                // `precioUnitario` dejaba el total viejo en pantalla (se cambiaba
+                // de lista y el cobro no se movía). Se recalcula la línea entera
+                // por la misma vía que usa el cambio de cantidad.
+                const itemRecalculado = { ...linea, precioBase: base };
+                const recalculo = calculateLineItem(itemRecalculado, Number(linea?.cantidad) || 1);
+                updateProductInvoice(l.index, { precioBase: base, ...recalculo });
+            }
+        } finally {
+            setRepreciandoLista(false);
+        }
+    };
+    reprecifiarCarritoRef.current = reprecifiarCarrito;
+
     const getCartQtyByProductId = (productoId: number) =>
         productsInvoice
             .filter((item: any) => Number(item?.productoId || item?.id) === productoId)
@@ -1810,6 +1932,9 @@ export const useFacturacionViewModel = () => {
                 // Código de paquete escaneado (ej. six-pack): agrega directo con la cantidad
                 // de unidades que representa (ver unidadesPorPaquete arriba).
                 cantidadInicial: unidadesPorPaquete,
+                // Identidad de la presentación, para poder reprecificarla al
+                // cambiar de lista (ver PresentacionSelect).
+                presentacionCodigo: esPaqueteConPrecio ? String(product?.codigoBarras || '') : '',
                 ...(esPaqueteConPrecio ? { esPaquete: true } : {}),
                 ...(aliasPaquete ? { descripcion: aliasPaquete } : {}),
                 ...(imagenPaquete ? { imagenUrl: imagenPaquete } : {}),
@@ -2826,6 +2951,13 @@ export const useFacturacionViewModel = () => {
                     vendedorCampoNombre: usuarios.find((u: any) => u.id === vendedorCampoId)?.nombre,
                 }
                 : {}),
+            // Con qué lista se cobró, para poder auditarlo después.
+            ...(listaPrecioId
+                ? {
+                    listaPrecioId,
+                    listaPrecioNombre: listasPrecio.find((l) => l.id === listaPrecioId)?.nombre,
+                }
+                : {}),
             detalles: [
                 ...(productsInvoice?.map((item: any) => {
                     const uPaquete = Number(item?.unidadesPorPaquete) || 1;
@@ -3168,6 +3300,10 @@ export const useFacturacionViewModel = () => {
         setSplitPayments([{ method: 'Efectivo', amount: 0 }, { method: 'Yape', amount: 0 }]);
         resetInvoice();
         resetProductInvoice();
+        // La venta siguiente arranca con la lista que resuelve el sistema: si
+        // no se limpiara, el cajero que una vez cobró "para la mesa" seguiría
+        // cobrando así todo el día sin darse cuenta.
+        listaElegidaAMano.current = false;
         if (LABELS_CLIENTES_VARIOS.includes(siguienteComprobante)) {
             const clientSelect: any = clients?.find((item: any) => "10000000" === item.nroDoc);
             setSelectedClient(clientSelect ? clientSelect : { nroDoc: "10000000", nombre: "CLIENTES VARIOS" });
@@ -3216,6 +3352,8 @@ export const useFacturacionViewModel = () => {
         cobranzaCampo,
         vendedoresCampo: usuarios,
         vendedorCampoId, setVendedorCampoId,
+        // Selector de lista de precios del POS
+        listasPrecio, listaPrecioId, handleCambiarListaPrecio, repreciandoLista,
 
         // Form & Selections
         formValues, setFormValues,

@@ -168,11 +168,54 @@ export const POSCatalogLayout = ({ vm, layout = 'CATALOGO' }: { vm: any; layout?
         return { tabs, total };
     }, [vm.catalogItems, vm.categories, vm.selectedCategoryId, vm.totalProducts]);
 
+    // La lista activa no es la "general": el cajero está cobrando una excepción
+    // (consumo en el local, mayorista…) y conviene que lo vea.
+    const esListaNoDefault = Boolean(
+        vm.listaPrecioId &&
+        !(vm.listasPrecio || []).find((l: any) => l.id === vm.listaPrecioId)?.esPorDefecto,
+    );
+
     return (
         <>
         <div className={`w-full ${compacto ? 'md:w-[45%]' : 'md:w-[65%]'} flex flex-col gap-4 bg-white dark:bg-[#111827] rounded-[24px] shadow-gray-200/50 h-auto min-h-[500px] md:h-full overflow-hidden border border-white dark:border-transparent`}>
             {/* Header: Search & Categories */}
             <div className="p-4 md:p-5 border-b border-gray-100 dark:border-slate-800 bg-white dark:bg-[#111827]">
+                {/* Lista de precios de la venta. Solo aparece si hay de dónde
+                    elegir: con una sola lista el selector sería ruido. Cuando
+                    la activa no es la general se resalta, porque cobrar con la
+                    lista equivocada es el error caro (ej. servir en el bar a
+                    precio de licorería). */}
+                {vm.listasPrecio?.length > 1 && (
+                    <div className={`mb-3 flex items-center gap-2 rounded-xl px-3 py-2 transition-colors ${esListaNoDefault
+                        ? 'bg-amber-50 dark:bg-amber-950/20'
+                        : ''}`}>
+                        <Icon
+                            icon="solar:tag-price-bold-duotone"
+                            className={`text-lg shrink-0 ${esListaNoDefault ? 'text-amber-600 dark:text-amber-400' : 'text-violet-500'}`}
+                        />
+                        <span className="hidden sm:inline text-xs font-semibold text-gray-500 dark:text-gray-400 shrink-0">
+                            Lista de precios
+                        </span>
+                        <select
+                            value={vm.listaPrecioId ?? ''}
+                            disabled={vm.repreciandoLista}
+                            onChange={(e) => vm.handleCambiarListaPrecio(e.target.value ? Number(e.target.value) : null)}
+                            className="flex-1 min-w-0 border-0 bg-transparent text-sm font-bold text-gray-800 dark:text-white outline-none cursor-pointer disabled:opacity-50"
+                        >
+                            {vm.listasPrecio.map((l: any) => (
+                                <option key={l.id} value={l.id} className="font-medium text-gray-800">
+                                    {l.nombre}{l.esPorDefecto ? ' (general)' : ''}
+                                </option>
+                            ))}
+                        </select>
+                        {vm.repreciandoLista && (
+                            <span className="shrink-0 text-[11px] font-semibold text-gray-500 dark:text-gray-400">
+                                Recalculando…
+                            </span>
+                        )}
+                    </div>
+                )}
+
                 <div className="flex gap-2 mb-3">
                     <div className="relative flex-1">
                         <input

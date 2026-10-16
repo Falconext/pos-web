@@ -103,6 +103,9 @@ export type IProduct = {
   fechaFinOferta?: string | Date | null
   // Precios por Mayorista
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
+  /** Piso y techo de venta. Null/vacío = sin límite. */
+  precioMinimoVenta?: number | string | null
+  precioMaximoVenta?: number | string | null
   atributosTecnicos?: Record<string, any>
   descripcionLarga?: string | null
   opcionesAtributos?: any
@@ -177,6 +180,9 @@ export type IFormProduct = {
   fechaFinOferta?: string | Date | null
   // Precios por Mayorista
   preciosMayorista?: { cantidadMinima: number; precio: number }[]
+  /** Piso y techo de venta. Null/vacío = sin límite. */
+  precioMinimoVenta?: number | string | null
+  precioMaximoVenta?: number | string | null
   atributosTecnicos?: Record<string, any>
   descripcionLarga?: string | null
   opcionesAtributos?: any

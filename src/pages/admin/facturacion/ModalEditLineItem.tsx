@@ -93,7 +93,20 @@ const ModalEditLineItem = ({ isOpen, onClose, item, onSave, monedaSimbolo = "S/"
         }
     };
 
+    // Piso y techo del producto: el backend los vuelve a validar, pero el
+    // cajero tiene que enterarse ANTES de cobrar, no al emitir.
+    const precioMin = item?.precioMinimoVenta != null ? Number(item.precioMinimoVenta) : null;
+    const precioMax = item?.precioMaximoVenta != null ? Number(item.precioMaximoVenta) : null;
+    const precioActual = Number(formValues.precioUnitario);
+    const fueraDeRango =
+        (precioMin != null && precioMin > 0 && precioActual < precioMin - 0.01)
+            ? `El precio mínimo de venta es ${monedaSimbolo} ${precioMin.toFixed(2)}`
+            : (precioMax != null && precioMax > 0 && precioActual > precioMax + 0.01)
+                ? `El precio máximo de venta es ${monedaSimbolo} ${precioMax.toFixed(2)}`
+                : '';
+
     const handleSubmit = () => {
+        if (fueraDeRango) return;
         onSave({
             ...item,
             precioUnitario: Number(formValues.precioUnitario),
@@ -105,6 +118,10 @@ const ModalEditLineItem = ({ isOpen, onClose, item, onSave, monedaSimbolo = "S/"
     };
 
     const hasWholesaleRules = item?.preciosMayorista?.length > 0;
+
+    const avisoRango = fueraDeRango ? (
+        <p className="mt-1 text-xs font-semibold text-rose-600 dark:text-rose-400">{fueraDeRango}</p>
+    ) : null;
 
     return (
         <Modal isOpenModal={isOpen} closeModal={onClose} title="Editar Item" width="500px">
@@ -127,6 +144,7 @@ const ModalEditLineItem = ({ isOpen, onClose, item, onSave, monedaSimbolo = "S/"
                             onChange={handleChange}
                             disabled={bloquearPrecio}
                         />
+                        {avisoRango}
                         {bloquearPrecio && (
                             <p className="text-xs text-gray-400 mt-1">No tienes permiso para editar el precio de venta.</p>
                         )}
@@ -221,7 +239,7 @@ const ModalEditLineItem = ({ isOpen, onClose, item, onSave, monedaSimbolo = "S/"
 
                 <div className="flex justify-end gap-2 pt-4">
                     <Button color="secondary" outline onClick={onClose}>Cancelar</Button>
-                    <Button color="primary" onClick={handleSubmit}>Guardar</Button>
+                    <Button color="primary" onClick={handleSubmit} disabled={!!fueraDeRango}>Guardar</Button>
                 </div>
             </div>
         </Modal>
