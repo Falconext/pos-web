@@ -49,6 +49,8 @@ export interface LeadConversacion {
   estado: EstadoLeadConversacion
   cantidadMensajes: number
   numeroWhatsappId: string | null
+  /** false = alguien tomó el chat y la IA no responde en ESTA conversación. */
+  botActivo: boolean
   actualizadoEn: string
   creadoEn: string
   prospecto?: { puntaje: number; estado: EstadoLeadProspecto } | null
@@ -129,13 +131,21 @@ export async function eliminarConversacion(
   return (r.data ?? { eliminada: true, telefono: '', mensajes: 0 })
 }
 
+/**
+ * Tomar (o devolver) el chat: la IA deja de responder en esta conversación.
+ *
+ * Va por conversación y no por prospecto porque los chats de prueba del propio
+ * negocio no generan prospecto —para no ensuciar el embudo— y eran justo los
+ * únicos donde no había manera de apagar la IA.
+ */
 export async function setBotActivo(
-  prospectoId: number,
+  conversacionId: number,
   activo: boolean,
-): Promise<LeadProspecto> {
-  const r = await patch<LeadProspecto>(`/leads/prospectos/${prospectoId}/bot`, {
-    activo,
-  })
+): Promise<LeadConversacion> {
+  const r = await patch<LeadConversacion>(
+    `/leads/conversaciones/${conversacionId}/bot`,
+    { activo },
+  )
   if (!r.success || !r.data) throw new Error(r.error || 'Error al cambiar el bot')
   return r.data
 }

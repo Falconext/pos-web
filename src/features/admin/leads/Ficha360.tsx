@@ -47,7 +47,10 @@ export function Ficha360({
   }, [telefono])
 
   return (
-    <div className="fixed inset-0 z-[9999] flex justify-end">
+        // Por encima del cajón de conversación (z-999999 del Modal compartido):
+    // la ficha se abre DESDE el chat, así que si queda debajo el usuario
+    // pulsa "Ver su historial" y no pasa nada visible.
+    <div className="fixed inset-0 z-[1000001] flex justify-end">
       <div className="absolute inset-0 bg-black/40" onClick={onCerrar} />
       <div className="relative flex h-full w-full max-w-md flex-col bg-white dark:bg-[#0A0D14]">
         <div className="flex items-start justify-between border-b border-gray-100 p-5 dark:border-gray-800">

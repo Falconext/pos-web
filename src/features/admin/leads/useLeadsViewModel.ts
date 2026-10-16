@@ -181,21 +181,41 @@ export function useLeadsViewModel() {
     }
   }
 
-  const toggleBot = async (prospectoId: number, activo: boolean) => {
+  /**
+   * Tomar el chat (o devolvérselo a la IA).
+   *
+   * Se identifica por CONVERSACIÓN: los chats de prueba del propio negocio no
+   * tienen prospecto —no se califican para no ensuciar el embudo— y eran los
+   * únicos donde no aparecía el interruptor, justo los que usa el dueño para
+   * probar su bot.
+   */
+  const toggleBot = async (conversacionId: number, activo: boolean) => {
     try {
-      await api.setBotActivo(prospectoId, activo)
+      await api.setBotActivo(conversacionId, activo)
       alertStore.alert(
         activo ? 'IA reactivada en este chat' : 'IA pausada — tomaste el chat',
         'success',
       )
-      // Refrescar el prospecto en memoria (lista + detalle abierto).
-      setProspectos((prev) =>
-        prev.map((p) => (p.id === prospectoId ? { ...p, botActivo: activo } : p)),
-      )
+      // Refrescar lo que ya está en pantalla: el chat abierto, la lista y los
+      // chats de prueba, que se pintan de tres sitios distintos.
       setConversacion((prev) =>
-        prev?.prospecto?.id === prospectoId
-          ? { ...prev, prospecto: { ...prev.prospecto, botActivo: activo } }
+        prev?.id === conversacionId
+          ? {
+              ...prev,
+              botActivo: activo,
+              prospecto: prev.prospecto
+                ? { ...prev.prospecto, botActivo: activo }
+                : prev.prospecto,
+            }
           : prev,
+      )
+      setProspectos((prev) =>
+        prev.map((p) =>
+          p.conversacionId === conversacionId ? { ...p, botActivo: activo } : p,
+        ),
+      )
+      setChatsDePrueba((prev) =>
+        prev.map((c) => (c.id === conversacionId ? { ...c, botActivo: activo } : c)),
       )
     } catch (e: any) {
       alertStore.alert(e.message || 'Error al cambiar el bot', 'error')

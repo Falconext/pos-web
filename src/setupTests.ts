@@ -28,3 +28,27 @@ if (typeof globalThis.TextDecoder === 'undefined') {
     SSR: false,
     BASE_URL: '/',
 };
+
+/**
+ * jsdom no implementa `scrollIntoView`. Lo usa cualquier vista que se abra
+ * mostrando el final de una lista — el chat de leads, por ejemplo, que arranca
+ * en el último mensaje y no en el de hace tres semanas. Sin este stub el
+ * efecto revienta y la prueba falla por algo que no está probando.
+ */
+if (!Element.prototype.scrollIntoView) {
+    Element.prototype.scrollIntoView = function scrollIntoView() {};
+}
+
+/**
+ * jsdom tampoco trae `ResizeObserver`. Lo usa cualquier vista que mida su
+ * propio espacio para llenarlo —la bandeja de leads calcula su alto hasta el
+ * borde de la ventana en vez de restarle una constante al 100vh—. Un stub que
+ * no observa nada alcanza: en jsdom no hay layout que cambiar.
+ */
+if (typeof (globalThis as any).ResizeObserver === 'undefined') {
+    (globalThis as any).ResizeObserver = class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
+}
