@@ -35,6 +35,7 @@ import UsuariosIndex from './pages/admin/usuarios/Index'
 import VendedoresView from './features/admin/users/VendedoresView'
 import SedesIndex from './pages/admin/sedes/Index'
 import ListasPrecioIndex from './pages/admin/listas-precio/Index'
+import ReprecioMasivo from './pages/admin/listas-precio/ReprecioMasivo'
 import NotificacionesIndex from './pages/admin/notificaciones/Index'
 import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
 import TemplateTienda from './pages/admin/tienda/Template'
@@ -236,6 +237,7 @@ function App() {
           <Route path="usuarios/proveedores" element={<ProveedoresPage />} />
           <Route path="sedes" element={<SedesIndex />} />
           <Route path="listas-precio" element={<ListasPrecioIndex />} />
+          <Route path="listas-precio/reprecio" element={<ReprecioMasivo />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           {/* Su propia suscripción: el empresario ve su plan y sus pagos. */}
           <Route path="mi-plan" element={<MiPlan />} />

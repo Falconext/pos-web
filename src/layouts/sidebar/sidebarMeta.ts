@@ -164,6 +164,8 @@ export const MODULE_META: Record<string, ModuleMeta> = {
       // Listas de Precio: solo el ADMIN_EMPRESA las gestiona.
       if (auth?.rol === 'ADMIN_EMPRESA') {
         items.push({ codigo: 'kardex:listas-precio', nombre: 'Listas de Precio', ruta: '/administrador/listas-precio' });
+        // Reprecio masivo: cambiar el precio de muchos productos de una vez.
+        items.push({ codigo: 'kardex:reprecio-masivo', nombre: 'Reprecio Masivo', ruta: '/administrador/listas-precio/reprecio' });
       }
       return items;
     },
