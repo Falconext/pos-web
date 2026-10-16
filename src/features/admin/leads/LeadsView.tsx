@@ -3,7 +3,6 @@ import { Icon } from '@iconify/react'
 import { format, isSameDay, isToday, isYesterday } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Button from '@/components/Button'
-import InputPro from '@/components/InputPro'
 import Modal from '@/components/Modal'
 import ModalConfirm from '@/components/ModalConfirm'
 import { useLeadsViewModel } from './useLeadsViewModel'
@@ -11,15 +10,13 @@ import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
 import { DisparadoresPanel } from './DisparadoresPanel'
 import { Ficha360 } from './Ficha360'
+import { BandejaChats } from './BandejaChats'
 import {
-  ESTADOS_KANBAN,
   ESTADO_META,
-  colorPuntaje,
   nombreVisible,
   iniciales,
 } from './LeadsModel'
 import type {
-  EstadoLeadProspecto,
   LeadProspecto,
   LeadDocumento,
   TipoLeadDocumento,
@@ -119,84 +116,40 @@ export default function LeadsView() {
         <Ficha360 telefono={vm.ficha360} onCerrar={() => vm.setFicha360(null)} />
       )}
 
+      {/* La bandeja: lista, chat y ficha a la vista.
+          Antes esto era un tablero kanban con el chat en un cajón flotante.
+          El tablero ya vive en la pestaña Embudo, abrir otro chat obligaba a
+          cerrar el anterior, y la ficha del cliente se abría en un segundo
+          cajón que quedaba tapado por el primero. */}
       {vista === 'conversaciones' && (
-        <>
-      {/* Búsqueda */}
-      <div className="mb-4 max-w-md">
-        <InputPro
-          name="search"
-          placeholder="Buscar por nombre o teléfono..."
-          value={vm.search}
-          onChange={(e) => vm.setSearch(e.target.value)}
+        <BandejaChats
+          prospectos={vm.prospectos}
+          chatsDePrueba={vm.chatsDePrueba}
+          conversacionAbiertaId={vm.conversacion?.id ?? null}
+          cargando={vm.isLoading}
+          busqueda={vm.search}
+          onBuscar={vm.setSearch}
+          onAbrir={vm.actions.abrirConversacion}
+          onVerHistorial={vm.setFicha360}
+          prospectoActivo={
+            vm.prospectos.find((p) => p.conversacionId === vm.conversacion?.id) ?? null
+          }
+          chat={
+            vm.conversacion || vm.loadingConversacion ? (
+              <ChatPanel vm={vm} />
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 text-gray-500 dark:text-gray-400">
+                <Icon
+                  icon="solar:chat-round-dots-bold-duotone"
+                  width={46}
+                  className="opacity-25"
+                />
+                <p className="text-sm font-semibold">Elige una conversación</p>
+                <p className="-mt-2 text-xs">Sus mensajes y su ficha aparecen acá</p>
+              </div>
+            )
+          }
         />
-      </div>
-
-      {/* Tablero.
-          El resumen por estado que vivía acá arriba repetía el mismo número que
-          la cabecera de cada columna: se dejó uno solo, el de la columna. */}
-      {vm.isLoading ? (
-        <div className="flex items-center justify-center py-20 text-gray-400">
-          <Icon icon="svg-spinners:180-ring" width={32} />
-        </div>
-      ) : (
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {ESTADOS_KANBAN.map((estado) => (
-            <ColumnaKanban
-              key={estado}
-              estado={estado}
-              items={vm.porEstado(estado)}
-              onAbrir={(p) => vm.actions.abrirConversacion(p.conversacionId)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Las pruebas del propio negocio.
-          Van fuera del tablero a propósito: son chats que no son leads y
-          mezclarlos con los clientes es lo que se vino a arreglar. Pero
-          tampoco pueden ser invisibles — alguien tiene que poder leerlos y
-          borrarlos para volver a probar. */}
-      {!vm.isLoading && vm.chatsDePrueba.length > 0 && (
-        <div className="mb-4 rounded-2xl border border-dashed border-gray-200 p-3 dark:border-slate-700">
-          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-400">
-            <Icon icon="solar:test-tube-bold-duotone" width={13} />
-            Chats de prueba · no cuentan como leads
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {vm.chatsDePrueba.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => vm.actions.abrirConversacion(c.id)}
-                className="inline-flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2 text-left transition hover:bg-gray-100 dark:bg-slate-800/60 dark:hover:bg-slate-800"
-              >
-                <Icon icon="mdi:whatsapp" width={14} className="flex-none text-[#25D366]" />
-                <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-semibold text-gray-700 dark:text-gray-200">
-                    {nombreVisible(c.nombreProspecto, c.telefonoProspecto)}
-                  </span>
-                  <span className="block text-[10px] text-gray-400">
-                    {c.cantidadMensajes} mensaje{c.cantidadMensajes === 1 ? '' : 's'}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Drawer de conversación */}
-      <Modal
-        isOpenModal={!!vm.conversacion || vm.loadingConversacion}
-        closeModal={vm.actions.cerrarConversacion}
-        position="right"
-        width="440px"
-        title="Conversación"
-      >
-        <ChatPanel vm={vm} />
-      </Modal>
-
-        </>
       )}
 
       {/* Los modales viven fuera de la vista: "Configurar" y "Entrenar" se
@@ -265,309 +218,203 @@ function SwitchIa({
   )
 }
 
-/**
- * Una columna del tablero.
- *
- * La columna tiene fondo propio y las tarjetas van blancas encima: así se lee
- * dónde termina un estado y empieza el otro sin necesidad de separadores, que
- * es lo que pasaba antes cuando las columnas vacías se veían como un hueco.
- */
-function ColumnaKanban({
-  estado,
-  items,
-  onAbrir,
-}: {
-  estado: EstadoLeadProspecto
-  items: LeadProspecto[]
-  onAbrir: (p: LeadProspecto) => void
-}) {
-  const meta = ESTADO_META[estado]
-  return (
-    <section className="flex min-h-[9rem] w-[19rem] flex-none flex-col rounded-2xl bg-gray-100/80 dark:bg-slate-900/60">
-      <header className="flex items-center justify-between gap-2 px-3 py-2.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className={`h-2 w-2 flex-none rounded-full ${meta.dot}`} />
-          <h3 className="truncate text-sm font-semibold text-gray-700 dark:text-gray-200">
-            {meta.label}
-          </h3>
-          <span className="flex-none text-xs font-semibold text-gray-400 dark:text-gray-500">
-            {items.length}
-          </span>
-        </div>
-      </header>
-      <div className="flex flex-col gap-2 px-2 pb-2">
-        {items.length === 0 ? (
-          // Una columna vacía mantiene su altura: si colapsa, el tablero queda
-          // desparejo y cuesta leer que ese estado existe y está en cero.
-          <p className="flex flex-1 items-center justify-center pb-4 text-xs text-gray-400 dark:text-gray-600">
-            Sin prospectos
-          </p>
-        ) : (
-          items.map((p) => (
-            <ProspectoCard key={p.id} p={p} onClick={() => onAbrir(p)} />
-          ))
-        )}
-      </div>
-    </section>
-  )
-}
-
-/** Fila de metadato de la tarjeta: ícono chico + texto, como en el tablero. */
-function MetaFila({ icon, children }: { icon: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-      <Icon icon={icon} width={14} className="flex-none text-gray-400 dark:text-gray-500" />
-      <span className="truncate">{children}</span>
-    </div>
-  )
-}
-
-function ProspectoCard({
-  p,
-  onClick,
-}: {
-  p: LeadProspecto
-  onClick: () => void
-}) {
-  const meta = ESTADO_META[p.estado]
-  // La fecha que le importa al vendedor es la del último movimiento, no la del
-  // alta: le dice si el prospecto se está enfriando.
-  const ultimaActividad = p.actualizadoEn
-    ? format(new Date(p.actualizadoEn), "d 'de' MMM", { locale: es })
-    : null
-
-  return (
-    <article
-      role="button"
-      tabIndex={0}
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClick()
-        }
-      }}
-      className="cursor-pointer rounded-xl border border-gray-200 bg-white p-3 text-left transition-colors duration-150 hover:border-violet-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-700"
-    >
-      {/* Píldoras de estado: temperatura y puntaje BANT. */}
-      <div className="mb-2 flex items-center gap-1.5">
-        <span
-          className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold ${meta.badge}`}
-        >
-          <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-          {meta.label}
-        </span>
-        <span
-          className={`rounded-md bg-gray-100 px-2 py-0.5 text-[11px] font-semibold dark:bg-slate-800 ${colorPuntaje(p.puntaje)}`}
-          title="Puntaje BANT"
-        >
-          {p.puntaje}
-        </span>
-      </div>
-
-      <h4 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
-        {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
-      </h4>
-
-      {p.resumen && (
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-gray-500 dark:text-gray-400">
-          {p.resumen}
-        </p>
-      )}
-
-      <div className="mt-2 flex flex-col gap-1">
-        {ultimaActividad && (
-          <MetaFila icon="solar:calendar-minimalistic-linear">{ultimaActividad}</MetaFila>
-        )}
-        {p.cotizacion && (
-          <MetaFila icon="solar:document-text-linear">{p.cotizacion.codigo}</MetaFila>
-        )}
-        {p.proximaAccion && (
-          <MetaFila icon="solar:flag-linear">{p.proximaAccion}</MetaFila>
-        )}
-      </div>
-
-      {/* Pie: quién es y qué pasa con la IA. */}
-      <div className="mt-3 flex items-center justify-between border-t border-gray-100 pt-2.5 dark:border-slate-800">
-        <span
-          className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${meta.badge}`}
-          title={p.telefonoProspecto}
-        >
-          {iniciales(p.nombreProspecto, p.telefonoProspecto)}
-        </span>
-        {!p.botActivo && (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-600 dark:text-orange-400">
-            <Icon icon="solar:pause-bold" width={12} />
-            IA pausada
-          </span>
-        )}
-      </div>
-    </article>
-  )
-}
-
 function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
   const [confirmarBorrado, setConfirmarBorrado] = useState(false)
+  const [menuAbierto, setMenuAbierto] = useState(false)
   const conv = vm.conversacion
+  // Un chat se abre por lo último que dijeron, no por el primer mensaje de
+  // hace tres semanas. Sin esto hay que arrastrar la barra hasta el fondo en
+  // cada conversación que se abre.
+  const finDelChat = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    finDelChat.current?.scrollIntoView({ block: 'end' })
+  }, [conv?.id, conv?.mensajes.length])
   if (vm.loadingConversacion && !conv) {
     return (
-      <div className="flex items-center justify-center py-20 text-gray-400">
+      <div className="flex min-h-0 flex-1 items-center justify-center text-gray-400">
         <Icon icon="svg-spinners:180-ring" width={28} />
       </div>
     )
   }
   if (!conv) return null
   const prospecto = conv.prospecto
-  const botActivo = prospecto?.botActivo ?? true
+  // La pausa es de la conversación. Antes se leía del prospecto y en los chats
+  // de prueba —que no tienen— el interruptor no aparecía: el empresario
+  // preguntó "¿dónde está?, no lo veo" justo en uno de esos.
+  const botActivo = conv.botActivo ?? true
 
   const meta = prospecto ? ESTADO_META[prospecto.estado] : null
-  const headerTint =
-    (prospecto && HEADER_TINT[prospecto.estado]) || 'from-gray-50 dark:from-slate-800/30'
 
   return (
-    <div className="flex h-full flex-col px-4">
-      {/* Cabecera del prospecto */}
-      <div className="border-b border-gray-100 pb-3 pt-1 dark:border-slate-800">
-        <div className={`rounded-2xl bg-gradient-to-b ${headerTint} to-transparent p-3`}>
-          <div className="flex items-start gap-3">
-            <span className="relative flex h-12 w-12 flex-none items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-violet-600 text-sm font-bold text-white shadow-md ring-2 ring-white dark:ring-[#111827]">
-              {iniciales(conv.nombreProspecto, conv.telefonoProspecto)}
-              <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#25D366] ring-2 ring-white dark:ring-[#111827]">
-                <Icon icon="mdi:whatsapp" width={10} className="text-white" />
-              </span>
+    <div className="flex min-h-0 flex-1 flex-col">
+      {/* Cabecera */}
+      <div className="sticky top-0 z-10 flex flex-none items-center gap-2.5 border-b border-gray-100 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-[#111827]">
+        {/* Volver a la lista. Solo en pantalla chica: ahí la lista se oculta
+            para que el chat ocupe todo el ancho, así que sin esto no hay
+            manera de salir del chat. */}
+        <button
+          type="button"
+          onClick={vm.actions.cerrarConversacion}
+          aria-label="Volver a la lista"
+          className="flex h-11 w-9 flex-none items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 lg:hidden dark:text-gray-400 dark:hover:bg-slate-800"
+        >
+          <Icon icon="solar:alt-arrow-left-linear" width={20} />
+        </button>
+
+        <span className="relative flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-violet-600 text-xs font-bold text-white">
+          {iniciales(conv.nombreProspecto, conv.telefonoProspecto)}
+          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#25D366] ring-2 ring-white dark:ring-[#111827]">
+            <Icon icon="mdi:whatsapp" width={9} className="text-white" />
+          </span>
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-bold leading-tight text-gray-900 dark:text-white">
+            {nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)}
+          </p>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <span className="text-[11px] text-gray-500 dark:text-gray-400">
+              {conv.telefonoProspecto}
             </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-bold leading-tight text-gray-900 dark:text-white">
-                {nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-gray-400">{conv.telefonoProspecto}</p>
-              {/* La ficha 360° se abre desde el chat, que es donde surge la
-                  pregunta: "¿este cliente ya me compró?", "¿esto ya lo pidió
-                  antes?". Buscarla en otra pantalla es no mirarla. */}
-              <button
-                type="button"
-                onClick={() => vm.setFicha360(conv.telefonoProspecto)}
-                className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:underline dark:text-indigo-400"
-              >
-                <Icon icon="solar:clipboard-list-bold-duotone" width={12} />
-                Ver su historial
-              </button>
-              {meta && (
-                <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}
-                  >
-                    <Icon icon={meta.icon} width={11} />
-                    {meta.label}
-                  </span>
-                  {!botActivo && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-semibold text-orange-700 dark:bg-orange-900/30 dark:text-orange-300">
-                      <Icon icon="solar:pause-bold" width={10} /> IA en pausa
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            {prospecto && (
-              <div className="flex flex-none flex-col items-center gap-0.5">
-                <span
-                  className={`flex h-12 w-12 items-center justify-center rounded-full shadow-sm ${colorPuntaje(prospecto.puntaje)}`}
-                  style={{
-                    background: `conic-gradient(currentColor ${(prospecto.puntaje / 100) * 360}deg, rgba(148,163,184,0.16) 0deg)`,
-                  }}
-                >
-                  <span className="flex h-[38px] w-[38px] flex-col items-center justify-center rounded-full bg-white dark:bg-[#111827]">
-                    <span className="text-sm font-extrabold leading-none">{prospecto.puntaje}</span>
-                    <span className="text-[7px] font-bold uppercase tracking-wider text-gray-400">BANT</span>
-                  </span>
-                </span>
-              </div>
+            {meta && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${meta.badge}`}>
+                <Icon icon={meta.icon} width={9} />
+                {meta.label}
+              </span>
+            )}
+            {!prospecto && (
+              <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400">
+                · chat de prueba, no cuenta como lead
+              </span>
             )}
           </div>
         </div>
 
-        {prospecto && (
-          <div className="mt-3 grid grid-cols-4 gap-2">
-            <BantBar label="Presup." valor={prospecto.presupuesto} max={30} />
-            <BantBar label="Autoridad" valor={prospecto.autoridad} max={20} />
-            <BantBar label="Necesidad" valor={prospecto.necesidad} max={25} />
-            <BantBar label="Plazo" valor={prospecto.plazo} max={25} />
-          </div>
-        )}
-
-        <div className="mt-3 flex items-center justify-between gap-2">
-          <p className="text-[11px] text-gray-400">
-            {conv.mensajes.length} mensaje{conv.mensajes.length === 1 ? '' : 's'}
-            {!prospecto && ' · chat de prueba, no cuenta como lead'}
-          </p>
-          {/* Borrar el chat es lo que permite repetir una prueba desde cero.
-              Pide confirmación porque no se deshace, y dice cuántos mensajes
-              se lleva: no es lo mismo tirar un "hola" que una venta cerrada.
-              Con el ModalConfirm del proyecto y no con window.confirm, que se
-              ve como una alerta del navegador en medio del panel. */}
+        {/* "Tomar chat": el interruptor de la IA.
+            Es la acción de la que depende todo lo demás — mientras la IA
+            responda, lo que escriba el vendedor se le cruza al cliente — así
+            que va arriba y en color, no escondida al final de la cabecera. */}
+        <div className="flex flex-none flex-col items-end">
           <button
             type="button"
-            disabled={vm.borrandoChat}
-            onClick={() => setConfirmarBorrado(true)}
-            className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[12px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-950/30"
+            onClick={() => vm.actions.toggleBot(conv.id, !botActivo)}
+            aria-pressed={!botActivo}
+            title={
+              botActivo
+                ? 'La IA deja de responder y contestas tú'
+                : 'La IA vuelve a responder sola'
+            }
+            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-3 text-[12.5px] font-bold transition-colors ${
+              botActivo
+                ? 'bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/40 dark:text-orange-200 dark:hover:bg-orange-900/60'
+                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:hover:bg-emerald-900/60'
+            }`}
           >
-            <Icon
-              icon={vm.borrandoChat ? 'svg-spinners:180-ring' : 'solar:trash-bin-trash-bold'}
-              width={14}
-            />
-            {vm.borrandoChat ? 'Borrando…' : 'Borrar chat'}
+            <Icon icon={botActivo ? 'solar:hand-stars-bold' : 'solar:play-bold'} width={15} />
+            {botActivo ? 'Tomar chat' : 'Devolver a la IA'}
           </button>
+          {/* La consecuencia, pegada al botón que la provoca. Vivía encima del
+              campo de escribir, a media pantalla de distancia del interruptor
+              que explica. */}
+          <span className="mt-0.5 hidden text-[10px] leading-tight text-gray-500 xl:block dark:text-gray-400">
+            {botActivo ? 'o escribe abajo y lo tomas' : 'la IA no responde acá'}
+          </span>
         </div>
 
-        <ModalConfirm
-          isOpenModal={confirmarBorrado}
-          setIsOpenModal={setConfirmarBorrado}
-          title="¿Borrar esta conversación?"
-          information={`Se borrarán los ${conv.mensajes.length} mensaje${conv.mensajes.length === 1 ? '' : 's'} de ${nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)}. Podrá volver a escribir y la IA lo atenderá desde cero. No se puede deshacer.`}
-          confirmText="Borrar chat"
-          confirmLoading={vm.borrandoChat}
-          confirmSubmit={() => {
-            setConfirmarBorrado(false)
-            vm.actions.borrarConversacion(conv.id)
-          }}
-        />
-
-        {prospecto && (
-          <div className="mt-3 flex gap-2">
-            <button
-              type="button"
-              onClick={() => vm.actions.toggleBot(prospecto.id, !botActivo)}
-              className={`flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-[13px] font-semibold transition ${
-                botActivo
-                  ? 'bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-300'
-                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
-              }`}
-            >
-              <Icon icon={botActivo ? 'solar:pause-bold' : 'solar:play-bold'} width={15} />
-              {botActivo ? 'Tomar el chat' : 'Reactivar IA'}
-            </button>
-            {prospecto.estado === 'CONVERTIDO' || prospecto.clienteId ? (
-              <div className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-emerald-50 py-2 text-[13px] font-semibold text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
-                <Icon icon="solar:user-check-bold" width={15} />
-                Ya es cliente
+        {/* Convertir y borrar son de una vez: van en el menú, no en la barra. */}
+        <div className="relative flex-none">
+          <button
+            type="button"
+            onClick={() => setMenuAbierto((v) => !v)}
+            aria-label="Más acciones"
+            aria-expanded={menuAbierto}
+            className="flex h-11 w-11 items-center justify-center rounded-xl text-gray-500 transition-colors hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-slate-800"
+          >
+            <Icon icon="solar:menu-dots-bold" width={18} />
+          </button>
+          {menuAbierto && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setMenuAbierto(false)}
+                aria-hidden
+              />
+              <div className="absolute right-0 top-full z-20 mt-1 w-56 overflow-hidden rounded-xl border border-gray-100 bg-white py-1 shadow-lg dark:border-slate-700 dark:bg-[#1b2434]">
+                {prospecto &&
+                  (prospecto.estado === 'CONVERTIDO' || prospecto.clienteId ? (
+                    <div className="flex items-center gap-2 px-3 py-2.5 text-[13px] font-semibold text-emerald-700 dark:text-emerald-300">
+                      <Icon icon="solar:user-check-bold" width={15} />
+                      Ya es cliente
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={vm.convirtiendo}
+                      onClick={() => {
+                        setMenuAbierto(false)
+                        vm.actions.convertirCliente(prospecto.id)
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[13px] font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60 dark:text-gray-200 dark:hover:bg-slate-800"
+                    >
+                      <Icon icon="solar:user-plus-bold" width={15} className="text-violet-500" />
+                      {vm.convirtiendo ? 'Convirtiendo…' : 'Convertir a cliente'}
+                    </button>
+                  ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuAbierto(false)
+                    vm.setFicha360(conv.telefonoProspecto)
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[13px] font-semibold text-gray-700 transition-colors hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-slate-800"
+                >
+                  <Icon
+                    icon="solar:clipboard-list-bold-duotone"
+                    width={15}
+                    className="text-indigo-500"
+                  />
+                  Ver su historial
+                </button>
+                {/* Borrar el chat es lo que permite repetir una prueba desde
+                    cero. Pide confirmación porque no se deshace, y dice
+                    cuántos mensajes se lleva: no es lo mismo tirar un "hola"
+                    que una venta cerrada. */}
+                <button
+                  type="button"
+                  disabled={vm.borrandoChat}
+                  onClick={() => {
+                    setMenuAbierto(false)
+                    setConfirmarBorrado(true)
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[13px] font-semibold text-rose-600 transition-colors hover:bg-rose-50 disabled:opacity-60 dark:text-rose-400 dark:hover:bg-rose-950/30"
+                >
+                  <Icon
+                    icon={vm.borrandoChat ? 'svg-spinners:180-ring' : 'solar:trash-bin-trash-bold'}
+                    width={15}
+                  />
+                  {vm.borrandoChat ? 'Borrando…' : 'Borrar chat'}
+                </button>
               </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => vm.actions.convertirCliente(prospecto.id)}
-                disabled={vm.convirtiendo}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-violet-600 py-2 text-[13px] font-semibold text-white shadow-sm transition hover:bg-violet-700 disabled:opacity-60"
-              >
-                <Icon icon="solar:user-plus-bold" width={15} />
-                {vm.convirtiendo ? 'Convirtiendo…' : 'Convertir a cliente'}
-              </button>
-            )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
+      <ModalConfirm
+        isOpenModal={confirmarBorrado}
+        setIsOpenModal={setConfirmarBorrado}
+        title="¿Borrar esta conversación?"
+        information={`Se borrarán los ${conv.mensajes.length} mensaje${conv.mensajes.length === 1 ? '' : 's'} de ${nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)}. Podrá volver a escribir y la IA lo atenderá desde cero. No se puede deshacer.`}
+        confirmText="Borrar chat"
+        confirmLoading={vm.borrandoChat}
+        confirmSubmit={() => {
+          setConfirmarBorrado(false)
+          vm.actions.borrarConversacion(conv.id)
+        }}
+      />
+
       {/* Mensajes — estilo chat */}
-      <div className="-mx-4 flex-1 overflow-y-auto bg-[#f6f7fb] px-5 py-4 dark:bg-[#0b0f17]">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-[#f6f7fb] px-5 py-4 dark:bg-[#0b0f17]">
         {conv.mensajes.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-gray-400">
             <Icon icon="solar:chat-round-line-linear" width={32} />
@@ -651,29 +498,12 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
             )
           })
         })()}
+        {/* Ancla invisible: el chat se abre mostrando esto, o sea el final. */}
+        <div ref={finDelChat} />
       </div>
 
       <Composer vm={vm} botActivo={botActivo} />
 
-      {prospecto?.proximaAccion && (
-        <div className="border-t border-gray-100 pt-3 dark:border-slate-800">
-          <div className="flex gap-2.5 rounded-xl bg-violet-50 p-3 dark:bg-violet-900/20">
-            <Icon
-              icon="solar:target-bold-duotone"
-              width={18}
-              className="mt-0.5 flex-none text-violet-500 dark:text-violet-300"
-            />
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-violet-600 dark:text-violet-300">
-                Próxima acción recomendada
-              </p>
-              <p className="mt-0.5 text-xs leading-relaxed text-gray-600 dark:text-gray-300">
-                {prospecto.proximaAccion}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -700,13 +530,7 @@ function Composer({
   }
 
   return (
-    <div className="border-t border-gray-100 pt-3 dark:border-slate-800">
-      {botActivo && (
-        <p className="mb-1.5 flex items-center gap-1 px-0.5 text-[11px] text-amber-600 dark:text-amber-400">
-          <Icon icon="solar:info-circle-bold" width={12} />
-          Si respondes, la IA se pausa en este chat.
-        </p>
-      )}
+    <div className="flex-none border-t border-gray-100 px-4 pb-3 pt-3 dark:border-slate-800">
       <div className="flex items-end gap-2">
         <textarea
           value={texto}
@@ -741,46 +565,10 @@ function Composer({
   )
 }
 
-const HEADER_TINT: Record<string, string> = {
-  FRIO: 'from-sky-50 dark:from-sky-900/10',
-  TIBIO: 'from-amber-50 dark:from-amber-900/10',
-  CALIENTE: 'from-rose-50 dark:from-rose-900/10',
-  CONVERTIDO: 'from-emerald-50 dark:from-emerald-900/10',
-  PERDIDO: 'from-gray-50 dark:from-slate-800/30',
-}
-
 function etiquetaDia(d: Date): string {
   if (isToday(d)) return 'Hoy'
   if (isYesterday(d)) return 'Ayer'
   return format(d, "d 'de' MMMM", { locale: es })
-}
-
-function BantBar({
-  label,
-  valor,
-  max,
-}: {
-  label: string
-  valor: number | null
-  max: number
-}) {
-  const pct = valor != null ? Math.min(100, Math.round((valor / max) * 100)) : 0
-  const color =
-    pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : pct > 0 ? 'bg-orange-500' : 'bg-gray-300'
-  return (
-    <div className="rounded-lg bg-gray-50 px-2 py-1.5 dark:bg-slate-800/60">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[13px] font-bold text-gray-900 dark:text-white">
-          {valor ?? '—'}
-          <span className="text-[9px] font-normal text-gray-400">/{max}</span>
-        </span>
-      </div>
-      <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-slate-700">
-        <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
-      </div>
-      <p className="mt-1 text-[9px] uppercase tracking-wide text-gray-400">{label}</p>
-    </div>
-  )
 }
 
 function EntrenarPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
