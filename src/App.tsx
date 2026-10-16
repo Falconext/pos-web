@@ -29,6 +29,7 @@ const PerfilIndex = cargaPerezosa(() => import('./pages/admin/perfil/Index'))
 const KardexIndex = cargaPerezosa(() => import('./pages/admin/kardex/Index'))
 const InventarioDashboard = cargaPerezosa(() => import('./pages/admin/kardex/Dashboard'))
 const KardexProductos = cargaPerezosa(() => import('./pages/admin/kardex/Productos'))
+const ReprecioMasivo = cargaPerezosa(() => import('./pages/admin/listas-precio/ReprecioMasivo'))
 const KardexMermas = cargaPerezosa(() => import('./pages/admin/kardex/mermas'))
 const ApiKrezka = cargaPerezosa(() => import('./features/admin/apiKrezka/ApiKrezkaView'))
 const KardexEntradasSalidas = cargaPerezosa(() => import('./pages/admin/kardex/entradasSalidas'))
@@ -254,6 +255,7 @@ function App() {
           <Route path="usuarios/proveedores" element={<ProveedoresPage />} />
           <Route path="sedes" element={<SedesIndex />} />
           <Route path="listas-precio" element={<ListasPrecioIndex />} />
+          <Route path="listas-precio/reprecio" element={<ReprecioMasivo />} />
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           {/* Su propia suscripción: el empresario ve su plan y sus pagos. */}
           <Route path="mi-plan" element={<MiPlan />} />
