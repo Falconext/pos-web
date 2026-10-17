@@ -45,6 +45,36 @@ export interface IListaPrecioForm {
 }
 
 // Lo mínimo que el POS necesita para pintar el selector de lista.
+// Reprecio masivo
+export type OperacionReprecio = 'AUMENTAR' | 'DISMINUIR' | 'REEMPLAZAR';
+export type ModoReprecio = 'MONTO' | 'PORCENTAJE';
+
+export interface IFilaReprecio {
+  productoId: number;
+  codigo: string;
+  descripcion: string;
+  costoNeto: number;
+  costoConIgv: number;
+  precioActual: number;
+  precioNuevo: number | null;
+  utilidadActual: number | null;
+  utilidadNueva: number | null;
+  sinCosto: boolean;
+  seAplica: boolean;
+}
+
+export interface ILoteReprecio {
+  id: number;
+  listaPrecioId: number;
+  listaNombre: string;
+  operacion: string;
+  modo: string;
+  valor: number;
+  totalItems: number;
+  creadoEn: string;
+  revertidoEn: string | null;
+}
+
 export interface IListaPrecioOpcion {
   id: number;
   nombre: string;
@@ -75,6 +105,11 @@ interface IListasPrecioState {
   // POS:
   aplicables: (clienteId?: number) => Promise<{ listas: IListaPrecioOpcion[]; listaResueltaId: number | null }>;
   reordenar: (ids: number[]) => Promise<void>;
+  // Reprecio masivo:
+  previsualizarReprecio: (filtro: any, operacion: any) => Promise<IFilaReprecio[]>;
+  aplicarReprecio: (filtro: any, operacion: any) => Promise<{ aplicados: number; omitidos: number } | null>;
+  lotesReprecio: () => Promise<ILoteReprecio[]>;
+  revertirReprecio: (loteId: number) => Promise<boolean>;
   preciosDeLineas: (
     listaPrecioId: number | null,
     lineas: { productoId: number; presentacionCodigo?: string }[],
@@ -184,6 +219,56 @@ export const useListasPrecioStore = create<IListasPrecioState>()(
       } catch (e: any) {
         useAlertStore.getState().alert(e.message || 'No se pudo reordenar', 'error');
         await get_().listar();
+      }
+    },
+
+    previsualizarReprecio: async (filtro, operacion) => {
+      try {
+        const resp: any = await post('lista-precio/reprecio-masivo/previsualizar', { filtro, operacion });
+        return resp.code === 1 ? (resp.data?.filas ?? []) : [];
+      } catch (e: any) {
+        useAlertStore.getState().alert(e.message || 'No se pudo previsualizar', 'error');
+        return [];
+      }
+    },
+
+    aplicarReprecio: async (filtro, operacion) => {
+      try {
+        const resp: any = await post('lista-precio/reprecio-masivo/aplicar', { filtro, operacion });
+        if (resp.code === 1) {
+          const d = resp.data;
+          useAlertStore.getState().alert(
+            `Se repreciaron ${d.aplicados} producto(s) en "${d.lista}".` +
+            (d.omitidos ? ` ${d.omitidos} sin cambios.` : ''),
+            'success',
+          );
+          return d;
+        }
+        throw new Error(resp.error || resp.message || 'No se pudo aplicar');
+      } catch (e: any) {
+        useAlertStore.getState().alert(e.message || 'No se pudo aplicar el reprecio', 'error');
+        return null;
+      }
+    },
+
+    lotesReprecio: async () => {
+      try {
+        const resp: any = await get('lista-precio/reprecio-masivo/lotes?limit=10');
+        return resp.code === 1 ? resp.data : [];
+      } catch { return []; }
+    },
+
+    revertirReprecio: async (loteId) => {
+      try {
+        const resp: any = await post(`lista-precio/reprecio-masivo/revertir/${loteId}`, {});
+        if (resp.code === 1) {
+          useAlertStore.getState().alert('Reprecio deshecho: los precios volvieron a como estaban.', 'success');
+          return true;
+        }
+        throw new Error(resp.error || resp.message || 'No se pudo deshacer');
+      } catch (e: any) {
+        useAlertStore.getState().alert(e.message || 'No se pudo deshacer', 'error');
+        return false;
       }
     },
 
