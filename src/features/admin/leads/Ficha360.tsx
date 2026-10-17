@@ -142,8 +142,18 @@ export function Ficha360({
               </Seccion>
 
               <Seccion titulo="Con qué llegó" icono="solar:stethoscope-bold-duotone">
+                {/* Lo que contó de su malestar, en sus palabras. Es el dato
+                    con el que se arma la guía de consumo, así que va primero
+                    y entero, no como etiqueta recortada. */}
+                {ficha.cliente.sintomas && (
+                  <p className="mb-2 rounded-lg bg-amber-50 px-2.5 py-2 text-xs leading-relaxed text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
+                    {ficha.cliente.sintomas}
+                  </p>
+                )}
                 {ficha.consultasDeSalud.length === 0 ? (
-                  <p className="text-xs text-gray-400">Sin consultas de salud registradas.</p>
+                  !ficha.cliente.sintomas && (
+                    <p className="text-xs text-gray-400">Sin consultas de salud registradas.</p>
+                  )
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
                     {ficha.consultasDeSalud.map((c, i) => (

@@ -111,6 +111,8 @@ export interface Ficha360 {
     sexo: string | null
     edad: number | null
     resumen: string | null
+    /** Lo que contó de su malestar, en sus palabras. Para la guía de consumo. */
+    sintomas: string | null
     puntosClave: string[]
     dni: string | null
     telefonos: string[]
