@@ -61,3 +61,25 @@ export function precioAplicable(valor: unknown): boolean {
     const n = Number(valor);
     return valor != null && Number.isFinite(n) && n > 0;
 }
+
+/**
+ * De las líneas reprecificables, cuáles se tocan realmente.
+ *
+ * El reprecio por lista se dispara en dos situaciones distintas y no deben
+ * tratarse igual:
+ *
+ * - **Automático**, al resolverse la lista del cliente/sede nada más cargar la
+ *   pantalla. Acá las líneas traídas de un comprobante ya emitido CONSERVAN su
+ *   precio: abrir una venta vieja para corregir el nombre del cliente no puede
+ *   cambiarle el total sin que nadie lo pida.
+ * - **Manual**, cuando el cajero elige otra tarifa. Ahí sí se aplican a todo:
+ *   es una decisión suya, con causa visible en pantalla.
+ */
+export function lineasAReprecificar<T extends { index: number }>(
+    lineas: T[],
+    carrito: any[],
+    opts?: { respetarPrecioDelDocumento?: boolean },
+): T[] {
+    if (!opts?.respetarPrecioDelDocumento) return lineas;
+    return lineas.filter((l) => !carrito?.[l.index]?.precioDelDocumento);
+}
