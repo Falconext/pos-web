@@ -17,7 +17,7 @@ import { getFormatoImpresionDefault } from "@/utils/formatoImpresion";
 import { useEmpresasStore } from "@/zustand/empresas";
 import { useUsersStore } from "@/zustand/users";
 import { useListasPrecioStore, IListaPrecioOpcion } from "@/zustand/listasPrecio";
-import { lineasReprecificables, precioBaseDeLinea, precioAplicable } from "./reprecioPorLista";
+import { lineasReprecificables, precioBaseDeLinea, precioAplicable, lineasAReprecificar } from "./reprecioPorLista";
 import { IFormClient } from "@/interfaces/clients";
 import { IFormProduct } from "@/interfaces/products";
 import { formatISO, parse } from 'date-fns';
@@ -495,7 +495,7 @@ export const useFacturacionViewModel = () => {
     const listaElegidaAMano = useRef(false);
     // La función de reprecio se declara más abajo (necesita el carrito y
     // calculateLineItem); se expone por ref para que este efecto la alcance.
-    const reprecifiarCarritoRef = useRef<((id: number | null) => Promise<void>) | null>(null);
+    const reprecifiarCarritoRef = useRef<((id: number | null, opts?: { respetarPrecioDelDocumento?: boolean }) => Promise<void>) | null>(null);
     useEffect(() => {
         let cancelado = false;
         cargarListasAplicables(selectedClient?.id).then((r) => {
@@ -523,7 +523,7 @@ export const useFacturacionViewModel = () => {
             }
             // Las líneas ya cargadas también tienen que moverse: dejarlas al
             // precio anterior es cobrar con la tarifa equivocada.
-            void reprecifiarCarritoRef.current?.(resuelta);
+            void reprecifiarCarritoRef.current?.(resuelta, { respetarPrecioDelDocumento: true });
         });
         return () => { cancelado = true; };
     }, [selectedClient?.id]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -941,6 +941,10 @@ export const useFacturacionViewModel = () => {
                         descuento: 0,
                         unidad: det.unidad || mapped.unidad,
                         imagenUrl: mapped.imagenUrl || productoEnCatalogo?.imagenUrl || null,
+                        // Precio que quedó pactado en el documento. El reprecio
+                        // automático por lista no lo toca: abrir una venta para
+                        // corregir un dato no puede cambiarle el total.
+                        precioDelDocumento: true,
                     };
                 });
                 resetProductInvoice();
@@ -1294,6 +1298,8 @@ export const useFacturacionViewModel = () => {
                         stock: mapped.stock || 999,
                         estado: 'ACTIVO',
                         atributosTecnicos: mapped.atributosTecnicos || d.producto?.atributosTecnicos || undefined,
+                        // Ver `precioDelDocumento` en la carga desde cotización.
+                        precioDelDocumento: true,
                     });
                 });
             }
@@ -1480,8 +1486,15 @@ export const useFacturacionViewModel = () => {
      * lista cambia sola al elegir un cliente con precio pactado: en los dos
      * casos dejar el carrito al precio anterior es cobrar mal.
      */
-    const reprecifiarCarrito = async (nuevaListaId: number | null) => {
-        const lineas = lineasReprecificables(productsInvoice || []);
+    const reprecifiarCarrito = async (
+        nuevaListaId: number | null,
+        opts?: { respetarPrecioDelDocumento?: boolean },
+    ) => {
+        const todas = lineasReprecificables(productsInvoice || []);
+        // Las líneas traídas de un comprobante ya emitido conservan su precio:
+        // el automático no las toca. Si el cajero cambia de lista a mano, eso
+        // es una decisión suya y sí se aplican.
+        const lineas = lineasAReprecificar(todas, productsInvoice || [], opts);
         if (!lineas.length) return;
 
         setRepreciandoLista(true);
