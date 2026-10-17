@@ -75,6 +75,119 @@ const unidadesDeContrato = (c?: IContratoVehicular | null): UnidadForm[] => {
 };
 
 // ─── Modal Crear / Editar Contrato ────────────────────────────────────────────
+/**
+ * El contrato en pantalla, sin pasar por el PDF.
+ *
+ * Lo pidió un cliente del rubro vehicular: para saber qué incluye un contrato
+ * —sobre todo los que tienen varias unidades, que en la tabla se ven como
+ * "+1 vehículos"— había que imprimirlo o abrir el PDF. Acá está lo mismo que
+ * sale impreso: las unidades con su monto, el total y la vigencia.
+ */
+function ContratoDetalleModal({ contrato, onClose, onImprimir }: {
+    contrato: IContratoVehicular;
+    onClose: () => void;
+    onImprimir: () => void;
+}) {
+    const unidades = contrato.unidades?.length
+        ? contrato.unidades.map((u) => ({
+            placa: u.vehiculo?.placa || '—',
+            detalle: [u.vehiculo?.marca, u.vehiculo?.modelo].filter(Boolean).join(' '),
+            extra: [u.vehiculo?.color, u.vehiculo?.anio].filter(Boolean).join(' · '),
+            montoAnual: u.montoAnual,
+        }))
+        : [{
+            placa: contrato.vehiculo?.placa || '—',
+            detalle: [contrato.vehiculo?.marca, contrato.vehiculo?.modelo].filter(Boolean).join(' '),
+            extra: contrato.vehiculo?.color || '',
+            montoAnual: contrato.montoAnual,
+        }];
+    // El total del contrato manda sobre la suma de las unidades: es el que se
+    // cobra y el que sale impreso. Solo se suma cuando no está cargado.
+    const total = contrato.montoAnual ?? unidades.reduce((a, u) => a + Number(u.montoAnual ?? 0), 0);
+    const dias = diasRestantes(contrato.fechaFin);
+
+    const Dato = ({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) => (
+        <div>
+            <p className="text-[11px] uppercase tracking-wide text-gray-400 dark:text-slate-500">{etiqueta}</p>
+            <p className="text-sm font-medium text-gray-800 dark:text-slate-200">{children}</p>
+        </div>
+    );
+
+    return (
+        <Modal
+            isOpenModal
+            closeModal={onClose}
+            title={`Contrato N° ${contrato.id}`}
+            icon="solar:document-text-bold-duotone"
+            width="640px"
+            position="center"
+        >
+            <div className="space-y-5 p-4 sm:p-6">
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${estadoBadge[contrato.estado]}`}>
+                        {estadoLabel[contrato.estado]}
+                    </span>
+                    {contrato.estado !== 'CANCELADO' && (
+                        <span className={`text-xs ${diasColor(dias)}`}>
+                            {dias < 0 ? `Venció hace ${Math.abs(dias)}d` : `Vence en ${dias}d`}
+                        </span>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Dato etiqueta="Servicio">{contrato.producto?.descripcion || '—'}</Dato>
+                    <Dato etiqueta="Propietario">{contrato.vehiculo?.cliente?.nombre || '—'}</Dato>
+                    <Dato etiqueta="Inicio">{fmt(contrato.fechaInicio)}</Dato>
+                    <Dato etiqueta="Vencimiento">{fmt(contrato.fechaFin)}</Dato>
+                </div>
+
+                <div>
+                    <p className="mb-2 text-[11px] uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                        {unidades.length === 1 ? 'Vehículo' : `Vehículos (${unidades.length})`}
+                    </p>
+                    <div className="overflow-hidden rounded-xl border border-gray-100 dark:border-slate-700">
+                        {unidades.map((u, i) => (
+                            <div
+                                key={i}
+                                className="flex items-center justify-between gap-3 border-b border-gray-100 px-3 py-2.5 last:border-0 dark:border-slate-700"
+                            >
+                                <div className="min-w-0">
+                                    <p className="font-mono text-sm font-semibold text-gray-800 dark:text-slate-200">{u.placa}</p>
+                                    <p className="truncate text-xs text-gray-500 dark:text-slate-400">
+                                        {[u.detalle, u.extra].filter(Boolean).join(' · ') || '—'}
+                                    </p>
+                                </div>
+                                {u.montoAnual != null && (
+                                    <span className="shrink-0 text-sm font-medium text-gray-700 dark:text-slate-300">
+                                        S/ {Number(u.montoAnual).toFixed(2)}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl bg-gray-50 px-3 py-2.5 dark:bg-slate-800">
+                    <span className="text-sm font-medium text-gray-600 dark:text-slate-300">Total anual</span>
+                    <span className="text-base font-bold text-gray-900 dark:text-white">S/ {Number(total).toFixed(2)}</span>
+                </div>
+
+                {contrato.observaciones && (
+                    <div>
+                        <p className="mb-1 text-[11px] uppercase tracking-wide text-gray-400 dark:text-slate-500">Observaciones</p>
+                        <p className="whitespace-pre-line text-sm text-gray-700 dark:text-slate-300">{contrato.observaciones}</p>
+                    </div>
+                )}
+
+                <div className="flex justify-end gap-2 pt-1">
+                    <Button type="button" color="gray" onClick={onClose}>Cerrar</Button>
+                    <Button type="button" color="secondary" icon="solar:printer-bold" onClick={onImprimir}>Imprimir / PDF</Button>
+                </div>
+            </div>
+        </Modal>
+    );
+}
+
 function ContratoModal({ contrato, onClose, onSaved }: { contrato?: IContratoVehicular | null; onClose: () => void; onSaved: () => void }) {
     const { alert } = useAlertStore();
     const addContrato = useContratosVehicularesStore((s) => s.addContrato);
@@ -301,6 +414,7 @@ export default function ContratosVehicularesPage() {
     const [contratoCancelar, setContratoCancelar] = useState<IContratoVehicular | null>(null);
     const [cancelando, setCancelando] = useState(false);
     const [contratoEliminar, setContratoEliminar] = useState<IContratoVehicular | null>(null);
+    const [contratoDetalle, setContratoDetalle] = useState<IContratoVehicular | null>(null);
     const [eliminando, setEliminando] = useState(false);
 
     // Menú de acciones (dropdown) por fila.
@@ -570,6 +684,7 @@ export default function ContratosVehicularesPage() {
                     const row = menuRow;
                     return (
                         <>
+                            <MenuItem icon="solar:eye-bold" label="Ver detalle" onClick={() => { setContratoDetalle(row); closeMenu(); }} />
                             <MenuItem icon="solar:pen-bold" label="Editar contrato" onClick={() => { setContratoEditar(row); closeMenu(); }} />
                             <MenuItem icon="solar:printer-bold" label="Imprimir / PDF" onClick={() => { imprimirContrato(row); closeMenu(); }} />
                             <MenuItem icon="mdi:whatsapp" label="Recordar por WhatsApp" onClick={() => { recordarWhatsApp(row); closeMenu(); }} />
@@ -585,6 +700,14 @@ export default function ContratosVehicularesPage() {
                     );
                 })()}
             </TableActionMenu>
+
+            {contratoDetalle && (
+                <ContratoDetalleModal
+                    contrato={contratoDetalle}
+                    onClose={() => setContratoDetalle(null)}
+                    onImprimir={() => { imprimirContrato(contratoDetalle); setContratoDetalle(null); }}
+                />
+            )}
 
             {(modalNuevo || contratoEditar) && (
                 <ContratoModal
