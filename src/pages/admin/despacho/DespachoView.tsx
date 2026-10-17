@@ -560,6 +560,57 @@ export default function DespachoView() {
         () => queryRepartidorId ? Number(queryRepartidorId) : undefined
     );
     const [editingDespacho, setEditingDespacho] = useState<number | null>(null);
+    const [enviandoEnlace, setEnviandoEnlace] = useState<number | null>(null);
+
+    /**
+     * Le manda al repartidor el enlace con el que marca su entrega.
+     *
+     * El enlace se pide al backend —que lo genera si el despacho todavía no
+     * tenía— y se abre `wa.me` con el mensaje escrito. Quien despacha solo
+     * aprieta enviar.
+     *
+     * Si el repartidor no tiene celular cargado, igual se abre WhatsApp sin
+     * destinatario: así se puede reenviar a quien sea sin frenar la entrega.
+     */
+    const enviarEnlaceRepartidor = async (item: any) => {
+        setEnviandoEnlace(item.comprobanteId);
+        try {
+            const res: any = await apiClient.post(
+                `/envio-despacho/comprobante/${item.comprobanteId}/enlace-repartidor`,
+            );
+            const token = res?.data?.data?.token ?? res?.data?.token;
+            if (!token) {
+                alert('No se pudo generar el enlace. Intenta de nuevo.', 'error');
+                return;
+            }
+            const url = `${window.location.origin}/entrega/${token}`;
+            const texto = [
+                `*${item.referencia ?? 'Pedido'}* — ${item.cliente ?? 'Cliente'}`,
+                item.agenciaDestino ? `📍 ${item.agenciaDestino}` : '',
+                Number(item.montoCOD) > 0 ? `💵 Cobrar S/ ${Number(item.montoCOD).toFixed(2)}` : '✅ Ya está pagado',
+                '',
+                'Abre este enlace para marcar la entrega:',
+                url,
+            ].filter(Boolean).join('\n');
+            // El celular sale del repartidor asignado, que ya está cargado en
+            // el store. Sin repartidor asignado se abre WhatsApp sin
+            // destinatario: se elige a mano y la entrega no se frena.
+            const celularRep = String(
+                useRepartidoresStore
+                    .getState()
+                    .repartidores.find((r: any) => r.id === item.repartidorId)?.celular ?? '',
+            ).replace(/\D/g, '');
+            window.open(
+                `https://wa.me/${celularRep ? `51${celularRep}` : ''}?text=${encodeURIComponent(texto)}`,
+                '_blank',
+                'noopener,noreferrer',
+            );
+        } catch {
+            alert('No se pudo generar el enlace. Revisa tu conexión.', 'error');
+        } finally {
+            setEnviandoEnlace(null);
+        }
+    };
     const [editingPedidoTienda, setEditingPedidoTienda] = useState<DespachoItem | null>(null);
     const [trazabilidadItem, setTrazabilidadItem] = useState<DespachoItem | null>(null);
     const [trazabilidadPedidoTienda, setTrazabilidadPedidoTienda] = useState<DespachoItem | null>(null);
@@ -1012,6 +1063,22 @@ export default function DespachoView() {
                             <Icon icon="mdi:whatsapp" className="text-base" />
                         </a>
                     ) : null}
+                    {/* El enlace para el repartidor.
+                        No se manda desde el servidor: Meta bloquea el texto
+                        libre a un número que no escribió en 24 horas, y una
+                        plantilla nueva son días de aprobación. Se abre wa.me
+                        y lo manda quien despacha desde su propio WhatsApp. */}
+                    {item.tipo === 'COMPROBANTE' && item.comprobanteId && item.estado !== 'ENTREGADO' && (
+                        <button
+                            type="button"
+                            onClick={() => enviarEnlaceRepartidor(item)}
+                            disabled={enviandoEnlace === item.comprobanteId}
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors disabled:opacity-50"
+                            title="Enviar enlace al repartidor para que marque la entrega"
+                        >
+                            <Icon icon={enviandoEnlace === item.comprobanteId ? 'svg-spinners:180-ring-with-bg' : 'solar:scooter-bold'} className="text-base" />
+                        </button>
+                    )}
                     {item.tipo === 'COMPROBANTE' && item.comprobanteId && (
                         <button
                             type="button"

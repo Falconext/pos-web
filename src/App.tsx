@@ -113,6 +113,7 @@ import ImportarPage from './features/admin/logistica/importar/ImportarPage'
 import IntegracionesPage from './features/admin/logistica/integraciones/IntegracionesPage'
 import LeadsPage from './features/admin/leads/LeadsPage'
 import PrivacidadPage from './pages/legal/PrivacidadPage'
+import EntregaRepartidorPage from './pages/entrega/EntregaRepartidorPage'
 import EliminarDatosPage from './pages/legal/EliminarDatosPage'
 
 function App() {
@@ -134,6 +135,10 @@ function App() {
         <Route path="/forgot-password" element={<Navigate to="/recuperar-contrasena" replace />} />
         <Route path="/reset-password" element={<Navigate to="/restablecer-contrasena" replace />} />
         <Route path="/sede-seleccion" element={<SedeSelectionScreen />} />
+        {/* La pantalla del repartidor. Pública a propósito: el motorizado no
+            tiene cuenta y el token del enlace es su credencial — darle un
+            usuario implicaría abrirle el módulo de Ventas entero. */}
+        <Route path="/entrega/:token" element={<EntregaRepartidorPage />} />
         {/* Login específico para tienda (mismo backend, layout invertido) */}
         <Route path="/tienda/login" element={<TiendaLogin />} />
         {/* <Route
