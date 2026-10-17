@@ -426,6 +426,11 @@ export const useFacturacionViewModel = () => {
     const [adelanto, setAdelanto] = useState<number>(0);
     // Método del pago inicial cuando la venta es a crédito con adelanto.
     const [adelantoMetodo, setAdelantoMetodo] = useState<string>('Efectivo');
+    // Cuenta destino del PAGO INICIAL de una venta a crédito. Va aparte de
+    // `paymentDetail` porque ese describe el cobro del contado, que en una venta
+    // a crédito no existe: acá lo único que se cobra es el inicial.
+    const [adelantoCuentaId, setAdelantoCuentaId] = useState<number | null>(null);
+    const [adelantoCuentaLabel, setAdelantoCuentaLabel] = useState<string>('');
     const [fechaRecojo, setFechaRecojo] = useState<string>('');
     // Nota de Pedido: si el usuario marca esto, la NP descuenta stock al emitirse.
     // Por defecto false → la NP no toca stock hasta convertirse en comprobante formal.
@@ -2700,7 +2705,17 @@ export const useFacturacionViewModel = () => {
             useAlertStore.getState().alert(cpeRequeridoMensaje, "error");
             return false;
         }
-        if (formValues.medioPago === 'Crédito') return true;
+        // Una venta a crédito no cobra el total, pero SÍ puede cobrar un pago
+        // inicial — y ese inicial necesita cuenta destino igual que cualquier
+        // transferencia. Antes se devolvía true acá mismo, así que el POS dejaba
+        // emitir y el rechazo llegaba del servidor, ya con el modal de pago
+        // abierto y sin decir qué corregir.
+        const esCreditoConInicial =
+            formValues.medioPago === 'Crédito' &&
+            (isMixedPayment
+                ? (splitPayments || []).some((l) => Number(l.amount || 0) > 0)
+                : Number(adelanto || 0) > 0);
+        if (formValues.medioPago === 'Crédito' && !esCreditoConInicial) return true;
         // El N° de operación/voucher es opcional: no bloquea la emisión (se puede
         // registrar después). Solo se exige la cuenta bancaria para transferencias,
         // y solo si la empresa tiene alguna cuenta bancaria registrada — si no
@@ -2709,7 +2724,15 @@ export const useFacturacionViewModel = () => {
         const tieneCuentasBancarias = ((auth?.empresa?.cuentasBancarias as any[]) || []).length > 0;
         const requiresAccount = (method?: string) => tieneCuentasBancarias && normalizePaymentMethod(method) === 'TRANSFERENCIA';
         const details = buildPaymentDetails();
-        const lines: PaymentLine[] = details.mode === 'MIXTO' ? (details.splitPayments ?? []) : [details as PaymentLine];
+        const lines: PaymentLine[] = esCreditoConInicial
+            ? (isMixedPayment
+                ? (splitPayments || [])
+                : [{
+                    method: normalizePaymentMethod(adelantoMetodo),
+                    amount: Number(adelanto || 0),
+                    cuentaBancariaId: adelantoCuentaId || null,
+                } as PaymentLine])
+            : (details.mode === 'MIXTO' ? (details.splitPayments ?? []) : [details as PaymentLine]);
 
         for (const line of lines) {
             if (Number(line.amount || 0) <= 0) continue;
@@ -2901,7 +2924,15 @@ export const useFacturacionViewModel = () => {
         const paymentDetailsFinal = creditoConInicial
             ? (isMixedPayment
                 ? paymentDetails
-                : { mode: 'SIMPLE', method: normalizePaymentMethod(adelantoMetodo), amount: adelantoCreditoCalculado })
+                : {
+                    mode: 'SIMPLE',
+                    method: normalizePaymentMethod(adelantoMetodo),
+                    amount: adelantoCreditoCalculado,
+                    // Sin esto el backend rechaza el inicial por transferencia
+                    // ("requiere cuenta bancaria destino") y la venta no se emite.
+                    cuentaBancariaId: adelantoCuentaId || null,
+                    cuentaBancariaLabel: adelantoCuentaLabel || undefined,
+                })
             : paymentDetails;
         // Cuota única (0 o 1 cuota): su monto SIEMPRE es el total a financiar, para que
         // no quede obsoleto al cambiar el pago inicial. Con 2+ cuotas, se respeta el
@@ -3365,6 +3396,8 @@ export const useFacturacionViewModel = () => {
         splitPayments, setSplitPayments,
         adelanto, setAdelanto,
         adelantoMetodo, setAdelantoMetodo,
+        adelantoCuentaId, setAdelantoCuentaId,
+        adelantoCuentaLabel, setAdelantoCuentaLabel,
         fechaRecojo, setFechaRecojo,
         descontarStockNP, setDescontarStockNP,
         fechaEmisionManual, setFechaEmisionManual,
