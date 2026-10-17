@@ -734,6 +734,59 @@ export const useFacturacionViewModel = () => {
         }
     }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia, listaPrecioId, selectedClient?.id]);
 
+    /**
+     * Productos de las líneas que ya están en el carrito, para que cada línea
+     * conserve sus PRESENTACIONES sin depender de la página del catálogo.
+     *
+     * El carrito leía los paquetes de `products`, que es la página cargada en
+     * ese momento (20 de 290). Al editar un comprobante las líneas vienen del
+     * documento y sus productos casi nunca caen en esa página, así que el
+     * desplegable de presentación desaparecía; lo mismo pasaba al limpiar la
+     * búsqueda con el carrito lleno.
+     */
+    const [productosDeLineas, setProductosDeLineas] = useState<Record<number, any>>({});
+
+    useEffect(() => {
+        const idsCarrito: number[] = [...new Set<number>((productsInvoice || [])
+            .map((l: any) => Number(l?.productoId ?? l?.id))
+            .filter((n: number) => Number.isFinite(n) && n > 0))];
+        if (idsCarrito.length === 0) return;
+
+        // Lo que ya está en la página del catálogo no hace falta pedirlo.
+        const enCatalogo = new Set((products || []).map((p: any) => Number(p?.id)));
+        const faltantes = idsCarrito.filter((id) => !enCatalogo.has(id) && !productosDeLineas[id]);
+        if (faltantes.length === 0) return;
+
+        let cancelado = false;
+        const params = new URLSearchParams({ ids: faltantes.join(','), usarPrecioSede: 'true' });
+        if (sedeActiva?.id) params.set('sedeId', String(sedeActiva.id));
+        if (listaPrecioId) params.set('listaPrecioId', String(listaPrecioId));
+        if (selectedClient?.id) params.set('clienteId', String(selectedClient.id));
+        get(`productos?${params.toString()}`)
+            .then((resp: any) => {
+                if (cancelado) return;
+                const traidos = resp?.data?.productos ?? [];
+                if (traidos.length === 0) return;
+                setProductosDeLineas((curr) => {
+                    const siguiente = { ...curr };
+                    for (const p of traidos) siguiente[Number(p.id)] = p;
+                    return siguiente;
+                });
+            })
+            .catch(() => {});
+        return () => { cancelado = true; };
+        // `productosDeLineas` no va en las dependencias: se escribe acá mismo y
+        // volvería a disparar el efecto en bucle. Lo que importa es qué hay en
+        // el carrito, qué trae el catálogo y con qué precios se está mirando.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productsInvoice, products, sedeActiva?.id, listaPrecioId, selectedClient?.id]);
+
+    // Al cambiar de lista o de cliente los precios de las presentaciones cambian,
+    // así que lo cacheado queda viejo y hay que volver a pedirlo.
+    useEffect(() => {
+        setProductosDeLineas({});
+    }, [listaPrecioId, selectedClient?.id, sedeActiva?.id]);
+
     // Farmacia: catálogo con FEFO (reemplaza getAllProducts para rubros regulados)
     useEffect(() => {
         if (!usaLotesFarmacia) return;
@@ -3660,6 +3713,7 @@ export const useFacturacionViewModel = () => {
         initialFormProduct, initialFormClient,
         isLoading,
         isEditMode,
+        productosDeLineas,
         isEditNotaVenta: editNotaVentaId != null,
         editaHaciaFormal,
     };
