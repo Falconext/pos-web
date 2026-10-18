@@ -8,11 +8,16 @@ export interface IResumenReporte {
     totalIGV: number,
     totalGravadas: number,
     totalInafectas: number,
+    totalExoneradas: number,
+    totalExportacion: number,
     totalDescuentos: number,
     totalBoletas: number,
     totalFacturas: number,
     totalNotasCredito: number,
-    totalNotasDebito: number
+    totalNotasDebito: number,
+    // Anulados por NC que SÍ suman en su mes (la NC los resta en el suyo).
+    cantidadAnulados: number,
+    totalAnulados: number,
 }
 
 export interface IResumenReporteInformales {
@@ -23,6 +28,10 @@ export interface IResumenReporteInformales {
     totalComprobantesPago: number,
     totalNotasPedido: number,
     totalOrdenesTrabajo: number,
+    // Informales ya convertidos a boleta/factura: se excluyen del total y se
+    // informan aparte para que el conteo cuadre.
+    cantidadConvertidos: number,
+    totalConvertidos: number,
 }
 
 export interface IResumenReporteCompras {
@@ -50,6 +59,10 @@ export interface IAccountingState {
     exportExcelReport: (params: any) => void
     exportPdfReport: (params: any, formato: 'zip' | 'pdf') => Promise<void>
     reportInvoices: [];
+    // Emitidos en el rango que NO suman (rechazados / fallidos por SUNAT), cada
+    // uno con `motivoExclusion`. Sin esto el conteo del reporte no cuadra con
+    // la lista de Comprobantes y nadie sabe por qué.
+    excluidosReporte: any[];
     resumenReporte: IResumenReporte | null,
     getAllReportInvoice: (params: any, callback?: Function,
         allProperties?: boolean) => void
@@ -83,6 +96,7 @@ export interface IAccountingState {
 export const useAccountingStore = create<IAccountingState>()(devtools((set, _get) => ({
     // Estados para reportes formales
     reportInvoices: [],
+    excluidosReporte: [],
     resumenReporte: null,
     
     // Estados para reportes informales
@@ -107,22 +121,27 @@ export const useAccountingStore = create<IAccountingState>()(devtools((set, _get
 
             const query = new URLSearchParams(filteredParams).toString();
             const resp: any = await get(`/contabilidad/obtener-reporte?${query}`);
-            console.log(resp)
             if (resp.code === 1) {
                 useAlertStore.setState({ success: true });
                 set({
                     reportInvoices: resp.data.comprobantes,
+                    excluidosReporte: resp.data.excluidos ?? [],
                     resumenReporte: resp.data.resumen
                 }, false, "OBTENER REPORTE DE COMPROBANTES");
                 useAlertStore.setState({ loading: false })
             } else {
                 set({
-                    reportInvoices: []
+                    reportInvoices: [],
+                    excluidosReporte: [],
                 });
                 useAlertStore.setState({ loading: false })
             }
-        } catch (error) {
+        } catch (error: any) {
+            // Sin esto quedaban en pantalla las filas y el resumen del rango
+            // anterior como si fueran los del nuevo, sin ningún aviso.
+            set({ reportInvoices: [], excluidosReporte: [], resumenReporte: null });
             useAlertStore.setState({ loading: false })
+            useAlertStore.getState().alert(error?.message || 'No se pudo cargar el reporte', 'error');
         } finally {
             if (callback) {
                 callback();
@@ -230,8 +249,10 @@ export const useAccountingStore = create<IAccountingState>()(devtools((set, _get
                 });
                 useAlertStore.setState({ loading: false })
             }
-        } catch (error) {
+        } catch (error: any) {
+            set({ reportInvoicesInformal: [], resumenReporteInformal: null });
             useAlertStore.setState({ loading: false })
+            useAlertStore.getState().alert(error?.message || 'No se pudo cargar el reporte', 'error');
         } finally {
             if (callback) {
                 callback();
@@ -298,9 +319,11 @@ export const useAccountingStore = create<IAccountingState>()(devtools((set, _get
                 });
                 useAlertStore.setState({ loading: false })
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error obteniendo arqueo:', error);
+            set({ arqueoData: null });
             useAlertStore.setState({ loading: false })
+            useAlertStore.getState().alert(error?.message || 'No se pudo cargar el arqueo', 'error');
         } finally {
             if (callback) {
                 callback();
@@ -360,8 +383,10 @@ export const useAccountingStore = create<IAccountingState>()(devtools((set, _get
             } else {
                 set({ reportCompras: [], resumenReporteCompras: null });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error obteniendo reporte compras:', error);
+            set({ reportCompras: [], resumenReporteCompras: null });
+            useAlertStore.getState().alert(error?.message || 'No se pudo cargar el reporte', 'error');
         } finally {
             if (callback) callback();
         }
@@ -412,8 +437,10 @@ export const useAccountingStore = create<IAccountingState>()(devtools((set, _get
             } else {
                 set({ reportGastos: [], resumenReporteGastos: null });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error obteniendo reporte gastos:', error);
+            set({ reportGastos: [], resumenReporteGastos: null });
+            useAlertStore.getState().alert(error?.message || 'No se pudo cargar el reporte', 'error');
         } finally {
             if (callback) callback();
         }

@@ -3,6 +3,7 @@ import moment from 'moment';
 import { useAccountingStore } from '@/zustand/accounting';
 import { useAuthStore } from '@/zustand/auth';
 import { useSedesStore } from '@/zustand/sedes';
+import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 
 const useDateFilter = () => {
     const { auth } = useAuthStore();
@@ -20,14 +21,15 @@ const useDateFilter = () => {
 };
 
 export const useReporteViewModel = () => {
-    const { reportInvoices, getAllReportInvoice, resumenReporte, exportExcelReport, exportPdfReport } = useAccountingStore();
+    const { reportInvoices, excluidosReporte, getAllReportInvoice, resumenReporte, exportExcelReport, exportPdfReport } = useAccountingStore();
     const { auth, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate } = useDateFilter();
     const { sedes, listarSedes } = useSedesStore();
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
     const [isExportingPdf, setIsExportingPdf] = useState(false);
 
-    const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
-    const canFilterSede = isAdmin || auth?.rol === 'USUARIO_EMPRESA';
+    // El backend clava al usuario común en su sede (sedeIdParaListado); ofrecerle
+    // "Todas las sedes" era mentirle. Admin y supervisor sí eligen.
+    const canFilterSede = puedeLeerVentasDeTodos(auth as any);
 
     const sedesOptions = [
         { id: 0, value: "Todas las sedes" },
@@ -55,10 +57,17 @@ export const useReporteViewModel = () => {
         ANULADO: 'Anulado',
     };
 
-    const reports = reportInvoices?.map((item: any) => {
+    const mapRow = (item: any) => {
         const moneda = item?.tipoMoneda || 'PEN';
-        const simbol = moneda === 'USD' ? '$' : 'S/';
         const fmt = (v: any) => v != null ? Number(v).toFixed(2) : '0.00';
+        // El backend ya manda los importes EN SOLES (factura en US$ × TC del
+        // comprobante), igual que en Compras; el valor del documento en dólares
+        // se muestra en la columna moneda, no se le pone "$" a un monto en soles.
+        const simbol = 'S/';
+        const tc = Number(item?.tipoCambio) || 0;
+        const monedaLabel = moneda === 'USD'
+            ? `US$ ${fmt(item?.mtoImpVentaDoc ?? item?.mtoImpVenta)}${tc > 0 ? ` · TC ${tc.toFixed(3)}` : ''}`
+            : 'PEN';
         const formaPago = (item?.formaPagoTipo || '').toUpperCase() === 'CREDITO' ? 'Crédito' : 'Contado';
         return {
             sede: item?.sede?.nombre || '-',
@@ -69,19 +78,44 @@ export const useReporteViewModel = () => {
             cliente: item?.cliente?.nombre || '-',
             vendedor: item?.usuario?.nombre || '-',
             fecha: moment(item?.fechaEmision).utcOffset(-5 * 60).format('DD/MM/YYYY'),
-            moneda,
+            // La clave lleva "Doc" a propósito: el DataTable pasa a minúsculas
+            // cualquier texto salvo en columnas que "parecen código" (serie, doc…);
+            // sin esto "US$ 375.00 · TC 3.750" saldría como "Us$ … · tc …".
+            monedaDoc: monedaLabel,
             formaPago,
             medioPago: item?.medioPago || '-',
             estadoSunat: item?.estadoEnvioSunat,
             estadoPago: estadoPagoLabel[item?.estadoPago] || item?.estadoPago || '-',
             gravadas: fmt(item?.mtoOperGravadas),
             inafectas: fmt(item?.mtoOperInafectas),
+            exoneradas: fmt(item?.mtoOperExoneradas),
+            exportacion: fmt(item?.mtoOperExportacion),
             igv: fmt(item?.mtoIGV),
             total: `${simbol} ${fmt(item?.mtoImpVenta)}`,
             saldo: item?.saldo != null && Number(item.saldo) > 0 ? `${simbol} ${fmt(item.saldo)}` : '-',
             motivo: item?.motivo?.descripcion || '-',
+            // La clave lleva "Doc" por lo mismo que `monedaDoc`: que el DataTable
+            // no pase "SUNAT" a "sunat".
+            motivoDocExcluido: item?.motivoExclusion || '-',
         };
+    };
+
+    const reports = reportInvoices?.map(mapRow);
+    const excluidos = (excluidosReporte ?? []).map(mapRow);
+
+    // Lectura conjunta de anulados / NC / rechazados. Criterio SUNAT (y SIRE):
+    // el anulado SUMA en su mes de emisión; lo resta su NC en el mes en que ella
+    // se emitió; el rechazado no existe para SUNAT. Sin este desglose, ver
+    // "Anulado" en una fila y "Nota de Crédito: 0.00" parecía un error.
+    const cuenta = (items: any[]) => ({
+        n: items.length,
+        monto: items.reduce((t: number, i: any) => t + Number(i?.mtoImpVenta || 0), 0),
     });
+    const notasResumen = {
+        anulados: cuenta((reportInvoices ?? []).filter((i: any) => i?.estadoEnvioSunat === 'ANULADO' && i?.tipoDoc !== '07')),
+        ncAnulacion: cuenta((reportInvoices ?? []).filter((i: any) => i?.tipoDoc === '07' && ['01', '06'].includes(i?.motivo?.codigo))),
+        rechazados: cuenta(excluidosReporte ?? []),
+    };
 
     const handleExport = () => {
         const params: any = { fechaInicio, fechaFin };
@@ -100,7 +134,7 @@ export const useReporteViewModel = () => {
         }
     };
 
-    return { reports, resumenReporte, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate, handleExport, handleExportPdf, isExportingPdf, canFilterSede, sedesOptions, handleSelectSede };
+    return { reports, excluidos, notasResumen, resumenReporte, fechaInicio, fechaFin, isHoveredExp, setIsHoveredExp, handleDate, handleExport, handleExportPdf, isExportingPdf, canFilterSede, sedesOptions, handleSelectSede };
 };
 
 export const useReporteInformalesViewModel = () => {
@@ -109,7 +143,7 @@ export const useReporteInformalesViewModel = () => {
     const { sedes, listarSedes } = useSedesStore();
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
 
-    const canFilterSede = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'USUARIO_EMPRESA';
+    const canFilterSede = puedeLeerVentasDeTodos(auth as any);
 
     const sedesOptions = [
         { id: 0, value: "Todas las sedes" },
@@ -163,7 +197,7 @@ export const useReporteComprasViewModel = () => {
     const { sedes, listarSedes } = useSedesStore();
     const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
 
-    const canFilterSede = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA' || auth?.rol === 'USUARIO_EMPRESA';
+    const canFilterSede = puedeLeerVentasDeTodos(auth as any);
 
     const sedesOptions = [
         { id: 0, value: "Todas las sedes" },
@@ -203,7 +237,7 @@ export const useReporteComprasViewModel = () => {
             ruc: item?.proveedor?.nroDoc || '-',
             proveedor: item?.proveedor?.nombre || '-',
             fecha: moment(item?.fechaEmision).utcOffset(-5 * 60).format('DD/MM/YYYY'),
-            moneda: monedaLabel,
+            monedaDoc: monedaLabel, // ver nota en useReporteViewModel
             estadoPago: estadoPagoLabel[item?.estadoPago] || item?.estadoPago || '-',
             gravadas: `${simbol} ${fmt(item?.subtotal)}`,
             igv: `${simbol} ${fmt(item?.igv)}`,

@@ -17,17 +17,32 @@ const FORMAL_COLUMNS = [
     { label: 'Cliente', key: 'cliente' },
     { label: 'Vendedor', key: 'vendedor' },
     { label: 'Fecha', key: 'fecha' },
-    { label: 'Moneda', key: 'moneda' },
+    { label: 'Moneda', key: 'monedaDoc' },
     { label: 'Forma Pago', key: 'formaPago' },
     { label: 'Medio Pago', key: 'medioPago' },
     { label: 'Estado SUNAT', key: 'estadoSunat' },
     { label: 'Estado Pago', key: 'estadoPago' },
     { label: 'Op. Gravada', key: 'gravadas' },
     { label: 'Op. Inafecta', key: 'inafectas' },
+    { label: 'Op. Exonerada', key: 'exoneradas' },
+    { label: 'Op. Exportación', key: 'exportacion' },
     { label: 'IGV', key: 'igv' },
     { label: 'Total', key: 'total' },
     { label: 'Saldo', key: 'saldo' },
     { label: 'Motivo NC/ND', key: 'motivo' },
+];
+
+// Mismas columnas que el listado + por qué el documento no entra al total.
+const EXCLUIDOS_COLUMNS = [
+    { label: 'Comprobante', key: 'comprobante' },
+    { label: 'Serie', key: 'serie' },
+    { label: 'Correlativo', key: 'correlativo' },
+    { label: 'RUC/DNI', key: 'ruc' },
+    { label: 'Cliente', key: 'cliente' },
+    { label: 'Fecha', key: 'fecha' },
+    { label: 'Estado SUNAT', key: 'estadoSunat' },
+    { label: 'Total', key: 'total' },
+    { label: 'Por qué no suma', key: 'motivoDocExcluido' },
 ];
 
 const INFORMAL_COLUMNS = [
@@ -54,7 +69,7 @@ const COMPRAS_COLUMNS = [
     { label: 'RUC/DNI', key: 'ruc' },
     { label: 'Proveedor', key: 'proveedor' },
     { label: 'Fecha', key: 'fecha' },
-    { label: 'Moneda', key: 'moneda' },
+    { label: 'Moneda', key: 'monedaDoc' },
     { label: 'Estado Pago', key: 'estadoPago' },
     { label: 'Base Gravada', key: 'gravadas' },
     { label: 'IGV', key: 'igv' },
@@ -73,20 +88,56 @@ const GASTOS_COLUMNS = [
 
 const money = (value: number) => `S/ ${typeof value === 'number' ? value.toFixed(2) : '0.00'}`;
 
-const SummaryBox = ({ items, total }: { items: [string, number, string?][]; total: number }) => (
+// [label, monto, clase de color?, ocultar si es cero?]. Las líneas "opcionales"
+// (NC, ND, descuentos, inafectas…) solo se muestran cuando tienen valor: un
+// "Nota de Crédito: S/ 0.00" en un mes con NC de anulación parecía un error.
+type SummaryItem = [string, number, string?, boolean?];
+
+const SummaryBox = ({ items, total, notas }: { items: SummaryItem[]; total: number; notas?: React.ReactNode }) => (
     <div className="w-full rounded-2xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-900/50 sm:min-w-[300px] sm:p-6">
-        {items.map(([label, val, colorClass = '']) => (
-            <div key={label} className="flex justify-between gap-4 border-b border-gray-200 py-1.5 last:border-0 dark:border-slate-800">
-                <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
-                <span className={`text-sm font-semibold dark:text-white ${colorClass}`}>{money(val)}</span>
-            </div>
-        ))}
+        {items
+            .filter(([, val, , hideIfZero]) => !hideIfZero || Math.abs(val || 0) >= 0.005)
+            .map(([label, val, colorClass = '']) => (
+                <div key={label} className="flex justify-between gap-4 border-b border-gray-200 py-1.5 last:border-0 dark:border-slate-800">
+                    <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
+                    <span className={`text-sm font-semibold dark:text-white ${colorClass}`}>{money(val)}</span>
+                </div>
+            ))}
         <div className="mt-2 flex justify-between border-t-2 border-blue-500/30 pt-4">
             <span className="text-base font-bold dark:text-white">Total:</span>
             <strong className="text-lg font-black text-blue-600 dark:text-blue-400">{money(total)}</strong>
         </div>
+        {notas}
     </div>
 );
+
+// Anulados, sus NC y rechazados leídos juntos. El anulado suma en su mes
+// (criterio SUNAT/SIRE); lo resta su NC en el mes en que ella se emitió; el
+// rechazado no suma nunca.
+type Cuenta = { n: number; monto: number };
+const NotasResumen = ({ r }: { r: { anulados: Cuenta; ncAnulacion: Cuenta; rechazados: Cuenta } }) => {
+    const filas: [string, Cuenta, string][] = [
+        ['Anulados por NC (suman en su mes)', r.anulados, ''],
+        ['NC de anulación (restan en el suyo)', r.ncAnulacion, 'text-red-500 dark:text-red-400'],
+        ['Rechazados por SUNAT (no suman)', r.rechazados, 'text-gray-400'],
+    ];
+    const visibles = filas.filter(([, v]) => v.n > 0);
+    if (visibles.length === 0) return null;
+    return (
+        <div className="mt-4 rounded-xl border border-dashed border-gray-300 p-3 dark:border-slate-700">
+            <p className="mb-1.5 text-[11px] font-black uppercase tracking-wide text-gray-400">Anulaciones del período</p>
+            {visibles.map(([label, v, cls]) => (
+                <div key={label} className="flex justify-between gap-4 py-1 text-xs">
+                    <span className="text-gray-500 dark:text-gray-400">{label} <span className="text-gray-400">({v.n})</span></span>
+                    <span className={`font-semibold text-gray-500 dark:text-gray-400 ${cls}`}>{money(v.monto)}</span>
+                </div>
+            ))}
+            {r.anulados.n > 0 && r.ncAnulacion.n === 0 && (
+                <p className="mt-1.5 text-[11px] text-gray-400">La NC que anula estos documentos se emitió en otro mes y resta allí.</p>
+            )}
+        </div>
+    );
+};
 
 const MobileReportCards = ({ reports, type }: { reports: any[]; type: 'formal' | 'informal' }) => (
     <div className="space-y-3 md:hidden">
@@ -143,6 +194,8 @@ const MobileReportCards = ({ reports, type }: { reports: any[]; type: 'formal' |
 const TabFormal = () => {
     const vm = useReporteViewModel();
     const [pdfMenuOpen, setPdfMenuOpen, pdfMenuRef] = useOutsideClick(false);
+    const [showExcluidos, setShowExcluidos] = useState(false);
+    const nExcluidos = vm.excluidos?.length ?? 0;
     return (
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
             <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
@@ -207,14 +260,36 @@ const TabFormal = () => {
                 </div>
             </div>
             <div className="p-4">
-                {vm.reports?.length > 0 ? (
+                {vm.reports?.length > 0 || nExcluidos > 0 ? (
                     <>
-                        <div className="mb-3 flex items-center gap-2">
+                        <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                             <Icon icon="solar:documents-bold-duotone" className="text-lg text-indigo-600 dark:text-indigo-400" />
                             <h3 className="text-sm font-bold text-gray-800 dark:text-white">
                                 Comprobantes <span className="text-indigo-600 dark:text-indigo-400">({vm.reports.length})</span>
                             </h3>
+                            {nExcluidos > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setShowExcluidos(!showExcluidos)}
+                                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20"
+                                    title="Emitidos en el rango que SUNAT no aceptó (rechazados o con envío fallido): no entran al total"
+                                >
+                                    <Icon icon="solar:eye-closed-linear" className="text-sm" />
+                                    {vm.reports.length + nExcluidos} emitidos · {nExcluidos} no suman
+                                    <Icon icon={showExcluidos ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-sm" />
+                                </button>
+                            )}
                         </div>
+                        {showExcluidos && nExcluidos > 0 && (
+                            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50/40 p-3 dark:border-amber-500/20 dark:bg-amber-500/5">
+                                <p className="mb-2 text-xs text-amber-800 dark:text-amber-200">
+                                    Estos documentos aparecen en la lista de Comprobantes porque se emitieron, pero SUNAT no los aceptó, así que no son venta. Los anulados por nota de crédito, en cambio, sí suman en su mes de emisión y los resta la NC en el mes en que ella se emitió — mismo criterio que el Libro de Ventas (SIRE).
+                                </p>
+                                <div className="overflow-x-auto">
+                                    <DataTable actions={[]} bodyData={vm.excluidos} headerColumns={EXCLUIDOS_COLUMNS} />
+                                </div>
+                            </div>
+                        )}
                         <MobileReportCards reports={vm.reports} type="formal" />
                         <div className="hidden overflow-x-auto md:block">
                             <DataTable actions={[]} bodyData={vm.reports} headerColumns={FORMAL_COLUMNS} />
@@ -225,14 +300,17 @@ const TabFormal = () => {
                                     items={[
                                         ['Boletas:', vm.resumenReporte.totalBoletas],
                                         ['Facturas:', vm.resumenReporte.totalFacturas],
-                                        ['Nota de Crédito:', vm.resumenReporte.totalNotasCredito, 'text-red-500 dark:text-red-400'],
-                                        ['Nota de Débito:', vm.resumenReporte.totalNotasDebito],
-                                        ['Total Descuentos:', vm.resumenReporte.totalDescuentos, 'text-orange-500 dark:text-orange-400'],
+                                        ['Nota de Crédito (restan):', -vm.resumenReporte.totalNotasCredito, 'text-red-500 dark:text-red-400', true],
+                                        ['Nota de Débito:', vm.resumenReporte.totalNotasDebito, '', true],
+                                        ['Total Descuentos:', vm.resumenReporte.totalDescuentos, 'text-orange-500 dark:text-orange-400', true],
                                         ['Op. Gravadas:', vm.resumenReporte.totalGravadas],
-                                        ['Op. Inafectas:', vm.resumenReporte.totalInafectas],
+                                        ['Op. Inafectas:', vm.resumenReporte.totalInafectas, '', true],
+                                        ['Op. Exoneradas:', vm.resumenReporte.totalExoneradas, '', true],
+                                        ['Op. Exportación:', vm.resumenReporte.totalExportacion, '', true],
                                         ['Total IGV (18%):', vm.resumenReporte.totalIGV],
                                     ]}
                                     total={vm.resumenReporte.totalVenta}
+                                    notas={<NotasResumen r={vm.notasResumen} />}
                                 />
                             </div>
                         )}
@@ -300,6 +378,7 @@ const TabInformal = () => {
                                         ['Comprobantes de Pago:', r.totalComprobantesPago],
                                         ['Notas de Pedido:', r.totalNotasPedido],
                                         ['Órdenes de Trabajo:', r.totalOrdenesTrabajo],
+                                        [`Ya convertidos a SUNAT (${r.cantidadConvertidos ?? 0}, no suman):`, r.totalConvertidos ?? 0, 'text-gray-400 dark:text-gray-500', true],
                                     ]}
                                     total={r.totalVenta}
                                 />

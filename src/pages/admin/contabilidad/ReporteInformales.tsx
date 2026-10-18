@@ -53,7 +53,7 @@ const ReportesComprobantesInformales = () => {
                              {r !== null && (
                                 <div className="flex justify-end mt-8 mb-5 pr-[24px]">
                                     <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 min-w-[300px]">
-                                        {[['Tickets:', r.totalTickets], ['Notas de Venta:', r.totalNotasVenta], ['Recibos por Honorarios:', r.totalRecibosHonorarios], ['Comprobantes de Pago:', r.totalComprobantesPago], ['Notas de Pedido:', r.totalNotasPedido], ['Órdenes de Trabajo:', r.totalOrdenesTrabajo]].map(([label, val]) => (
+                                        {[['Tickets:', r.totalTickets], ['Notas de Venta:', r.totalNotasVenta], ['Recibos por Honorarios:', r.totalRecibosHonorarios], ['Comprobantes de Pago:', r.totalComprobantesPago], ['Notas de Pedido:', r.totalNotasPedido], ['Órdenes de Trabajo:', r.totalOrdenesTrabajo], [`Ya convertidos a SUNAT (${r.cantidadConvertidos ?? 0}, no suman):`, r.totalConvertidos ?? 0]].map(([label, val]) => (
                                             <div key={label as string} className="flex justify-between py-1.5 border-b border-gray-200 dark:border-slate-800 last:border-0">
                                                 <label className="text-sm text-gray-500 dark:text-gray-400">{label as string}</label>
                                                 <span className="text-sm font-semibold dark:text-white">S/ {(val as number).toFixed(2)}</span>
