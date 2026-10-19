@@ -2690,7 +2690,10 @@ export const useFacturacionViewModel = () => {
         const m = normalizePaymentMethod(paymentMethod);
         return MEDIOS_BANCARIZADOS.includes(m) ? [m] : [];
     })();
-    const cpeRequeridoPorMedioPago = exigeCpePorMedioPago && !esComprobanteElectronico && !isEditMode && mediosBancarizadosDelCobro.length > 0;
+    // Editando una nota (NV/ticket/…) pero con Boleta o Factura elegida: al
+    // guardar se actualiza la nota Y se emite el comprobante formal desde ella.
+    const editaHaciaFormal = isEditMode && editNotaVentaId != null && ['01', '03'].includes(String(formValues?.tipoDoc || ''));
+    const cpeRequeridoPorMedioPago =exigeCpePorMedioPago && !esComprobanteElectronico && !isEditMode && mediosBancarizadosDelCobro.length > 0;
     const etiquetaMedio = (m: string) => ({ YAPE: 'Yape', PLIN: 'Plin', TRANSFERENCIA: 'Transferencia', TARJETA: 'Tarjeta' } as Record<string, string>)[m] || m;
     const cpeRequeridoMedios = mediosBancarizadosDelCobro.map(etiquetaMedio).join(' y ');
     const cpeRequeridoMensaje = cpeRequeridoPorMedioPago
@@ -3123,6 +3126,21 @@ export const useFacturacionViewModel = () => {
         let result: { success: boolean; error?: string };
         if (isEditMode && editNotaVentaId) {
             result = await updateNotaVenta(editNotaVentaId, finalData);
+            // Editar la nota y elegir Boleta/Factura en "Cambiar" es convertirla.
+            // Antes solo se actualizaba la nota (seguía siendo NV01-…) pero el
+            // ticket salía como "BOLETA DE VENTA ELECTRÓNICA NV01-…" y el cliente
+            // se llevaba una boleta que nunca fue a SUNAT (DEMENVER NV01-6783).
+            // Primero se guardan los productos nuevos en la nota (kardex y cobro)
+            // y luego se emite el formal desde ella, igual que "Hacer Boleta".
+            if (result.success && editaHaciaFormal) {
+                result = await addInvoice({ ...finalData, comprobanteOrigenId: editNotaVentaId });
+                if (!result.success) {
+                    useAlertStore.getState().alert(
+                        `La nota se actualizó, pero la ${String(formValues?.comprobante || 'boleta').toLowerCase()} no se emitió: ${result.error || 'error desconocido'}. Emítala desde Notas de venta → "Hacer Boleta".`,
+                        'error',
+                    );
+                }
+            }
         } else if (isEditMode && editQuotationId) {
             result = await updateQuotation(editQuotationId, finalData);
         } else if (tiposInformales.includes(formValues.tipoDoc)) {
@@ -3549,5 +3567,6 @@ export const useFacturacionViewModel = () => {
         isLoading,
         isEditMode,
         isEditNotaVenta: editNotaVentaId != null,
+        editaHaciaFormal,
     };
 };
