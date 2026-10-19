@@ -138,15 +138,24 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
     const motivoNota = (vm.typesOperation as any[])
         ?.find((op: any) => op.id === Number(vm.formValues?.motivoId))?.descripcion || 'Nota de crédito';
 
+    // Editando una nota ya cobrada: el cobro es solo el SALDO (nuevo total − lo
+    // ya pagado). "Exacto", el vuelto, el faltante y el pago mixto se miden
+    // contra este monto; sin pago previo es el total, como siempre.
+    const pagoPrevio: number = Number(vm.pagoPrevio ?? 0);
+    const enModoSaldo = pagoPrevio > 0;
+    const cobroObjetivo: number = enModoSaldo ? Number(vm.montoACobrar ?? 0) : total;
+    const aDevolver: number = enModoSaldo ? Number(vm.montoADevolver ?? 0) : 0;
+    const sinCobroPendiente = enModoSaldo && cobroObjetivo <= 0;
+
     // Split payment helpers
     const splitTotal = (vm.splitPayments as PaymentLine[])
         .reduce((s, p) => s + (Number(p.amount) || 0), 0);
-    const splitRemaining = Math.max(0, total - splitTotal);
-    const splitExcess = Math.max(0, splitTotal - total);
+    const splitRemaining = Math.max(0, cobroObjetivo - splitTotal);
+    const splitExcess = Math.max(0, splitTotal - cobroObjetivo);
     const splitCashTotal = (vm.splitPayments as PaymentLine[])
         .filter((p) => String(p.method).trim().toUpperCase() === 'EFECTIVO')
         .reduce((s, p) => s + (Number(p.amount) || 0), 0);
-    const splitValid = Math.abs(splitTotal - total) < 0.01 || (splitExcess > 0 && splitCashTotal + 0.01 >= splitExcess);
+    const splitValid = sinCobroPendiente || Math.abs(splitTotal - cobroObjetivo) < 0.01 || (splitExcess > 0 && splitCashTotal + 0.01 >= splitExcess);
     const splitChange = splitValid ? Number(splitExcess.toFixed(2)) : 0;
 
     const updateSplitAmount = (idx: number, value: number) => {
@@ -193,7 +202,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
     const handleFillRemaining = (idx: number) => {
         vm.setSplitPayments((curr: PaymentLine[]) => {
             const otherTotal = curr.reduce((s, p, i) => i === idx ? s : s + (Number(p.amount) || 0), 0);
-            const fill = parseFloat(Math.max(0, total - otherTotal).toFixed(2));
+            const fill = parseFloat(Math.max(0, cobroObjetivo - otherTotal).toFixed(2));
             const next = [...curr];
             next[idx] = { ...next[idx], amount: fill };
             return next;
@@ -615,6 +624,39 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                                     </div>
                                 ) : (
                 <div className="mb-1">
+                    {enModoSaldo && (
+                        <div data-testid="pos-pago-previo" className="mb-3 rounded-xl border border-violet-200 dark:border-violet-800/60 bg-violet-50/70 dark:bg-violet-950/30 p-3">
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                                <div>
+                                    <p className="text-[9px] font-black uppercase tracking-wide text-gray-400">Nuevo total</p>
+                                    <p className="text-sm font-black text-gray-800 dark:text-white">{simboloPreview} {total.toFixed(2)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[9px] font-black uppercase tracking-wide text-gray-400">Ya pagado</p>
+                                    <p className="text-sm font-black text-emerald-600 dark:text-emerald-300">{simboloPreview} {pagoPrevio.toFixed(2)}</p>
+                                </div>
+                                {aDevolver > 0 ? (
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-wide text-amber-600">A devolver</p>
+                                        <p className="text-sm font-black text-amber-600 dark:text-amber-300">{simboloPreview} {aDevolver.toFixed(2)}</p>
+                                    </div>
+                                ) : (
+                                    <div>
+                                        <p className="text-[9px] font-black uppercase tracking-wide text-violet-600">Saldo a cobrar</p>
+                                        <p className="text-sm font-black text-violet-700 dark:text-violet-300">{simboloPreview} {cobroObjetivo.toFixed(2)}</p>
+                                    </div>
+                                )}
+                            </div>
+                            <p className="mt-2 text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                                {aDevolver > 0
+                                    ? `El cliente pagó más que el nuevo total: devuélvele ${simboloPreview} ${aDevolver.toFixed(2)}. No hay nada que cobrar.`
+                                    : sinCobroPendiente
+                                        ? 'Lo ya pagado cubre el nuevo total. No hay nada que cobrar.'
+                                        : `Cobra solo la diferencia. Ingresa lo que el cliente entrega ahora; el vuelto se calcula sobre ${simboloPreview} ${cobroObjetivo.toFixed(2)}.`}
+                            </p>
+                        </div>
+                    )}
+                    {!sinCobroPendiente && (<>
                     {/* Toggle simple / mixto */}
                     <div className="flex items-center justify-end mb-2">
                         <button
@@ -670,12 +712,12 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                                             step="0.01"
                                             value={vm.pay || ''}
                                             onChange={(e) => vm.setPay(Number(e.target.value) || 0)}
-                                            placeholder={`Recibido ${total.toFixed(2)}`}
+                                            placeholder={`Recibido ${cobroObjetivo.toFixed(2)}`}
                                             className="w-full pl-7 pr-16 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-slate-800 text-xs font-bold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-emerald-300"
                                         />
                                         <button
                                             type="button"
-                                            onClick={() => vm.setPay(Number(total.toFixed(2)))}
+                                            onClick={() => vm.setPay(Number(cobroObjetivo.toFixed(2)))}
                                             className="absolute right-1 top-1/2 -translate-y-1/2 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-[9px] font-black text-emerald-700 dark:text-emerald-300"
                                         >
                                             Exacto
@@ -706,7 +748,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                             )}
 
                             {renderPaymentTraceFields(
-                                { ...vm.paymentDetail, method: vm.paymentMethod, amount: total },
+                                { ...vm.paymentDetail, method: vm.paymentMethod, amount: cobroObjetivo },
                                 (patch) => vm.setPaymentDetail((curr: PaymentLine) => ({ ...curr, ...patch })),
                             )}
                         </div>
@@ -778,6 +820,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                             </div>
                         </div>
                     )}
+                    </>)}
                 </div>
                                 )}
                                 {vm.cpeRequeridoPorMedioPago && <CpeRequeridoCard vm={vm} />}

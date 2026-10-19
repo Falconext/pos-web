@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ordenEnCajas, ordenDesdeCajas } from '@/features/admin/compras/utils/compraPorPaquete';
+import { ordenEnCajas, ordenDesdeCajas, precioOrdenConFactorIgv } from '@/features/admin/compras/utils/compraPorPaquete';
 import ModalCurvaTallas from './ModalCurvaTallas';
 import { sePideEnCurva } from './curvaDeTallas';
 import { Icon } from '@iconify/react';
@@ -15,6 +15,8 @@ import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
 import { Calendar } from '@/components/Date';
 import { tipoCambioService } from '@/services/tipoCambio.service';
+import { useSedesStore } from '@/zustand/sedes';
+import { useAuthStore } from '@/zustand/auth';
 
 interface DetalleOC {
     productoId?: number;
@@ -56,6 +58,8 @@ interface OrdenCompra {
     condicionesPago?: string | null;
     lugarEntrega?: string | null;
     proveedorId?: number;
+    /** Sede de la orden: a dónde entra la mercadería si no se elige otra al recibir. */
+    sedeId?: number | null;
     proveedor?: { nombre: string; nroDoc?: string };
     usuario?: { nombre: string };
     compra?: { id: number; serie: string; numero: string } | null;
@@ -418,6 +422,19 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
     const [moneda, setMoneda] = useState(orden?.moneda ?? 'PEN');
     const [aplicaIgv, setAplicaIgv] = useState(orden ? Number(orden.igv) > 0 : true);
     const [igvIncluido, setIgvIncluido] = useState(orden?.igvIncluido ?? false);
+    // Marcar "Precios con IGV incluido" convierte los precios ya escritos de
+    // las líneas gravadas (neto ×1.18 ↔ con IGV ÷1.18), así cada línea conserva
+    // su total. Antes solo cambiaba cómo se leían: OWENSOFT lo marcaba para
+    // escribir un disco "a S/100 con IGV" y las demás líneas perdían su IGV
+    // (273.81 pasaba a 232.04); terminaba calculando 84.75 a mano.
+    const cambiarIgvIncluido = (incluido: boolean) => {
+        if (incluido === igvIncluido) return;
+        const factor = incluido ? 1.18 : 1 / 1.18;
+        setDetalles((prev) => prev.map((d) => (
+            d.gravado === false ? d : { ...d, precioUnitario: precioOrdenConFactorIgv(d.precioUnitario, factor, d.unidadesPorPaquete) }
+        )));
+        setIgvIncluido(incluido);
+    };
 
     const [detalles, setDetalles] = useState<DetalleOC[]>(
         (orden?.detalles ?? []).map((d: any) => ({
@@ -481,7 +498,9 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
             cantidad: 1,
             // El costo se guarda sin IGV y suele traer 4 decimales (ej. 46.6102 = 55÷1.18);
             // en la orden al proveedor basta con 2 decimales para que se vea limpio.
-            precioUnitario: Number((Number(p.costoPromedio ?? 0) || 0).toFixed(2)),
+            // Con "Precios con IGV incluido" el costo del catálogo (neto) entra con su IGV.
+            precioUnitario: Number(((Number(p.costoPromedio ?? 0) || 0)
+                * (aplicaIgv && igvIncluido && esGravadoAfectacion(p.tipoAfectacionIGV) ? 1.18 : 1)).toFixed(2)),
             gravado: esGravadoAfectacion(p.tipoAfectacionIGV),
             // Cajas que tiene configuradas el producto, para poder pedirle al
             // proveedor "5 cajas de 6" en vez de "30 unidades". Se queda en el
@@ -808,6 +827,7 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
                     producto={modeloEnCurva}
                     onCancelar={() => setModeloEnCurva(null)}
                     onAgregar={agregarCurva}
+                    factorCosto={aplicaIgv && igvIncluido ? 1.18 : 1}
                 />
 
                 <div>
@@ -824,9 +844,9 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
                         </label>
                         {aplicaIgv && (
                             <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300">
-                                <input type="checkbox" checked={igvIncluido} onChange={(e) => setIgvIncluido(e.target.checked)} className="h-4 w-4 rounded accent-blue-600" />
+                                <input type="checkbox" checked={igvIncluido} onChange={(e) => cambiarIgvIncluido(e.target.checked)} className="h-4 w-4 rounded accent-blue-600" />
                                 Precios con IGV incluido
-                                <span className="text-[10px] font-medium text-gray-400">(el IGV se extrae del precio)</span>
+                                <span className="text-[10px] font-medium text-gray-400">(escribe el precio tal como sale en la factura)</span>
                             </label>
                         )}
                     </div>
@@ -860,6 +880,15 @@ function ModalRecibirOrden({ orden, onClose, onSaved }: { orden: OrdenCompra; on
     const [formaPago, setFormaPago] = useState('CONTADO');
     const [fechaVencimiento, setFechaVencimiento] = useState('');
     const [guardando, setGuardando] = useState(false);
+    // A qué sede/almacén entra la mercadería. Antes siempre entraba a la sede
+    // de la orden y para mandarla al almacén había que editar la compra después
+    // (OWENSOFT, video 2).
+    const { sedes, listarSedes } = useSedesStore();
+    const sedeActivaId = useAuthStore((st) => st.sedeActiva?.id);
+    const [sedeDestinoId, setSedeDestinoId] = useState<number>(Number(orden.sedeId || sedeActivaId || 0));
+    useEffect(() => { listarSedes(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    const sedesActivas = (sedes || []).filter((x: any) => x.activo !== false);
+    const etiquetaSede = (x: any) => `${x.nombre}${x.tipo === 'ALMACEN' ? ' (Almacén)' : ''}`;
     // Orden en dólares: la compra se registra con el TC de la factura recibida
     // (sugerido: TC venta SUNAT de la fecha de emisión), no con el de la orden.
     const esUSD = orden.moneda === 'USD';
@@ -885,11 +914,13 @@ function ModalRecibirOrden({ orden, onClose, onSaved }: { orden: OrdenCompra; on
                 numero: numero.trim(),
                 fechaEmision,
                 formaPago,
+                sedeId: sedeDestinoId || undefined,
                 tipoCambio: esUSD ? Number(tipoCambio) : undefined,
                 fechaVencimiento: formaPago === 'CREDITO' && fechaVencimiento ? fechaVencimiento : undefined,
             });
             if (resp.success) {
-                alert(`Mercadería recibida: se registró la compra y el stock ingresó al almacén`, 'success');
+                const destino = sedesActivas.find((x: any) => x.id === sedeDestinoId);
+                alert(`Mercadería recibida: se registró la compra y el stock ingresó a ${destino ? etiquetaSede(destino) : 'la sede'}`, 'success');
                 onSaved();
             } else {
                 alert(resp.error || 'No se pudo registrar la recepción', 'error');
@@ -957,6 +988,19 @@ function ModalRecibirOrden({ orden, onClose, onSaved }: { orden: OrdenCompra; on
                             onChange={(id: any) => setFormaPago(String(id))}
                         />
                     </div>
+                    {sedesActivas.length > 1 && (
+                        <div className="col-span-2">
+                            <Select
+                                name="sedeDestino"
+                                label="El stock ingresará a"
+                                error={() => { }}
+                                withLabel
+                                value={(() => { const x = sedesActivas.find((y: any) => y.id === sedeDestinoId); return x ? etiquetaSede(x) : ''; })()}
+                                options={sedesActivas.map((x: any) => ({ id: x.id, value: etiquetaSede(x) }))}
+                                onChange={(id: any) => setSedeDestinoId(Number(id))}
+                            />
+                        </div>
+                    )}
                     {formaPago === 'CREDITO' && (
                         <div>
                             <Calendar

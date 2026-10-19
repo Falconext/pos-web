@@ -44,6 +44,8 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
     // Restricción por usuario: ocultar el costo (y su desglose/margen) en la ficha.
     const ocultarCosto = !!useAuthStore((s) => s.auth?.ocultarPrecioCosto);
     const rolAuth = useAuthStore((s) => s.auth?.rol);
+    // Con varias sedes cada una lleva su costo: se edita el de la sede que muestra el Kardex.
+    const costoSede = vm.costoSede;
     const [listasPrecioOpen, setListasPrecioOpen] = useState(false);
     // Imprimir la etiqueta sin salir de la ficha: es lo que se quiere hacer justo
     // después de generar el código. El modal trae también las variantes.
@@ -1288,6 +1290,13 @@ export const ProductBasicForm: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                                                             setCostoUsdInput('');
                                                         }}
                                                     />
+                                                    {isEdit && costoSede && (
+                                                        <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                                                            {costoSede.id
+                                                                ? `Costo en ${costoSede.nombre ?? 'esta sede'}. Cambiarlo no toca el de las otras sedes.`
+                                                                : 'Estás viendo todas las sedes: el costo que escribas vale para todas.'}
+                                                        </p>
+                                                    )}
                                                     {moneda === 'USD' && (
                                                         <div className="mt-2 rounded-lg bg-blue-50 dark:bg-blue-900/20 px-3 py-2 space-y-1.5">
                                                             <p className="text-[11px] text-blue-700 dark:text-blue-300">¿Lo compras en dólares? Escribe el costo con IGV en US$ y se guarda en soles.</p>

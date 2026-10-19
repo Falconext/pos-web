@@ -864,6 +864,7 @@ export default function ProductsView() {
             setErrors={actions.setErrors}
             setFormValues={actions.setFormValues}
             isEdit={vm.isEdit}
+            costoSede={vm.tieneVariasSedes ? { id: vm.effectiveSedeId ?? null, nombre: vm.selectedSedeName ?? null } : undefined}
         />}
 
         <ModalConfirm

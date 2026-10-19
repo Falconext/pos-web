@@ -49,6 +49,9 @@ const SALUD_STYLES: Record<'sana' | 'riesgo' | 'critico', { pill: string; dot: s
   critico: { pill: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', dot: 'bg-rose-500', label: 'Fuga probable' },
 };
 
+// Venció y pasó la gracia: el login y el guard ya no la dejan entrar.
+const SALUD_SIN_ACCESO = { pill: 'bg-slate-200 text-slate-700 dark:bg-slate-700/60 dark:text-slate-200', dot: 'bg-slate-500', label: 'Sin acceso' };
+
 const GESTION_META: Record<string, { label: string; cls: string; dot: string }> = {
   POR_CONTACTAR: { label: 'Por contactar', cls: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300', dot: 'bg-slate-400' },
   CONTACTADA: { label: 'Contactada', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', dot: 'bg-blue-500' },
@@ -218,10 +221,17 @@ const EmpresasIndex = () => {
         </div>
       ),
       'Vence en': (
-        <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${sev.pill}`}>
-          <Icon icon={sev.icon} width={11} height={11} />
-          {row['Vence en']}
-        </span>
+        <div className="flex flex-col leading-tight gap-0.5">
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap w-fit ${sev.pill}`}>
+            <Icon icon={sev.icon} width={11} height={11} />
+            {row['Vence en']}
+          </span>
+          {row.acceso === 'gracia' && (
+            <span className="text-[11px] text-amber-600 dark:text-amber-400 whitespace-nowrap" title="Venció, pero todavía puede entrar mientras dura la gracia">
+              En gracia · {row.diasGracia} día{row.diasGracia === 1 ? '' : 's'}
+            </span>
+          )}
+        </div>
       ),
       'Estado': (
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${row.estado === 'ACTIVO' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-gray-100 text-gray-500 dark:bg-slate-700/50 dark:text-gray-400'}`}>
@@ -230,8 +240,11 @@ const EmpresasIndex = () => {
         </span>
       ),
       'Salud': (() => {
-        const s = SALUD_STYLES[(row.saludEstado as 'sana' | 'riesgo' | 'critico')] ?? SALUD_STYLES.sana;
-        const enRiesgo = (row.saludEstado === 'riesgo' || row.saludEstado === 'critico') && row.estado === 'ACTIVO';
+        // Una cuenta bloqueada no puede facturar: decir "Activa" porque vendió hace poco confunde.
+        const s = row.acceso === 'bloqueada'
+          ? SALUD_SIN_ACCESO
+          : SALUD_STYLES[(row.saludEstado as 'sana' | 'riesgo' | 'critico')] ?? SALUD_STYLES.sana;
+        const enRiesgo = (row.acceso === 'bloqueada' || row.saludEstado === 'riesgo' || row.saludEstado === 'critico') && row.estado === 'ACTIVO';
         const gestion = row.estadoGestion ? GESTION_META[row.estadoGestion as string] : null;
         return (
           <div className="flex items-center gap-2">

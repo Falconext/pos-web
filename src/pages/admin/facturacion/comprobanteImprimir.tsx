@@ -7,6 +7,7 @@ import { elemCfg, lineasDeTexto, ticketPx } from '@/features/admin/cotizaciones/
 import { useAuthStore } from '@/zustand/auth';
 import { useSedesStore } from '@/zustand/sedes';
 import { descripcionParaImpresion } from '@/utils/descripcion-vehiculo';
+import { imprimeDetalleAdicional, lineasDetalleAdicional } from '@/utils/detalleAdicional';
 import { useQrSunat } from '@/utils/qrSunat';
 import { lineasPagoMixto } from '@/utils/pagoMixto';
 
@@ -167,6 +168,13 @@ console.log(formValues)
     const displayRetencionMonto = retencionData ? Number(retencionData.montoDetraccion || 0) : calculatedRetention;
     const shouldShowRetention = retencionData || (hasRetentionText && calculatedRetention > 0);
     const isDocumentoFiscal = ['01', '03', '07', '08'].includes(String(formValues?.tipoDoc || ''));
+    // Detalle multilínea bajo el título de cada ítem (cotización de servicios). No
+    // se imprime en factura/boleta/notas: el XML de SUNAT solo lleva el título.
+    const muestraDetalleAdicional =
+        imprimeDetalleAdicional(formValues?.tipoDoc) &&
+        !/^(FACTURA|BOLETA|NOTA DE CR|NOTA DE D)/i.test(String(receipt || ''));
+    const detalleLineas = (item: any): string[] =>
+        muestraDetalleAdicional ? lineasDetalleAdicional(item?.detalleAdicional) : [];
     const explicitDiscount = parseAmount(
         formValues?.mtoDescuentoGlobal ??
         formValues?.totalDescuentos ??
@@ -269,7 +277,18 @@ console.log(formValues)
         || 'EFECTIVO'
     ).toUpperCase();
     const saldoCredito = Math.max(0, round2(mtoImpVenta - pagoInicialCredito));
-    const displayPagado = isCreditPayment ? pagoInicialCredito : (splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto);
+    // Nota EDITADA que ya estaba cobrada (ver utils/cobroEdicion): el vuelto es
+    // sobre el saldo, así que se imprime lo pagado antes y lo recibido ahora, y
+    // PAGADO pasa a ser el total cubierto (20.80 antes + 50 recibido − 25.80 de
+    // vuelto = 45). Sin estos datos, PAGADO = total + vuelto daba 70.80.
+    const pagoAnteriorEdicion = isCreditPayment ? 0 : parseAmount(paymentDetails?.pagoAnterior, 0);
+    const recibidoEdicion = pagoAnteriorEdicion > 0 ? parseAmount(paymentDetails?.recibido, 0) : 0;
+    const devolucionEdicion = pagoAnteriorEdicion > 0 ? parseAmount(paymentDetails?.devolucion, 0) : 0;
+    const displayPagado = isCreditPayment
+        ? pagoInicialCredito
+        : pagoAnteriorEdicion > 0
+            ? round2(mtoImpVenta)
+            : (splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto);
     const splitPaymentDetails = Array.isArray(paymentDetails?.splitPayments)
         ? paymentDetails.splitPayments
         : (Array.isArray(formValues?.splitPayments) ? formValues.splitPayments : []);
@@ -418,6 +437,9 @@ console.log(formValues)
                                         {esItemGratuito(item) && (
                                             <span className={`ml-1 font-bold`} style={{ fontSize: tpx('productos', 13) }}>[GRATIS]</span>
                                         )}
+                                        {detalleLineas(item).map((l, idx) => (
+                                            <span key={`da-${idx}`} className="block" style={{ fontSize: tpx('productos', 13) }}>{l}</span>
+                                        ))}
                                         {item?.lotes && item.lotes.length > 0 && (
                                             <div className="flex flex-col mt-0.5">
                                                 {item.lotes.map((l: any, idx: number) => (
@@ -560,9 +582,21 @@ console.log(formValues)
                                 ))}
                             </>
                         )}
+                        {pagoAnteriorEdicion > 0 && (
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                <span>PAGO ANTERIOR:</span>
+                                <span>{monedaSimbolo} {pagoAnteriorEdicion.toFixed(2)}</span>
+                            </p>
+                        )}
+                        {recibidoEdicion > 0 && (
+                            <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
+                                <span>RECIBIDO:</span>
+                                <span>{monedaSimbolo} {recibidoEdicion.toFixed(2)}</span>
+                            </p>
+                        )}
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
-                            <span>VUELTO:</span>
-                            <span>{monedaSimbolo} {displayVuelto.toFixed(2)}</span>
+                            <span>{devolucionEdicion > 0 ? 'DEVOLUCIÓN:' : 'VUELTO:'}</span>
+                            <span>{monedaSimbolo} {(devolucionEdicion > 0 ? devolucionEdicion : displayVuelto).toFixed(2)}</span>
                         </p>
                         <p className={`${size === 'TICKET' ? 'text-[16px]' : 'text-xs'} flex justify-between`}>
                             <span>PAGADO:</span>
@@ -839,6 +873,9 @@ console.log(formValues)
                                                 <td className="text-left border-r border-gray-300 px-2 py-1 align-top" style={descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).includes('\n') ? { whiteSpace: 'pre-line', lineHeight: 1.7 } : undefined}>
                                                     {descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}
                                                     {esGratis && <span className="ml-1 font-bold text-[9px]">[GRATIS]</span>}
+                                                    {detalleLineas(item).map((l, idx) => (
+                                                        <div key={`da-${idx}`} className="font-normal" style={{ whiteSpace: 'normal', lineHeight: 1.35 }}>{l}</div>
+                                                    ))}
                                                 </td>
                                                 <td className="text-center border-r border-gray-300 py-1 align-top">{monedaSimbolo}</td>
                                                 <td className="text-right border-r border-gray-300 px-1 py-1 align-top">{pUnit.toFixed(2)}</td>
@@ -1146,8 +1183,17 @@ console.log(formValues)
                                                     </>
                                                 )}
 
-                                                <span className="font-bold">VUELTO:</span>
-                                                <span>{monedaSimbolo} {displayVuelto.toFixed(2)}</span>
+                                                {pagoAnteriorEdicion > 0 && (<>
+                                                    <span className="font-bold">PAGO ANTERIOR:</span>
+                                                    <span>{monedaSimbolo} {pagoAnteriorEdicion.toFixed(2)}</span>
+                                                </>)}
+                                                {recibidoEdicion > 0 && (<>
+                                                    <span className="font-bold">RECIBIDO:</span>
+                                                    <span>{monedaSimbolo} {recibidoEdicion.toFixed(2)}</span>
+                                                </>)}
+
+                                                <span className="font-bold">{devolucionEdicion > 0 ? 'DEVOLUCIÓN:' : 'VUELTO:'}</span>
+                                                <span>{monedaSimbolo} {(devolucionEdicion > 0 ? devolucionEdicion : displayVuelto).toFixed(2)}</span>
 
                                                 <span className="font-bold">PAGADO:</span>
                                                 <span>{monedaSimbolo} {displayPagado.toFixed(2)}</span>
@@ -1300,6 +1346,9 @@ console.log(formValues)
                                                         {descripcionParaImpresion(item?.descripcion, item?.atributosTecnicos).toUpperCase()}
                                                         {esGratis && <span className="ml-1 font-bold text-[9px]">[GRATIS]</span>}
                                                     </div>
+                                                    {detalleLineas(item).map((l, idx) => (
+                                                        <div key={`da-${idx}`} className="font-normal" style={{ lineHeight: 1.35 }}>{l}</div>
+                                                    ))}
                                                     {item?.lotes && item.lotes.length > 0 && (
                                                         <div className="flex flex-col mt-0.5">
                                                             {item.lotes.map((l: any, idx: number) => (

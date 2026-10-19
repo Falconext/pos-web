@@ -247,6 +247,9 @@ export const useEmpresaIndexViewModel = (): any => {
             saludEstado: empresa.salud?.estado ?? 'sana',
             diasSinVender: empresa.salud?.diasSinVender ?? null,
             ultimaVentaTexto: describirUltimaVenta(empresa.salud),
+            // Si la empresa puede entrar, con la misma regla que el login (gracia incluida).
+            acceso: (empresa.salud?.acceso ?? 'vigente') as 'vigente' | 'gracia' | 'bloqueada',
+            diasGracia: empresa.salud?.diasGracia ?? 0,
             estadoGestion: empresa.estadoGestion ?? null,
         };
     }) || [];
