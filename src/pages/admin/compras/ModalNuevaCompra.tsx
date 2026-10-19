@@ -833,8 +833,10 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
             // valor y sin IGV (exonerado, o proveedor que no lo cobra) entra
             // "Sin IGV". Si no, el total salía con 18% de más (XML de S/ 218
             // se grababa como S/ 227 y en pantalla se veía S/ 236). La foto
-            // (IA) no trae IGV por línea: ahí no se decide nada.
-            ...(lineaXmlSinIgv(item) ? { _gravado: false } : {}),
+            // (IA) no trae IGV por línea —el backend manda `igv: 0` en todas—,
+            // así que ahí no se decide nada: si no, la compra entera quedaba
+            // sin IGV.
+            ...(origen === 'xml' && lineaXmlSinIgv(item) ? { _gravado: false } : {}),
             _fromXml: true,
             _codigoXml: item.codigo,
             _sinVincular: !item.productoId,
