@@ -2,6 +2,7 @@
 import { Document, Page, Text, View, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import moment from 'moment';
 import { elemCfg } from '@/features/admin/cotizaciones/cotizFormatoElementos';
+import { lineasPagoMixto } from '@/utils/pagoMixto';
 
 Font.register({
     family: 'Roboto',
@@ -308,14 +309,14 @@ const PrintPDF = ({
     const medioPagoCode = normalizePaymentLabel(formValues?.medioPago);
     const isCreditPayment = paymentConditionCode === 'CREDITO' || medioPagoCode === 'CREDITO' || hasCreditInstallments;
     const isMixedPayment = medioPagoCode === 'MIXTO';
+    // Al reimprimir el desglose viene del comprobante guardado, no de `splitPayments`.
+    const lineasMixtas = isMixedPayment ? lineasPagoMixto(formValues) : [];
     const paymentConditionLabel = isCreditPayment ? 'CRÉDITO' : 'CONTADO';
     const paymentMethodLabel = isCreditPayment
         ? 'CRÉDITO'
         : (formValues?.medioPago ? String(formValues.medioPago).toUpperCase() : 'EFECTIVO');
     const displayVuelto = isCreditPayment ? 0 : Number(formValues?.vuelto || 0);
-    const splitPaidTotal = isMixedPayment && Array.isArray(formValues?.splitPayments)
-        ? formValues.splitPayments.reduce((sum: number, sp: { amount: number }) => sum + Number(sp.amount || 0), 0)
-        : 0;
+    const splitPaidTotal = lineasMixtas.reduce((sum, sp) => sum + sp.amount, 0);
     const displayPagado = isCreditPayment ? 0 : (splitPaidTotal > 0 ? splitPaidTotal : mtoImpVenta + displayVuelto);
     const paymentDetails = formValues?.paymentDetails || {};
     const splitPaymentDetails = Array.isArray(paymentDetails?.splitPayments)
@@ -492,12 +493,12 @@ const PrintPDF = ({
                                 )}
                                 {!isCreditPayment && (
                                     <>
-                                        {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                        {lineasMixtas.length > 0 ? (
                                             <>
                                                 <View style={styles.infoRow}>
                                                     <Text style={styles.label}>MEDIOS PAGO:</Text>
                                                 </View>
-                                                {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                {lineasMixtas.map((sp, idx) => {
                                                     const detail = splitPaymentDetails[idx] || sp;
                                                     return (
                                                         <View key={idx}>
@@ -743,12 +744,12 @@ const PrintPDF = ({
                                             )}
                                             {!isCreditPayment && (
                                                 <>
-                                                    {isMixedPayment && Array.isArray(formValues?.splitPayments) && formValues.splitPayments.length > 0 ? (
+                                                    {lineasMixtas.length > 0 ? (
                                                         <>
                                                             <View style={styles.infoRow}>
                                                                 <Text style={styles.label}>MEDIOS DE PAGO</Text>
                                                             </View>
-                                                            {formValues.splitPayments.map((sp: { method: string; amount: number }, idx: number) => {
+                                                            {lineasMixtas.map((sp, idx) => {
                                                                 const detail = splitPaymentDetails[idx] || sp;
                                                                 return (
                                                                     <View key={idx}>

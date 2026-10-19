@@ -36,6 +36,7 @@ import TableActionMenu from '@/components/TableActionMenu';
 import ModalConfirm from '@/components/ModalConfirm';
 import { useUsersStore } from '@/zustand/users';
 import { mapDetalleToInvoiceProduct } from '@/features/admin/facturacion/utils/comprobanteProductMapper';
+import { etiquetaMedioPago, lineasPagoMixto } from '@/utils/pagoMixto';
 
 // ─── Config badges ────────────────────────────────────────────────────────────
 
@@ -1349,6 +1350,12 @@ export default function PanelVentasView() {
                                             {col('mpago') && (
                                                 <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400 whitespace-nowrap">
                                                     {item.metodoPago}
+                                                    {/* Mixto: cuánto entró por cada medio, no solo la palabra. */}
+                                                    {String(item.metodoPago).toUpperCase() === 'MIXTO' && lineasPagoMixto(item).map((l) => (
+                                                        <span key={l.method} className="block text-[10px] text-gray-400 dark:text-slate-500">
+                                                            {etiquetaMedioPago(l.method)} S/ {l.amount.toFixed(2)}
+                                                        </span>
+                                                    ))}
                                                 </td>
                                             )}
                                             <td className="px-3 py-2.5">

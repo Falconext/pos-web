@@ -15,6 +15,7 @@ import ComprobantePrintPage from './comprobanteImprimir';
 import { numberToWords } from '@/utils/numberToLetters';
 import { hasPlanFeature } from '@/utils/permissions';
 import { buildComprobantePrintPageStyle } from '@/utils/printStyles';
+import { etiquetaMedioPago, lineasPagoMixto } from '@/utils/pagoMixto';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -382,6 +383,11 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
                                     ? `Crédito${comprobante.medioPago ? ` · ${comprobante.medioPago}` : ''}`
                                     : comprobante.medioPago || 'Sin medio de pago'}
                             </p>
+                            {String(comprobante.medioPago || '').toUpperCase() === 'MIXTO' && lineasPagoMixto(comprobante).map((l) => (
+                                <p key={l.method} className="text-xs text-gray-500 dark:text-gray-400">
+                                    {etiquetaMedioPago(l.method)} {monedaSimbolo} {l.amount.toFixed(2)}
+                                </p>
+                            ))}
                         </div>
                         <div>
                             <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Cliente</p>
