@@ -18,6 +18,8 @@ import {
   desglosePorPaquete,
   ordenEnCajas,
   ordenDesdeCajas,
+  lineaXmlSinIgv,
+  precioOrdenConFactorIgv,
 } from '../utils/compraPorPaquete';
 
 // Caja de 6 cervezas a S/ 36 (precio final del proveedor, IGV incluido).
@@ -216,4 +218,35 @@ describe('cambiar de presentación en la orden', () => {
     expect(r.cantidad).toBe(5);
     expect(r.unidadesPorPaquete).toBeNull();
   });
+});
+
+describe('lineaXmlSinIgv', () => {
+    it('línea con valor e IGV 0 en el XML → sin IGV', () => {
+        expect(lineaXmlSinIgv({ igv: 0, subtotal: 50 })).toBe(true);
+    });
+    it('línea con IGV → gravada', () => {
+        expect(lineaXmlSinIgv({ igv: 18, subtotal: 100 })).toBe(false);
+    });
+    it('bonificación (valor 0) no decide', () => {
+        expect(lineaXmlSinIgv({ igv: 0, subtotal: 0 })).toBe(false);
+    });
+    it('foto IA sin IGV por línea no decide', () => {
+        expect(lineaXmlSinIgv({ subtotal: 50 })).toBe(false);
+        expect(lineaXmlSinIgv(null)).toBe(false);
+    });
+});
+
+describe('precioOrdenConFactorIgv', () => {
+    it('línea por unidad: ida y vuelta vuelve al mismo precio', () => {
+        const con = precioOrdenConFactorIgv(7.33, 1.18);
+        expect(con).toBe(8.65);
+        expect(precioOrdenConFactorIgv(con, 1 / 1.18)).toBe(7.33);
+    });
+    it('línea por caja: convierte el costo de la caja, no el unitario', () => {
+        const unit = 4.1667; // caja de 12 a S/ 50.00
+        const con = precioOrdenConFactorIgv(unit, 1.18, 12);
+        expect(ordenEnCajas(24, con, 12).costoPorPaquete).toBe(59);
+        const sin = precioOrdenConFactorIgv(con, 1 / 1.18, 12);
+        expect(ordenEnCajas(24, sin, 12).costoPorPaquete).toBe(50);
+    });
 });

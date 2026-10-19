@@ -1,6 +1,7 @@
 import { ChangeEvent, useEffect, useState, useMemo, useRef } from "react";
 import { afectacionPorDefecto } from '@/utils/afectacionIgv';
 import { heredaCredito } from './conversionPago';
+import { armarPagoEdicion, calcularCobro, pagoPrevioDeNota, type PagoPrevio } from './utils/cobroEdicion';
 import { guardarObservacionesRecordadas, leerObservacionesRecordadas } from '@/utils/observacionesVenta';
 import { IInvoicesState, useInvoiceStore } from "@/zustand/invoices";
 import { IExtentionsState, useExtentionsStore } from "@/zustand/extentions";
@@ -68,6 +69,7 @@ async function generarGuiaShalomSiCorresponde(comprobanteId: number, transportis
     }
 }
 import { mapDetalleToInvoiceProduct } from "./utils/comprobanteProductMapper";
+import { detalleAdicionalParaPayload } from "@/utils/detalleAdicional";
 import { tipoCambioService } from "@/services/tipoCambio.service";
 import { PORCENTAJE_RETENCION, aplicaRetencion, calcularRetencion } from './retencion';
 import { diasEmisionRetroactiva, fechaFueraDePlazo } from './fechaEmisionRetroactiva';
@@ -140,6 +142,8 @@ const crearEstadoItemLibre = (empresa?: { leyAmazonia?: boolean | null } | null)
     // Producto externo con número de serie (p. ej. accesorios/repuestos de cómputo
     // que no están en catálogo pero requieren registrar su serie para garantía).
     requiereSerie: false,
+    // Detalle multilínea bajo el título (cotización de servicios). Ver utils/detalleAdicional.
+    detalleAdicional: '',
 });
 
 // Nombre legible por código de afectación (Catálogo 07) para mostrar en el ticket.
@@ -530,6 +534,10 @@ export const useFacturacionViewModel = () => {
 
     const [receiptNoteId, setReceiptNoteId] = useState<string>("01")
     const [pay, setPay] = useState<number>(0);
+    // Lo que ya se había cobrado de la nota que se está EDITANDO (null si no hay
+    // pago previo o si la nota sigue a crédito). Con esto el modal cobra solo el
+    // saldo y el vuelto se calcula contra el saldo, no contra el total.
+    const [pagoPrevioEdicion, setPagoPrevioEdicion] = useState<PagoPrevio | null>(null);
     const [_change, setChange] = useState<number>(0);
     const [receiptNote, setReceiptNote] = useState<string>("FACTURA")
     const [serie, setSerie] = useState<string>("");
@@ -1185,7 +1193,22 @@ export const useFacturacionViewModel = () => {
                 if (typeof pd === 'string') { try { pd = JSON.parse(pd); } catch { pd = null; } }
                 const pagado = Math.max(0, Number(nvData.mtoImpVenta || 0) - Number(nvData.saldo || 0));
 
-                if (pd && (pd.mode === 'MIXTO' || Array.isArray(pd.splitPayments))) {
+                // EDITAR una nota ya cobrada (contado): lo cobrado queda como "Ya
+                // pagado" y el modal pide solo la diferencia. Antes el campo
+                // "recibido" arrancaba con lo ya pagado y el vuelto salía contra el
+                // total (DEMENVER: pagó 20.80, nuevo total 45, entrega 50 → mostraba
+                // vuelto 5.00 en vez de 25.80). Convertir y las notas a crédito
+                // siguen como antes.
+                const previoEdicion = state.isEditNV && state.notaVentaId && !heredaCredito(nvData)
+                    ? pagoPrevioDeNota(nvData)
+                    : null;
+                setPagoPrevioEdicion(previoEdicion && previoEdicion.monto > 0 ? previoEdicion : null);
+
+                if (previoEdicion && previoEdicion.monto > 0) {
+                    setIsMixedPayment(false);
+                    setPaymentMethod(previoEdicion.lineas.length === 1 ? normMetodo(previoEdicion.lineas[0].method) : 'Efectivo');
+                    setPay(0);
+                } else if (pd && (pd.mode === 'MIXTO' || Array.isArray(pd.splitPayments))) {
                     const lineas = (pd.splitPayments || [])
                         .filter((l: any) => Number(l?.amount || 0) > 0)
                         .map((l: any) => ({
@@ -2015,6 +2038,7 @@ export const useFacturacionViewModel = () => {
             afectacionNombre: NOMBRE_AFECTACION[freeQuoteItem.afectacion] || 'Gravado – Operación Onerosa',
             estado: 'ACTIVO',
             esItemLibre: true,
+            ...detalleAdicionalParaPayload(freeQuoteItem.detalleAdicional),
             // requiereSerie habilita el campo de series del carrito también para ítem
             // libre (producto externo). Solo aplica a productos, no a servicios.
             atributosTecnicos: {
@@ -2608,21 +2632,25 @@ export const useFacturacionViewModel = () => {
     const normalizePaymentMethod = (value?: string) => String(value ?? '').trim().toUpperCase();
     const isCashPayment = normalizePaymentMethod(paymentMethod) === 'EFECTIVO';
     const splitPaymentTotal = splitPayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
-    const montoRecibido = isMixedPayment
-        ? Number(splitPaymentTotal.toFixed(2))
-        : isCashPayment && pay > 0
-            ? Number(pay.toFixed(2))
-            : Number(totalAdjusted.toFixed(2));
-    const vueltoCalculado = Number(Math.max(0, montoRecibido - totalAdjusted).toFixed(2));
-    // Efectivo simple con un monto recibido MENOR al total: lo que aún falta cobrar.
-    // Caso real: al editar una nota de venta el campo arranca con lo que el cliente ya
-    // pagó (p.ej. 8.90); si se cambia el producto por otro de 26.70, antes el modal
-    // mostraba "Vuelto 0.00" y registraba la venta como pagada completa (se regalaban
-    // 17.80). Para mixto, el propio panel de líneas ya muestra "Falta S/ ...".
-    const faltanteEfectivo = !isMixedPayment && isCashPayment && pay > 0
-        ? Number(Math.max(0, totalAdjusted - montoRecibido).toFixed(2))
-        : 0;
     const esCreditoNV = formValues.medioPago === 'Crédito';
+    // Editando una nota ya cobrada (y no a crédito): se cobra solo el saldo.
+    const pagoPrevio = isEditMode && editNotaVentaId != null && !esCreditoNV && pagoPrevioEdicion
+        ? pagoPrevioEdicion.monto
+        : 0;
+    // Efectivo simple con un monto recibido MENOR al saldo: lo que aún falta cobrar
+    // (`faltanteEfectivo`). Caso real: si se cambia el producto de una nota cobrada
+    // por otro más caro y se cobra de menos, antes se registraba como pagada completa.
+    // Para mixto, el propio panel de líneas ya muestra "Falta S/ ...".
+    const cobro = calcularCobro({
+        total: totalAdjusted,
+        pagoPrevio,
+        esMixto: isMixedPayment,
+        esEfectivo: isCashPayment,
+        pay,
+        splitTotal: splitPaymentTotal,
+    });
+    const { montoRecibido, faltante: faltanteEfectivo, aCobrar: montoACobrar, aDevolver: montoADevolver } = cobro;
+    const vueltoCalculado = cobro.vuelto;
     // Pago inicial del crédito: si es mixto, la suma de las líneas; si es simple, el campo adelanto.
     const inicialCreditoMonto = esCreditoNV
         ? (isMixedPayment ? Number(splitPaymentTotal.toFixed(2)) : Number(adelanto))
@@ -2648,24 +2676,38 @@ export const useFacturacionViewModel = () => {
             };
         };
 
-        if (isMixedPayment) {
-            return {
+        const pagoNuevo = isMixedPayment
+            ? {
                 mode: 'MIXTO',
                 splitPayments: splitPayments
                     .map(normalizeLine)
                     .filter((line) => Number(line.amount || 0) > 0),
+            }
+            : {
+                mode: 'SIMPLE',
+                ...normalizeLine({
+                    ...paymentDetail,
+                    method: paymentMethod,
+                    amount: montoRecibido,
+                }),
             };
-        }
-
-        return {
-            mode: 'SIMPLE',
-            ...normalizeLine({
-                ...paymentDetail,
-                method: paymentMethod,
-                amount: montoRecibido,
-            }),
-        };
+        if (pagoEdicion) return pagoEdicion.paymentDetails as any;
+        return pagoNuevo as any;
     };
+
+    // Pago completo de la nota editada (lo previo + lo de ahora). El backend
+    // reemplaza los pagos con lo que recibe, así que se le manda todo.
+    const pagoEdicion = pagoPrevio > 0 && pagoPrevioEdicion
+        ? armarPagoEdicion({
+            total: totalAdjusted,
+            previas: pagoPrevioEdicion.lineas,
+            nuevas: montoACobrar <= 0
+                ? []
+                : isMixedPayment
+                    ? splitPayments.map((l) => ({ ...l, method: normalizePaymentMethod(l.method), amount: Number(l.amount || 0) }))
+                    : [{ ...paymentDetail, method: normalizePaymentMethod(paymentMethod), amount: montoRecibido }],
+        })
+        : null;
 
     // Pagos por Yape/Plin/Transferencia/Tarjeta exigen Boleta/Factura (Perfil →
     // Configuración → posExigirCpeMedioPago). Solo mira el medio que se registra
@@ -2894,9 +2936,11 @@ export const useFacturacionViewModel = () => {
             observacionesFinal = `${observacionesFinal} | Operación sujeta a Retención del 3% del IGV`.replace(/^ \| /, '');
         }
 
-        const effectiveMedioPago = isMixedPayment
-            ? 'MIXTO'
-            : paymentMethod;
+        const effectiveMedioPago = pagoEdicion
+            ? pagoEdicion.medioPago
+            : isMixedPayment
+                ? 'MIXTO'
+                : paymentMethod;
         const paymentDetails = buildPaymentDetails();
         const esPagoCredito = formValues.medioPago === 'Crédito';
         const esDocumentoInformal = esInformal;
@@ -2904,7 +2948,7 @@ export const useFacturacionViewModel = () => {
         // cliente no va a pagar todo, debe ir por Crédito (queda saldo) o pago mixto.
         if (!esPagoCredito && faltanteEfectivo > 0.009) {
             return useAlertStore.getState().alert(
-                `El monto recibido (S/ ${montoRecibido.toFixed(2)}) es menor al total (S/ ${totalAdjusted.toFixed(2)}). Falta cobrar S/ ${faltanteEfectivo.toFixed(2)}.`,
+                `El monto recibido (S/ ${montoRecibido.toFixed(2)}) es menor al ${pagoPrevio > 0 ? 'saldo' : 'total'} (S/ ${montoACobrar.toFixed(2)}). Falta cobrar S/ ${faltanteEfectivo.toFixed(2)}.`,
                 "error",
             );
         }
@@ -2954,7 +2998,7 @@ export const useFacturacionViewModel = () => {
             fechaEmision,
             medioPago: medioPagoFinal,
             paymentDetails: paymentDetailsFinal,
-            splitPayments: isMixedPayment ? paymentDetails.splitPayments : undefined,
+            splitPayments: pagoEdicion ? pagoEdicion.splitPayments : (isMixedPayment ? paymentDetails.splitPayments : undefined),
             ...(origenComprobanteId != null ? { comprobanteOrigenId: origenComprobanteId } : {}),
             vuelto: vueltoCalculado,
             clienteId: Number(formValues?.clienteId) || invoiceData?.cliente?.id,
@@ -3044,6 +3088,8 @@ export const useFacturacionViewModel = () => {
                         // Fraccionamiento: unidad de venta cuando difiere de la unidad base
                         ...(item.unidadSeleccionada === 'UNIDAD' && item.unidadVentaNombre ? { unidadVenta: item.unidadVentaNombre } : {}),
                         ...(item.esItemLibre && item.unidadMedidaCodigo ? { unidadVenta: item.unidadMedidaCodigo } : {}),
+                        // Detalle multilínea de la línea (solo PDF; no va al XML de SUNAT).
+                        ...detalleAdicionalParaPayload(item.detalleAdicional),
                     };
                 }) ?? []),
                 // Monto cobrado como item de envío: aumenta el total del comprobante.
@@ -3325,6 +3371,7 @@ export const useFacturacionViewModel = () => {
             observaciones: recuerdaObservaciones ? obsVentaInicial() : '',
         });
         setPay(0);
+        setPagoPrevioEdicion(null);
         setChange(0);
         setPaymentMethod('Efectivo');
         setIsMixedPayment(false);
@@ -3532,6 +3579,7 @@ export const useFacturacionViewModel = () => {
         totalAdjusted, totalCredito, total, productDiscount, hasDiscount,
         opGravadaAdjusted, igvAdjusted, opExoneradaAdjusted, opInafectaAdjusted, finalDiscount, totalInWords,
         montoRecibido, vueltoCalculado, faltanteEfectivo, isCashPayment,
+        pagoPrevio, montoACobrar, montoADevolver, pagoEdicion,
 
         // References & Inputs
         serie, setSerie,

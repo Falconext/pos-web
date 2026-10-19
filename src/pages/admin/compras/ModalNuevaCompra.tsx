@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { costoUnitarioDesdePaquete, expandirPaqueteAUnidades, etiquetaDePaquete, desglosePorPaquete } from '@/features/admin/compras/utils/compraPorPaquete';
+import { costoUnitarioDesdePaquete, expandirPaqueteAUnidades, etiquetaDePaquete, desglosePorPaquete, lineaXmlSinIgv } from '@/features/admin/compras/utils/compraPorPaquete';
 import { BarcodeScannerInput } from "@/components/BarcodeScannerInput";
 import Modal from "@/components/Modal";
 import Button from "@/components/Button";
@@ -362,9 +362,13 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                     // muestra tal cual y no decide el modo con/sin IGV. Manda la
                     // afectación actual del producto (así una compra antigua
                     // grabada con IGV sobre un exonerado se corrige al guardar).
+                    // Y una línea de producto gravado que se guardó SIN IGV
+                    // (orden pactada sin IGV con el proveedor) sigue sin IGV:
+                    // si no, reabrirla le sumaba 18% al total ya cerrado.
+                    const seGuardoConIgv = Number(det.igv) > 0 || Number(det.subtotal) === 0;
                     const gravado = det.producto
-                        ? esGravadoAfectacion(det.producto.tipoAfectacionIGV)
-                        : Number(det.igv) > 0 || Number(det.subtotal) === 0;
+                        ? esGravadoAfectacion(det.producto.tipoAfectacionIGV) && seGuardoConIgv
+                        : seGuardoConIgv;
                     const conIgv = neto * 1.18;
                     const r2 = Math.round(conIgv * 100) / 100;
                     return { neto, gravado, conIgvLimpio: Math.abs(conIgv - r2) < 0.001 ? r2 : null };
@@ -762,7 +766,8 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                 ? {
                     ...item,
                     productoId: prod.id,
-                    _gravado: esGravadoAfectacion((prod as any).tipoAfectacionIGV),
+                    // Lo que dice el XML (línea sin IGV) manda sobre la afectación.
+                    _gravado: esGravadoAfectacion((prod as any).tipoAfectacionIGV) && item._gravado !== false,
                     _sinVincular: false,
                     _vinculadoManual: true,
                     _productoVinculadoLabel: `${prod.codigo} - ${prod.descripcion}`,
@@ -824,6 +829,12 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
             lote: '',
             fechaVencimiento: '',
             subtotal: item.subtotal,
+            // El XML dice por línea si el proveedor cobró IGV: una línea con
+            // valor y sin IGV (exonerado, o proveedor que no lo cobra) entra
+            // "Sin IGV". Si no, el total salía con 18% de más (XML de S/ 218
+            // se grababa como S/ 227 y en pantalla se veía S/ 236). La foto
+            // (IA) no trae IGV por línea: ahí no se decide nada.
+            ...(lineaXmlSinIgv(item) ? { _gravado: false } : {}),
             _fromXml: true,
             _codigoXml: item.codigo,
             _sinVincular: !item.productoId,
@@ -1199,6 +1210,9 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                 cantidad: i.cantidad,
                 precioUnitario: i.precioUnitario,
                 incluyeIgv,
+                // Línea sin IGV aunque el producto sea gravado: el backend la
+                // respeta en vez de volver a decidir por la afectación.
+                gravado: esGravadoItem(i) ? undefined : false,
                 lote: i.lote || undefined,
                 fechaVencimiento: i.fechaVencimiento || undefined,
                 codigoXml: i._codigoXml || undefined,
@@ -1813,7 +1827,7 @@ const ModalNuevaCompra = ({ isOpen, onClose, onSuccess, compra }: ModalNuevaComp
                                                     )}
                                                     {!esGravadoItem(item) && (
                                                         <span
-                                                            title="Producto exonerado/inafecto: esta línea no lleva IGV"
+                                                            title="Esta línea no lleva IGV (producto exonerado/inafecto, o compra pactada sin IGV)"
                                                             className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-300 px-1.5 py-0.5 rounded border border-teal-100 dark:border-teal-800/30"
                                                         >
                                                             Sin IGV

@@ -1580,6 +1580,8 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
           costoUnitario: formValues?.costoUnitario
             ? Number(formValues?.costoUnitario)
             : undefined,
+          // El costo se corrige en la sede que el Kardex está mostrando (0 = todas).
+          ...(props.costoSede ? { costoSedeId: props.costoSede.id ?? 0 } : {}),
           costoFijo:
             (formValues as any)?.costoFijo != null
               ? Number((formValues as any).costoFijo)
@@ -1592,7 +1594,15 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             (formValues as any)?.comisionPorcentaje != null
               ? Number((formValues as any).comisionPorcentaje)
               : undefined,
-          stock: stockPayload,
+          // Viendo "Todas las sedes" el formulario muestra el stock TOTAL, y el
+          // backend lo aplica a la sede de la sesión: guardar sin tocar nada
+          // creaba un ajuste fantasma (+10 en la principal con 10 en el
+          // almacén). Sin un ajuste explícito, ahí el stock no se envía.
+          stock:
+            props.costoSede && !props.costoSede.id && tipoAjusteStock === 'ninguno' &&
+            !(esFarmaceutico && features.gestionLotes)
+              ? (undefined as any)
+              : stockPayload,
           // Para que el kardex registre POR QUÉ cambió el stock, no solo quién.
           ...(isEdit && tipoAjusteStock !== 'ninguno' && motivoAjuste
             ? { motivoAjusteStock: motivoAjuste, detalleAjusteStock: (detalleAjuste || '').trim() || undefined }
@@ -2231,6 +2241,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
 
   return {
     // Properties & State
+    costoSede: props.costoSede,
     isMobile,
     isRestaurante,
     isFarmacia,

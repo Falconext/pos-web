@@ -162,3 +162,31 @@ export const ordenDesdeCajas = (
     ),
   };
 };
+
+/**
+ * Línea de un XML SUNAT que el proveedor emitió SIN IGV: tiene valor y su IGV
+ * es 0 (exonerado, inafecto o proveedor que no lo cobra). Solo decide si el
+ * dato viene: el XML lo trae por línea; la foto leída con IA no.
+ */
+export const lineaXmlSinIgv = (item: { igv?: unknown; subtotal?: unknown } | null | undefined): boolean =>
+    item?.igv !== undefined && item?.igv !== null && Number(item.igv) === 0
+    && Number(item?.subtotal) > 0;
+
+/**
+ * Precio unitario de una línea de orden al marcar/desmarcar "Precios con IGV
+ * incluido" (factor 1.18 o 1/1.18). En una línea pedida por caja se convierte
+ * el COSTO DE LA CAJA (lo que se ve y se escribe) y de ahí sale el unitario:
+ * convertir el unitario a 2 decimales movía la caja de S/ 50.00 a 59.04 y, al
+ * desmarcar, a 50.04 (un ida y vuelta no volvía al precio original).
+ */
+export const precioOrdenConFactorIgv = (
+  precioUnitario: number,
+  factor: number,
+  unidadesPorPaquete?: number | null,
+): number => {
+  const unidades = Math.max(1, Number(unidadesPorPaquete) || 1);
+  if (unidades <= 1) return Number((Number(precioUnitario) * factor).toFixed(2));
+  const { costoPorPaquete } = ordenEnCajas(1, precioUnitario, unidades);
+  const nuevoPaquete = Number((costoPorPaquete * factor).toFixed(2));
+  return ordenDesdeCajas(1, nuevoPaquete, unidades).precioUnitario;
+};

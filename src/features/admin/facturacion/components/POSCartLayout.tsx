@@ -1,6 +1,7 @@
 import { Icon } from "@iconify/react";
 import { useState } from "react";
 import useAlertStore from "@/zustand/alert";
+import { DetalleAdicionalLinea } from './DetalleAdicionalLinea';
 
 // Línea de PAQUETE (ej. six-pack escaneado): el vendedor piensa en packs, no en
 // unidades — el carrito muestra/edita PACKS y por dentro la cantidad sigue en
@@ -412,6 +413,14 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                         </div>
                                     );
                                 })()}
+                                {/* Detalle multilínea bajo el título (cotización de servicios). */}
+                                {(vm.isQuotationRoute || item.esItemLibre || item.detalleAdicional) && (
+                                    <DetalleAdicionalLinea
+                                        value={item.detalleAdicional}
+                                        esFiscal={esFacturaOBoleta}
+                                        onChange={(texto) => vm.updateProductInvoice(index, { detalleAdicional: texto })}
+                                    />
+                                )}
                                 {requiereSerie(item) && (
                                     <textarea
                                         value={item.numerosSerie || ''}
