@@ -400,6 +400,41 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
         autoImpresionHecha.current = true;
         handleOpenNewTab(getFormatoImpresionDefault(vm.auth?.empresa));
     }, [emitStep, vm.auth?.empresa?.imprimirAutomatico, handleOpenNewTab, vm.auth?.empresa]);
+    // Mismas condiciones que deshabilitan el botón EMITIR/ACTUALIZAR.
+    const emitirBloqueado = vm.cpeRequeridoPorMedioPago || (!isCreditoPreview && ((vm.isMixedPayment && !splitValid) || faltanteEfectivo > 0));
+
+    // Enter emite (pedido de cajeros: escribir el monto y Enter, sin ir al mouse).
+    // El ref evita una doble emisión si se mantiene o repite la tecla mientras la
+    // primera petición todavía no cambió el modal a "procesando".
+    const emitiendoConEnter = useRef(false);
+    useEffect(() => {
+        if (!showPago || emitStep !== 'pago') {
+            emitiendoConEnter.current = false;
+            return;
+        }
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key !== 'Enter' || e.repeat || e.isComposing || e.defaultPrevented) return;
+            if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+            const el = e.target as HTMLElement | null;
+            const tag = el?.tagName;
+            // EMITIR, Cancelar y la X ya responden al Enter por sí mismos. En el
+            // resto de botones (Efectivo, Yape, Exacto…) el foco queda ahí tras el
+            // clic, y lo esperado es que Enter emita, no que vuelva a elegir Yape.
+            // En un textarea o un select el Enter tiene su propio uso.
+            if (el?.closest('[data-enter-nativo]')) return;
+            if (tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'A') return;
+            if (el?.closest('[role="listbox"], [role="combobox"], [role="menu"]')) return;
+            e.preventDefault();
+            if (emitirBloqueado || emitiendoConEnter.current) return;
+            emitiendoConEnter.current = true;
+            Promise.resolve(vm.addInvoiceReceipt()).finally(() => {
+                emitiendoConEnter.current = false;
+            });
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [showPago, emitStep, emitirBloqueado, vm.addInvoiceReceipt]);
+
     const handleModalOverlay = () => {
         if (emitStep === 'pago') setShowPago(false);
         else if (emitStep === 'emitido') closeEmitido();
@@ -607,7 +642,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                                     <p className="text-xs text-gray-400">{vm.formValues?.medioPago === 'Crédito' ? 'Revisa y confirma el comprobante a crédito' : 'Elige el método de pago y confirma'}</p>
                                 </div>
                             </div>
-                            <button onClick={() => setShowPago(false)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                            <button data-enter-nativo onClick={() => setShowPago(false)} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                                 <Icon icon="solar:close-circle-bold" width={22} />
                             </button>
                         </div>
@@ -895,17 +930,19 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
 
                         {/* Footer: emitir */}
                         <div className="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-gray-100 dark:border-white/10 shrink-0">
-                            <button onClick={() => setShowPago(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
+                            <button data-enter-nativo onClick={() => setShowPago(false)} className="px-4 py-2.5 rounded-xl text-sm font-bold text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors">
                                 Cancelar
                             </button>
                             <button
+                                data-enter-nativo
                                 onClick={() => vm.addInvoiceReceipt()}
-                                disabled={vm.cpeRequeridoPorMedioPago || (!isCreditoPreview && ((vm.isMixedPayment && !splitValid) || faltanteEfectivo > 0))}
-                                title={vm.cpeRequeridoPorMedioPago ? 'Cambia a Boleta o Factura para emitir' : undefined}
-                                className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all ${(vm.cpeRequeridoPorMedioPago || (!isCreditoPreview && ((vm.isMixedPayment && !splitValid) || faltanteEfectivo > 0))) ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-500/30'}`}
+                                disabled={emitirBloqueado}
+                                title={vm.cpeRequeridoPorMedioPago ? 'Cambia a Boleta o Factura para emitir' : 'Atajo: Enter'}
+                                className={`px-6 py-2.5 rounded-xl text-sm font-bold text-white flex items-center gap-2 transition-all ${emitirBloqueado ? 'bg-gray-400 cursor-not-allowed' : 'bg-violet-600 hover:bg-violet-700 shadow-lg shadow-violet-500/30'}`}
                             >
                                 <Icon icon={vm.isEditMode && !vm.editaHaciaFormal ? "solar:pen-bold" : "solar:printer-minimalistic-bold"} width={18} />
                                 {vm.isEditMode && !vm.editaHaciaFormal ? 'ACTUALIZAR' : 'EMITIR'}
+                                <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-white/20 text-white/90">Enter ↵</kbd>
                             </button>
                         </div>
                     </motion.div>
