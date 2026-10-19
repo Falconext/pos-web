@@ -5,6 +5,8 @@ import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
+import { STOCK_FILTRO_OPCIONES, type StockFiltro } from './ProductsModel';
+import RangoStockInputs, { describirFiltroStock } from './components/RangoStockInputs';
 import ModalProduct from '@/pages/admin/kardex/modal-productos';
 import ModalCategories from '@/pages/admin/kardex/modal-categorias';
 import ModalMarcas from '@/pages/admin/kardex/modal-marcas';
@@ -639,9 +641,28 @@ export default function ProductsView() {
                                     name="sedeId"
                                     options={vm.sedesOptions}
                                     error=""
+                                    value={vm.effectiveSedeId ? (vm.sedesOptions.find((o: any) => o.id === vm.effectiveSedeId)?.value ?? 'Todas las sedes') : 'Todas las sedes'}
                                     defaultValue="Todas las sedes"
                                 />
                             </div>
+                        )}
+                        <div className="w-full lg:w-52">
+                            <Select
+                                onChange={(id: any) => actions.setStockFiltro((id || '') as StockFiltro, vm.stockDesde, vm.stockHasta)}
+                                label="Stock"
+                                name="stockFiltro"
+                                options={STOCK_FILTRO_OPCIONES}
+                                error=""
+                                value={STOCK_FILTRO_OPCIONES.find(o => o.id === vm.stockFiltro)?.value}
+                                defaultValue="Todo el stock"
+                            />
+                        </div>
+                        {vm.stockFiltro === 'RANGO' && (
+                            <RangoStockInputs
+                                desde={vm.stockDesde}
+                                hasta={vm.stockHasta}
+                                onAplicar={(desde, hasta) => actions.setStockFiltro('RANGO', desde, hasta)}
+                            />
                         )}
                         {vm.tieneVariasSedes && vm.effectiveSedeId && (
                             <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap cursor-pointer lg:mt-6" title="Muestra también los productos que existen en la empresa pero no están asignados a esta sede">
@@ -731,22 +752,22 @@ export default function ProductsView() {
                 </div>
             </div>
 
-            {/* Stock Bajo active filter badge */}
-            {vm.soloStockBajo && (
+            {/* Filtro de stock activo */}
+            {vm.stockFiltro && (
                 <div className="px-4 sm:px-5 pb-3 flex items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
                         <Icon icon="solar:danger-triangle-bold" className="text-sm" />
-                        Filtrando: Stock Bajo
+                        Filtrando: {describirFiltroStock(vm.stockFiltro, vm.stockDesde, vm.stockHasta)}
                         <button
                             type="button"
-                            onClick={() => actions.setSoloStockBajo(false)}
+                            onClick={() => actions.setStockFiltro('')}
                             className="ml-1 hover:text-amber-900 dark:hover:text-amber-200 transition-colors"
-                            aria-label="Quitar filtro stock bajo"
+                            aria-label="Quitar filtro de stock"
                         >
                             <Icon icon="solar:close-circle-bold" className="text-sm" />
                         </button>
                     </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">{vm.totalProducts} producto{vm.totalProducts !== 1 ? 's' : ''} con stock bajo</span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{vm.totalProducts} producto{vm.totalProducts !== 1 ? 's' : ''}</span>
                 </div>
             )}
 

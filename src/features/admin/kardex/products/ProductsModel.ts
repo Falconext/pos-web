@@ -40,7 +40,10 @@ export interface IProductsViewModelState {
     showColumnFilter: boolean;
     vistaActual: 'cards' | 'tabla' | 'lista';
     marcaIdFilter: number | undefined;
-    soloStockBajo: boolean;
+    /** Filtro de stock: '' = todos; BAJO (≤ mínimo), SIN_STOCK (0) o RANGO (desde–hasta). */
+    stockFiltro: StockFiltro;
+    stockDesde: string;
+    stockHasta: string;
     /** Ver también los productos NO asignados a la sede seleccionada. */
     incluirOcultos: boolean;
     isOpenModalAsignarSedes: boolean;
@@ -102,3 +105,12 @@ export const initialProductForm: IFormProduct = {
     opcionesAtributos: [],
     variantesConfig: []
 };
+
+export type StockFiltro = '' | 'BAJO' | 'SIN_STOCK' | 'RANGO';
+
+export const STOCK_FILTRO_OPCIONES: { id: StockFiltro; value: string }[] = [
+    { id: '', value: 'Todo el stock' },
+    { id: 'BAJO', value: 'Stock bajo (≤ mínimo)' },
+    { id: 'SIN_STOCK', value: 'Sin stock (0)' },
+    { id: 'RANGO', value: 'Rango de stock…' },
+];

@@ -11,7 +11,7 @@ import apiClient from '@/utils/apiClient';
 import { get, patch } from '@/utils/fetch';
 import { hasPlanFeature, type IUserPermissions } from '@/utils/permissions';
 import { useRubroFeatures } from '@/utils/rubro-features';
-import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct } from './ProductsModel';
+import { IProductsViewModelState, initialProductForm, IFormProduct, IProduct, type StockFiltro } from './ProductsModel';
 import { afectacionPorDefecto, nombreAfectacionPorDefecto } from '@/utils/afectacionIgv';
 
 const COLUMNAS_CORPORATIVAS = ['Localización', '% Venta', '% Provisión'];
@@ -46,10 +46,15 @@ export const useProductsViewModel = () => {
 
     const isAdmin = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
     const esPrincipal = !sedeActiva || sedeActiva.esPrincipal === true;
-    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(null);
+    // `?sede=` llega desde la tarjeta "Stock bajo" del dashboard: el Kardex abre en
+    // la MISMA sede que contó el dashboard (0 = todas), si no los números no cuadran.
+    const sedeDesdeUrl = searchParams.get('sede');
+    const [selectedSedeId, setSelectedSedeId] = useState<number | null>(
+        sedeDesdeUrl && Number(sedeDesdeUrl) > 0 ? Number(sedeDesdeUrl) : null,
+    );
     // Track whether the admin has explicitly chosen "Todas las sedes" (id=0 → null)
     // so we don't override that choice with the sedeActiva fallback.
-    const userChoseSede = useRef(false);
+    const userChoseSede = useRef(sedeDesdeUrl != null);
     // For principal-sede admins: default to the current sede's stock instead of the
     // global total (sum of all sedes), which doesn't change on inter-sede transfers.
     const effectiveSedeId = useMemo(() => {
@@ -191,7 +196,12 @@ export const useProductsViewModel = () => {
         showColumnFilter: false,
         vistaActual: isRestaurante ? 'cards' : 'tabla',
         marcaIdFilter: undefined,
-        soloStockBajo: searchParams.get('stockBajo') === 'true',
+        // `?stockBajo=true` es el link de la tarjeta del dashboard; `?stock=` el filtro nuevo.
+        stockFiltro: searchParams.get('stockBajo') === 'true'
+            ? 'BAJO'
+            : (['BAJO', 'SIN_STOCK', 'RANGO'].includes(searchParams.get('stock') || '') ? searchParams.get('stock') as StockFiltro : ''),
+        stockDesde: searchParams.get('stockDesde') || '',
+        stockHasta: searchParams.get('stockHasta') || '',
         incluirOcultos: false,
         isOpenModalAsignarSedes: false,
     });
@@ -323,7 +333,14 @@ export const useProductsViewModel = () => {
             };
             if (state.marcaIdFilter) params.marcaId = String(state.marcaIdFilter);
             if (effectiveSedeId) params.sedeId = String(effectiveSedeId);
-            if (state.soloStockBajo) params.soloStockBajo = 'true';
+            if (state.stockFiltro) params.stockFiltro = state.stockFiltro;
+            // Un backend sin `stockFiltro` (aún no desplegado) lo descarta en silencio:
+            // el nombre viejo mantiene "stock bajo" funcionando mientras tanto.
+            if (state.stockFiltro === 'BAJO') params.soloStockBajo = 'true';
+            if (state.stockFiltro === 'RANGO') {
+                if (state.stockDesde.trim() !== '') params.stockDesde = state.stockDesde.trim();
+                if (state.stockHasta.trim() !== '') params.stockHasta = state.stockHasta.trim();
+            }
             if (effectiveSedeId && state.incluirOcultos) params.incluirOcultos = 'true';
             const query = new URLSearchParams(params).toString();
             const resp: any = await get(`productos?${query}`);
@@ -343,7 +360,7 @@ export const useProductsViewModel = () => {
             setProductsLoaded(true);
             setProductsLoading(false);
         }
-    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, state.incluirOcultos, debounce, effectiveSedeId]);
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.stockFiltro, state.stockDesde, state.stockHasta, state.incluirOcultos, debounce, effectiveSedeId]);
 
     // Siempre mantiene la ref actualizada sin recrear efectos dependientes
     const fetchProductsListRef = useRef(fetchProductsList);
@@ -353,7 +370,7 @@ export const useProductsViewModel = () => {
     useEffect(() => {
         if (!auth?.empresaId) return;
         fetchProductsListRef.current();
-    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.soloStockBajo, state.incluirOcultos, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [auth?.empresaId, state.currentPage, state.itemsPerPage, state.marcaIdFilter, state.stockFiltro, state.stockDesde, state.stockHasta, state.incluirOcultos, debounce, effectiveSedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const fetchResumenInventario = useCallback(async () => {
         if (!auth?.empresaId) {
@@ -953,12 +970,18 @@ export const useProductsViewModel = () => {
         cambiarCategoria,
         actions: {
             ...actions,
-            setSoloStockBajo: (value: boolean) => {
-                setState(prev => ({ ...prev, soloStockBajo: value, currentPage: 1 }));
-                // Sync URL param for shareability
+            setStockFiltro: (filtro: StockFiltro, desde = '', hasta = '') => {
+                setState(prev => ({ ...prev, stockFiltro: filtro, stockDesde: desde, stockHasta: hasta, currentPage: 1 }));
+                // En la URL para poder compartir el link con el filtro puesto.
                 const next = new URLSearchParams(searchParams);
-                if (value) next.set('stockBajo', 'true');
-                else next.delete('stockBajo');
+                next.delete('stockBajo');
+                next.delete('stockDesde');
+                next.delete('stockHasta');
+                if (filtro) next.set('stock', filtro); else next.delete('stock');
+                if (filtro === 'RANGO') {
+                    if (desde) next.set('stockDesde', desde);
+                    if (hasta) next.set('stockHasta', hasta);
+                }
                 setSearchParams(next, { replace: true });
             },
         },

@@ -448,7 +448,7 @@ export default function AdminIndex() {
               <div>
                 <h3 className="text-sm font-bold text-gray-900 dark:text-white">Stock Bajo</h3>
                 <p className={`text-xs font-medium ${alertas?.stockBajo?.length > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
-                  {alertas?.stockBajo?.length > 0 ? `${alertas.stockBajo.length} producto${alertas.stockBajo.length > 1 ? 's' : ''}` : 'Todo en orden'}
+                  {alertas?.stockBajo?.length > 0 ? (() => { const n = alertas.stockBajoTotal ?? alertas.stockBajo.length; return `${n} producto${n > 1 ? 's' : ''}`; })() : 'Todo en orden'}
                 </p>
               </div>
             </div>
@@ -470,7 +470,7 @@ export default function AdminIndex() {
                 <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">Todos los productos tienen stock suficiente</p>
               )}
             </div>
-            <button onClick={() => navigate('/administrador/kardex/productos?stockBajo=true')} className="mt-4 w-full py-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors flex items-center justify-center gap-1">
+            <button onClick={() => navigate(`/administrador/kardex/productos?stockBajo=true&sede=${effectiveSedeId ?? 0}`)} className="mt-4 w-full py-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-xl hover:bg-amber-100 dark:hover:bg-amber-500/20 transition-colors flex items-center justify-center gap-1">
               {alertas?.stockBajo?.length > 0 ? 'Ver solo stock bajo' : 'Ver Kardex'} <Icon icon="solar:alt-arrow-right-linear" className="text-sm" />
             </button>
           </div>
