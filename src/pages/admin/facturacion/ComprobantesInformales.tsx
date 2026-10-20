@@ -43,7 +43,10 @@ import { EditarDespachoModal } from "@/pages/admin/despacho/EditarDespachoModal"
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 import { hasPermission } from "@/utils/permissions";
 import CasillaSeleccion from "@/components/CasillaSeleccion";
-import { AnimatePresence, motion } from "framer-motion";
+import BarraSeleccionNotas from "@/features/admin/facturacion/seleccion/BarraSeleccionNotas";
+import ModalCobrarVarias from "@/features/admin/facturacion/seleccion/ModalCobrarVarias";
+import ModalEstadoCuentaWhatsApp from "@/features/admin/facturacion/seleccion/ModalEstadoCuentaWhatsApp";
+import { motivoNoCobrar, notaElegidaDe, resumirSeleccion, type NotaElegida } from "@/features/admin/facturacion/seleccion/seleccionNotas";
 
 // Informales que sí se despachan (las cotizaciones no: se convierten primero).
 const TIPOS_ENVIABLES = new Set(['NV', 'TICKET', 'NP', 'OT', 'RH', 'CP']);
@@ -159,26 +162,29 @@ const ComprobantesInformales = () => {
         }
     }, [canFilterBySede]);
 
-    // Preventa: varias notas elegidas → una sola orden de compra al proveedor.
-    // Se guarda id → "NV01-00000025" para que la elección sobreviva al paginar.
+    // Notas elegidas en la lista (orden de compra, cobrar, exportar, WhatsApp).
+    // Se guardan con sus datos para que la elección sobreviva al paginar.
     const puedeArmarOrden = hasPermission(auth as any, 'compras');
-    const [seleccionOrden, setSeleccionOrden] = useState<Map<number, string>>(new Map());
-    const alternarSeleccion = (id: number, documento: string) => {
+    const [seleccionOrden, setSeleccionOrden] = useState<Map<number, NotaElegida>>(new Map());
+    const alternarSeleccion = (item: any) => {
         setSeleccionOrden((prev) => {
             const next = new Map(prev);
-            if (next.has(id)) next.delete(id); else next.set(id, documento);
+            if (next.has(item.id)) next.delete(item.id); else next.set(item.id, notaElegidaDe(item));
             return next;
         });
     };
+    const notasElegidas = [...seleccionOrden.values()];
+    const resumenElegidas = resumirSeleccion(notasElegidas);
+    const [modalSeleccion, setModalSeleccion] = useState<null | 'cobrar' | 'whatsapp'>(null);
+    const [exportandoElegidas, setExportandoElegidas] = useState<null | string>(null);
     const armarOrdenDeCompra = () => {
         navigate('/administrador/compras/ordenes', { state: { desdeVentas: [...seleccionOrden.keys()] } });
     };
 
     // "Marcar todas" solo actúa sobre las notas de ESTA página que se pueden pedir.
-    const pediblesDePagina: [number, string][] = (invoices ?? [])
-        .filter((it: any) => ['NV', 'NP', 'TICKET'].includes(String(it.tipoDoc)) && it.estadoEnvioSunat !== 'ANULADO')
-        .map((it: any) => [it.id, `${it.serie}-${String(it.correlativo).padStart(8, '0')}`]);
-    const marcadasDePagina = pediblesDePagina.filter(([id]) => seleccionOrden.has(id)).length;
+    const pediblesDePagina: any[] = (invoices ?? [])
+        .filter((it: any) => ['NV', 'NP', 'TICKET'].includes(String(it.tipoDoc)) && it.estadoEnvioSunat !== 'ANULADO');
+    const marcadasDePagina = pediblesDePagina.filter((it) => seleccionOrden.has(it.id)).length;
     const todasMarcadas = pediblesDePagina.length > 0 && marcadasDePagina === pediblesDePagina.length;
     const casillaTodas = pediblesDePagina.length > 0 ? (
         <CasillaSeleccion
@@ -187,8 +193,8 @@ const ComprobantesInformales = () => {
             etiqueta={todasMarcadas ? 'Quitar las notas de esta página' : 'Elegir todas las notas de esta página'}
             onCambiar={() => setSeleccionOrden((prev) => {
                 const next = new Map(prev);
-                if (todasMarcadas) pediblesDePagina.forEach(([id]) => next.delete(id));
-                else pediblesDePagina.forEach(([id, doc]) => next.set(id, doc));
+                if (todasMarcadas) pediblesDePagina.forEach((it) => next.delete(it.id));
+                else pediblesDePagina.forEach((it) => next.set(it.id, notaElegidaDe(it)));
                 return next;
             })}
         />
@@ -244,7 +250,7 @@ const ComprobantesInformales = () => {
             <div className="flex flex-col items-center gap-1">
                 <CasillaSeleccion
                     marcada={seleccionOrden.has(item.id)}
-                    onCambiar={() => alternarSeleccion(item.id, documento)}
+                    onCambiar={() => alternarSeleccion(item)}
                     etiqueta={`Elegir ${documento} para la orden de compra`}
                 />
                 {ordenesDeCompra.length > 0 && (
@@ -426,6 +432,31 @@ const ComprobantesInformales = () => {
 
     // Exporta el listado filtrado (rango de fechas/estado/sede/vendedor) en PDF o Excel
     const [exportando, setExportando] = useState<'pdf' | 'excel' | null>(null);
+
+    // Exportar solo las notas elegidas (pueden venir de varias páginas).
+    const exportarElegidas = async (tipo: 'notas' | 'pdf' | 'excel') => {
+        if (exportandoElegidas || seleccionOrden.size === 0) return;
+        setExportandoElegidas(tipo);
+        try {
+            const params = new URLSearchParams({ tipoComprobante: 'INFORMAL', ids: [...seleccionOrden.keys()].join(',') });
+            if (tipo === 'notas') params.set('formato', 'pdf');
+            else params.set('formato', tipo);
+            const ruta = tipo === 'notas' ? 'exportar-pdf' : 'exportar-resumen';
+            const resp = await apiClient.get(`/comprobante/${ruta}?${params.toString()}`, { responseType: 'blob', timeout: 120_000 });
+            const url = window.URL.createObjectURL(new Blob([resp.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${tipo === 'notas' ? 'notas' : 'resumen_notas'}_elegidas_${seleccionOrden.size}.${tipo === 'excel' ? 'xlsx' : 'pdf'}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch {
+            useAlertStore.getState().alert('No se pudo exportar las notas elegidas', 'error');
+        } finally {
+            setExportandoElegidas(null);
+        }
+    };
     const handleExportarResumen = async (formato: 'pdf' | 'excel') => {
         if (exportando) return;
         setExportando(formato);
@@ -697,56 +728,68 @@ const ComprobantesInformales = () => {
                 </div>
             </div>
 
-            <AnimatePresence>
-                {puedeArmarOrden && seleccionOrden.size > 0 && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 24 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 24 }}
-                        transition={{ duration: 0.18, ease: 'easeOut' }}
-                        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] z-[70] mx-auto max-w-3xl md:bottom-28"
-                        data-testid="barra-orden-compra"
-                    >
-                        <div className="flex flex-col gap-3 rounded-2xl bg-gray-900/95 p-3 text-white shadow-2xl shadow-gray-900/30 ring-1 ring-white/10 backdrop-blur sm:flex-row sm:items-center sm:gap-4 sm:pl-3 sm:pr-2.5 dark:bg-slate-800/95">
-                            <div className="flex min-w-0 flex-1 items-center gap-3">
-                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-base font-black tabular-nums">
-                                    {seleccionOrden.size}
-                                </span>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-bold leading-tight">
-                                        {seleccionOrden.size === 1 ? 'nota elegida' : 'notas elegidas'} para pedir al proveedor
-                                    </p>
-                                    <p className="mt-0.5 truncate text-xs text-gray-400">
-                                        {(() => {
-                                            const docs = [...seleccionOrden.values()].map((d) => d.replace(/-0+(?=\d)/, '-'));
-                                            return docs.length > 4 ? `${docs.slice(0, 4).join(' · ')} y ${docs.length - 4} más` : docs.join(' · ');
-                                        })()}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex shrink-0 items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setSeleccionOrden(new Map())}
-                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-gray-300 transition hover:bg-white/10 hover:text-white"
-                                >
-                                    <Icon icon="solar:close-circle-linear" className="text-lg" />
-                                    Quitar
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={armarOrdenDeCompra}
-                                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-4 text-sm font-bold shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 active:scale-[0.98] sm:flex-none"
-                                >
-                                    <Icon icon="solar:clipboard-list-bold-duotone" className="text-lg" />
-                                    Generar orden de compra
-                                    <Icon icon="solar:arrow-right-linear" className="text-base" />
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <BarraSeleccionNotas
+                notas={notasElegidas}
+                onQuitar={() => setSeleccionOrden(new Map())}
+                principal={{
+                    key: 'orden',
+                    label: 'Orden de compra',
+                    descripcion: 'Pedir al proveedor lo vendido en estas notas',
+                    icon: 'solar:clipboard-list-bold-duotone',
+                    onClick: armarOrdenDeCompra,
+                    deshabilitada: puedeArmarOrden ? null : 'Tu plan o usuario no tiene Compras',
+                }}
+                acciones={[
+                    {
+                        key: 'cobrar', grupo: 'Cobranza', label: 'Cobrar', icon: 'solar:wallet-money-bold-duotone',
+                        descripcion: `Registrar el pago de lo pendiente (${resumenElegidas.moneda === 'USD' ? 'US$' : 'S/'} ${resumenElegidas.saldo.toFixed(2)})`,
+                        deshabilitada: motivoNoCobrar(resumenElegidas),
+                        onClick: () => setModalSeleccion('cobrar'),
+                    },
+                    {
+                        key: 'whatsapp', grupo: 'Cobranza', label: 'Estado de cuenta por WhatsApp', icon: 'ic:baseline-whatsapp',
+                        descripcion: 'Mensaje con las notas y lo que falta pagar',
+                        onClick: () => setModalSeleccion('whatsapp'),
+                    },
+                    {
+                        key: 'pdf-notas', grupo: 'Exportar e imprimir', label: 'Notas en PDF', icon: 'solar:printer-minimalistic-bold-duotone',
+                        descripcion: 'Cada nota completa, lista para imprimir',
+                        cargando: exportandoElegidas === 'notas',
+                        onClick: () => exportarElegidas('notas'),
+                    },
+                    {
+                        key: 'resumen-pdf', grupo: 'Exportar e imprimir', label: 'Resumen en PDF', icon: 'solar:file-text-bold-duotone',
+                        descripcion: 'Una lista con fecha, cliente, importe y saldo',
+                        cargando: exportandoElegidas === 'pdf',
+                        onClick: () => exportarElegidas('pdf'),
+                    },
+                    {
+                        key: 'resumen-excel', grupo: 'Exportar e imprimir', label: 'Resumen en Excel', icon: 'solar:document-add-bold-duotone',
+                        descripcion: 'La misma lista para trabajarla en Excel',
+                        cargando: exportandoElegidas === 'excel',
+                        onClick: () => exportarElegidas('excel'),
+                    },
+                ]}
+            />
+            {modalSeleccion === 'cobrar' && (
+                <ModalCobrarVarias
+                    notas={notasElegidas}
+                    onClose={() => setModalSeleccion(null)}
+                    onCobrado={(mensaje) => {
+                        setModalSeleccion(null);
+                        setSeleccionOrden(new Map());
+                        useAlertStore.getState().alert(mensaje, 'success');
+                        recargarLista();
+                    }}
+                />
+            )}
+            {modalSeleccion === 'whatsapp' && (
+                <ModalEstadoCuentaWhatsApp
+                    notas={notasElegidas}
+                    negocio={String((auth as any)?.empresa?.nombreComercial || (auth as any)?.empresa?.razonSocial || '')}
+                    onClose={() => setModalSeleccion(null)}
+                />
+            )}
 
             {/* Main Content Card */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
@@ -837,14 +880,14 @@ const ComprobantesInformales = () => {
                                                     {row.comprobante} {row.serie}-{row.correlativo}
                                                 </h3>
                                                 <p className="text-xs font-semibold text-gray-500">{row.fechaEmisión}</p>
-                                                {puedeArmarOrden && row.sePuedePedir && (
+                                                {row.sePuedePedir && (
                                                     <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
                                                         <CasillaSeleccion
                                                             marcada={seleccionOrden.has(row.id)}
-                                                            onCambiar={() => alternarSeleccion(row.id, row.documentoOrden)}
+                                                            onCambiar={() => alternarSeleccion(row._item)}
                                                             etiqueta={`Elegir ${row.documentoOrden} para la orden de compra`}
                                                         />
-                                                        <button type="button" onClick={() => alternarSeleccion(row.id, row.documentoOrden)}>Pedir al proveedor</button>
+                                                        <button type="button" onClick={() => alternarSeleccion(row._item)}>Elegir</button>
                                                         {row.ordenesDeCompra.length > 0 && (
                                                             <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:ring-violet-800">
                                                                 <Icon icon="solar:clipboard-check-bold" className="text-[11px]" />
@@ -888,7 +931,7 @@ const ComprobantesInformales = () => {
                             <div className="hidden overflow-x-auto md:block">
                                 <DataTable bodyData={productsTable}
                                     headerColumns={[
-                                        ...(puedeArmarOrden ? [{ label: casillaTodas, key: 'seleccion' }] : []),
+                                        { label: casillaTodas, key: 'seleccion' },
                                         'Fecha',
                                         'Sede',
                                         'Serie',
