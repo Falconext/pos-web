@@ -1,120 +1,123 @@
+import { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { cargaPerezosa } from './lib/cargaPerezosa'
 import Alert from './components/Alert'
-import LoginPage from './pages/Login'
-import StorePreviewPage from './pages/StorePreviewPage'
+import PantallaNoCargo from './components/PantallaNoCargo'
+const LoginPage = cargaPerezosa(() => import('./pages/Login'))
+const StorePreviewPage = cargaPerezosa(() => import('./pages/StorePreviewPage'))
 // import DashboardPage from './pages/Dashboard' 
 import { ProtectedRoute } from './app/ProtectedRoute'
 import { RoleRoute } from './app/RoleRoute'
 import { ProduccionRoute } from './app/ProduccionRoute'
 import { ModuleRoute } from './app/ModuleRoute'
-import AdminIndex from './pages/admin/Index'
-import AdminLayout from './layouts/AdminLayout'
-import ClientesPage from './pages/admin/Clientes'
-import DoctorsPage from './pages/admin/Doctors'
-import ReporteContabilidad from './pages/admin/contabilidad/Reporte'
-import ReporteInformales from './pages/admin/contabilidad/ReporteInformales'
-import ArqueoCaja from './pages/admin/contabilidad/Arqueo'
-import CajaIndex from './pages/admin/caja/Index'
-import ComprobantesPage from './pages/admin/facturacion/Comprobantes'
-import ComprobantesInformales from './pages/admin/facturacion/ComprobantesInformales'
-import Invoice from './pages/admin/facturacion/Nuevo'
-import Pagos from './pages/admin/facturacion/Pagos'
-import CuentasPorCobrar from './pages/admin/facturacion/CuentasPorCobrar'
-import Cotizaciones from './pages/admin/cotizaciones/Cotizaciones'
-import EmpresasIndex from './pages/admin/empresa/Index'
-import PerfilIndex from './pages/admin/perfil/Index'
-import KardexIndex from './pages/admin/kardex/Index'
-import InventarioDashboard from './pages/admin/kardex/Dashboard'
-import KardexProductos from './pages/admin/kardex/Productos'
-import KardexMermas from './pages/admin/kardex/mermas'
-import KardexTraslados from './pages/admin/kardex/Traslados'
-import Lotes from './pages/admin/kardex/Lotes'
-import LibroControl from './pages/admin/kardex/LibroControl'
-import SeriesGarantias from './pages/admin/kardex/SeriesGarantias'
-import UsuariosIndex from './pages/admin/usuarios/Index'
-import VendedoresView from './features/admin/users/VendedoresView'
-import SedesIndex from './pages/admin/sedes/Index'
-import ListasPrecioIndex from './pages/admin/listas-precio/Index'
-import NotificacionesIndex from './pages/admin/notificaciones/Index'
-import ConfiguracionTienda from './pages/admin/tienda/Configuracion'
-import TemplateTienda from './pages/admin/tienda/Template'
-import PedidosTienda from './pages/admin/tienda/Pedidos'
-import ReviewsTienda from './pages/admin/tienda/Reviews'
-import BlogTienda from './pages/admin/tienda/Blog'
-import PanelVentasView from './pages/admin/despacho/PanelVentasView'
-import CouriersView from './features/admin/despacho/couriers/CouriersView'
-import RepartidoresView from './pages/admin/repartidores/RepartidoresView'
-import CombosTienda from './pages/admin/tienda/Combos'
-import ModificadoresTienda from './pages/admin/tienda/Modificadores'
-import TiendaPublica from './pages/tienda/[slug]'
-import ProductoDetalle from './pages/tienda/ProductoDetalle'
-import ProductoDetalleRouter from './pages/tienda/ProductoDetalleRouter'
-import Checkout from './pages/tienda/Checkout'
-import Catalogo from './pages/tienda/Catalogo'
-import SeguimientoPedido from './pages/tienda/SeguimientoPedido'
-import ContactoRouter from './pages/tienda/ContactoRouter'
-import BlogRouter from './pages/tienda/BlogRouter'
-import TiendaLogin from './pages/TiendaLogin'
-import TiendaHome from './pages/TiendaHome'
+const AdminIndex = cargaPerezosa(() => import('./pages/admin/Index'))
+const AdminLayout = cargaPerezosa(() => import('./layouts/AdminLayout'))
+const ClientesPage = cargaPerezosa(() => import('./pages/admin/Clientes'))
+const DoctorsPage = cargaPerezosa(() => import('./pages/admin/Doctors'))
+const ReporteContabilidad = cargaPerezosa(() => import('./pages/admin/contabilidad/Reporte'))
+const ReporteInformales = cargaPerezosa(() => import('./pages/admin/contabilidad/ReporteInformales'))
+const ArqueoCaja = cargaPerezosa(() => import('./pages/admin/contabilidad/Arqueo'))
+const CajaIndex = cargaPerezosa(() => import('./pages/admin/caja/Index'))
+const ComprobantesPage = cargaPerezosa(() => import('./pages/admin/facturacion/Comprobantes'))
+const ComprobantesInformales = cargaPerezosa(() => import('./pages/admin/facturacion/ComprobantesInformales'))
+const Invoice = cargaPerezosa(() => import('./pages/admin/facturacion/Nuevo'))
+const Pagos = cargaPerezosa(() => import('./pages/admin/facturacion/Pagos'))
+const CuentasPorCobrar = cargaPerezosa(() => import('./pages/admin/facturacion/CuentasPorCobrar'))
+const Cotizaciones = cargaPerezosa(() => import('./pages/admin/cotizaciones/Cotizaciones'))
+const EmpresasIndex = cargaPerezosa(() => import('./pages/admin/empresa/Index'))
+const PerfilIndex = cargaPerezosa(() => import('./pages/admin/perfil/Index'))
+const KardexIndex = cargaPerezosa(() => import('./pages/admin/kardex/Index'))
+const InventarioDashboard = cargaPerezosa(() => import('./pages/admin/kardex/Dashboard'))
+const KardexProductos = cargaPerezosa(() => import('./pages/admin/kardex/Productos'))
+const KardexMermas = cargaPerezosa(() => import('./pages/admin/kardex/mermas'))
+const KardexTraslados = cargaPerezosa(() => import('./pages/admin/kardex/Traslados'))
+const Lotes = cargaPerezosa(() => import('./pages/admin/kardex/Lotes'))
+const LibroControl = cargaPerezosa(() => import('./pages/admin/kardex/LibroControl'))
+const SeriesGarantias = cargaPerezosa(() => import('./pages/admin/kardex/SeriesGarantias'))
+const UsuariosIndex = cargaPerezosa(() => import('./pages/admin/usuarios/Index'))
+const VendedoresView = cargaPerezosa(() => import('./features/admin/users/VendedoresView'))
+const SedesIndex = cargaPerezosa(() => import('./pages/admin/sedes/Index'))
+const ListasPrecioIndex = cargaPerezosa(() => import('./pages/admin/listas-precio/Index'))
+const NotificacionesIndex = cargaPerezosa(() => import('./pages/admin/notificaciones/Index'))
+const ConfiguracionTienda = cargaPerezosa(() => import('./pages/admin/tienda/Configuracion'))
+const TemplateTienda = cargaPerezosa(() => import('./pages/admin/tienda/Template'))
+const PedidosTienda = cargaPerezosa(() => import('./pages/admin/tienda/Pedidos'))
+const ReviewsTienda = cargaPerezosa(() => import('./pages/admin/tienda/Reviews'))
+const BlogTienda = cargaPerezosa(() => import('./pages/admin/tienda/Blog'))
+const PanelVentasView = cargaPerezosa(() => import('./pages/admin/despacho/PanelVentasView'))
+const CouriersView = cargaPerezosa(() => import('./features/admin/despacho/couriers/CouriersView'))
+const RepartidoresView = cargaPerezosa(() => import('./pages/admin/repartidores/RepartidoresView'))
+const CombosTienda = cargaPerezosa(() => import('./pages/admin/tienda/Combos'))
+const ModificadoresTienda = cargaPerezosa(() => import('./pages/admin/tienda/Modificadores'))
+const TiendaPublica = cargaPerezosa(() => import('./pages/tienda/[slug]'))
+const ProductoDetalle = cargaPerezosa(() => import('./pages/tienda/ProductoDetalle'))
+const ProductoDetalleRouter = cargaPerezosa(() => import('./pages/tienda/ProductoDetalleRouter'))
+const Checkout = cargaPerezosa(() => import('./pages/tienda/Checkout'))
+const Catalogo = cargaPerezosa(() => import('./pages/tienda/Catalogo'))
+const SeguimientoPedido = cargaPerezosa(() => import('./pages/tienda/SeguimientoPedido'))
+const ContactoRouter = cargaPerezosa(() => import('./pages/tienda/ContactoRouter'))
+const BlogRouter = cargaPerezosa(() => import('./pages/tienda/BlogRouter'))
+const TiendaLogin = cargaPerezosa(() => import('./pages/TiendaLogin'))
+const TiendaHome = cargaPerezosa(() => import('./pages/TiendaHome'))
 
-import CatalogoGlobal from './pages/admin/sistema/CatalogoGlobal'
-import Planes from './pages/admin/sistema/Planes'
-import ModulosPage from './pages/admin/sistema/Modulos'
-import FinanceDashboard from './pages/admin/finanzas/Dashboard'
-import MisComisionesPage from './pages/admin/mis-comisiones/MisComisionesPage'
-import Campanas from './pages/admin/marketing/Campanas'
-import ResumenNegocio from './pages/admin/ecommerce/ResumenNegocio'
-import ComprasIndex from './pages/admin/compras/Index'
-import ProveedoresPage from './pages/admin/compras/Proveedores'
-import OrdenesCompraPage from './pages/admin/compras/OrdenesCompra'
-import GuiaRemision from './pages/admin/guia-remision/GuiaRemision'
-import LibroVentas from './pages/admin/sire/LibroVentas'
-import LibroCompras from './pages/admin/sire/LibroCompras'
-import AdminResellers from './pages/admin/sistema/Resellers'
-import CatalogoWebPage from './pages/admin/sistema/CatalogoWebPage'
-import SistemaUsuarios from './pages/admin/sistema/SistemaUsuarios'
-import SistemaFinanzas from './pages/admin/sistema/SistemaFinanzas'
-import SistemaCobros from './pages/admin/sistema/Cobros'
-import MiPlan from './pages/admin/MiPlan'
-import SistemaRubros from './pages/admin/sistema/SistemaRubros'
-import DisenoRubroPage from './pages/admin/sistema/DisenoRubroPage'
-import ResellerLayout from './layouts/ResellerLayout'
-import ResellerDashboard from './pages/reseller/Dashboard'
-import ResellerClientes from './pages/reseller/Clientes'
-import ResellerRecargas from './pages/reseller/Recargas'
-import ResellerEstadoCuenta from './pages/reseller/EstadoCuenta'
-import SedeSelectionScreen from './features/auth/sede-selection/SedeSelectionScreen'
-import ForgotPasswordPage from './pages/ForgotPassword'
-import ResetPasswordPage from './pages/ResetPassword'
-import ProduccionRecetasPage from './pages/admin/produccion/Recetas'
-import ProduccionOrdenesPage from './pages/admin/produccion/Ordenes'
-import ReservasPage from './pages/admin/reservas/ReservasPage'
-import SistemaSoporte from './pages/admin/sistema/Soporte'
-import VehiculosPage from './pages/admin/vehiculos/Vehiculos'
-import ContratosVehicularesPage from './pages/admin/vehiculos/ContratosVehiculares'
+const CatalogoGlobal = cargaPerezosa(() => import('./pages/admin/sistema/CatalogoGlobal'))
+const Planes = cargaPerezosa(() => import('./pages/admin/sistema/Planes'))
+const ModulosPage = cargaPerezosa(() => import('./pages/admin/sistema/Modulos'))
+const FinanceDashboard = cargaPerezosa(() => import('./pages/admin/finanzas/Dashboard'))
+const MisComisionesPage = cargaPerezosa(() => import('./pages/admin/mis-comisiones/MisComisionesPage'))
+const Campanas = cargaPerezosa(() => import('./pages/admin/marketing/Campanas'))
+const ResumenNegocio = cargaPerezosa(() => import('./pages/admin/ecommerce/ResumenNegocio'))
+const ComprasIndex = cargaPerezosa(() => import('./pages/admin/compras/Index'))
+const ProveedoresPage = cargaPerezosa(() => import('./pages/admin/compras/Proveedores'))
+const OrdenesCompraPage = cargaPerezosa(() => import('./pages/admin/compras/OrdenesCompra'))
+const GuiaRemision = cargaPerezosa(() => import('./pages/admin/guia-remision/GuiaRemision'))
+const LibroVentas = cargaPerezosa(() => import('./pages/admin/sire/LibroVentas'))
+const LibroCompras = cargaPerezosa(() => import('./pages/admin/sire/LibroCompras'))
+const AdminResellers = cargaPerezosa(() => import('./pages/admin/sistema/Resellers'))
+const CatalogoWebPage = cargaPerezosa(() => import('./pages/admin/sistema/CatalogoWebPage'))
+const SistemaUsuarios = cargaPerezosa(() => import('./pages/admin/sistema/SistemaUsuarios'))
+const SistemaFinanzas = cargaPerezosa(() => import('./pages/admin/sistema/SistemaFinanzas'))
+const SistemaCobros = cargaPerezosa(() => import('./pages/admin/sistema/Cobros'))
+const MiPlan = cargaPerezosa(() => import('./pages/admin/MiPlan'))
+const SistemaRubros = cargaPerezosa(() => import('./pages/admin/sistema/SistemaRubros'))
+const DisenoRubroPage = cargaPerezosa(() => import('./pages/admin/sistema/DisenoRubroPage'))
+const ResellerLayout = cargaPerezosa(() => import('./layouts/ResellerLayout'))
+const ResellerDashboard = cargaPerezosa(() => import('./pages/reseller/Dashboard'))
+const ResellerClientes = cargaPerezosa(() => import('./pages/reseller/Clientes'))
+const ResellerRecargas = cargaPerezosa(() => import('./pages/reseller/Recargas'))
+const ResellerEstadoCuenta = cargaPerezosa(() => import('./pages/reseller/EstadoCuenta'))
+const SedeSelectionScreen = cargaPerezosa(() => import('./features/auth/sede-selection/SedeSelectionScreen'))
+const ForgotPasswordPage = cargaPerezosa(() => import('./pages/ForgotPassword'))
+const ResetPasswordPage = cargaPerezosa(() => import('./pages/ResetPassword'))
+const ProduccionRecetasPage = cargaPerezosa(() => import('./pages/admin/produccion/Recetas'))
+const ProduccionOrdenesPage = cargaPerezosa(() => import('./pages/admin/produccion/Ordenes'))
+const ReservasPage = cargaPerezosa(() => import('./pages/admin/reservas/ReservasPage'))
+const SistemaSoporte = cargaPerezosa(() => import('./pages/admin/sistema/Soporte'))
+const VehiculosPage = cargaPerezosa(() => import('./pages/admin/vehiculos/Vehiculos'))
+const ContratosVehicularesPage = cargaPerezosa(() => import('./pages/admin/vehiculos/ContratosVehiculares'))
 
 // Módulo Logística
-import LogisticaDashboard from './features/admin/logistica/dashboard/LogisticaDashboard'
-import ConductoresPage from './features/admin/logistica/conductores/ConductoresPage'
-import VehiculosLogisticaPage from './features/admin/logistica/vehiculos/VehiculosPage'
-import AlmacenesPage from './features/admin/logistica/almacenes/AlmacenesPage'
-import ZonasPage from './features/admin/logistica/zonas/ZonasPage'
-import ClientesLogisticaPage from './features/admin/logistica/clientes/ClientesLogisticaPage'
-import PedidosLogisticaPage from './features/admin/logistica/pedidos/PedidosLogisticaPage'
-import DespachosPage from './features/admin/logistica/despachos/DespachosPage'
-import TrackingPage from './features/admin/logistica/tracking/TrackingPage'
-import MantenimientoPage from './features/admin/logistica/mantenimiento/MantenimientoPage'
-import CombustiblePage from './features/admin/logistica/combustible/CombustiblePage'
-import PeajesPage from './features/admin/logistica/peajes/PeajesPage'
-import DocumentosPage from './features/admin/logistica/documentos/DocumentosPage'
-import DispositivosPage from './features/admin/logistica/dispositivos/DispositivosPage'
-import GeocercasPage from './features/admin/logistica/geocercas/GeocercasPage'
-import ImportarPage from './features/admin/logistica/importar/ImportarPage'
-import IntegracionesPage from './features/admin/logistica/integraciones/IntegracionesPage'
-import LeadsPage from './features/admin/leads/LeadsPage'
-import PrivacidadPage from './pages/legal/PrivacidadPage'
-import EntregaRepartidorPage from './pages/entrega/EntregaRepartidorPage'
-import EliminarDatosPage from './pages/legal/EliminarDatosPage'
+const LogisticaDashboard = cargaPerezosa(() => import('./features/admin/logistica/dashboard/LogisticaDashboard'))
+const ConductoresPage = cargaPerezosa(() => import('./features/admin/logistica/conductores/ConductoresPage'))
+const VehiculosLogisticaPage = cargaPerezosa(() => import('./features/admin/logistica/vehiculos/VehiculosPage'))
+const AlmacenesPage = cargaPerezosa(() => import('./features/admin/logistica/almacenes/AlmacenesPage'))
+const ZonasPage = cargaPerezosa(() => import('./features/admin/logistica/zonas/ZonasPage'))
+const ClientesLogisticaPage = cargaPerezosa(() => import('./features/admin/logistica/clientes/ClientesLogisticaPage'))
+const PedidosLogisticaPage = cargaPerezosa(() => import('./features/admin/logistica/pedidos/PedidosLogisticaPage'))
+const DespachosPage = cargaPerezosa(() => import('./features/admin/logistica/despachos/DespachosPage'))
+const TrackingPage = cargaPerezosa(() => import('./features/admin/logistica/tracking/TrackingPage'))
+const MantenimientoPage = cargaPerezosa(() => import('./features/admin/logistica/mantenimiento/MantenimientoPage'))
+const CombustiblePage = cargaPerezosa(() => import('./features/admin/logistica/combustible/CombustiblePage'))
+const PeajesPage = cargaPerezosa(() => import('./features/admin/logistica/peajes/PeajesPage'))
+const DocumentosPage = cargaPerezosa(() => import('./features/admin/logistica/documentos/DocumentosPage'))
+const DispositivosPage = cargaPerezosa(() => import('./features/admin/logistica/dispositivos/DispositivosPage'))
+const GeocercasPage = cargaPerezosa(() => import('./features/admin/logistica/geocercas/GeocercasPage'))
+const ImportarPage = cargaPerezosa(() => import('./features/admin/logistica/importar/ImportarPage'))
+const IntegracionesPage = cargaPerezosa(() => import('./features/admin/logistica/integraciones/IntegracionesPage'))
+const LeadsPage = cargaPerezosa(() => import('./features/admin/leads/LeadsPage'))
+const PrivacidadPage = cargaPerezosa(() => import('./pages/legal/PrivacidadPage'))
+const EntregaRepartidorPage = cargaPerezosa(() => import('./pages/entrega/EntregaRepartidorPage'))
+const EliminarDatosPage = cargaPerezosa(() => import('./pages/legal/EliminarDatosPage'))
 import SeoTienda from './components/tienda/SeoTienda'
 
 function App() {
@@ -123,6 +126,10 @@ function App() {
     <BrowserRouter>
       <SeoTienda />
       <Alert />
+      {/* Cada pantalla se descarga al abrirla: quien entra a una tienda ya no baja
+          el panel completo (antes, un solo archivo de 11 MB). */}
+      <PantallaNoCargo>
+      <Suspense fallback={<CargandoPagina />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         {/* Política de privacidad pública (requerida por Meta para publicar la app de WhatsApp) */}
@@ -391,8 +398,18 @@ function App() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
+      </Suspense>
+      </PantallaNoCargo>
     </BrowserRouter>
   )
 }
 
 export default App
+
+function CargandoPagina() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-white dark:bg-[#0A0D14]" role="status" aria-label="Cargando">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-gray-500" />
+    </div>
+  )
+}

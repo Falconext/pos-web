@@ -1,4 +1,9 @@
 import React from 'react';
+import { cargaPerezosa } from '@/lib/cargaPerezosa';
+
+// Cada plantilla se descarga solo si la tienda la usa (antes iban las 32 en el
+// mismo archivo que el panel). Las páginas la pintan con <Componente />, así que
+// el Suspense de App.tsx cubre la espera.
 import type { 
   TemplateHomePageProps, 
   TemplateCatalogoPageProps, 
@@ -7,160 +12,160 @@ import type {
 } from './shared/types';
 
 // Moda
-import ModaHomePage from './moda/ModaHomePage';
-import ModaCatalogoPage from './moda/ModaCatalogoPage';
-import ModaCheckoutPage from './moda/ModaCheckoutPage';
-import ModaSeguimientoPage from './moda/ModaSeguimientoPage';
+const ModaHomePage = cargaPerezosa(() => import('./moda/ModaHomePage'));
+const ModaCatalogoPage = cargaPerezosa(() => import('./moda/ModaCatalogoPage'));
+const ModaCheckoutPage = cargaPerezosa(() => import('./moda/ModaCheckoutPage'));
+const ModaSeguimientoPage = cargaPerezosa(() => import('./moda/ModaSeguimientoPage'));
 
 // Autopartes
-import AutopartesHomePage from './autopartes/AutopartesHomePage';
-import AutopartesCatalogoPage from './autopartes/AutopartesCatalogoPage';
-import AutopartesCheckoutPage from './autopartes/AutopartesCheckoutPage';
+const AutopartesHomePage = cargaPerezosa(() => import('./autopartes/AutopartesHomePage'));
+const AutopartesCatalogoPage = cargaPerezosa(() => import('./autopartes/AutopartesCatalogoPage'));
+const AutopartesCheckoutPage = cargaPerezosa(() => import('./autopartes/AutopartesCheckoutPage'));
 
 // Tecnologia
-import TecnologiaHomePage from './tecnologia/TecnologiaHomePage';
-import TecnologiaCatalogoPage from './tecnologia/TecnologiaCatalogoPage';
-import TecnologiaCheckoutPage from './tecnologia/TecnologiaCheckoutPage';
+const TecnologiaHomePage = cargaPerezosa(() => import('./tecnologia/TecnologiaHomePage'));
+const TecnologiaCatalogoPage = cargaPerezosa(() => import('./tecnologia/TecnologiaCatalogoPage'));
+const TecnologiaCheckoutPage = cargaPerezosa(() => import('./tecnologia/TecnologiaCheckoutPage'));
 
 // Maye
-import MayeHomePage from './maye/MayeHomePage';
-import MayeCatalogoPage from './maye/MayeCatalogoPage';
-import MayeCheckoutPage from './maye/MayeCheckoutPage';
+const MayeHomePage = cargaPerezosa(() => import('./maye/MayeHomePage'));
+const MayeCatalogoPage = cargaPerezosa(() => import('./maye/MayeCatalogoPage'));
+const MayeCheckoutPage = cargaPerezosa(() => import('./maye/MayeCheckoutPage'));
 
 // Gadgets
-import GadgetsHomePage from './gadgets/GadgetsHomePage';
-import GadgetsCatalogoPage from './gadgets/GadgetsCatalogoPage';
-import GadgetsCheckoutPage from './gadgets/GadgetsCheckoutPage';
+const GadgetsHomePage = cargaPerezosa(() => import('./gadgets/GadgetsHomePage'));
+const GadgetsCatalogoPage = cargaPerezosa(() => import('./gadgets/GadgetsCatalogoPage'));
+const GadgetsCheckoutPage = cargaPerezosa(() => import('./gadgets/GadgetsCheckoutPage'));
 
 // Urbano
-import UrbanoHomePage from './urbano/UrbanoHomePage';
-import UrbanoCatalogoPage from './urbano/UrbanoCatalogoPage';
-import UrbanoCheckoutPage from './urbano/UrbanoCheckoutPage';
-import UrbanoSeguimientoPage from './urbano/UrbanoSeguimientoPage';
+const UrbanoHomePage = cargaPerezosa(() => import('./urbano/UrbanoHomePage'));
+const UrbanoCatalogoPage = cargaPerezosa(() => import('./urbano/UrbanoCatalogoPage'));
+const UrbanoCheckoutPage = cargaPerezosa(() => import('./urbano/UrbanoCheckoutPage'));
+const UrbanoSeguimientoPage = cargaPerezosa(() => import('./urbano/UrbanoSeguimientoPage'));
 
 // Apicultura
-import ApiculturaHomePage from './apicultura/ApiculturaHomePage';
-import ApiculturaCatalogoPage from './apicultura/ApiculturaCatalogoPage';
-import ApiculturaCheckoutPage from './apicultura/ApiculturaCheckoutPage';
+const ApiculturaHomePage = cargaPerezosa(() => import('./apicultura/ApiculturaHomePage'));
+const ApiculturaCatalogoPage = cargaPerezosa(() => import('./apicultura/ApiculturaCatalogoPage'));
+const ApiculturaCheckoutPage = cargaPerezosa(() => import('./apicultura/ApiculturaCheckoutPage'));
 
 // Construccion
-import ConstruccionHomePage from './construccion/ConstruccionHomePage';
-import ConstruccionCatalogoPage from './construccion/ConstruccionCatalogoPage';
-import ConstruccionCheckoutPage from './construccion/ConstruccionCheckoutPage';
+const ConstruccionHomePage = cargaPerezosa(() => import('./construccion/ConstruccionHomePage'));
+const ConstruccionCatalogoPage = cargaPerezosa(() => import('./construccion/ConstruccionCatalogoPage'));
+const ConstruccionCheckoutPage = cargaPerezosa(() => import('./construccion/ConstruccionCheckoutPage'));
 
 // Falcon (tecnología)
-import FalconHomePage from './falcon/FalconHomePage';
-import FalconCatalogoPage from './falcon/FalconCatalogoPage';
-import FalconCheckoutPage from './falcon/FalconCheckoutPage';
+const FalconHomePage = cargaPerezosa(() => import('./falcon/FalconHomePage'));
+const FalconCatalogoPage = cargaPerezosa(() => import('./falcon/FalconCatalogoPage'));
+const FalconCheckoutPage = cargaPerezosa(() => import('./falcon/FalconCheckoutPage'));
 
 // Antojo (pizzería + frappes + cremoladas)
-import AntojoHomePage from './antojo/AntojoHomePage';
-import AntojoCatalogoPage from './antojo/AntojoCatalogoPage';
-import AntojoCheckoutPage from './antojo/AntojoCheckoutPage';
+const AntojoHomePage = cargaPerezosa(() => import('./antojo/AntojoHomePage'));
+const AntojoCatalogoPage = cargaPerezosa(() => import('./antojo/AntojoCatalogoPage'));
+const AntojoCheckoutPage = cargaPerezosa(() => import('./antojo/AntojoCheckoutPage'));
 
 // Luxury (perfumería de lujo)
-import LuxuryHomePage from './luxury/LuxuryHomePage';
-import LuxuryCatalogoPage from './luxury/LuxuryCatalogoPage';
-import LuxuryCheckoutPage from './luxury/LuxuryCheckoutPage';
+const LuxuryHomePage = cargaPerezosa(() => import('./luxury/LuxuryHomePage'));
+const LuxuryCatalogoPage = cargaPerezosa(() => import('./luxury/LuxuryCatalogoPage'));
+const LuxuryCheckoutPage = cargaPerezosa(() => import('./luxury/LuxuryCheckoutPage'));
 
 // Spa (salón de belleza & spa)
-import SpaHomePage from './spa/SpaHomePage';
-import SpaCatalogoPage from './spa/SpaCatalogoPage';
-import SpaCheckoutPage from './spa/SpaCheckoutPage';
+const SpaHomePage = cargaPerezosa(() => import('./spa/SpaHomePage'));
+const SpaCatalogoPage = cargaPerezosa(() => import('./spa/SpaCatalogoPage'));
+const SpaCheckoutPage = cargaPerezosa(() => import('./spa/SpaCheckoutPage'));
 
 // Carteras (Luxora — carteras, bolsos y accesorios de lujo)
-import CarterasHomePage from './carteras/CarterasHomePage';
-import CarterasCatalogoPage from './carteras/CarterasCatalogoPage';
-import CarterasCheckoutPage from './carteras/CarterasCheckoutPage';
+const CarterasHomePage = cargaPerezosa(() => import('./carteras/CarterasHomePage'));
+const CarterasCatalogoPage = cargaPerezosa(() => import('./carteras/CarterasCatalogoPage'));
+const CarterasCheckoutPage = cargaPerezosa(() => import('./carteras/CarterasCheckoutPage'));
 
 // Joyería (Aurum — joyería fina de alta gama)
-import AurumHomePage from './joyeria/AurumHomePage';
-import AurumCatalogoPage from './joyeria/AurumCatalogoPage';
-import AurumCheckoutPage from './joyeria/AurumCheckoutPage';
+const AurumHomePage = cargaPerezosa(() => import('./joyeria/AurumHomePage'));
+const AurumCatalogoPage = cargaPerezosa(() => import('./joyeria/AurumCatalogoPage'));
+const AurumCheckoutPage = cargaPerezosa(() => import('./joyeria/AurumCheckoutPage'));
 
 // Abarrotes (Grogin — abarrotes / minimarket / supermercado)
-import GroginHomePage from './abarrotes/GroginHomePage';
-import GroginCatalogoPage from './abarrotes/GroginCatalogoPage';
-import GroginCheckoutPage from './abarrotes/GroginCheckoutPage';
+const GroginHomePage = cargaPerezosa(() => import('./abarrotes/GroginHomePage'));
+const GroginCatalogoPage = cargaPerezosa(() => import('./abarrotes/GroginCatalogoPage'));
+const GroginCheckoutPage = cargaPerezosa(() => import('./abarrotes/GroginCheckoutPage'));
 
 // Supermercado (FreshMart — grocery verde/blanco)
-import FreshMartHomePage from './supermercado/FreshMartHomePage';
-import FreshMartCatalogoPage from './supermercado/FreshMartCatalogoPage';
-import FreshMartCheckoutPage from './supermercado/FreshMartCheckoutPage';
+const FreshMartHomePage = cargaPerezosa(() => import('./supermercado/FreshMartHomePage'));
+const FreshMartCatalogoPage = cargaPerezosa(() => import('./supermercado/FreshMartCatalogoPage'));
+const FreshMartCheckoutPage = cargaPerezosa(() => import('./supermercado/FreshMartCheckoutPage'));
 
 // Ropa Hombre (Urbanic — moda masculina editorial)
-import RopaHombreHomePage from './ropa-hombre/RopaHombreHomePage';
-import RopaHombreCatalogoPage from './ropa-hombre/RopaHombreCatalogoPage';
-import RopaHombreCheckoutPage from './ropa-hombre/RopaHombreCheckoutPage';
+const RopaHombreHomePage = cargaPerezosa(() => import('./ropa-hombre/RopaHombreHomePage'));
+const RopaHombreCatalogoPage = cargaPerezosa(() => import('./ropa-hombre/RopaHombreCatalogoPage'));
+const RopaHombreCheckoutPage = cargaPerezosa(() => import('./ropa-hombre/RopaHombreCheckoutPage'));
 
 // Bicicletas (Vonica — bicicletas, ciclismo & deportes)
-import BicicletasHomePage from './bicicletas/BicicletasHomePage';
-import BicicletasCatalogoPage from './bicicletas/BicicletasCatalogoPage';
-import BicicletasCheckoutPage from './bicicletas/BicicletasCheckoutPage';
+const BicicletasHomePage = cargaPerezosa(() => import('./bicicletas/BicicletasHomePage'));
+const BicicletasCatalogoPage = cargaPerezosa(() => import('./bicicletas/BicicletasCatalogoPage'));
+const BicicletasCheckoutPage = cargaPerezosa(() => import('./bicicletas/BicicletasCheckoutPage'));
 
 // Moda minimal (Norda — ropa & calzado minimalista estilo Everlane)
-import ModaMinimalHomePage from './moda-minimal/ModaMinimalHomePage';
-import ModaMinimalCatalogoPage from './moda-minimal/ModaMinimalCatalogoPage';
-import ModaMinimalCheckoutPage from './moda-minimal/ModaMinimalCheckoutPage';
+const ModaMinimalHomePage = cargaPerezosa(() => import('./moda-minimal/ModaMinimalHomePage'));
+const ModaMinimalCatalogoPage = cargaPerezosa(() => import('./moda-minimal/ModaMinimalCatalogoPage'));
+const ModaMinimalCheckoutPage = cargaPerezosa(() => import('./moda-minimal/ModaMinimalCheckoutPage'));
 
 // Comida app (Crispy — app de comida / delivery)
-import CrispyHomePage from './comida-app/CrispyHomePage';
-import CrispyCatalogoPage from './comida-app/CrispyCatalogoPage';
-import CrispyCheckoutPage from './comida-app/CrispyCheckoutPage';
+const CrispyHomePage = cargaPerezosa(() => import('./comida-app/CrispyHomePage'));
+const CrispyCatalogoPage = cargaPerezosa(() => import('./comida-app/CrispyCatalogoPage'));
+const CrispyCheckoutPage = cargaPerezosa(() => import('./comida-app/CrispyCheckoutPage'));
 
 // Motos (Voltia Motos — venta de motos + servicio/taller mecánico)
-import MotosHomePage from './motos/MotosHomePage';
-import MotosCatalogoPage from './motos/MotosCatalogoPage';
-import MotosCheckoutPage from './motos/MotosCheckoutPage';
+const MotosHomePage = cargaPerezosa(() => import('./motos/MotosHomePage'));
+const MotosCatalogoPage = cargaPerezosa(() => import('./motos/MotosCatalogoPage'));
+const MotosCheckoutPage = cargaPerezosa(() => import('./motos/MotosCheckoutPage'));
 
 // Hoodie (Hoodie — ropa urbana / streetwear editorial)
-import HoodieHomePage from './hoodie/HoodieHomePage';
-import HoodieCatalogoPage from './hoodie/HoodieCatalogoPage';
-import HoodieCheckoutPage from './hoodie/HoodieCheckoutPage';
+const HoodieHomePage = cargaPerezosa(() => import('./hoodie/HoodieHomePage'));
+const HoodieCatalogoPage = cargaPerezosa(() => import('./hoodie/HoodieCatalogoPage'));
+const HoodieCheckoutPage = cargaPerezosa(() => import('./hoodie/HoodieCheckoutPage'));
 
 // Tones (Tones — ropa infantil / bebé cálida y premium)
-import TonesHomePage from './tones/TonesHomePage';
-import TonesCatalogoPage from './tones/TonesCatalogoPage';
-import TonesCheckoutPage from './tones/TonesCheckoutPage';
+const TonesHomePage = cargaPerezosa(() => import('./tones/TonesHomePage'));
+const TonesCatalogoPage = cargaPerezosa(() => import('./tones/TonesCatalogoPage'));
+const TonesCheckoutPage = cargaPerezosa(() => import('./tones/TonesCheckoutPage'));
 
 // Farmacia (MediCare — farmacia / botica / medicamentos, verde médico premium)
-import FarmaciaHomePage from './farmacia/FarmaciaHomePage';
-import FarmaciaCatalogoPage from './farmacia/FarmaciaCatalogoPage';
-import FarmaciaCheckoutPage from './farmacia/FarmaciaCheckoutPage';
+const FarmaciaHomePage = cargaPerezosa(() => import('./farmacia/FarmaciaHomePage'));
+const FarmaciaCatalogoPage = cargaPerezosa(() => import('./farmacia/FarmaciaCatalogoPage'));
+const FarmaciaCheckoutPage = cargaPerezosa(() => import('./farmacia/FarmaciaCheckoutPage'));
 
 // Zapatos (Stride — zapatería / zapatillas / calzado, oliva + beige premium)
-import StrideHomePage from './zapatos/StrideHomePage';
-import StrideCatalogoPage from './zapatos/StrideCatalogoPage';
-import StrideCheckoutPage from './zapatos/StrideCheckoutPage';
+const StrideHomePage = cargaPerezosa(() => import('./zapatos/StrideHomePage'));
+const StrideCatalogoPage = cargaPerezosa(() => import('./zapatos/StrideCatalogoPage'));
+const StrideCheckoutPage = cargaPerezosa(() => import('./zapatos/StrideCheckoutPage'));
 
 // Mueblería (Nórdica — muebles / decoración / hogar, escandinavo cálido)
-import NordicaHomePage from './muebleria/NordicaHomePage';
-import NordicaCatalogoPage from './muebleria/NordicaCatalogoPage';
-import NordicaCheckoutPage from './muebleria/NordicaCheckoutPage';
+const NordicaHomePage = cargaPerezosa(() => import('./muebleria/NordicaHomePage'));
+const NordicaCatalogoPage = cargaPerezosa(() => import('./muebleria/NordicaCatalogoPage'));
+const NordicaCheckoutPage = cargaPerezosa(() => import('./muebleria/NordicaCheckoutPage'));
 
 // Mascotas (Patitas — veterinaria / pet shop, cálido y juguetón)
-import PatitasHomePage from './mascotas/PatitasHomePage';
-import PatitasCatalogoPage from './mascotas/PatitasCatalogoPage';
-import PatitasCheckoutPage from './mascotas/PatitasCheckoutPage';
+const PatitasHomePage = cargaPerezosa(() => import('./mascotas/PatitasHomePage'));
+const PatitasCatalogoPage = cargaPerezosa(() => import('./mascotas/PatitasCatalogoPage'));
+const PatitasCheckoutPage = cargaPerezosa(() => import('./mascotas/PatitasCheckoutPage'));
 
 // Maquillaje (Blush — maquillaje / cosméticos / skincare, rosa nude premium)
-import BlushHomePage from './maquillaje/BlushHomePage';
-import BlushCatalogoPage from './maquillaje/BlushCatalogoPage';
-import BlushCheckoutPage from './maquillaje/BlushCheckoutPage';
+const BlushHomePage = cargaPerezosa(() => import('./maquillaje/BlushHomePage'));
+const BlushCatalogoPage = cargaPerezosa(() => import('./maquillaje/BlushCatalogoPage'));
+const BlushCheckoutPage = cargaPerezosa(() => import('./maquillaje/BlushCheckoutPage'));
 
 // Retail (Vitrina — comercio minorista / bazar / tienda multi-categoría)
-import VitrinaHomePage from './retail/VitrinaHomePage';
-import VitrinaCatalogoPage from './retail/VitrinaCatalogoPage';
-import VitrinaCheckoutPage from './retail/VitrinaCheckoutPage';
+const VitrinaHomePage = cargaPerezosa(() => import('./retail/VitrinaHomePage'));
+const VitrinaCatalogoPage = cargaPerezosa(() => import('./retail/VitrinaCatalogoPage'));
+const VitrinaCheckoutPage = cargaPerezosa(() => import('./retail/VitrinaCheckoutPage'));
 // Bolsos (Rosé — carteras / bolsos / marroquinería, rosa y vino con serif de lujo)
-import RoseHomePage from './bolsos/RoseHomePage';
-import RoseCatalogoPage from './bolsos/RoseCatalogoPage';
-import RoseCheckoutPage from './bolsos/RoseCheckoutPage';
+const RoseHomePage = cargaPerezosa(() => import('./bolsos/RoseHomePage'));
+const RoseCatalogoPage = cargaPerezosa(() => import('./bolsos/RoseCatalogoPage'));
+const RoseCheckoutPage = cargaPerezosa(() => import('./bolsos/RoseCheckoutPage'));
 
 // Moda Elegante (Élan — moda femenina, ropa y calzado, lujo minimal editorial)
-import ElanHomePage from './moda-elegante/ElanHomePage';
-import ElanCatalogoPage from './moda-elegante/ElanCatalogoPage';
-import ElanCheckoutPage from './moda-elegante/ElanCheckoutPage';
+const ElanHomePage = cargaPerezosa(() => import('./moda-elegante/ElanHomePage'));
+const ElanCatalogoPage = cargaPerezosa(() => import('./moda-elegante/ElanCatalogoPage'));
+const ElanCheckoutPage = cargaPerezosa(() => import('./moda-elegante/ElanCheckoutPage'));
 
 export interface TemplateConfig {
   id: string;
