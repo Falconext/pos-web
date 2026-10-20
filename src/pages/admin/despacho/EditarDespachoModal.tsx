@@ -111,7 +111,19 @@ function construirPayloadDespacho(envioData: any) {
 }
 
 export { TIPOS_VENTA_REPARTO, FORMAS_PAGO_COBRO } from './repartoPropio';
-export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { comprobanteId: number; onClose: () => void; onSuccess: () => void }) {
+/**
+ * Un solo envío para varias notas del mismo cliente: el despacho se guarda en
+ * `comprobanteId` y estas otras notas quedan enlazadas a él (un paquete, una
+ * guía). Los montos de la venta pasan a ser la suma de todas.
+ */
+export interface NotasDelEnvio {
+    ids: number[];
+    documentos: string[];
+    total: number;
+    saldo: number;
+}
+
+export function EditarDespachoModal({ comprobanteId, onClose, onSuccess, notasIncluidas }: { comprobanteId: number; onClose: () => void; onSuccess: () => void; notasIncluidas?: NotasDelEnvio | null }) {
     const [envioData, setEnvioData] = useState<any>({
         transportista: '',
         codigoGuia: '',
@@ -203,12 +215,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 const tipoComp = comprobantePayload?.tipoDoc ?? comprobantePayload?.tipoComprobante ?? comprobantePayload?.tipo ?? '';
                 const FORMALES = ['01', '03', '07', '08'];
                 setEsNV(!FORMALES.includes(tipoComp) || tipoComp === '');
-                setSaldoVenta(Number(comprobantePayload?.saldo ?? 0));
+                const extra = notasIncluidas?.ids.length ? notasIncluidas : null;
+                setSaldoVenta(extra ? extra.saldo : Number(comprobantePayload?.saldo ?? 0));
                 if (comprobantePayload) {
-                    const totalVenta = Number(comprobantePayload.mtoImpVenta ?? 0);
-                    const saldo = Math.max(Number(comprobantePayload.saldo ?? 0), 0);
+                    const totalVenta = extra ? extra.total : Number(comprobantePayload.mtoImpVenta ?? 0);
+                    const saldo = extra ? extra.saldo : Math.max(Number(comprobantePayload.saldo ?? 0), 0);
                     setVentaInfo({
-                        referencia: [comprobantePayload.serie, comprobantePayload.correlativo].filter(Boolean).join('-'),
+                        referencia: extra ? extra.documentos.join(' + ') : [comprobantePayload.serie, comprobantePayload.correlativo].filter(Boolean).join('-'),
                         total: totalVenta,
                         pagado: Math.max(totalVenta - saldo, 0),
                         saldo,
@@ -241,7 +254,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                 setEnvioData({
                     transportista: p.transportista || '',
                     codigoGuia: p.codigoGuia || '',
-                    observaciones: p.observaciones || '',
+                    observaciones: p.observaciones || (notasIncluidas?.ids.length ? `Un solo paquete: ${notasIncluidas.documentos.join(', ')}` : ''),
                     tipoEnvio: p.tipoEnvio || 'DOMICILIO',
                     agenciaDestino: p.agenciaDestino || '',
                     celularDest: p.celularDest || (/^9\d{8}$/.test(String(cli?.telefono ?? '').replace(/\D/g, '')) ? String(cli.telefono).replace(/\D/g, '') : ''),
@@ -406,6 +419,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
     const [existeDespacho, setExisteDespacho] = useState(false);
     const [quitando, setQuitando] = useState(false);
     const [confirmarQuitar, setConfirmarQuitar] = useState(false);
+    // Guarda el despacho y, si es un envío de varias notas, las enlaza a él.
+    const guardarEnvio = async () => {
+        await apiClient.patch(`/envio-despacho/comprobante/${comprobanteId}/upsert`, construirPayloadDespacho(envioData));
+        const otras = (notasIncluidas?.ids ?? []).filter((id) => id !== comprobanteId);
+        if (otras.length) await apiClient.post(`/envio-despacho/comprobante/${comprobanteId}/notas`, { comprobanteIds: otras });
+    };
+
     const ventaPagada = !!ventaInfo && ventaInfo.saldo <= 0.009;
     const fmt = (n: number) => `${ventaInfo?.simbolo ?? 'S/'} ${Number(n || 0).toFixed(2)}`;
     // Qué hace cada courier con el dinero: es lo que más confunde al empresario.
@@ -427,7 +447,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
             // de seguimiento aún no existe —nace recién al guardar— y `put` respondía
             // "No existe seguimiento de despacho para este comprobante" a quien pulsaba
             // Generar guía sin haber guardado antes.
-            await apiClient.patch(`/envio-despacho/comprobante/${comprobanteId}/upsert`, construirPayloadDespacho(envioData));
+            await guardarEnvio();
             setExisteDespacho(true);
             const guia = await shalomService.crearGuia(comprobanteId, {
                 destinoId: envioData.shalomAgenciaDestinoId || undefined,
@@ -464,7 +484,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         try {
             // Mismo motivo que en Shalom: `upsert` crea el seguimiento si el envío se
             // está coordinando por primera vez.
-            await apiClient.patch(`/envio-despacho/comprobante/${comprobanteId}/upsert`, construirPayloadDespacho(envioData));
+            await guardarEnvio();
             setExisteDespacho(true);
             const guia = await olvaService.crearGuia(comprobanteId, {
                 tipoEnvio: envioData.tipoEnvio === 'DOMICILIO' ? 'DOMICILIO' : 'AGENCIA',
@@ -513,7 +533,7 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
         try {
             // upsert: crea el seguimiento si aún no existe (coordinación nueva) o lo
             // actualiza si ya existía.
-            await apiClient.patch(`/envio-despacho/comprobante/${comprobanteId}/upsert`, construirPayloadDespacho(envioData));
+            await guardarEnvio();
             alert(existeDespacho ? 'Despacho actualizado correctamente' : 'Envío coordinado correctamente', 'success');
             onSuccess();
         } catch (error: unknown) {
@@ -596,6 +616,13 @@ export function EditarDespachoModal({ comprobanteId, onClose, onSuccess }: { com
                     {selectedCourier && COURIER_HINTS[selectedCourier.value] && (
                         <p className="-mt-2 text-[11px] leading-4 text-slate-500 dark:text-slate-400" data-testid="courier-hint">
                             <b className="text-slate-700 dark:text-slate-200">{selectedCourier.label}:</b> {COURIER_HINTS[selectedCourier.value]}
+                        </p>
+                    )}
+
+                    {notasIncluidas && notasIncluidas.ids.length > 1 && (
+                        <p className="flex items-start gap-2 rounded-2xl border border-violet-200 bg-violet-50/70 px-4 py-2.5 text-xs text-violet-800 dark:border-violet-900/50 dark:bg-violet-950/20 dark:text-violet-200" data-testid="envio-varias-notas">
+                            <Icon icon="solar:box-bold-duotone" className="mt-px shrink-0 text-base" />
+                            <span><b>Un solo envío para {notasIncluidas.ids.length} notas:</b> {notasIncluidas.documentos.join(', ')}. Se genera una sola guía y las demás notas quedan dentro de este paquete.</span>
                         </p>
                     )}
 

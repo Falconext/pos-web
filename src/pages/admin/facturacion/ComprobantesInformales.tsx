@@ -39,7 +39,7 @@ import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/c
 import { puedeHacerNotaDeVenta } from '@/features/admin/facturacion/utils/puedeHacerNotaDeVenta';
 import { datosPagoDeNota } from "@/features/admin/facturacion/utils/datosPagoDeNota";
 import apiClient from "@/utils/apiClient";
-import { EditarDespachoModal } from "@/pages/admin/despacho/EditarDespachoModal";
+import { EditarDespachoModal, type NotasDelEnvio } from "@/pages/admin/despacho/EditarDespachoModal";
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 import { hasPermission } from "@/utils/permissions";
 import CasillaSeleccion from "@/components/CasillaSeleccion";
@@ -47,7 +47,7 @@ import BarraSeleccionNotas from "@/features/admin/facturacion/seleccion/BarraSel
 import ModalCobrarVarias from "@/features/admin/facturacion/seleccion/ModalCobrarVarias";
 import { motivoNoFacturar, notaDeVentaDataConjunta } from "@/features/admin/facturacion/seleccion/facturarJuntas";
 import ModalEstadoCuentaWhatsApp from "@/features/admin/facturacion/seleccion/ModalEstadoCuentaWhatsApp";
-import { motivoNoCobrar, notaElegidaDe, resumirSeleccion, type NotaElegida } from "@/features/admin/facturacion/seleccion/seleccionNotas";
+import { documentoCorto, envioConjunto, motivoNoCobrar, notaElegidaDe, resumirSeleccion, type NotaElegida } from "@/features/admin/facturacion/seleccion/seleccionNotas";
 
 // Informales que sí se despachan (las cotizaciones no: se convierten primero).
 const TIPOS_ENVIABLES = new Set(['NV', 'TICKET', 'NP', 'OT', 'RH', 'CP']);
@@ -126,9 +126,13 @@ const ComprobantesInformales = () => {
     // Abrir el modal NO crea el seguimiento: el despacho nace recién cuando se
     // guarda con destino. Antes bastaba con tocar "Coordinar envío" para que la
     // venta quedara marcada "con despacho" aunque no se llenara nada (caso AMELIS).
+    // Envío de varias notas del mismo cliente (Más acciones → Un solo envío).
+    const [envioVarias, setEnvioVarias] = useState<NotasDelEnvio | null>(null);
     const coordinarEnvio = (item: IInvoices) => {
         if (!item?.id) return;
-        setEditDespachoId(item.id);
+        // Nota que va en el paquete de otra: se edita ESE envío, no se crea otro.
+        setEnvioVarias(null);
+        setEditDespachoId(Number((item as any).envioDespacho?.comprobanteId ?? item.id));
     };
 
 
@@ -730,7 +734,8 @@ const ComprobantesInformales = () => {
             </div>
 
             <BarraSeleccionNotas
-                notas={notasElegidas}
+                // Con un modal abierto la barra se esconde: quedaba asomando por encima del fondo.
+                notas={editDespachoId || modalSeleccion ? [] : notasElegidas}
                 onQuitar={() => setSeleccionOrden(new Map())}
                 principal={{
                     key: 'orden',
@@ -752,6 +757,19 @@ const ComprobantesInformales = () => {
                         descripcion: 'Una sola factura para el cliente con RUC',
                         deshabilitada: motivoNoFacturar(notasElegidas, 'FACTURA'),
                         onClick: () => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: notaDeVentaDataConjunta(notasElegidas) } }),
+                    },
+                    {
+                        key: 'envio', grupo: 'Envío', label: 'Coordinar un solo envío', icon: 'solar:box-bold-duotone',
+                        descripcion: 'Un paquete y una guía para todas las notas',
+                        deshabilitada: envioConjunto(notasElegidas).motivo,
+                        onClick: () => {
+                            const { principal } = envioConjunto(notasElegidas);
+                            if (!principal) return;
+                            const ordenadas = [principal, ...notasElegidas.filter((n) => n.id !== principal.id)];
+                            const r = resumirSeleccion(notasElegidas);
+                            setEnvioVarias({ ids: ordenadas.map((n) => n.id), documentos: ordenadas.map((n) => documentoCorto(n.documento)), total: r.total, saldo: r.saldo });
+                            setEditDespachoId(principal.id);
+                        },
                     },
                     {
                         key: 'cobrar', grupo: 'Cobranza', label: 'Cobrar', icon: 'solar:wallet-money-bold-duotone',
@@ -1102,8 +1120,12 @@ const ComprobantesInformales = () => {
             {editDespachoId && (
                 <EditarDespachoModal
                     comprobanteId={editDespachoId}
-                    onClose={() => setEditDespachoId(null)}
-                    onSuccess={() => { setEditDespachoId(null); recargarLista(); }}
+                    notasIncluidas={envioVarias}
+                    onClose={() => { setEditDespachoId(null); setEnvioVarias(null); }}
+                    onSuccess={() => {
+                        if (envioVarias) setSeleccionOrden(new Map());
+                        setEditDespachoId(null); setEnvioVarias(null); recargarLista();
+                    }}
                 />
             )}
 
