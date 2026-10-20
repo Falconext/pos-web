@@ -41,6 +41,9 @@ import { datosPagoDeNota } from "@/features/admin/facturacion/utils/datosPagoDeN
 import apiClient from "@/utils/apiClient";
 import { EditarDespachoModal } from "@/pages/admin/despacho/EditarDespachoModal";
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
+import { hasPermission } from "@/utils/permissions";
+import CasillaSeleccion from "@/components/CasillaSeleccion";
+import { AnimatePresence, motion } from "framer-motion";
 
 // Informales que sí se despachan (las cotizaciones no: se convierten primero).
 const TIPOS_ENVIABLES = new Set(['NV', 'TICKET', 'NP', 'OT', 'RH', 'CP']);
@@ -156,6 +159,41 @@ const ComprobantesInformales = () => {
         }
     }, [canFilterBySede]);
 
+    // Preventa: varias notas elegidas → una sola orden de compra al proveedor.
+    // Se guarda id → "NV01-00000025" para que la elección sobreviva al paginar.
+    const puedeArmarOrden = hasPermission(auth as any, 'compras');
+    const [seleccionOrden, setSeleccionOrden] = useState<Map<number, string>>(new Map());
+    const alternarSeleccion = (id: number, documento: string) => {
+        setSeleccionOrden((prev) => {
+            const next = new Map(prev);
+            if (next.has(id)) next.delete(id); else next.set(id, documento);
+            return next;
+        });
+    };
+    const armarOrdenDeCompra = () => {
+        navigate('/administrador/compras/ordenes', { state: { desdeVentas: [...seleccionOrden.keys()] } });
+    };
+
+    // "Marcar todas" solo actúa sobre las notas de ESTA página que se pueden pedir.
+    const pediblesDePagina: [number, string][] = (invoices ?? [])
+        .filter((it: any) => ['NV', 'NP', 'TICKET'].includes(String(it.tipoDoc)) && it.estadoEnvioSunat !== 'ANULADO')
+        .map((it: any) => [it.id, `${it.serie}-${String(it.correlativo).padStart(8, '0')}`]);
+    const marcadasDePagina = pediblesDePagina.filter(([id]) => seleccionOrden.has(id)).length;
+    const todasMarcadas = pediblesDePagina.length > 0 && marcadasDePagina === pediblesDePagina.length;
+    const casillaTodas = pediblesDePagina.length > 0 ? (
+        <CasillaSeleccion
+            marcada={todasMarcadas}
+            parcial={marcadasDePagina > 0 && !todasMarcadas}
+            etiqueta={todasMarcadas ? 'Quitar las notas de esta página' : 'Elegir todas las notas de esta página'}
+            onCambiar={() => setSeleccionOrden((prev) => {
+                const next = new Map(prev);
+                if (todasMarcadas) pediblesDePagina.forEach(([id]) => next.delete(id));
+                else pediblesDePagina.forEach(([id, doc]) => next.set(id, doc));
+                return next;
+            })}
+        />
+    ) : '';
+
     const productsTable = invoices?.map((item: IInvoices) => {
         const despachoCompleto = item.comprobante === 'NOTA DE VENTA' && hasDespachoCompleto(item);
         const despachoFecha = item.envioDespacho?.creadoEn
@@ -198,8 +236,31 @@ const ComprobantesInformales = () => {
                 <Icon icon="mdi:dots-vertical" width={18} height={18} />
             </button>
         );
+        const ordenesDeCompra: string[] = ((item as any).ordenesCompra ?? [])
+            .map((o: any) => `OC-${String(o.ordenCompra?.numero ?? '').padStart(6, '0')}`);
+        const documento = `${item.serie}-${String(item.correlativo).padStart(8, '0')}`;
+        const sePuedePedir = ['NV', 'NP', 'TICKET'].includes(String((item as any).tipoDoc)) && item.estadoEnvioSunat !== 'ANULADO';
+        const seleccion = sePuedePedir ? (
+            <div className="flex flex-col items-center gap-1">
+                <CasillaSeleccion
+                    marcada={seleccionOrden.has(item.id)}
+                    onCambiar={() => alternarSeleccion(item.id, documento)}
+                    etiqueta={`Elegir ${documento} para la orden de compra`}
+                />
+                {ordenesDeCompra.length > 0 && (
+                    <span title={`Ya se pidió al proveedor en ${ordenesDeCompra.join(', ')}`} className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:ring-violet-800">
+                        <Icon icon="solar:clipboard-check-bold" className="text-[11px]" />
+                        {ordenesDeCompra.map((o) => o.replace(/^OC-0+/, 'OC-')).join(', ')}
+                    </span>
+                )}
+            </div>
+        ) : null;
         return {
+            seleccion,
             ...rowBase,
+            ordenesDeCompra,
+            sePuedePedir,
+            documentoOrden: documento,
             acciones,
         };
     });
@@ -551,7 +612,7 @@ const ComprobantesInformales = () => {
     ].filter(Boolean).length;
 
     return (
-        <div className="min-h-screen overflow-x-hidden bg-gray-50 px-3 pb-4 dark:bg-[#0A0D14] sm:px-2">
+        <div className={`min-h-screen overflow-x-hidden bg-gray-50 px-3 dark:bg-[#0A0D14] sm:px-2 ${seleccionOrden.size > 0 ? 'pb-36' : 'pb-4'}`}>
             <ComprobantePrintPage
                 company={auth}
                 componentRef={componentRef}
@@ -636,6 +697,57 @@ const ComprobantesInformales = () => {
                 </div>
             </div>
 
+            <AnimatePresence>
+                {puedeArmarOrden && seleccionOrden.size > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 24 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom,0px)+16px)] z-[70] mx-auto max-w-3xl md:bottom-28"
+                        data-testid="barra-orden-compra"
+                    >
+                        <div className="flex flex-col gap-3 rounded-2xl bg-gray-900/95 p-3 text-white shadow-2xl shadow-gray-900/30 ring-1 ring-white/10 backdrop-blur sm:flex-row sm:items-center sm:gap-4 sm:pl-3 sm:pr-2.5 dark:bg-slate-800/95">
+                            <div className="flex min-w-0 flex-1 items-center gap-3">
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-base font-black tabular-nums">
+                                    {seleccionOrden.size}
+                                </span>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold leading-tight">
+                                        {seleccionOrden.size === 1 ? 'nota elegida' : 'notas elegidas'} para pedir al proveedor
+                                    </p>
+                                    <p className="mt-0.5 truncate text-xs text-gray-400">
+                                        {(() => {
+                                            const docs = [...seleccionOrden.values()].map((d) => d.replace(/-0+(?=\d)/, '-'));
+                                            return docs.length > 4 ? `${docs.slice(0, 4).join(' · ')} y ${docs.length - 4} más` : docs.join(' · ');
+                                        })()}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setSeleccionOrden(new Map())}
+                                    className="inline-flex h-10 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-gray-300 transition hover:bg-white/10 hover:text-white"
+                                >
+                                    <Icon icon="solar:close-circle-linear" className="text-lg" />
+                                    Quitar
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={armarOrdenDeCompra}
+                                    className="inline-flex h-10 flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-blue-600 px-4 text-sm font-bold shadow-lg shadow-blue-600/30 transition hover:bg-blue-500 active:scale-[0.98] sm:flex-none"
+                                >
+                                    <Icon icon="solar:clipboard-list-bold-duotone" className="text-lg" />
+                                    Generar orden de compra
+                                    <Icon icon="solar:arrow-right-linear" className="text-base" />
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Main Content Card */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
@@ -717,7 +829,7 @@ const ComprobantesInformales = () => {
                         <>
                             <div className="space-y-3 md:hidden">
                                 {productsTable.map((row: any) => (
-                                    <article key={row.id} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#0F172A]">
+                                    <article key={row.id} className={`rounded-2xl border bg-white p-4 shadow-sm transition-colors dark:bg-[#0F172A] ${seleccionOrden.has(row.id) ? 'border-blue-500 ring-1 ring-blue-500/40 dark:border-blue-500' : 'border-gray-100 dark:border-slate-800'}`}>
                                         <div className="mb-3 flex items-start justify-between gap-3">
                                             <div className="min-w-0">
                                                 <p className="text-[11px] font-black uppercase tracking-wide text-gray-400">{row.sede}</p>
@@ -725,6 +837,22 @@ const ComprobantesInformales = () => {
                                                     {row.comprobante} {row.serie}-{row.correlativo}
                                                 </h3>
                                                 <p className="text-xs font-semibold text-gray-500">{row.fechaEmisión}</p>
+                                                {puedeArmarOrden && row.sePuedePedir && (
+                                                    <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                                                        <CasillaSeleccion
+                                                            marcada={seleccionOrden.has(row.id)}
+                                                            onCambiar={() => alternarSeleccion(row.id, row.documentoOrden)}
+                                                            etiqueta={`Elegir ${row.documentoOrden} para la orden de compra`}
+                                                        />
+                                                        <button type="button" onClick={() => alternarSeleccion(row.id, row.documentoOrden)}>Pedir al proveedor</button>
+                                                        {row.ordenesDeCompra.length > 0 && (
+                                                            <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:ring-violet-800">
+                                                                <Icon icon="solar:clipboard-check-bold" className="text-[11px]" />
+                                                                {row.ordenesDeCompra.map((o: string) => o.replace(/^OC-0+/, 'OC-')).join(', ')}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                )}
                                             </div>
                                             <button
                                                 type="button"
@@ -760,6 +888,7 @@ const ComprobantesInformales = () => {
                             <div className="hidden overflow-x-auto md:block">
                                 <DataTable bodyData={productsTable}
                                     headerColumns={[
+                                        ...(puedeArmarOrden ? [{ label: casillaTodas, key: 'seleccion' }] : []),
                                         'Fecha',
                                         'Sede',
                                         'Serie',
