@@ -251,24 +251,31 @@ const ComprobantesInformales = () => {
             .map((o: any) => `OC-${String(o.ordenCompra?.numero ?? '').padStart(6, '0')}`);
         const documento = `${item.serie}-${String(item.correlativo).padStart(8, '0')}`;
         const sePuedePedir = ['NV', 'NP', 'TICKET'].includes(String((item as any).tipoDoc)) && item.estadoEnvioSunat !== 'ANULADO';
+        // Solo la casilla: el sello de la orden de compra va junto al nombre del
+        // comprobante, así todas las casillas quedan a la misma altura.
         const seleccion = sePuedePedir ? (
-            <div className="flex flex-col items-center gap-1">
-                <CasillaSeleccion
-                    marcada={seleccionOrden.has(item.id)}
-                    onCambiar={() => alternarSeleccion(item)}
-                    etiqueta={`Elegir ${documento} para la orden de compra`}
-                />
-                {ordenesDeCompra.length > 0 && (
-                    <span title={`Ya se pidió al proveedor en ${ordenesDeCompra.join(', ')}`} className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:ring-violet-800">
-                        <Icon icon="solar:clipboard-check-bold" className="text-[11px]" />
-                        {ordenesDeCompra.map((o) => o.replace(/^OC-0+/, 'OC-')).join(', ')}
-                    </span>
-                )}
-            </div>
+            <CasillaSeleccion
+                marcada={seleccionOrden.has(item.id)}
+                onCambiar={() => alternarSeleccion(item)}
+                etiqueta={`Elegir ${documento} para la orden de compra`}
+            />
         ) : null;
+        // `comprobante` sigue siendo texto (lo usan imprimir y otras acciones);
+        // esta es solo la celda que se ve.
+        const comprobanteVista = ordenesDeCompra.length > 0 ? (
+            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                {/* Mismo formato que el resto de celdas de texto de la tabla ("Nota De Venta"). */}
+                <span className="capitalize">{String(item.comprobante ?? '').toLowerCase()}</span>
+                <span title={`Ya se pidió al proveedor en ${ordenesDeCompra.join(', ')}`} className="inline-flex items-center gap-0.5 rounded-full bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:ring-violet-800">
+                    <Icon icon="solar:clipboard-check-bold" className="text-[11px]" />
+                    {ordenesDeCompra.map((o) => o.replace(/^OC-0+/, 'OC-')).join(', ')}
+                </span>
+            </span>
+        ) : item.comprobante;
         return {
             seleccion,
             ...rowBase,
+            comprobanteVista,
             ordenesDeCompra,
             sePuedePedir,
             documentoOrden: documento,
@@ -967,7 +974,7 @@ const ComprobantesInformales = () => {
                                         'Sede',
                                         'Serie',
                                         'Nro.',
-                                        'Comprobante',
+                                        { label: 'Comprobante', key: 'comprobanteVista' },
                                         'Doc. Afiliado',
                                         'Num doc',
                                         'Cliente',
