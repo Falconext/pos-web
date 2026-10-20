@@ -45,6 +45,7 @@ import { hasPermission } from "@/utils/permissions";
 import CasillaSeleccion from "@/components/CasillaSeleccion";
 import BarraSeleccionNotas from "@/features/admin/facturacion/seleccion/BarraSeleccionNotas";
 import ModalCobrarVarias from "@/features/admin/facturacion/seleccion/ModalCobrarVarias";
+import { motivoNoFacturar, notaDeVentaDataConjunta } from "@/features/admin/facturacion/seleccion/facturarJuntas";
 import ModalEstadoCuentaWhatsApp from "@/features/admin/facturacion/seleccion/ModalEstadoCuentaWhatsApp";
 import { motivoNoCobrar, notaElegidaDe, resumirSeleccion, type NotaElegida } from "@/features/admin/facturacion/seleccion/seleccionNotas";
 
@@ -740,6 +741,18 @@ const ComprobantesInformales = () => {
                     deshabilitada: puedeArmarOrden ? null : 'Tu plan o usuario no tiene Compras',
                 }}
                 acciones={[
+                    {
+                        key: 'boleta', grupo: 'Facturar', label: 'Emitir una boleta con estas notas', icon: 'solar:bill-list-bold-duotone',
+                        descripcion: 'Una sola boleta por todo lo de las notas',
+                        deshabilitada: motivoNoFacturar(notasElegidas, 'BOLETA'),
+                        onClick: () => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'BOLETA', fromNotaDeVenta: true, notaDeVentaData: notaDeVentaDataConjunta(notasElegidas) } }),
+                    },
+                    {
+                        key: 'factura', grupo: 'Facturar', label: 'Emitir una factura con estas notas', icon: 'solar:document-text-bold-duotone',
+                        descripcion: 'Una sola factura para el cliente con RUC',
+                        deshabilitada: motivoNoFacturar(notasElegidas, 'FACTURA'),
+                        onClick: () => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: notaDeVentaDataConjunta(notasElegidas) } }),
+                    },
                     {
                         key: 'cobrar', grupo: 'Cobranza', label: 'Cobrar', icon: 'solar:wallet-money-bold-duotone',
                         descripcion: `Registrar el pago de lo pendiente (${resumenElegidas.moneda === 'USD' ? 'US$' : 'S/'} ${resumenElegidas.saldo.toFixed(2)})`,
