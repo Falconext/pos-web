@@ -1,4 +1,5 @@
 import { usePerfilViewModel } from '@/features/admin/perfil/usePerfilViewModel';
+import AlertasStockConfig from '@/features/admin/perfil/AlertasStockConfig';
 import { BRAND } from '@/lib/branding';
 import { Icon } from '@iconify/react';
 import Loading from '@/components/Loading';
@@ -112,6 +113,7 @@ export default function PerfilIndex() {
     const { auth } = useAuthStore();
     // "Conectar WhatsApp" solo para quienes tienen el módulo IA de Ventas (plan de Ventas).
     const tieneVentas = hasPermission(auth as any, 'leads');
+    const esAdminEmpresa = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
     const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingVentaSinStockConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword } = vm;
     const [showActual, setShowActual] = useState(false);
     const [showNueva, setShowNueva] = useState(false);
@@ -906,6 +908,13 @@ export default function PerfilIndex() {
                                     </div>
                                 </label>
                     </SeccionConfig>
+                    {/* ── Resumen diario de stock bajo por correo/WhatsApp (solo administradores) ── */}
+                    {esAdminEmpresa && (
+                    <SeccionConfig id="alertas-stock" icono="solar:bell-bing-bold-duotone" titulo="Alertas de stock bajo" resumen="Lista diaria de productos por reponer, en tu correo" abierta={seccionAbierta === 'alertas-stock'} onToggle={toggleSeccion} className={configTab}>
+                        <AlertasStockConfig />
+                    </SeccionConfig>
+                    )}
+
                     <SeccionConfig id="ventas" icono="solar:cart-large-2-bold-duotone" titulo="Ventas y caja" resumen="Búsqueda del POS, kits, cobranza de campo y aprobaciones" abierta={seccionAbierta === 'ventas'} onToggle={toggleSeccion} className={configTab}>
                                 {/* Búsqueda del POS al agregar: limpiar (Demenver) o mantener (OWENSOFT). Por empresa. */}
                                 <div className="mt-3 p-3 rounded-lg border border-violet-100 dark:border-violet-900/30 bg-violet-50/40 dark:bg-violet-900/10" data-testid="pos-busqueda-config">
