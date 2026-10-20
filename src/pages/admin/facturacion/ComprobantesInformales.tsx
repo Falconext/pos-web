@@ -45,7 +45,7 @@ import { hasPermission } from "@/utils/permissions";
 import CasillaSeleccion from "@/components/CasillaSeleccion";
 import BarraSeleccionNotas from "@/features/admin/facturacion/seleccion/BarraSeleccionNotas";
 import ModalCobrarVarias from "@/features/admin/facturacion/seleccion/ModalCobrarVarias";
-import { motivoNoFacturar, notaDeVentaDataConjunta } from "@/features/admin/facturacion/seleccion/facturarJuntas";
+import { clienteConRuc, motivoNoFacturar, notaDeVentaDataConjunta } from "@/features/admin/facturacion/seleccion/facturarJuntas";
 import ModalEstadoCuentaWhatsApp from "@/features/admin/facturacion/seleccion/ModalEstadoCuentaWhatsApp";
 import { documentoCorto, envioConjunto, motivoNoCobrar, notaElegidaDe, resumirSeleccion, type NotaElegida } from "@/features/admin/facturacion/seleccion/seleccionNotas";
 
@@ -761,9 +761,11 @@ const ComprobantesInformales = () => {
                     },
                     {
                         key: 'factura', grupo: 'Facturar', label: 'Emitir una factura con estas notas', icon: 'solar:document-text-bold-duotone',
-                        descripcion: 'Una sola factura para el cliente con RUC',
+                        descripcion: clienteConRuc(notasElegidas)
+                            ? 'Una sola factura por todo lo de las notas'
+                            : 'Una sola factura; en el POS eliges el cliente con RUC',
                         deshabilitada: motivoNoFacturar(notasElegidas, 'FACTURA'),
-                        onClick: () => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: notaDeVentaDataConjunta(notasElegidas) } }),
+                        onClick: () => navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: notaDeVentaDataConjunta(notasElegidas, 'FACTURA') } }),
                     },
                     {
                         key: 'envio', grupo: 'Envío', label: 'Coordinar un solo envío', icon: 'solar:box-bold-duotone',
