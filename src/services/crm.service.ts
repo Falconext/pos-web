@@ -213,6 +213,8 @@ export type TipoDisparo =
   | 'POST_ENTREGA'
   | 'RECOMPRA'
   | 'REACTIVACION'
+  | 'RECORDATORIO_ACORDADO'
+  | 'SEGUIMIENTO_DEMO'
 
 export type EstadoDisparo =
   | 'PROGRAMADO'
@@ -348,6 +350,18 @@ export const DISPARO_META: Record<
     detalle: 'A quien ya compró y lleva 45 días sin escribir.',
     icon: 'solar:user-hand-up-bold-duotone',
     marketing: true,
+  },
+  RECORDATORIO_ACORDADO: {
+    label: 'Recordatorio acordado',
+    detalle: 'En la fecha en que el cliente dijo que retomaba la compra.',
+    icon: 'solar:calendar-bold-duotone',
+    marketing: false,
+  },
+  SEGUIMIENTO_DEMO: {
+    label: 'Seguimiento de la demo',
+    detalle: 'A las 3 horas de entregar la demo: "¿qué tal te pareció el sistema?".',
+    icon: 'solar:monitor-smartphone-bold-duotone',
+    marketing: false,
   },
 }
 

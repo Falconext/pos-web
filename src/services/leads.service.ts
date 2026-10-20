@@ -77,6 +77,8 @@ export interface LeadsConfig {
   iaVentasSeguimiento: boolean
   iaVentasCotizacion: boolean
   iaVentasBrochureUrl: string
+  /** El negocio entrega demos por rubro (Krezka): se ve la pestaña Demos. */
+  tieneDemos?: boolean
 }
 
 // ─── Llamadas a la API (todas scoped por empresa del token) ──────────────────
@@ -245,4 +247,35 @@ export async function reindexarDocumento(id: number): Promise<LeadDocumento> {
 export async function eliminarDocumento(id: number): Promise<void> {
   const r = await del(`/leads/entrenamiento/${id}`)
   if (!r.success) throw new Error(r.error || 'Error al eliminar el documento')
+}
+
+// ─── Banco de prospectos que pidieron demo ────────────────────────────────
+
+export interface LeadDemo {
+  id: number
+  telefono: string
+  nombre: string
+  celular: string | null
+  correo: string | null
+  ruc: string | null
+  razonSocial: string | null
+  nombreComercial: string | null
+  rubro: string | null
+  demo: string
+  aproximada: boolean
+  creadoEn: string
+  ultimoMensajeEn: string | null
+  seguimiento: {
+    estado: 'PROGRAMADO' | 'ENVIADO' | 'CANCELADO' | 'OMITIDO' | 'FALLIDO'
+    programadoPara: string
+    enviadoEn: string | null
+    motivo: string | null
+  } | null
+  respondioSeguimiento: boolean
+}
+
+export async function fetchDemos(): Promise<LeadDemo[]> {
+  const r = await get<LeadDemo[]>('/leads/demos')
+  if (!r.success || !r.data) throw new Error(r.error || 'Error al cargar las demos')
+  return r.data
 }
