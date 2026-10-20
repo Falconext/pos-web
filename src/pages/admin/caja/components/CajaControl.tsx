@@ -97,9 +97,14 @@ const CajaControl: React.FC = () => {
         );
     }, [formCierre]);
 
-    const totalSistema = useMemo(() => {
-        return Number(estadoCaja?.ventasDelDia?.totalIngresos || 0);
-    }, [estadoCaja]);
+    // Lo que el sistema espera encontrar en caja: el mismo desglose por medio de
+    // pago contra el que se compara cada campo (incluye el fondo inicial en
+    // efectivo). Las ventas del día dejaban fuera la apertura y, en un turno
+    // pendiente, eran las de HOY y no las del turno que se cuadra.
+    const totalSistema = useMemo(() => (
+        esperadoCierre.montoEfectivo + esperadoCierre.montoYape + esperadoCierre.montoPlin
+        + esperadoCierre.montoTransferencia + esperadoCierre.montoTarjeta
+    ), [esperadoCierre]);
 
     const diferencia = useMemo(() => totalDeclarado - totalSistema, [totalDeclarado, totalSistema]);
 
