@@ -74,6 +74,15 @@ describe('inyectarSeo', () => {
   });
 });
 
+describe('verificación de Search Console', () => {
+  it('solo cuando la tienda la configuró', () => {
+    expect(inyectarSeo(INDEX, seo({ verificacionGoogle: 'abcDEF123_xyz-456' }))).toContain(
+      '<meta name="google-site-verification" content="abcDEF123_xyz-456" />',
+    );
+    expect(inyectarSeo(INDEX, seo())).not.toContain('google-site-verification');
+  });
+});
+
 describe('robots.txt', () => {
   it('producción: tiendas sí, panel y checkout no, con sitemap', () => {
     const r = robotsTxt('https://app.krezka.com');

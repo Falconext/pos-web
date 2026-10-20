@@ -1,4 +1,5 @@
 import { useConfiguracionTiendaViewModel } from '@/features/admin/tienda/useConfiguracionTiendaViewModel';
+import TiendaSeoGoogle from '@/features/admin/tienda/TiendaSeoGoogle';
 import { Icon } from '@iconify/react';
 import Button from '@/components/Button';
 import InputPro from '@/components/InputPro';
@@ -86,6 +87,9 @@ export default function ConfiguracionTienda() {
             <InputPro label="Horario de atención" name="horarioAtencion" value={formData.horarioAtencion} onChange={handleChange} />
           </div>
         </div>
+
+        {/* ── Google (SEO) ── */}
+        <TiendaSeoGoogle formData={formData} handleChange={handleChange} nombreTienda={vm.config?.nombreComercial || ''} />
 
         {/* ── Logo de Tienda ── */}
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-transparent p-6">

@@ -18,6 +18,8 @@ export interface PaginaSeo {
   ogType: 'website' | 'product';
   precio?: string;
   moneda?: string;
+  /** Portada de la tienda: código de google-site-verification del negocio. */
+  verificacionGoogle?: string | null;
   jsonLd: Record<string, unknown>[];
 }
 
@@ -41,6 +43,9 @@ export function inyectarSeo(html: string, seo: PaginaSeo): string {
     `<title>${esc(seo.titulo)}</title>`,
     meta('name', 'description', seo.descripcion),
     meta('name', 'robots', seo.robots),
+    // Con esto el dueño registra SU tienda (prefijo de URL) en Search Console
+    // y ve sus propias búsquedas, sin tocar el dominio de Krezka.
+    meta('name', 'google-site-verification', seo.verificacionGoogle),
     seo.canonical ? `<link rel="canonical" href="${esc(seo.canonical)}" />` : '',
     meta('property', 'og:type', seo.ogType),
     meta('property', 'og:site_name', seo.sitio),
@@ -63,7 +68,7 @@ export function inyectarSeo(html: string, seo: PaginaSeo): string {
 
   const limpio = html
     .replace(/<title>[\s\S]*?<\/title>\s*/i, '')
-    .replace(/<meta\s+name="(description|robots|twitter:[^"]+)"[^>]*>\s*/gi, '')
+    .replace(/<meta\s+name="(description|robots|google-site-verification|twitter:[^"]+)"[^>]*>\s*/gi, '')
     .replace(/<meta\s+property="(og:[^"]+|product:[^"]+)"[^>]*>\s*/gi, '')
     .replace(/<link\s+rel="canonical"[^>]*>\s*/gi, '');
 
