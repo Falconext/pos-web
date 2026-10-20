@@ -115,11 +115,13 @@ import LeadsPage from './features/admin/leads/LeadsPage'
 import PrivacidadPage from './pages/legal/PrivacidadPage'
 import EntregaRepartidorPage from './pages/entrega/EntregaRepartidorPage'
 import EliminarDatosPage from './pages/legal/EliminarDatosPage'
+import SeoTienda from './components/tienda/SeoTienda'
 
 function App() {
   console.log('App initialized - Checkpoint')
   return (
     <BrowserRouter>
+      <SeoTienda />
       <Alert />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
@@ -376,6 +378,9 @@ function App() {
         <Route path="/tienda/:slug" element={<TiendaPublica />} />
         <Route path="/tienda/:slug/catalogo" element={<Catalogo />} />
         <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalleRouter />} />
+        {/* URL canónica del producto para Google: el nombre va en su propio segmento
+            y la ficha sigue leyendo :id como siempre (ver pos-bd src/seo/seo-texto.ts). */}
+        <Route path="/tienda/:slug/producto/:id/:nombre" element={<ProductoDetalleRouter />} />
         <Route path="/tienda/:slug/checkout" element={<Checkout />} />
         <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />
         <Route path="/tienda/:slug/contacto" element={<ContactoRouter />} />
