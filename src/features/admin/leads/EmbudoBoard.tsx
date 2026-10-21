@@ -381,7 +381,17 @@ function ModalVoucher({
           Enviado {moment(pago.recibidoEn).format('DD/MM/YYYY HH:mm')}
         </p>
 
-        {pago.url ? (
+        {pago.url && /\.pdf$/i.test(pago.url) ? (
+          // La constancia de una transferencia llega en PDF: no es una imagen.
+          <a
+            href={pago.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-3 py-6 text-sm font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-800 dark:text-gray-200 dark:hover:bg-gray-900"
+          >
+            Ver comprobante (PDF)
+          </a>
+        ) : pago.url ? (
           <a href={pago.url} target="_blank" rel="noopener noreferrer">
             <img
               src={pago.url}
