@@ -21,14 +21,14 @@ describe('quitar productos de un kit en el carrito', () => {
         expect(precioKitSin(72, comps, [])).toBe(72);
     });
 
-    it('quitar los chocolates baja su parte del precio del kit', () => {
-        // Sueltos suman 106; los chocolates son 18/106 del kit → 72 × 88/106.
-        expect(precioKitSin(72, comps, [3])).toBe(59.77);
+    it('quitar un producto resta lo que cuesta suelto', () => {
+        expect(precioKitSin(72, comps, [4])).toBe(71); // tarjeta S/ 1
+        expect(precioKitSin(72, comps, [3])).toBe(54); // chocolates S/ 18
+        expect(precioKitSin(72, comps, [3, 4])).toBe(53);
     });
 
-    it('sin precios sueltos reparte por cantidad', () => {
-        const sinPrecio = comps.map((c) => ({ ...c, precio: 0 }));
-        expect(precioKitSin(30, sinPrecio, [4])).toBe(28); // quedan 14 de 15 unidades
+    it('el precio no baja de 0', () => {
+        expect(precioKitSin(20, comps, [1])).toBe(0); // 12 rosas × S/ 6 = 72 > 20
     });
 
     it('la descripción dice qué se quitó', () => {

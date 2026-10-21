@@ -221,8 +221,8 @@ const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) =>
 };
 
 // Kit vendido como una línea: ver lo que lleva y quitar algo solo en esta venta
-// ("el Detalle Te Amo pero sin chocolates"). El precio baja en la parte de lo
-// quitado; el kit del catálogo no cambia.
+// ("el Detalle Te Amo pero sin chocolates"). El precio baja en lo que cuesta
+// suelto lo quitado; el kit del catálogo no cambia.
 const KitContenido = ({ item, index, vm }: { item: any; index: number; vm: any }) => {
     const componentes: any[] = item?.kitComponentes || [];
     const quitados: number[] = item?.kitQuitados || [];
@@ -262,7 +262,7 @@ const KitContenido = ({ item, index, vm }: { item: any; index: number; vm: any }
                     })}
                     {quitados.length > 0 && rebaja > 0.004 && (
                         <li className="border-t border-gray-200 pt-1 text-[10px] text-gray-500 dark:border-white/10 dark:text-gray-400">
-                            Precio del kit: −S/ {rebaja.toFixed(2)} por lo quitado. Puedes ajustarlo con el lápiz.
+                            Se restó S/ {rebaja.toFixed(2)}, lo que cuesta suelto lo quitado. Puedes cambiar el precio con el lápiz.
                         </li>
                     )}
                 </ul>

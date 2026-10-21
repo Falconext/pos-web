@@ -2,7 +2,7 @@
  * Quitar productos de un kit en el carrito (kit vendido como una línea).
  * Pedido de florería: "el Detalle Te Amo pero sin chocolates". El kit no se
  * edita en el catálogo; solo esta venta lleva menos cosas, baja el precio en
- * la parte de lo quitado y el backend descuenta stock solo de lo que queda
+ * lo que cuesta suelto lo quitado y el backend descuenta stock solo de lo que queda
  * (DetalleComprobante.kitQuitados).
  */
 
@@ -27,20 +27,13 @@ export const componentesDeCombo = (combo: any): ComponenteKit[] =>
 const redondear2 = (n: number) => Math.round(n * 100) / 100;
 
 /**
- * Precio del kit con lo que queda: la parte de lo quitado se calcula por su
- * precio suelto dentro del total de los componentes (igual que se reparte el
- * precio de un kit al venderlo en líneas separadas). Sin precios, por cantidad.
+ * Precio del kit con lo que queda: se resta lo que cuesta suelto lo quitado
+ * (una tarjeta de S/ 1 baja S/ 1). Nunca baja de 0.
  */
 export function precioKitSin(precioCompleto: number, componentes: ComponenteKit[], quitados: number[]): number {
-    if (!quitados.length) return redondear2(precioCompleto);
     const fuera = new Set(quitados);
-    const peso = (c: ComponenteKit) => c.cantidad * c.precio;
-    const conPrecio = componentes.some((c) => peso(c) > 0);
-    const medida = conPrecio ? peso : (c: ComponenteKit) => c.cantidad;
-    const total = componentes.reduce((s, c) => s + medida(c), 0);
-    if (total <= 0) return redondear2(precioCompleto);
-    const queda = componentes.filter((c) => !fuera.has(c.productoId)).reduce((s, c) => s + medida(c), 0);
-    return redondear2(precioCompleto * (queda / total));
+    const resta = componentes.filter((c) => fuera.has(c.productoId)).reduce((s, c) => s + c.cantidad * c.precio, 0);
+    return redondear2(Math.max(0, precioCompleto - resta));
 }
 
 /** "DETALLE TE AMO (SIN CHOCOLATES FERRERO X3)": así sale en el comprobante y el ticket. */

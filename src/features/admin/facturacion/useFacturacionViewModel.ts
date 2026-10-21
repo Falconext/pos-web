@@ -2145,8 +2145,8 @@ export const useFacturacionViewModel = () => {
         setTimeout(() => setBarcodeError(false), 2000);
     };
 
-    // Quitar / devolver un producto del kit en esta venta: baja el precio en la
-    // parte de lo quitado y el backend descuenta stock solo de lo que queda.
+    // Quitar / devolver un producto del kit en esta venta: resta lo que cuesta
+    // suelto lo quitado y el backend descuenta stock solo de lo que queda.
     const handleAlternarComponenteKit = (index: number, productoId: number) => {
         const item = productsInvoice[index];
         const componentes: ComponenteKit[] = item?.kitComponentes || [];
