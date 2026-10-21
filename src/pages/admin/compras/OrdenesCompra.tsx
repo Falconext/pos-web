@@ -17,6 +17,9 @@ import { Calendar } from '@/components/Date';
 import { tipoCambioService } from '@/services/tipoCambio.service';
 import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
+import { useLocation, useNavigate } from 'react-router-dom';
+import ModalOrdenDesdeVentas from './ModalOrdenDesdeVentas';
+import { observacionDeOrigen, type LineaDesdeVentas, type ResumenDesdeVentas } from './ordenDesdeVentas';
 
 interface DetalleOC {
     productoId?: number;
@@ -64,7 +67,16 @@ interface OrdenCompra {
     usuario?: { nombre: string };
     compra?: { id: number; serie: string; numero: string } | null;
     detalles?: any[];
-    _count?: { detalles: number };
+    /** Notas de venta de las que se armó (preventa). */
+    origenes?: { comprobante: { id: number; serie: string; correlativo: number } }[];
+    _count?: { detalles: number; origenes?: number };
+}
+
+/** Orden nueva precargada desde notas de venta. */
+interface OrdenInicial {
+    detalles: DetalleOC[];
+    comprobanteOrigenIds: number[];
+    notas: ResumenDesdeVentas['notas'];
 }
 
 const ESTADO_STYLE: Record<string, string> = {
@@ -101,6 +113,38 @@ export default function OrdenesCompraPage() {
     const [recibirOrden, setRecibirOrden] = useState<OrdenCompra | null>(null);
     const [anularOrden, setAnularOrden] = useState<OrdenCompra | null>(null);
     const [descargandoId, setDescargandoId] = useState<number | null>(null);
+
+    // Notas de venta → Orden de compra: la lista de notas manda los ids elegidos.
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [desdeVentasIds, setDesdeVentasIds] = useState<number[] | null>(null);
+    const [ordenInicial, setOrdenInicial] = useState<OrdenInicial | null>(null);
+    useEffect(() => {
+        const ids = (location.state as any)?.desdeVentas;
+        if (!Array.isArray(ids) || ids.length === 0) return;
+        setDesdeVentasIds(ids);
+        // Se limpia para que recargar la página no vuelva a abrir el paso.
+        navigate(location.pathname, { replace: true, state: null });
+    }, [location.state, location.pathname, navigate]);
+
+    const continuarDesdeVentas = (resumen: ResumenDesdeVentas, lineas: { linea: LineaDesdeVentas; cantidad: number }[]) => {
+        setOrdenInicial({
+            comprobanteOrigenIds: resumen.comprobanteIds,
+            notas: resumen.notas,
+            detalles: lineas.map(({ linea, cantidad }) => ({
+                productoId: linea.productoId ?? undefined,
+                descripcion: linea.descripcion,
+                cantidad,
+                precioUnitario: linea.precioUnitario,
+                gravado: linea.gravado,
+                unidadesPorPaquete: null,
+                _paquetes: linea.paquetes ?? [],
+            })),
+        });
+        setDesdeVentasIds(null);
+        setOrdenEdit(null);
+        setIsModalOpen(true);
+    };
 
     const cargar = useCallback(async () => {
         setLoading(true);
@@ -264,6 +308,11 @@ export default function OrdenesCompraPage() {
                                     <td className="px-4 py-3">
                                         <p className="font-semibold text-gray-800 dark:text-gray-100">{o.proveedor?.nombre}</p>
                                         <p className="text-xs text-gray-400">{o.proveedor?.nroDoc}</p>
+                                        {Number(o._count?.origenes) > 0 && (
+                                            <p className="mt-0.5 text-[11px] font-semibold text-violet-600 dark:text-violet-300">
+                                                Desde {o._count!.origenes} nota{o._count!.origenes === 1 ? '' : 's'} de venta
+                                            </p>
+                                        )}
                                     </td>
                                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{o.fechaEntrega ? moment(o.fechaEntrega).format('DD/MM/YYYY') : '—'}</td>
                                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{o._count?.detalles ?? o.detalles?.length ?? 0}</td>
@@ -321,8 +370,17 @@ export default function OrdenesCompraPage() {
             {isModalOpen && (
                 <ModalOrdenCompra
                     orden={ordenEdit}
-                    onClose={() => { setIsModalOpen(false); setOrdenEdit(null); }}
-                    onSaved={() => { setIsModalOpen(false); setOrdenEdit(null); cargar(); }}
+                    inicial={ordenEdit ? null : ordenInicial}
+                    onClose={() => { setIsModalOpen(false); setOrdenEdit(null); setOrdenInicial(null); }}
+                    onSaved={() => { setIsModalOpen(false); setOrdenEdit(null); setOrdenInicial(null); cargar(); }}
+                />
+            )}
+
+            {desdeVentasIds && (
+                <ModalOrdenDesdeVentas
+                    comprobanteIds={desdeVentasIds}
+                    onClose={() => setDesdeVentasIds(null)}
+                    onContinuar={continuarDesdeVentas}
                 />
             )}
 
@@ -347,7 +405,7 @@ export default function OrdenesCompraPage() {
 
 /* ─── Modal Crear/Editar ─────────────────────────────────────────────────── */
 /** Exportado para poder probar el formulario sin montar toda la página. */
-export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenCompra | null; onClose: () => void; onSaved: () => void }) {
+export function ModalOrdenCompra({ orden, inicial = null, onClose, onSaved }: { orden: OrdenCompra | null; inicial?: OrdenInicial | null; onClose: () => void; onSaved: () => void }) {
     const { alert } = useAlertStore();
     const esEdicion = Boolean(orden?.id);
 
@@ -437,7 +495,7 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
     };
 
     const [detalles, setDetalles] = useState<DetalleOC[]>(
-        (orden?.detalles ?? []).map((d: any) => ({
+        !orden && inicial ? inicial.detalles : (orden?.detalles ?? []).map((d: any) => ({
             productoId: d.productoId ?? undefined,
             descripcion: d.descripcion,
             cantidad: Number(d.cantidad),
@@ -594,6 +652,7 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
                 // `_paquetes` es solo del front (el catálogo de cajas del
                 // producto): no tiene por qué viajar al backend.
                 detalles: detalles.map(({ _paquetes, ...d }) => d),
+                ...(!esEdicion && inicial ? { comprobanteOrigenIds: inicial.comprobanteOrigenIds } : {}),
             };
             const resp: any = esEdicion
                 ? await put(`compras/ordenes/${orden!.id}`, payload)
@@ -612,6 +671,19 @@ export function ModalOrdenCompra({ orden, onClose, onSaved }: { orden: OrdenComp
     return (
         <Modal isOpenModal closeModal={onClose} title={esEdicion ? `Editar ${orden?.numeroFormato}` : 'Nueva Orden de Compra'} icon="solar:clipboard-list-bold-duotone" width="860px" position="right">
             <div className="space-y-4 p-4">
+                {(inicial?.notas.length || orden?.origenes?.length) ? (
+                    <p className="flex gap-2 rounded-xl bg-violet-50 p-3 text-xs text-violet-800 dark:bg-violet-950/30 dark:text-violet-200" data-testid="oc-origen">
+                        <Icon icon="solar:document-text-bold-duotone" width={16} className="mt-px shrink-0" />
+                        {observacionDeOrigen(
+                            inicial?.notas ?? (orden?.origenes ?? []).map((o) => ({
+                                id: o.comprobante.id,
+                                documento: `${o.comprobante.serie}-${String(o.comprobante.correlativo).padStart(8, '0')}`,
+                                cliente: null,
+                                ordenes: [],
+                            })),
+                        )}
+                    </p>
+                ) : null}
                 {/* Proveedor */}
                 <div ref={provBoxRef} className="relative">
                     <label className={lblCls}>Proveedor *</label>

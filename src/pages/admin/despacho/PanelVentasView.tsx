@@ -357,7 +357,7 @@ export default function PanelVentasView() {
     // destino (antes, con solo abrirlo la venta ya quedaba "con despacho").
     const coordinarEnvio = useCallback((item: VentaPanelItem) => {
         if (!item.comprobanteId) return;
-        setEditDespachoId(item.comprobanteId);
+        setEditDespachoId(item.despachoEnComprobanteId ?? item.comprobanteId);
     }, []);
 
     const whatsappPedido = (item: VentaPanelItem) => {
@@ -1445,7 +1445,7 @@ export default function PanelVentasView() {
                                                         && !item.nroOrden
                                                         && !/^\d{8}$|^\d{11}$/.test(String(item.clienteDoc ?? '').trim()) && (
                                                         <button type="button"
-                                                            onClick={(e) => { e.stopPropagation(); setEditDespachoId(item.comprobanteId); }}
+                                                            onClick={(e) => { e.stopPropagation(); setEditDespachoId(item.despachoEnComprobanteId ?? item.comprobanteId); }}
                                                             className="mt-1 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 hover:bg-amber-100 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-400"
                                                             title="El cliente no tiene DNI registrado; complétalo para generar la guía">
                                                             <Icon icon="solar:danger-triangle-bold" className="text-xs" /> Falta DNI para la guía
@@ -1551,7 +1551,7 @@ export default function PanelVentasView() {
                 confirmText="Sí, editar despacho"
                 confirmSubmit={() => {
                     if (confirmDespachoItem?.comprobanteId) {
-                        setEditDespachoId(confirmDespachoItem.comprobanteId);
+                        setEditDespachoId(confirmDespachoItem.despachoEnComprobanteId ?? confirmDespachoItem.comprobanteId);
                     }
                     setConfirmDespachoItem(null);
                 }}
@@ -1712,7 +1712,7 @@ export default function PanelVentasView() {
                                             if (it.estadoDespacho === 'ENTREGADO') {
                                                 setConfirmDespachoItem(it);
                                             } else {
-                                                setEditDespachoId(it.comprobanteId);
+                                                setEditDespachoId(it.despachoEnComprobanteId ?? it.comprobanteId);
                                             }
                                         }}
                                         className={`w-full flex items-center gap-2 px-3 py-2 text-xs ${
