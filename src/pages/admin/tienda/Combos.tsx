@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import InputPro from '@/components/InputPro';
 import { Calendar } from '@/components/Date';
 import { aIso, aDiaMesAnio } from './combosFechas';
+import PacksMasVendidos from '@/features/admin/tienda/PacksMasVendidos';
 import Select from '@/components/Select';
 import Button from '@/components/Button';
 import {
@@ -57,6 +58,8 @@ export default function CombosAdmin() {
           </>
         }
       />
+
+      <PacksMasVendidos />
 
       <InventoryCard>
         <InventoryToolbar>
