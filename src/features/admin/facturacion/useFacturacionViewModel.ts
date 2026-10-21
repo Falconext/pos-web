@@ -74,7 +74,7 @@ import { tipoCambioService } from "@/services/tipoCambio.service";
 import { PORCENTAJE_RETENCION, aplicaRetencion, calcularRetencion } from './retencion';
 import { diasEmisionRetroactiva, fechaFueraDePlazo } from './fechaEmisionRetroactiva';
 import { aplicacionEfectiva, lineasDeEnvio } from './aplicacionMontoEnvio';
-import { alternarQuitado, componentesDeCombo, descripcionKitSin, precioKitSin, type ComponenteKit } from './kitQuitados';
+import { alternarQuitado, componentesDeCombo, precioKitSin, type ComponenteKit } from './kitQuitados';
 
 type EnvioDespachoFormData = {
     transportista?: string;
@@ -1681,7 +1681,6 @@ export const useFacturacionViewModel = () => {
                     // Para quitar productos de este kit solo en esta venta (ver kitQuitados.ts).
                     kitComponentes: componentesDeCombo(combo),
                     kitQuitados: [],
-                    kitNombre: String(combo?.nombre || '').toUpperCase(),
                     kitPrecioCompleto: precioKit,
                     imagenUrl: combo?.imagenUrl || null,
                     cantidadInicial: 1,
@@ -2161,7 +2160,6 @@ export const useFacturacionViewModel = () => {
         const subtotal = price * Number(item?.cantidad || 1) * (1 - Number(item?.descuento || 0) / 100);
         updateProductInvoice(index, {
             kitQuitados: quitados,
-            descripcion: descripcionKitSin(item?.kitNombre || item?.descripcion, componentes, quitados),
             precioUnitario: price,
             precioBase: price,
             total: subtotal.toFixed(2),

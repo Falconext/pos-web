@@ -1,9 +1,9 @@
 /**
  * Quitar productos de un kit en el carrito (kit vendido como una línea).
  * Pedido de florería: "el Detalle Te Amo pero sin chocolates". El kit no se
- * edita en el catálogo; solo esta venta lleva menos cosas, baja el precio en
- * lo que cuesta suelto lo quitado y el backend descuenta stock solo de lo que queda
- * (DetalleComprobante.kitQuitados).
+ * edita en el catálogo y la línea sigue con el nombre del kit; solo esta venta
+ * lleva menos cosas, baja lo que cuesta suelto lo quitado y el backend descuenta
+ * stock solo de lo que queda (DetalleComprobante.kitQuitados).
  */
 
 export interface ComponenteKit {
@@ -34,12 +34,6 @@ export function precioKitSin(precioCompleto: number, componentes: ComponenteKit[
     const fuera = new Set(quitados);
     const resta = componentes.filter((c) => fuera.has(c.productoId)).reduce((s, c) => s + c.cantidad * c.precio, 0);
     return redondear2(Math.max(0, precioCompleto - resta));
-}
-
-/** "DETALLE TE AMO (SIN CHOCOLATES FERRERO X3)": así sale en el comprobante y el ticket. */
-export function descripcionKitSin(nombre: string, componentes: ComponenteKit[], quitados: number[]): string {
-    const fuera = componentes.filter((c) => quitados.includes(c.productoId)).map((c) => c.descripcion).filter(Boolean);
-    return fuera.length ? `${nombre} (SIN ${fuera.join(', ')})` : nombre;
 }
 
 /** Quita o devuelve un producto. null = no se puede (dejaría el kit vacío). */

@@ -1,4 +1,4 @@
-import { alternarQuitado, componentesDeCombo, descripcionKitSin, precioKitSin } from '../kitQuitados';
+import { alternarQuitado, componentesDeCombo, precioKitSin } from '../kitQuitados';
 
 // "DETALLE TE AMO" a S/ 72: 12 rosas (S/ 6), caja (S/ 15), chocolates (S/ 18), tarjeta (S/ 1).
 const combo = {
@@ -29,11 +29,6 @@ describe('quitar productos de un kit en el carrito', () => {
 
     it('el precio no baja de 0', () => {
         expect(precioKitSin(20, comps, [1])).toBe(0); // 12 rosas × S/ 6 = 72 > 20
-    });
-
-    it('la descripción dice qué se quitó', () => {
-        expect(descripcionKitSin('DETALLE TE AMO', comps, [])).toBe('DETALLE TE AMO');
-        expect(descripcionKitSin('DETALLE TE AMO', comps, [3, 4])).toBe('DETALLE TE AMO (SIN CHOCOLATES FERRERO ROCHER X3, TARJETA DEDICATORIA)');
     });
 
     it('quitar y devolver; no deja el kit vacío', () => {
