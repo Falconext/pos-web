@@ -8,6 +8,7 @@ import { ProductImageUploader } from "./ProductImageUploader";
 import { ProductStockManager } from "./ProductStockManager";
 import { ProductWholesalePricing } from "./ProductWholesalePricing";
 import { ProductBasicForm } from "./ProductBasicForm";
+import { ProductSeoGoogle } from './ProductSeoGoogle';
 import { ProductRichDescription } from "./ProductRichDescription";
 import { ProductDisponibilidadIa } from "./ProductDisponibilidadIa";
 import { ProductPasteSpecs } from "./ProductPasteSpecs";
@@ -96,6 +97,7 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
                             )}
                             {vm.productSections.iaVentas && <ProductDisponibilidadIa vm={vm} />}
                             <ProductRichDescription vm={vm} />
+                            <ProductSeoGoogle vm={vm} />
                             <ProductPasteSpecs vm={vm} />
 
                         </div>

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState, Suspense } from 'react'
+import PantallaNoCargo from '@/components/PantallaNoCargo';
 import { Icon } from '@iconify/react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore, type IAuthState } from '@/zustand/auth'
@@ -99,7 +100,13 @@ export default function ResellerLayout() {
                 </header>
 
                 <div className="p-6">
-                    <Outlet />
+                    {/* Las páginas se descargan al abrirlas (App.tsx): el menú queda fijo y solo el
+                        contenido muestra la espera. */}
+                    <PantallaNoCargo clave={location.pathname}>
+                    <Suspense fallback={<div className="flex h-64 items-center justify-center" role="status" aria-label="Cargando"><div className="h-7 w-7 animate-spin rounded-full border-2 border-gray-200 border-t-gray-500" /></div>}>
+                      <Outlet />
+                    </Suspense>
+                    </PantallaNoCargo>
                 </div>
             </main>
 

@@ -1,46 +1,48 @@
 import { useEffect, useState } from 'react';
+import { cargaPerezosa } from '@/lib/cargaPerezosa';
 import { datosDeProducto, iniciarPixel, rastrear } from '@/utils/metaPixel';
 import type { ComponentType } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
 import ProductoDetalle from './ProductoDetalle';
-import GadgetsProductoDetalle from './GadgetsProductoDetalle';
-import AutopartesProductoDetalle from './AutopartesProductoDetalle';
-import ModaProductoDetalle from './ModaProductoDetalle';
-import TecnologiaProductoDetalle from './TecnologiaProductoDetalle';
-import ConstruccionProductoDetalle from './ConstruccionProductoDetalle';
-import FalconProductoDetalle from './FalconProductoDetalle';
-import MayeProductoDetalle from './MayeProductoDetalle';
-import ApiculturaProductoDetalle from './ApiculturaProductoDetalle';
-import LuxuryProductoDetalle from './LuxuryProductoDetalle';
-import SpaProductoDetalle from './SpaProductoDetalle';
-import CarterasProductoDetalle from './CarterasProductoDetalle';
-import AurumProductoDetalle from './AurumProductoDetalle';
-import GroginProductoDetalle from './GroginProductoDetalle';
-import FreshMartProductoDetalle from './FreshMartProductoDetalle';
-import RopaHombreProductoDetalle from './RopaHombreProductoDetalle';
-import BicicletasProductoDetalle from './BicicletasProductoDetalle';
-import MotosProductoDetalle from './MotosProductoDetalle';
-import HoodieProductoDetalle from './HoodieProductoDetalle';
-import TonesProductoDetalle from './TonesProductoDetalle';
-import ModaMinimalProductoDetalle from './ModaMinimalProductoDetalle';
-import CrispyProductoDetalle from './CrispyProductoDetalle';
-import FarmaciaProductoDetalle from './FarmaciaProductoDetalle';
-import StrideProductoDetalle from './StrideProductoDetalle';
-import NordicaProductoDetalle from './NordicaProductoDetalle';
-import PatitasProductoDetalle from './PatitasProductoDetalle';
-import BlushProductoDetalle from './BlushProductoDetalle';
-import VitrinaProductoDetalle from './VitrinaProductoDetalle';
-import ElanProductoDetalle from './ElanProductoDetalle';
-import RoseProductoDetalle from './RoseProductoDetalle';
+const GadgetsProductoDetalle = cargaPerezosa(() => import('./GadgetsProductoDetalle'));
+const AutopartesProductoDetalle = cargaPerezosa(() => import('./AutopartesProductoDetalle'));
+const ModaProductoDetalle = cargaPerezosa(() => import('./ModaProductoDetalle'));
+const TecnologiaProductoDetalle = cargaPerezosa(() => import('./TecnologiaProductoDetalle'));
+const ConstruccionProductoDetalle = cargaPerezosa(() => import('./ConstruccionProductoDetalle'));
+const FalconProductoDetalle = cargaPerezosa(() => import('./FalconProductoDetalle'));
+const MayeProductoDetalle = cargaPerezosa(() => import('./MayeProductoDetalle'));
+const ApiculturaProductoDetalle = cargaPerezosa(() => import('./ApiculturaProductoDetalle'));
+const LuxuryProductoDetalle = cargaPerezosa(() => import('./LuxuryProductoDetalle'));
+const SpaProductoDetalle = cargaPerezosa(() => import('./SpaProductoDetalle'));
+const CarterasProductoDetalle = cargaPerezosa(() => import('./CarterasProductoDetalle'));
+const AurumProductoDetalle = cargaPerezosa(() => import('./AurumProductoDetalle'));
+const GroginProductoDetalle = cargaPerezosa(() => import('./GroginProductoDetalle'));
+const FreshMartProductoDetalle = cargaPerezosa(() => import('./FreshMartProductoDetalle'));
+const RopaHombreProductoDetalle = cargaPerezosa(() => import('./RopaHombreProductoDetalle'));
+const BicicletasProductoDetalle = cargaPerezosa(() => import('./BicicletasProductoDetalle'));
+const MotosProductoDetalle = cargaPerezosa(() => import('./MotosProductoDetalle'));
+const HoodieProductoDetalle = cargaPerezosa(() => import('./HoodieProductoDetalle'));
+const TonesProductoDetalle = cargaPerezosa(() => import('./TonesProductoDetalle'));
+const ModaMinimalProductoDetalle = cargaPerezosa(() => import('./ModaMinimalProductoDetalle'));
+const CrispyProductoDetalle = cargaPerezosa(() => import('./CrispyProductoDetalle'));
+const FarmaciaProductoDetalle = cargaPerezosa(() => import('./FarmaciaProductoDetalle'));
+const StrideProductoDetalle = cargaPerezosa(() => import('./StrideProductoDetalle'));
+const NordicaProductoDetalle = cargaPerezosa(() => import('./NordicaProductoDetalle'));
+const PatitasProductoDetalle = cargaPerezosa(() => import('./PatitasProductoDetalle'));
+const BlushProductoDetalle = cargaPerezosa(() => import('./BlushProductoDetalle'));
+const VitrinaProductoDetalle = cargaPerezosa(() => import('./VitrinaProductoDetalle'));
+const ElanProductoDetalle = cargaPerezosa(() => import('./ElanProductoDetalle'));
+const RoseProductoDetalle = cargaPerezosa(() => import('./RoseProductoDetalle'));
 
-import UrbanoProductoDetalle from './UrbanoProductoDetalle';
+const UrbanoProductoDetalle = cargaPerezosa(() => import('./UrbanoProductoDetalle'));
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
 import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
+// Fichas por plantilla, descargadas solo cuando se abren (ver cargaPerezosa).
 const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   gadgets: GadgetsProductoDetalle,
   autopartes: AutopartesProductoDetalle,

@@ -645,6 +645,11 @@ export const useProductsViewModel = () => {
                         formValues: {
                             ...prev.formValues,
                             descripcionLarga: full.descripcionLarga ?? (prev.formValues as any).descripcionLarga ?? '',
+                            // Tampoco vienen en el listado: sin esto el bloque Google abría vacío
+                            // y al guardar se borraba lo que el negocio había escrito.
+                            seoTitulo: full.seoTitulo ?? '',
+                            seoDescripcion: full.seoDescripcion ?? '',
+                            seoPalabraClave: full.seoPalabraClave ?? '',
                             atributosTecnicos: full.atributosTecnicos ?? (prev.formValues as any).atributosTecnicos,
                             codigosBarrasExtra: Array.isArray(full.codigosBarrasExtra)
                                 ? full.codigosBarrasExtra
