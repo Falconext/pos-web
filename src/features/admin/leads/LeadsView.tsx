@@ -9,6 +9,7 @@ import { useLeadsViewModel } from './useLeadsViewModel'
 import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
 import { DisparadoresPanel } from './DisparadoresPanel'
+import { DemosPanel } from './DemosPanel'
 import { Ficha360 } from './Ficha360'
 import { BandejaChats } from './BandejaChats'
 import {
@@ -22,13 +23,15 @@ import type {
   TipoLeadDocumento,
 } from '@/services/leads.service'
 
-type Vista = 'conversaciones' | 'embudo' | 'analitica' | 'avisos'
+type Vista = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos'
 
 const VISTAS: { id: Vista; label: string; icon: string }[] = [
   { id: 'conversaciones', label: 'Conversaciones', icon: 'solar:chat-round-dots-bold-duotone' },
   { id: 'embudo', label: 'Embudo', icon: 'solar:filter-bold-duotone' },
   { id: 'analitica', label: 'Analítica', icon: 'solar:chart-2-bold-duotone' },
   { id: 'avisos', label: 'Avisos', icon: 'solar:bell-bold-duotone' },
+  // Solo para quien entrega demos por WhatsApp (Krezka): ver `tieneDemos`.
+  { id: 'demos', label: 'Demos', icon: 'solar:monitor-smartphone-bold-duotone' },
 ]
 
 export default function LeadsView() {
@@ -92,7 +95,7 @@ export default function LeadsView() {
 
       {/* Conmutador de vistas */}
       <div className="mb-4 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800/60 w-fit">
-        {VISTAS.map((v) => (
+        {VISTAS.filter((v) => v.id !== 'demos' || vm.config.tieneDemos).map((v) => (
           <button
             key={v.id}
             type="button"
@@ -112,6 +115,7 @@ export default function LeadsView() {
       {vista === 'embudo' && <EmbudoBoard onVerCliente={vm.setFicha360} />}
       {vista === 'analitica' && <BiPanel />}
       {vista === 'avisos' && <DisparadoresPanel />}
+      {vista === 'demos' && <DemosPanel />}
       {vm.ficha360 && (
         <Ficha360 telefono={vm.ficha360} onCerrar={() => vm.setFicha360(null)} />
       )}
