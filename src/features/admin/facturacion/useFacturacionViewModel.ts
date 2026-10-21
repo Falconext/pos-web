@@ -74,6 +74,7 @@ import { tipoCambioService } from "@/services/tipoCambio.service";
 import { PORCENTAJE_RETENCION, aplicaRetencion, calcularRetencion } from './retencion';
 import { diasEmisionRetroactiva, fechaFueraDePlazo } from './fechaEmisionRetroactiva';
 import { aplicacionEfectiva, lineasDeEnvio } from './aplicacionMontoEnvio';
+import { alternarQuitado, componentesDeCombo, descripcionKitSin, precioKitSin, type ComponenteKit } from './kitQuitados';
 
 type EnvioDespachoFormData = {
     transportista?: string;
@@ -1656,7 +1657,8 @@ export const useFacturacionViewModel = () => {
         // el backend al emitir (DetalleComprobante.comboId). Cada clic suma 1 kit.
         if ((auth?.empresa as any)?.kitsComoUnaLinea) {
             const precioKit = Number(combo?.precioCombo || 0);
-            const existente = productsInvoice.findIndex((p: any) => Number(p?.comboId) === Number(combo.id));
+            // Un kit al que se le quitó algo es otra línea: el siguiente clic entra completo.
+            const existente = productsInvoice.findIndex((p: any) => Number(p?.comboId) === Number(combo.id) && !(p?.kitQuitados?.length));
             if (existente >= 0) {
                 const actual = productsInvoice[existente];
                 const nuevaCantidad = Number(actual?.cantidad || 0) + 1;
@@ -1676,6 +1678,11 @@ export const useFacturacionViewModel = () => {
                     // Solo el nombre del kit (sin prefijo ni contenido): así sale en el carrito y en el comprobante.
                     descripcion: String(combo?.nombre || '').toUpperCase(),
                     detalleKit: (combo.items || []).map((it: any) => `${it?.cantidad || 1} × ${it?.producto?.descripcion || ''}`).join(', '),
+                    // Para quitar productos de este kit solo en esta venta (ver kitQuitados.ts).
+                    kitComponentes: componentesDeCombo(combo),
+                    kitQuitados: [],
+                    kitNombre: String(combo?.nombre || '').toUpperCase(),
+                    kitPrecioCompleto: precioKit,
                     imagenUrl: combo?.imagenUrl || null,
                     cantidadInicial: 1,
                     precioUnitario: precioKit,
@@ -2136,6 +2143,31 @@ export const useFacturacionViewModel = () => {
         // Por ahora, lo dejaremos listo en el formValuesProduct.
         
         setTimeout(() => setBarcodeError(false), 2000);
+    };
+
+    // Quitar / devolver un producto del kit en esta venta: baja el precio en la
+    // parte de lo quitado y el backend descuenta stock solo de lo que queda.
+    const handleAlternarComponenteKit = (index: number, productoId: number) => {
+        const item = productsInvoice[index];
+        const componentes: ComponenteKit[] = item?.kitComponentes || [];
+        if (!componentes.length) return;
+        const quitados = alternarQuitado(componentes, item?.kitQuitados || [], productoId);
+        if (!quitados) {
+            useAlertStore.getState().alert('El kit tiene que llevar al menos un producto. Si no lo quiere, elimina el kit.', 'warning');
+            return;
+        }
+        const precioCompleto = Number(item?.kitPrecioCompleto ?? item?.precioUnitario ?? 0);
+        const price = precioKitSin(precioCompleto, componentes, quitados);
+        const subtotal = price * Number(item?.cantidad || 1) * (1 - Number(item?.descuento || 0) / 100);
+        updateProductInvoice(index, {
+            kitQuitados: quitados,
+            descripcion: descripcionKitSin(item?.kitNombre || item?.descripcion, componentes, quitados),
+            precioUnitario: price,
+            precioBase: price,
+            total: subtotal.toFixed(2),
+            sale: (subtotal / 1.18).toFixed(2),
+            igv: (subtotal - subtotal / 1.18).toFixed(2),
+        });
     };
 
     const handleSelectWholesaleTier = (index: number, tier: { cantidadMinima: number; precio: number } | null) => {
@@ -3048,6 +3080,7 @@ export const useFacturacionViewModel = () => {
                         productoId: Number(item?.productoId || item?.id) || null,
                         // Kit como una sola línea: el backend descuenta el stock de sus componentes.
                         ...(item?.comboId ? { comboId: Number(item.comboId) } : {}),
+                        ...(item?.comboId && item?.kitQuitados?.length ? { kitQuitados: item.kitQuitados.map(Number) } : {}),
                         // Línea de PAQUETE (ej. six-pack) en modo histórico: la cantidad va
                         // en unidades y la descripción aclara la equivalencia en packs para
                         // el cliente ("30 SIX PACK... (5 pack x6)"). En modo "una línea" la
@@ -3552,6 +3585,7 @@ export const useFacturacionViewModel = () => {
         handleClienteCreado,
         handleSaveEdit,
         handleSelectWholesaleTier,
+        handleAlternarComponenteKit,
         getApplicablePrice,
         updateProductInvoice,
         handleChangeSelect,
