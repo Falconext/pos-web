@@ -1,7 +1,7 @@
 import Select from "@/components/Select";
 import InputPro from "@/components/InputPro";
 import { Icon } from "@iconify/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EnvioModal } from "./EnvioModal";
 import { Calendar } from "@/components/Date";
 import moment from "moment";
@@ -11,6 +11,80 @@ const COURIER_LABELS: Record<string, string> = {
     SHALOM_PRO: 'Shalom PRO', SHALOM_COD: 'Shalom COD', OLVA: 'Olva',
     URBANO: 'Urbano', CRUZ_SUR: 'Cruz del Sur', PROPIOS: 'Propio', OTRO: 'Otro',
 };
+
+/**
+ * Selector de cuenta destino del PAGO INICIAL de una venta a crédito.
+ *
+ * El backend exige cuenta destino para una transferencia cuando la empresa tiene
+ * cuentas registradas. El pago inicial no la pedía nunca, así que una venta a
+ * crédito con inicial por transferencia se rechazaba al emitir, con el modal de
+ * pago ya abierto y sin decir qué corregir (caso COMERCIAL LINNA MODA, OT01-6).
+ *
+ * Yape y Plin también se muestran acá: el backend les resuelve la cuenta
+ * vinculada solo, pero si el negocio tiene varias conviene decir a cuál entró.
+ */
+const MEDIOS_CON_CUENTA = ['YAPE', 'PLIN', 'TRANSFERENCIA'];
+const necesitaCuenta = (metodo?: string) =>
+    MEDIOS_CON_CUENTA.includes(String(metodo || '').toUpperCase());
+
+function CuentaDestinoInicial({
+    vm, metodo, cuentaId, onChange,
+}: { vm: any; metodo?: string; cuentaId?: number | null; onChange: (id: number | null, label: string) => void }) {
+    const cuentas = ((vm.auth?.empresa?.cuentasBancarias as any[]) || []).filter((c) => c.activo !== false);
+    // Últimos 4 DÍGITOS: con formatos con guiones ("191-1234567-0-29") un slice
+    // directo devolvía "0-29".
+    const fin = (n?: string | null) => String(n ?? '').replace(/\D/g, '').slice(-4);
+    const etiqueta = (id?: number | null) => {
+        const c = cuentas.find((x) => x.id === Number(id));
+        if (!c) return '';
+        if (c.alias?.trim()) return c.alias.trim();
+        return `${c.banco || ''}${fin(c.numeroCuenta) ? ` ····${fin(c.numeroCuenta)}` : ''}`.trim();
+    };
+    // Por defecto: la cuenta vinculada a ese medio (Yape/Plin la tienen). Para una
+    // transferencia no hay vínculo, y caer en "la primera activa" puede meterla en
+    // la cuenta de Yape, que es justo la que no es: se prefiere una cuenta libre,
+    // sin medio vinculado. Un default mal elegido acá no da error, solo descuadra
+    // la caja al cierre.
+    const porDefecto = (): number | null => {
+        const m = String(metodo || '').toUpperCase();
+        const vinc = cuentas.find((c) => String(c.medioPagoVinculado || '').toUpperCase() === m);
+        if (vinc) return vinc.id;
+        const libre = cuentas.find((c) => !String(c.medioPagoVinculado || '').trim());
+        return (libre || cuentas[0])?.id ?? null;
+    };
+
+    useEffect(() => {
+        if (!necesitaCuenta(metodo) || cuentas.length === 0) return;
+        if (cuentaId) return;
+        const def = porDefecto();
+        if (def) onChange(def, etiqueta(def));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [metodo, cuentas.length]);
+
+    if (!necesitaCuenta(metodo) || cuentas.length === 0) return null;
+
+    return (
+        <div className="mt-2">
+            <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                ¿A qué cuenta entra?
+            </label>
+            <select
+                value={Number(cuentaId || porDefecto() || 0) || ''}
+                onChange={(e) => {
+                    const id = Number(e.target.value) || null;
+                    onChange(id, etiqueta(id));
+                }}
+                className="w-full px-2 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-violet-500"
+            >
+                {cuentas.map((c) => (
+                    <option key={c.id} value={c.id}>
+                        {(c.alias || c.banco)} ··{fin(c.numeroCuenta)}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
 
 function EnvioTrigger({ vm }: { vm: any }) {
     const { envioActivo, setEnvioActivo, envioData } = vm;
@@ -454,6 +528,7 @@ export const POSOptionsForm = ({ vm, onOpenComprobanteModal }: { vm: any; onOpen
                                             </button>
                                         </div>
                                         {!vm.isMixedPayment ? (
+                                            <>
                                             <div className="flex gap-2">
                                                 <input
                                                     type="number"
@@ -466,21 +541,40 @@ export const POSOptionsForm = ({ vm, onOpenComprobanteModal }: { vm: any; onOpen
                                                 />
                                                 <select
                                                     value={vm.adelantoMetodo}
-                                                    onChange={(e) => vm.setAdelantoMetodo(e.target.value)}
+                                                    onChange={(e) => {
+                                                        vm.setAdelantoMetodo(e.target.value);
+                                                        // La cuenta destino tiene que seguir al medio: si no se
+                                                        // limpia, cambiar a Yape deja el cobro apuntando a la
+                                                        // cuenta de la transferencia anterior y el dinero queda
+                                                        // asentado donde no entró.
+                                                        vm.setAdelantoCuentaId(null);
+                                                        vm.setAdelantoCuentaLabel('');
+                                                    }}
                                                     className="px-2 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-violet-500"
                                                 >
                                                     {['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'].map(m => (
                                                         <option key={m} value={m}>{m}</option>
                                                     ))}
                                                 </select>
-                                            </div>
+                                                </div>
+                                                <CuentaDestinoInicial
+                                                    vm={vm}
+                                                    metodo={vm.adelantoMetodo}
+                                                    cuentaId={vm.adelantoCuentaId}
+                                                    onChange={(id, label) => {
+                                                        vm.setAdelantoCuentaId(id);
+                                                        vm.setAdelantoCuentaLabel(label);
+                                                    }}
+                                                />
+                                            </>
                                         ) : (
                                             <div className="space-y-2">
                                                 {(vm.splitPayments || []).map((line: any, idx: number) => (
-                                                    <div key={idx} className="flex gap-2">
+                                                    <div key={idx}>
+                                                    <div className="flex gap-2">
                                                         <select
                                                             value={line.method}
-                                                            onChange={(e) => vm.setSplitPayments((curr: any[]) => curr.map((l, i) => i === idx ? { ...l, method: e.target.value } : l))}
+                                                            onChange={(e) => vm.setSplitPayments((curr: any[]) => curr.map((l, i) => i === idx ? { ...l, method: e.target.value, cuentaBancariaId: null, cuentaBancariaLabel: '' } : l))}
                                                             className="px-2 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:border-violet-500"
                                                         >
                                                             {['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'].map(m => (
@@ -501,6 +595,14 @@ export const POSOptionsForm = ({ vm, onOpenComprobanteModal }: { vm: any; onOpen
                                                                 <Icon icon="solar:trash-bin-trash-bold" width={16} />
                                                             </button>
                                                         )}
+                                                    </div>
+                                                    <CuentaDestinoInicial
+                                                        vm={vm}
+                                                        metodo={line.method}
+                                                        cuentaId={line.cuentaBancariaId}
+                                                        onChange={(id, label) => vm.setSplitPayments((curr: any[]) =>
+                                                            curr.map((l, i) => i === idx ? { ...l, cuentaBancariaId: id, cuentaBancariaLabel: label } : l))}
+                                                    />
                                                     </div>
                                                 ))}
                                                 <button type="button" onClick={() => vm.setSplitPayments((curr: any[]) => [...curr, { method: 'Efectivo', amount: 0 }])} className="text-[11px] font-bold text-violet-600 dark:text-violet-400 hover:underline">

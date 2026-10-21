@@ -430,6 +430,11 @@ export const useFacturacionViewModel = () => {
     const [adelanto, setAdelanto] = useState<number>(0);
     // Método del pago inicial cuando la venta es a crédito con adelanto.
     const [adelantoMetodo, setAdelantoMetodo] = useState<string>('Efectivo');
+    // Cuenta destino del PAGO INICIAL de una venta a crédito. Va aparte de
+    // `paymentDetail` porque ese describe el cobro del contado, que en una venta
+    // a crédito no existe: acá lo único que se cobra es el inicial.
+    const [adelantoCuentaId, setAdelantoCuentaId] = useState<number | null>(null);
+    const [adelantoCuentaLabel, setAdelantoCuentaLabel] = useState<string>('');
     const [fechaRecojo, setFechaRecojo] = useState<string>('');
     // Nota de Pedido: si el usuario marca esto, la NP descuenta stock al emitirse.
     // Por defecto false → la NP no toca stock hasta convertirse en comprobante formal.
@@ -729,6 +734,59 @@ export const useFacturacionViewModel = () => {
             getAllProducts(params, () => { }, true);
         }
     }, [page, limit, debouncedSearchTerm, selectedCategoryId, sedeActiva?.id, usaLotesFarmacia, listaPrecioId, selectedClient?.id]);
+
+    /**
+     * Productos de las líneas que ya están en el carrito, para que cada línea
+     * conserve sus PRESENTACIONES sin depender de la página del catálogo.
+     *
+     * El carrito leía los paquetes de `products`, que es la página cargada en
+     * ese momento (20 de 290). Al editar un comprobante las líneas vienen del
+     * documento y sus productos casi nunca caen en esa página, así que el
+     * desplegable de presentación desaparecía; lo mismo pasaba al limpiar la
+     * búsqueda con el carrito lleno.
+     */
+    const [productosDeLineas, setProductosDeLineas] = useState<Record<number, any>>({});
+
+    useEffect(() => {
+        const idsCarrito: number[] = [...new Set<number>((productsInvoice || [])
+            .map((l: any) => Number(l?.productoId ?? l?.id))
+            .filter((n: number) => Number.isFinite(n) && n > 0))];
+        if (idsCarrito.length === 0) return;
+
+        // Lo que ya está en la página del catálogo no hace falta pedirlo.
+        const enCatalogo = new Set((products || []).map((p: any) => Number(p?.id)));
+        const faltantes = idsCarrito.filter((id) => !enCatalogo.has(id) && !productosDeLineas[id]);
+        if (faltantes.length === 0) return;
+
+        let cancelado = false;
+        const params = new URLSearchParams({ ids: faltantes.join(','), usarPrecioSede: 'true' });
+        if (sedeActiva?.id) params.set('sedeId', String(sedeActiva.id));
+        if (listaPrecioId) params.set('listaPrecioId', String(listaPrecioId));
+        if (selectedClient?.id) params.set('clienteId', String(selectedClient.id));
+        get(`productos?${params.toString()}`)
+            .then((resp: any) => {
+                if (cancelado) return;
+                const traidos = resp?.data?.productos ?? [];
+                if (traidos.length === 0) return;
+                setProductosDeLineas((curr) => {
+                    const siguiente = { ...curr };
+                    for (const p of traidos) siguiente[Number(p.id)] = p;
+                    return siguiente;
+                });
+            })
+            .catch(() => {});
+        return () => { cancelado = true; };
+        // `productosDeLineas` no va en las dependencias: se escribe acá mismo y
+        // volvería a disparar el efecto en bucle. Lo que importa es qué hay en
+        // el carrito, qué trae el catálogo y con qué precios se está mirando.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [productsInvoice, products, sedeActiva?.id, listaPrecioId, selectedClient?.id]);
+
+    // Al cambiar de lista o de cliente los precios de las presentaciones cambian,
+    // así que lo cacheado queda viejo y hay que volver a pedirlo.
+    useEffect(() => {
+        setProductosDeLineas({});
+    }, [listaPrecioId, selectedClient?.id, sedeActiva?.id]);
 
     // Farmacia: catálogo con FEFO (reemplaza getAllProducts para rubros regulados)
     useEffect(() => {
@@ -2758,7 +2816,17 @@ export const useFacturacionViewModel = () => {
             useAlertStore.getState().alert(cpeRequeridoMensaje, "error");
             return false;
         }
-        if (formValues.medioPago === 'Crédito') return true;
+        // Una venta a crédito no cobra el total, pero SÍ puede cobrar un pago
+        // inicial — y ese inicial necesita cuenta destino igual que cualquier
+        // transferencia. Antes se devolvía true acá mismo, así que el POS dejaba
+        // emitir y el rechazo llegaba del servidor, ya con el modal de pago
+        // abierto y sin decir qué corregir.
+        const esCreditoConInicial =
+            formValues.medioPago === 'Crédito' &&
+            (isMixedPayment
+                ? (splitPayments || []).some((l) => Number(l.amount || 0) > 0)
+                : Number(adelanto || 0) > 0);
+        if (formValues.medioPago === 'Crédito' && !esCreditoConInicial) return true;
         // El N° de operación/voucher es opcional: no bloquea la emisión (se puede
         // registrar después). Solo se exige la cuenta bancaria para transferencias,
         // y solo si la empresa tiene alguna cuenta bancaria registrada — si no
@@ -2767,7 +2835,15 @@ export const useFacturacionViewModel = () => {
         const tieneCuentasBancarias = ((auth?.empresa?.cuentasBancarias as any[]) || []).length > 0;
         const requiresAccount = (method?: string) => tieneCuentasBancarias && normalizePaymentMethod(method) === 'TRANSFERENCIA';
         const details = buildPaymentDetails();
-        const lines: PaymentLine[] = details.mode === 'MIXTO' ? (details.splitPayments ?? []) : [details as PaymentLine];
+        const lines: PaymentLine[] = esCreditoConInicial
+            ? (isMixedPayment
+                ? (splitPayments || [])
+                : [{
+                    method: normalizePaymentMethod(adelantoMetodo),
+                    amount: Number(adelanto || 0),
+                    cuentaBancariaId: adelantoCuentaId || null,
+                } as PaymentLine])
+            : (details.mode === 'MIXTO' ? (details.splitPayments ?? []) : [details as PaymentLine]);
 
         for (const line of lines) {
             if (Number(line.amount || 0) <= 0) continue;
@@ -2961,7 +3037,15 @@ export const useFacturacionViewModel = () => {
         const paymentDetailsFinal = creditoConInicial
             ? (isMixedPayment
                 ? paymentDetails
-                : { mode: 'SIMPLE', method: normalizePaymentMethod(adelantoMetodo), amount: adelantoCreditoCalculado })
+                : {
+                    mode: 'SIMPLE',
+                    method: normalizePaymentMethod(adelantoMetodo),
+                    amount: adelantoCreditoCalculado,
+                    // Sin esto el backend rechaza el inicial por transferencia
+                    // ("requiere cuenta bancaria destino") y la venta no se emite.
+                    cuentaBancariaId: adelantoCuentaId || null,
+                    cuentaBancariaLabel: adelantoCuentaLabel || undefined,
+                })
             : paymentDetails;
         // Cuota única (0 o 1 cuota): su monto SIEMPRE es el total a financiar, para que
         // no quede obsoleto al cambiar el pago inicial. Con 2+ cuotas, se respeta el
@@ -3443,6 +3527,8 @@ export const useFacturacionViewModel = () => {
         splitPayments, setSplitPayments,
         adelanto, setAdelanto,
         adelantoMetodo, setAdelantoMetodo,
+        adelantoCuentaId, setAdelantoCuentaId,
+        adelantoCuentaLabel, setAdelantoCuentaLabel,
         fechaRecojo, setFechaRecojo,
         descontarStockNP, setDescontarStockNP,
         fechaEmisionManual, setFechaEmisionManual,
@@ -3614,6 +3700,7 @@ export const useFacturacionViewModel = () => {
         initialFormProduct, initialFormClient,
         isLoading,
         isEditMode,
+        productosDeLineas,
         isEditNotaVenta: editNotaVentaId != null,
         editaHaciaFormal,
     };
