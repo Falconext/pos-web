@@ -118,6 +118,11 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides con palabra destacada y beneficios reales de tu tienda', 'Tarjeta de categorías con círculos de color y fotos reales de tus productos', 'Recomendados en carrusel con rating real o "Nuevo", cantidad, favoritos y comparador', 'Combos reales con el ahorro calculado de tus precios, guías de cuidado editables y testimonios con reseñas reales', 'Ficha con variantes reales (talla, sabor, peso), zoom y barra de compra fija; todo editable en vivo'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  floreria: {
+    headline: 'Florería de lujo para ramos de rosas y arreglos florales: marfil, rubor y dorado, titulares en serif fina y pétalos que caen.',
+    features: ['Hero slider con titular en dos tonos, botón de video opcional y barra de beneficios reales en vidrio', 'Catálogo de ocasiones con fotos y conteo real, y ramos populares con tus destacados primero', '"Arma tu ramo" con tus productos reales por paso (flores, envoltura, extras…) y total en vivo', 'Por qué elegirnos, opiniones reales aprobadas, suscripción por WhatsApp y banda final con foto', 'Ficha con variantes, video, zoom y barra fija; checkout con dedicatoria; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
   retail: {
     headline: 'Tienda multi-categoría cálida y moderna para comercio minorista, bazar y tiendas por departamento: fondo crema, teal + naranja y titular serif.',
     features: ['Header con buscador central y menú de categorías; hero slider de 3 slides con palabra destacada subrayada', 'Franja de categorías con fotos reales, barra de beneficios reales y recomendados en carrusel', 'Tres banners de campaña editables, ofertas con contador de la fecha fin real y "Descubre más"', 'Banda de confianza con reseñas y cifras reales, club por WhatsApp y footer con tus medios de pago reales', 'Tarjetas con rating real, cantidad, favoritos y comparador; ficha con variantes, zoom y barra fija; todo editable en vivo'],
