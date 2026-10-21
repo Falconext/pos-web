@@ -865,7 +865,7 @@ OBJECIONES:
 
 TONO: cercano, profesional, respuestas cortas. Nunca inventes precios ni prometas lo que no existe.`
 
-function ConfigForm({
+export function ConfigForm({
   initial,
   onSave,
   onToggle,
@@ -876,12 +876,15 @@ function ConfigForm({
     iaVentasSeguimiento: boolean
     iaVentasCotizacion: boolean
     iaVentasBrochureUrl: string
+    cobroConLink?: boolean
+    mpConectado?: boolean
   }
   onSave: (data: {
     iaVentasContexto: string
     iaVentasSeguimiento: boolean
     iaVentasCotizacion: boolean
     iaVentasBrochureUrl: string
+    cobroConLink: boolean
   }) => void
   onToggle: (v: boolean) => void
 }) {
@@ -889,6 +892,7 @@ function ConfigForm({
   const [activa, setActiva] = useState(initial.iaVentasActiva)
   const [seguimiento, setSeguimiento] = useState(initial.iaVentasSeguimiento)
   const [cotizacion, setCotizacion] = useState(initial.iaVentasCotizacion)
+  const [cobroConLink, setCobroConLink] = useState(initial.cobroConLink ?? false)
   const [brochure, setBrochure] = useState(initial.iaVentasBrochureUrl)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -897,6 +901,7 @@ function ConfigForm({
     setActiva(initial.iaVentasActiva)
     setSeguimiento(initial.iaVentasSeguimiento)
     setCotizacion(initial.iaVentasCotizacion)
+    setCobroConLink(initial.cobroConLink ?? false)
     setBrochure(initial.iaVentasBrochureUrl)
   }, [initial])
 
@@ -965,6 +970,28 @@ function ConfigForm({
           </p>
         </div>
         <SwitchIa activa={cotizacion} onChange={setCotizacion} />
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3 dark:border-slate-800">
+        <div className="pr-3">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            Cobrar con link de Mercado Pago
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Al cotizar, la IA le ofrece al cliente un link para pagar con tarjeta. Cuando Mercado Pago confirma el pago, queda validado solo, sin revisar capturas. Mercado Pago cobra su comisión por cada venta; el Yape sigue disponible.
+          </p>
+          {!initial.mpConectado && (
+            <p className="mt-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+              Primero conecta tu Mercado Pago en Mi perfil → Medios de pago.
+            </p>
+          )}
+        </div>
+        <SwitchIa
+          activa={cobroConLink && Boolean(initial.mpConectado)}
+          onChange={(v) => {
+            if (initial.mpConectado) setCobroConLink(v)
+          }}
+        />
       </div>
 
       <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
@@ -1038,6 +1065,7 @@ function ConfigForm({
               iaVentasSeguimiento: seguimiento,
               iaVentasCotizacion: cotizacion,
               iaVentasBrochureUrl: brochure,
+              cobroConLink,
             })
           }
         >
