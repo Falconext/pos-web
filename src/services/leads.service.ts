@@ -1,4 +1,5 @@
 import { get, patch, post, del } from '@/utils/fetch'
+import apiClient from '@/utils/apiClient'
 
 // ─── Tipos del módulo IA de Ventas / Filtro de Leads ────────────────────────
 
@@ -61,6 +62,8 @@ export interface LeadMensaje {
   rol: RolLeadMensaje
   contenido: string
   esAudio: boolean
+  /** Imagen mandada por el vendedor desde el chat del panel. */
+  imagenUrl?: string | null
   creadoEn: string
 }
 
@@ -170,6 +173,30 @@ export async function enviarMensajeManual(
   )
   if (!r.success || !r.data) throw new Error(r.error || 'No se pudo enviar el mensaje')
   return r.data
+}
+
+/**
+ * Manda una imagen en la conversación (con pie opcional). Como el texto, toma
+ * el chat y pausa la IA.
+ */
+export async function enviarImagenManual(
+  conversacionId: number,
+  archivo: File,
+  texto?: string,
+): Promise<EnvioManualResult> {
+  const fd = new FormData()
+  fd.append('archivo', archivo)
+  if (texto?.trim()) fd.append('texto', texto.trim())
+  try {
+    const resp = await apiClient.post(`/leads/conversaciones/${conversacionId}/imagen`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    const data = resp.data?.data as EnvioManualResult | undefined
+    if (!data?.mensaje) throw new Error('No se pudo enviar la imagen')
+    return data
+  } catch (e: any) {
+    throw new Error(e?.response?.data?.message || e?.message || 'No se pudo enviar la imagen')
+  }
 }
 
 export interface ConvertirResult {

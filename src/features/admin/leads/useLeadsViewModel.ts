@@ -267,6 +267,45 @@ export function useLeadsViewModel() {
     }
   }
 
+  /** Manda una imagen (con pie opcional) en el chat abierto. */
+  const enviarImagenManual = async (archivo: File, texto?: string) => {
+    const conv = conversacion
+    if (!conv || enviandoMensaje) return false
+    setEnviandoMensaje(true)
+    try {
+      const { mensaje, botPausado } = await api.enviarImagenManual(conv.id, archivo, texto)
+      setConversacion((prev) =>
+        prev && prev.id === conv.id
+          ? {
+              ...prev,
+              mensajes: [...prev.mensajes, mensaje],
+              cantidadMensajes: prev.cantidadMensajes + 1,
+              prospecto: prev.prospecto
+                ? { ...prev.prospecto, botActivo: false }
+                : prev.prospecto,
+            }
+          : prev,
+      )
+      if (botPausado) {
+        const prospectoId = conv.prospecto?.id
+        if (prospectoId)
+          setProspectos((prev) =>
+            prev.map((p) => (p.id === prospectoId ? { ...p, botActivo: false } : p)),
+          )
+      }
+      alertStore.alert(
+        botPausado ? 'Imagen enviada — IA pausada, tomaste el chat' : 'Imagen enviada',
+        'success',
+      )
+      return true
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo enviar la imagen', 'error')
+      return false
+    } finally {
+      setEnviandoMensaje(false)
+    }
+  }
+
   const [convirtiendo, setConvirtiendo] = useState(false)
 
   const convertirCliente = async (prospectoId: number) => {
@@ -439,6 +478,7 @@ export function useLeadsViewModel() {
       borrarConversacion,
       toggleBot,
       enviarMensajeManual,
+      enviarImagenManual,
       convertirCliente,
       guardarConfig,
       toggleIaVentas,
