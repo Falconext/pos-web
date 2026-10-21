@@ -182,6 +182,14 @@ describe('el comprobante de pago', () => {
     expect(screen.getByText(/el pago está bien/i)).toBeInTheDocument()
   })
 
+  it('la constancia en PDF se abre como PDF, no como una imagen rota', async () => {
+    getMock.mockResolvedValue(conVoucher('https://s3/voucher.pdf'))
+    render(<EmbudoBoard />)
+    fireEvent.click(await screen.findByText(/revisar el comprobante/i))
+    expect(screen.getByText(/ver comprobante \(pdf\)/i).closest('a')).toHaveAttribute('href', 'https://s3/voucher.pdf')
+    expect(screen.queryByRole('img')).toBeNull()
+  })
+
   it('si la imagen no se guardó, lo dice en vez de dejar un hueco', async () => {
     // Aprobar un pago sin verlo es exactamente lo que este paso evita.
     getMock.mockResolvedValue(conVoucher(null))
