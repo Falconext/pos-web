@@ -33,6 +33,7 @@ const NordicaProductoDetalle = cargaPerezosa(() => import('./NordicaProductoDeta
 const PatitasProductoDetalle = cargaPerezosa(() => import('./PatitasProductoDetalle'));
 const BlushProductoDetalle = cargaPerezosa(() => import('./BlushProductoDetalle'));
 const VitrinaProductoDetalle = cargaPerezosa(() => import('./VitrinaProductoDetalle'));
+const PetalaProductoDetalle = cargaPerezosa(() => import('./PetalaProductoDetalle'));
 const ElanProductoDetalle = cargaPerezosa(() => import('./ElanProductoDetalle'));
 const RoseProductoDetalle = cargaPerezosa(() => import('./RoseProductoDetalle'));
 
@@ -73,6 +74,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   mascotas: PatitasProductoDetalle,
   maquillaje: BlushProductoDetalle,
   retail: VitrinaProductoDetalle,
+  floreria: PetalaProductoDetalle,
   'moda-elegante': ElanProductoDetalle,
   bolsos: RoseProductoDetalle,
 };

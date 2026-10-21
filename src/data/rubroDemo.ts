@@ -257,6 +257,32 @@ const carterasDemo: RubroDemo = {
   ],
 };
 
+// ─── Florería / Ramos de rosas ───────────────────────────────────────────────
+const fl = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
+const floreriaDemo: RubroDemo = {
+  storeName: 'Pétala',
+  slogan: 'Emociones que viven en el recuerdo',
+  heroKeyword: 'Ramos de autor',
+  heroDesc: 'Ramos de rosas, arreglos florales y detalles para cada ocasión.',
+  categories: ['Todos', 'Cumpleaños', 'Aniversario', 'Amor', 'Rosas', 'Envolturas', 'Extras'],
+  plantillaDefault: 'floreria',
+  colorDefault: '#9A7044',
+  products: [
+    { id: 1, descripcion: 'Ramo Jardín de peonías', precioUnitario: 189.00, imagenUrl: fl('1582794543139-8ac9cb0f7b11'), stock: 8, categoria: { nombre: 'Aniversario' }, marca: { nombre: 'Pétala' } },
+    { id: 2, descripcion: 'Bouquet Nube rosa', precioUnitario: 159.00, precioOferta: 139.00, imagenUrl: fl('1591886960571-74d43a9d4166'), stock: 12, categoria: { nombre: 'Amor' }, marca: { nombre: 'Pétala' } },
+    { id: 3, descripcion: 'Arreglo Ternura de la mañana', precioUnitario: 129.00, imagenUrl: fl('1563241527-3004b7be0ffd'), stock: 6, categoria: { nombre: 'Cumpleaños' }, marca: { nombre: 'Pétala' } },
+    { id: 4, descripcion: 'Ramo Campo de tulipanes', precioUnitario: 119.00, imagenUrl: fl('1561181286-d3fee7d55364'), stock: 10, categoria: { nombre: 'Cumpleaños' }, marca: { nombre: 'Pétala' } },
+    { id: 5, descripcion: 'Bouquet Durazno y crema', precioUnitario: 149.00, imagenUrl: fl('1572454591674-2739f30d8c40'), stock: 4, categoria: { nombre: 'Aniversario' }, marca: { nombre: 'Pétala' } },
+    { id: 6, descripcion: 'Corazón de flores', precioUnitario: 219.00, imagenUrl: fl('1526047932273-341f2a7631f9'), stock: 3, categoria: { nombre: 'Amor' }, marca: { nombre: 'Pétala' } },
+    { id: 7, descripcion: 'Rosa roja premium (tallo)', precioUnitario: 12.00, imagenUrl: fl('1496062031456-07b8f162a322'), stock: 120, categoria: { nombre: 'Rosas' }, marca: { nombre: 'Pétala' } },
+    { id: 8, descripcion: 'Rosa rosada (tallo)', precioUnitario: 10.00, imagenUrl: fl('1518895949257-7621c3c786d7'), stock: 90, categoria: { nombre: 'Rosas' }, marca: { nombre: 'Pétala' } },
+    { id: 9, descripcion: 'Papel coreano + lazo de seda', precioUnitario: 15.00, imagenUrl: fl('1567696153798-9111f9cd3d0d'), stock: 40, categoria: { nombre: 'Envolturas' }, marca: { nombre: 'Pétala' } },
+    { id: 10, descripcion: 'Caja de regalo con lazo', precioUnitario: 25.00, imagenUrl: fl('1513201099705-a9746e1e201f'), stock: 25, categoria: { nombre: 'Envolturas' }, marca: { nombre: 'Pétala' } },
+    { id: 11, descripcion: 'Tarjeta con dedicatoria', precioUnitario: 5.00, imagenUrl: fl('1579208575657-c595a05383b7'), stock: 200, categoria: { nombre: 'Extras' }, marca: { nombre: 'Pétala' } },
+    { id: 12, descripcion: 'Ramo Tulipán rosa', precioUnitario: 99.00, imagenUrl: fl('1520763185298-1b434c919102'), stock: 7, categoria: { nombre: 'Amor' }, marca: { nombre: 'Pétala' } },
+  ],
+};
+
 // ─── Retail / Comercio minorista ──────────────────────────────────────────────
 const ur = (id: string) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=700&q=80`;
 const retailDemo: RubroDemo = {
@@ -485,6 +511,8 @@ export function getRubroDemo(rubroNombre: string = ''): RubroDemo {
     return mascotasDemo;
   if (n.includes('carter') || n.includes('bolso') || n.includes('marroq') || n.includes('mochil'))
     return carterasDemo;
+  if (n.includes('flor') || n.includes('ramo') || n.includes('arreglo'))
+    return floreriaDemo;
   if (n.includes('comercio minor') || n.includes('retail') || n.includes('bazar') || n.includes('departament') || n.includes('variedad'))
     return retailDemo;
   if (n.includes('maquill') || n.includes('cosmet') || n.includes('makeup') || n.includes('skincare'))

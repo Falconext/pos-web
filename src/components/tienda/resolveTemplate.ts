@@ -37,7 +37,8 @@ export type PlantillaId =
   | 'moda-elegante'
   | 'maquillaje'
   | 'bolsos'
-  | 'retail';
+  | 'retail'
+  | 'floreria';
 
 export interface BannerSlotDef {
   orden: number;
@@ -779,7 +780,24 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#1F5E5B',
     icon: 'solar:shop-2-bold',
     rubrosPermitidos: ['Comercio minorista', 'Comercio', 'Retail', 'Bazar', 'Bazar, Perfumería y accesorios', 'Tienda por departamentos', 'Tienda', 'Variedades', 'Regalos', 'Importaciones', 'Minorista', 'Mayorista', 'Distribuidora', 'Librería y Papelería', 'Artesanía y decoración'],
+  },  floreria: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Florería (Pétala)',
+    description: 'Florería de lujo para ramos de rosas y arreglos florales: marfil, rubor y botones dorados, titulares en serif fina (Cormorant) y pétalos que caen en el hero. Hero slider de 3 slides con titular en dos tonos y botón de video opcional, barra de beneficios reales en vidrio, catálogo de ocasiones con conteo real, ramos populares, "Arma tu ramo" con tus productos reales (flores, envoltura, extras…) y total en vivo, por qué elegirnos, opiniones reales, suscripción por WhatsApp y banda final con foto. Tarjetas con cantidad, favoritos, comparador y zoom; ficha con variantes, video y barra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#9A7044',
+    icon: 'ph:flower-tulip-fill',
+    rubrosPermitidos: ['Florería', 'Floreria', 'Flores', 'Arreglos florales', 'Ramos', 'Regalos', 'Detalles', 'Artesanía y decoración', 'Eventos', 'Decoración de eventos', 'Comercio minorista'],
   },
+
 };
 
 export const DEFAULT_TEMPLATE: PlantillaId = 'moderna';
