@@ -82,6 +82,10 @@ export interface LeadsConfig {
   iaVentasBrochureUrl: string
   /** El negocio entrega demos por rubro (Krezka): se ve la pestaña Demos. */
   tieneDemos?: boolean
+  /** La IA ofrece el link de Mercado Pago para pagar lo cotizado. */
+  cobroConLink?: boolean
+  /** El negocio tiene su Mercado Pago conectado (sin eso no hay link). */
+  mpConectado?: boolean
 }
 
 // ─── Llamadas a la API (todas scoped por empresa del token) ──────────────────
