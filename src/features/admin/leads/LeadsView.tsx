@@ -6,11 +6,13 @@ import Button from '@/components/Button'
 import Modal from '@/components/Modal'
 import ModalConfirm from '@/components/ModalConfirm'
 import { useLeadsViewModel } from './useLeadsViewModel'
+import useAlertStore from '@/zustand/alert'
 import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
 import { DisparadoresPanel } from './DisparadoresPanel'
 import { DemosPanel } from './DemosPanel'
 import { Ficha360 } from './Ficha360'
+import { formatoDuracion, MAX_SEGUNDOS_NOTA, textoDeNotaDeVoz, useGrabadoraNota } from './notaDeVoz'
 import { BandejaChats } from './BandejaChats'
 import {
   ESTADO_META,
@@ -493,11 +495,23 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                         />
                       </a>
                     )}
+                    {m.audioUrl && (
+                      <audio
+                        controls
+                        preload="none"
+                        src={m.audioUrl}
+                        aria-label="Nota de voz enviada"
+                        className="mb-1 h-10 w-64 max-w-full"
+                      />
+                    )}
                     {(() => {
-                      // La marca "📷 [Imagen]" es para la IA; acá ya se ve la foto.
+                      // Las marcas "📷 [Imagen]" y "[Nota de voz]" son para la
+                      // IA; acá ya se ve la foto o el reproductor.
                       const texto = m.imagenUrl
                         ? m.contenido.replace(/^📷 \[Imagen\]\s*/, '')
-                        : m.contenido
+                        : m.audioUrl
+                          ? textoDeNotaDeVoz(m.contenido)
+                          : m.contenido
                       return texto ? (
                         <p className="whitespace-pre-wrap break-words leading-relaxed">{texto}</p>
                       ) : null
@@ -534,7 +548,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
  * Caja para responder a mano en la conversación. Enviar un mensaje toma el chat:
  * la IA queda pausada hasta que el vendedor la reactive.
  */
-function Composer({
+export function Composer({
   vm,
   botActivo,
 }: {
@@ -547,6 +561,16 @@ function Composer({
   const inputImagen = useRef<HTMLInputElement>(null)
   const enviando = vm.enviandoMensaje
   const puedeEnviar = (!!imagen || texto.trim().length > 0) && !enviando
+  const { alert: alertar } = useAlertStore()
+  const avisarError = useCallback((mensaje: string) => alertar(mensaje, 'error'), [alertar])
+  const grabadora = useGrabadoraNota(avisarError)
+  const conNota = grabadora.grabando || !!grabadora.pendiente
+
+  const enviarNota = async () => {
+    const nota = await grabadora.detener()
+    if (!nota) return
+    await vm.actions.enviarAudioManual(nota.archivo, nota.segundos)
+  }
 
   const elegirImagen = (archivo: File | undefined | null) => {
     if (!archivo || !archivo.type.startsWith('image/')) return
@@ -593,6 +617,43 @@ function Composer({
           </button>
         </div>
       )}
+      {conNota ? (
+        <div className="flex items-center gap-2" data-testid="grabando-nota">
+          <button
+            type="button"
+            onClick={grabadora.cancelar}
+            disabled={enviando}
+            title="Descartar la nota de voz"
+            className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
+          >
+            <Icon icon="solar:trash-bin-minimalistic-linear" width={19} />
+          </button>
+          <div className="flex h-10 flex-1 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
+            {grabadora.grabando ? (
+              <span className="h-2.5 w-2.5 flex-none animate-pulse rounded-full bg-rose-500" />
+            ) : (
+              <Icon icon="solar:microphone-3-bold" width={16} />
+            )}
+            <span className="font-semibold tabular-nums">
+              {formatoDuracion(grabadora.pendiente ? grabadora.pendiente.segundos : grabadora.segundos)}
+            </span>
+            <span className="truncate text-xs text-rose-600/80 dark:text-rose-300/80">
+              {grabadora.grabando
+                ? `Grabando… máximo ${formatoDuracion(MAX_SEGUNDOS_NOTA)}`
+                : 'Llegó al máximo. Envíala o descártala.'}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => void enviarNota()}
+            disabled={enviando}
+            title="Enviar la nota de voz"
+            className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Icon icon={enviando ? 'svg-spinners:180-ring' : 'solar:plain-bold'} width={18} />
+          </button>
+        </div>
+      ) : (
       <div className="flex items-end gap-2">
         <input
           ref={inputImagen}
@@ -613,6 +674,17 @@ function Composer({
         >
           <Icon icon="solar:gallery-add-linear" width={19} />
         </button>
+        {!imagen && !texto.trim() && (
+          <button
+            type="button"
+            onClick={() => void grabadora.empezar()}
+            disabled={enviando}
+            title="Grabar una nota de voz"
+            className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-violet-300 hover:text-violet-600 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
+          >
+            <Icon icon="solar:microphone-3-linear" width={19} />
+          </button>
+        )}
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -650,6 +722,7 @@ function Composer({
           />
         </button>
       </div>
+      )}
     </div>
   )
 }

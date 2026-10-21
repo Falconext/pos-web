@@ -267,13 +267,17 @@ export function useLeadsViewModel() {
     }
   }
 
-  /** Manda una imagen (con pie opcional) en el chat abierto. */
-  const enviarImagenManual = async (archivo: File, texto?: string) => {
+  /** Manda una imagen (con pie opcional) o una nota de voz en el chat abierto. */
+  const enviarAdjuntoManual = async (
+    tipo: 'imagen' | 'audio',
+    enviarlo: (conversacionId: number) => Promise<api.EnvioManualResult>,
+  ) => {
     const conv = conversacion
     if (!conv || enviandoMensaje) return false
     setEnviandoMensaje(true)
+    const nombre = tipo === 'imagen' ? 'Imagen enviada' : 'Nota de voz enviada'
     try {
-      const { mensaje, botPausado } = await api.enviarImagenManual(conv.id, archivo, texto)
+      const { mensaje, botPausado } = await enviarlo(conv.id)
       setConversacion((prev) =>
         prev && prev.id === conv.id
           ? {
@@ -294,17 +298,24 @@ export function useLeadsViewModel() {
           )
       }
       alertStore.alert(
-        botPausado ? 'Imagen enviada — IA pausada, tomaste el chat' : 'Imagen enviada',
+        botPausado ? `${nombre} — IA pausada, tomaste el chat` : nombre,
         'success',
       )
       return true
     } catch (e: any) {
-      alertStore.alert(e.message || 'No se pudo enviar la imagen', 'error')
+      alertStore.alert(
+        e.message || (tipo === 'imagen' ? 'No se pudo enviar la imagen' : 'No se pudo enviar la nota de voz'),
+        'error',
+      )
       return false
     } finally {
       setEnviandoMensaje(false)
     }
   }
+  const enviarImagenManual = (archivo: File, texto?: string) =>
+    enviarAdjuntoManual('imagen', (id) => api.enviarImagenManual(id, archivo, texto))
+  const enviarAudioManual = (archivo: File, segundos?: number) =>
+    enviarAdjuntoManual('audio', (id) => api.enviarAudioManual(id, archivo, segundos))
 
   const [convirtiendo, setConvirtiendo] = useState(false)
 
@@ -479,6 +490,7 @@ export function useLeadsViewModel() {
       toggleBot,
       enviarMensajeManual,
       enviarImagenManual,
+      enviarAudioManual,
       convertirCliente,
       guardarConfig,
       toggleIaVentas,

@@ -64,6 +64,8 @@ export interface LeadMensaje {
   esAudio: boolean
   /** Imagen mandada por el vendedor desde el chat del panel. */
   imagenUrl?: string | null
+  /** Nota de voz mandada por el vendedor desde el chat del panel (OGG). */
+  audioUrl?: string | null
   creadoEn: string
 }
 
@@ -202,6 +204,30 @@ export async function enviarImagenManual(
     return data
   } catch (e: any) {
     throw new Error(e?.response?.data?.message || e?.message || 'No se pudo enviar la imagen')
+  }
+}
+
+/**
+ * Manda una nota de voz grabada en el panel. El servidor la pasa a OGG/Opus
+ * para que WhatsApp la muestre como nota de voz. Toma el chat como el texto.
+ */
+export async function enviarAudioManual(
+  conversacionId: number,
+  archivo: File,
+  segundos?: number,
+): Promise<EnvioManualResult> {
+  const fd = new FormData()
+  fd.append('archivo', archivo)
+  if (segundos && segundos > 0) fd.append('duracion', String(Math.round(segundos)))
+  try {
+    const resp = await apiClient.post(`/leads/conversaciones/${conversacionId}/audio`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    const data = resp.data?.data as EnvioManualResult | undefined
+    if (!data?.mensaje) throw new Error('No se pudo enviar la nota de voz')
+    return data
+  } catch (e: any) {
+    throw new Error(e?.response?.data?.message || e?.message || 'No se pudo enviar la nota de voz')
   }
 }
 
