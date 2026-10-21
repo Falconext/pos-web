@@ -479,7 +479,25 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                           } ${nuevoGrupo ? 'rounded-br-md' : ''}`
                     }`}
                   >
-                    <p className="whitespace-pre-wrap break-words leading-relaxed">{m.contenido}</p>
+                    {m.imagenUrl && (
+                      <a href={m.imagenUrl} target="_blank" rel="noreferrer" className="-mx-1 -mt-0.5 mb-1 block">
+                        <img
+                          src={m.imagenUrl}
+                          alt="Imagen enviada"
+                          loading="lazy"
+                          className="max-h-64 w-full rounded-xl object-cover"
+                        />
+                      </a>
+                    )}
+                    {(() => {
+                      // La marca "📷 [Imagen]" es para la IA; acá ya se ve la foto.
+                      const texto = m.imagenUrl
+                        ? m.contenido.replace(/^📷 \[Imagen\]\s*/, '')
+                        : m.contenido
+                      return texto ? (
+                        <p className="whitespace-pre-wrap break-words leading-relaxed">{texto}</p>
+                      ) : null
+                    })()}
                     <span
                       className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
                         esUsuario
@@ -520,18 +538,77 @@ function Composer({
   botActivo: boolean
 }) {
   const [texto, setTexto] = useState('')
+  // Imagen elegida y todavía sin enviar; el texto pasa a ser su pie.
+  const [imagen, setImagen] = useState<{ archivo: File; vista: string } | null>(null)
+  const inputImagen = useRef<HTMLInputElement>(null)
   const enviando = vm.enviandoMensaje
-  const puedeEnviar = texto.trim().length > 0 && !enviando
+  const puedeEnviar = (!!imagen || texto.trim().length > 0) && !enviando
+
+  const elegirImagen = (archivo: File | undefined | null) => {
+    if (!archivo || !archivo.type.startsWith('image/')) return
+    setImagen((prev) => {
+      if (prev) URL.revokeObjectURL(prev.vista)
+      return { archivo, vista: URL.createObjectURL(archivo) }
+    })
+  }
+  const quitarImagen = () => {
+    setImagen((prev) => {
+      if (prev) URL.revokeObjectURL(prev.vista)
+      return null
+    })
+  }
 
   const enviar = async () => {
     if (!puedeEnviar) return
-    const ok = await vm.actions.enviarMensajeManual(texto)
-    if (ok) setTexto('')
+    const ok = imagen
+      ? await vm.actions.enviarImagenManual(imagen.archivo, texto)
+      : await vm.actions.enviarMensajeManual(texto)
+    if (ok) {
+      setTexto('')
+      quitarImagen()
+    }
   }
 
   return (
     <div className="flex-none border-t border-gray-100 px-4 pb-3 pt-3 dark:border-slate-800">
+      {imagen && (
+        <div className="mb-2 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-2 dark:border-slate-700 dark:bg-slate-800/60">
+          <img src={imagen.vista} alt="" className="h-14 w-14 flex-none rounded-lg object-cover" />
+          <div className="min-w-0 flex-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="truncate font-semibold text-gray-700 dark:text-gray-200">{imagen.archivo.name}</p>
+            <p>Lo que escribas abajo va como texto de la imagen.</p>
+          </div>
+          <button
+            type="button"
+            onClick={quitarImagen}
+            disabled={enviando}
+            title="Quitar imagen"
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:hover:bg-slate-700"
+          >
+            <Icon icon="solar:close-circle-linear" width={18} />
+          </button>
+        </div>
+      )}
       <div className="flex items-end gap-2">
+        <input
+          ref={inputImagen}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            elegirImagen(e.target.files?.[0])
+            e.target.value = ''
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => inputImagen.current?.click()}
+          disabled={enviando}
+          title="Enviar una imagen"
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-violet-300 hover:text-violet-600 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
+        >
+          <Icon icon="solar:gallery-add-linear" width={19} />
+        </button>
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -542,10 +619,18 @@ function Composer({
               void enviar()
             }
           }}
+          onPaste={(e) => {
+            // Pegar una captura (Ctrl+V) también la adjunta.
+            const archivo = Array.from(e.clipboardData.files).find((f) => f.type.startsWith('image/'))
+            if (archivo) {
+              e.preventDefault()
+              elegirImagen(archivo)
+            }
+          }}
           rows={1}
-          maxLength={4096}
+          maxLength={imagen ? 1024 : 4096}
           disabled={enviando}
-          placeholder="Escribe tu respuesta…"
+          placeholder={imagen ? 'Texto de la imagen (opcional)…' : 'Escribe tu respuesta…'}
           className="max-h-28 min-h-[40px] flex-1 resize-y rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100 dark:focus:ring-violet-900/40"
         />
         <button
