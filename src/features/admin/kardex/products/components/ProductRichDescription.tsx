@@ -97,7 +97,10 @@ export const ProductRichDescription: React.FC<{ vm: ViewProps }> = ({ vm }) => {
                             <ReactQuill
                                 theme="snow"
                                 value={(formValues as any)?.descripcionLarga || ''}
-                                onChange={(value: string) => setFormValues({ ...formValues, descripcionLarga: value } as any)}
+                                // Quill 2 guarda cada espacio como &nbsp;: en la tienda el párrafo no
+                                // se corta en líneas y se sale de la pantalla (252 de 930 descripciones
+                                // en prod al 20/10). Se guardan espacios normales.
+                                onChange={(value: string) => setFormValues({ ...formValues, descripcionLarga: value.replace(/&nbsp;/g, ' ') } as any)}
                                 placeholder="Escribe la descripción completa del producto: especificaciones, garantía, compatibilidad, características..."
                                 className="dark:text-gray-200"
                                 modules={{

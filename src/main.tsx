@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
 import { scheduleAppVersionChecks } from './utils/appVersion'
+import { esRutaDeTiendaPublica } from './lib/seoTienda/inyectarSeo'
 
 // Clave inline — NO importar branding.ts aquí para evitar que BRAND se evalúe
 // antes de que bootstrapBranding() resuelva el fetch y setee __FALCONEXT_PUBLIC_BRAND__
@@ -58,7 +59,11 @@ const inferDefaultBaseUrl = () => {
 
 const applyBrandToDocument = (brand: Partial<BrandConfig>) => {
   if (typeof document === 'undefined') return
-  if (brand.name) document.title = brand.name
+  // En una tienda pública el título es el de la tienda o del producto (lo
+  // escribe el middleware de Vercel antes de llegar aquí); pisarlo con la marca
+  // devolvía la pestaña a "Krezka" en cada visita.
+  const enTienda = typeof window !== 'undefined' && esRutaDeTiendaPublica(window.location.pathname)
+  if (brand.name && !enTienda) document.title = brand.name
   const host = typeof window !== 'undefined' ? window.location.hostname : ''
   const hostFavicon =
     host === 'app.krezka.com'

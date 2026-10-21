@@ -11,6 +11,7 @@ const defaultForm = {
     aceptaEfectivo: true, costoEnvioFijo: 0, envioGratisDesdeSoles: 0, minimoCompra: 0,
     aceptaRecojo: true, aceptaEnvio: true, tiendaVentaSinStock: false, direccionRecojo: '', tiempoPreparacionMin: 30,
     bancoNombre: '', numeroCuenta: '', cci: '', monedaCuenta: 'SOLES',
+    seoTitulo: '', seoDescripcion: '', googleVerificacion: '',
 };
 
 export const useConfiguracionTiendaViewModel = (): any => {
@@ -131,6 +132,8 @@ export const useConfiguracionTiendaViewModel = (): any => {
                 tiempoPreparacionMin: data.data.tiempoPreparacionMin || 30, bancoNombre: data.data.bancoNombre || '',
                 numeroCuenta: data.data.numeroCuenta || '', cci: data.data.cci || '', monedaCuenta: data.data.monedaCuenta || 'SOLES',
                 envioGratisDesdeSoles: Number(data.data.envioGratisDesdeSoles || 0), minimoCompra: Number(data.data.minimoCompra || 0),
+                seoTitulo: data.data.seoTitulo || '', seoDescripcion: data.data.seoDescripcion || '',
+                googleVerificacion: data.data.googleVerificacion || '',
             });
             setPreviewYapeUrl(data.data.yapeQrSignedUrl || data.data.yapeQrUrl || '');
             setPreviewPlinUrl(data.data.plinQrSignedUrl || data.data.plinQrUrl || '');

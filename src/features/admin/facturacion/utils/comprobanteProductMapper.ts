@@ -30,7 +30,12 @@ export const getDetalleSerials = (detalle: any) =>
 
 export const mapDetalleToInvoiceProduct = (detalle: any) => {
   const producto = detalle?.producto || {};
-  const productoId = Number(firstValue(producto?.id, detalle?.productoId, detalle?.id) || 0);
+  // Línea guardada SIN producto de catálogo (kit vendido como una línea, ítem
+  // libre): el detalle trae `productoId: null` explícito. Antes caía al `id`
+  // del propio detalle y, al convertir esa Nota de Venta, se mandaba como
+  // productoId un número que no es de ningún producto (o, peor, de otro).
+  const sinProducto = detalle && 'productoId' in detalle && detalle.productoId == null && !producto?.id;
+  const productoId = sinProducto ? 0 : Number(firstValue(producto?.id, detalle?.productoId, detalle?.id) || 0);
   const precioUnitario = Number(firstValue(detalle?.mtoPrecioUnitario, detalle?.precioUnitario, detalle?.precioUnit, producto?.precioUnitario) || 0);
   const cantidad = Number(firstValue(detalle?.cantidad, detalle?.cantidadInicial) || 1);
   const imagenUrl = getDetalleProductImage(detalle);
@@ -38,8 +43,12 @@ export const mapDetalleToInvoiceProduct = (detalle: any) => {
 
   return {
     ...detalle,
-    id: productoId || detalle?.id,
-    productoId,
+    id: sinProducto ? null : productoId || detalle?.id,
+    productoId: sinProducto ? null : productoId,
+    ...(sinProducto ? { esItemLibre: true } : {}),
+    // El kit conserva su combo (`...detalle` trae comboId): el backend
+    // descuenta sus componentes y el reporte de packs lo cuenta.
+    ...(sinProducto && detalle?.comboId ? { esKit: true, comboId: Number(detalle.comboId) } : {}),
     descripcion: firstValue(detalle?.descripcion, producto?.descripcion, 'Producto'),
     cantidad,
     cantidadInicial: cantidad,

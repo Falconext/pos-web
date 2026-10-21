@@ -185,6 +185,10 @@ export type IFormProduct = {
   precioMaximoVenta?: number | string | null
   atributosTecnicos?: Record<string, any>
   descripcionLarga?: string | null
+  /** SEO editable (bloque "Google" de la ficha). Vacío = automático. */
+  seoTitulo?: string | null
+  seoDescripcion?: string | null
+  seoPalabraClave?: string | null
   opcionesAtributos?: any
   valoresAtributos?: any
   productoPadreId?: number | null
