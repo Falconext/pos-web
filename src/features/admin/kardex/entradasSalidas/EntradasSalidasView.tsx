@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import moment from 'moment';
 import { useNavigate } from 'react-router-dom';
 import { useReactToPrint } from 'react-to-print';
+import Select from '@/components/Select';
 import { useAuthStore } from '@/zustand/auth';
 import {
     InventoryCard,
@@ -221,16 +222,17 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
             />
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-[320px_1fr]">
                 <InventoryCard className="h-fit space-y-4 p-5">
-                    <div>
-                        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-400">Motivo</label>
-                        <select data-testid="es-motivo" value={vm.motivo} onChange={(e) => vm.setMotivo(e.target.value)} className={`${campo} ${vm.intentoGuardar && !vm.motivo ? 'border-rose-400' : ''}`}>
-                            <option value="">Elige el motivo…</option>
-                            {vm.ctx.motivos[vm.tipo].map((m) => (
-                                <option key={m.codigo} value={m.codigo}>
-                                    {m.etiqueta}
-                                </option>
-                            ))}
-                        </select>
+                    <div data-testid="es-motivo">
+                        <Select
+                            key={vm.tipo}
+                            name="motivo"
+                            label="Motivo"
+                            placeholder="Elige el motivo…"
+                            value={vm.motivoEtiqueta}
+                            error={vm.intentoGuardar && !vm.motivo ? 'Elige el motivo' : ''}
+                            options={vm.ctx.motivos[vm.tipo].map((m) => ({ id: m.codigo, value: m.etiqueta }))}
+                            onChange={(id: string) => vm.setMotivo(id || '')}
+                        />
                     </div>
                     <div>
                         <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -352,7 +354,7 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-3 py-3 text-right text-slate-500">
+                                                <td className="px-3 py-3 text-right leading-9 text-slate-500">
                                                     {l.stockSede} <span className="text-[10px]">{l.unidad}</span>
                                                 </td>
                                                 {verLotes ? (
@@ -396,7 +398,7 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
                                                                     })}
                                                             </select>
                                                         ) : (
-                                                            <span className="text-xs text-slate-300">—</span>
+                                                            <span className="text-xs leading-9 text-slate-300">—</span>
                                                         )}
                                                     </td>
                                                 ) : null}
@@ -434,9 +436,9 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
                                                         />
                                                     </td>
                                                 ) : null}
-                                                <td className={`px-3 py-3 text-right font-bold ${queda < 0 ? 'text-rose-500' : entrada ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300'}`}>{queda}</td>
+                                                <td className={`px-3 py-3 text-right font-bold leading-9 ${queda < 0 ? 'text-rose-500' : entrada ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300'}`}>{queda}</td>
                                                 <td className="px-2 py-3">
-                                                    <button onClick={() => vm.quitarLinea(l.key)} title="Quitar" className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20">
+                                                    <button onClick={() => vm.quitarLinea(l.key)} title="Quitar" className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20">
                                                         <Icon icon="solar:trash-bin-trash-linear" width={16} />
                                                     </button>
                                                 </td>
