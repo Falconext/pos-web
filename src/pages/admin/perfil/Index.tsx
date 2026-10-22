@@ -14,7 +14,6 @@ import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import ShalomProConexion from '@/components/ShalomProConexion';
 import OlvaConfiguracion from '@/components/OlvaConfiguracion';
 import DespachoAutomatizacionCard from '@/components/DespachoAutomatizacionCard';
-import { ClavesApiCard } from './ClavesApiCard';
 
 /**
  * Pagos con tarjeta en la tienda (Culqi / Niubiz): apagado por ahora.
@@ -1350,8 +1349,12 @@ export default function PerfilIndex() {
                     {/* Claves API: solo con el módulo "API de Krezka" en el plan y para el
                         administrador (una clave lee todo el catálogo y el stock). */}
                     {tieneApi && esAdminEmpresa && (
-                        <SeccionConfig id="claves-api" icono="solar:code-square-bold-duotone" titulo="Claves API" resumen="Conecta tu página web con tus productos y tu stock" abierta={seccionAbierta === 'claves-api'} onToggle={toggleSeccion} className={configTab}>
-                            <ClavesApiCard />
+                        <SeccionConfig id="claves-api" icono="solar:code-square-bold-duotone" titulo="Claves API" resumen="Conecta tu página web con tus productos, tu stock y tus ventas" abierta={seccionAbierta === 'claves-api'} onToggle={toggleSeccion} className={configTab}>
+                            {/* Las claves, el probador y el código viven en su propia pantalla. */}
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" data-testid="claves-api-acceso">
+                                <p className="text-sm text-gray-600 dark:text-gray-300">Crea tus claves, pruébalas sin tocar datos reales y copia el código para tu web.</p>
+                                <Link to="/administrador/api-krezka" className="inline-flex flex-none items-center justify-center rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white hover:bg-violet-700">Abrir API de Krezka</Link>
+                            </div>
                         </SeccionConfig>
                     )}
                     {/* Automatización de despacho: rastreo automático + plantillas WhatsApp

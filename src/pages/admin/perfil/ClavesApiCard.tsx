@@ -31,10 +31,17 @@ const fecha = (iso: string | null) =>
 export const baseApiPublica = (): string =>
     `${String(apiClient.defaults.baseURL ?? '').replace(/\/+$/, '')}/v1/erp`
 
-export function ClavesApiCard() {
+/**
+ * `onCreada`: la pantalla "API de Krezka" la usa para dejar la clave recién
+ * creada lista en su probador. `conNotas`: allá la explicación para el
+ * programador tiene su propia sección, así que se oculta acá.
+ */
+export function ClavesApiCard({ onCreada, conNotas = true }: { onCreada?: (clave: string, entorno: 'test' | 'live') => void; conNotas?: boolean } = {}) {
     const { alert } = useAlertStore()
     const [claves, setClaves] = useState<ClaveApi[] | null>(null)
     const [nombre, setNombre] = useState('')
+    // Por defecto, de prueba: con ella se integra sin tocar datos reales.
+    const [entorno, setEntorno] = useState<'test' | 'live'>('test')
     const [creando, setCreando] = useState(false)
     const [nueva, setNueva] = useState<string | null>(null)
     const [anular, setAnular] = useState<ClaveApi | null>(null)
@@ -55,9 +62,10 @@ export function ClavesApiCard() {
         setCreando(true)
         try {
             const r = datos<{ apiKey: string }>(
-                await apiClient.post('/integraciones/claves-api', { nombre: nombre.trim() || undefined }),
+                await apiClient.post('/integraciones/claves-api', { nombre: nombre.trim() || undefined, entorno }),
             )
             setNueva(r.apiKey)
+            onCreada?.(r.apiKey, entorno)
             setNombre('')
             await cargar()
         } catch (e) {
@@ -129,6 +137,18 @@ export function ClavesApiCard() {
             )}
 
             <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-none rounded-xl bg-gray-100 p-1 dark:bg-slate-800" data-testid="clave-entorno">
+                    {(['test', 'live'] as const).map((e) => (
+                        <button
+                            key={e}
+                            type="button"
+                            onClick={() => setEntorno(e)}
+                            className={`rounded-lg px-3 py-1 text-xs font-bold ${entorno === e ? 'bg-white text-gray-900 shadow-sm dark:bg-slate-900 dark:text-white' : 'text-gray-500'}`}
+                        >
+                            {e === 'test' ? 'De prueba' : 'Real'}
+                        </button>
+                    ))}
+                </div>
                 <input
                     type="text"
                     value={nombre}
@@ -160,7 +180,12 @@ export function ClavesApiCard() {
                         <li key={c.id} className="flex items-center gap-3 px-3 py-2.5" data-testid={`clave-${c.id}`}>
                             <Icon icon="solar:key-minimalistic-2-bold-duotone" width={18} className="flex-none text-violet-500" />
                             <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">{c.nombre || 'Sin nombre'}</p>
+                                <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-gray-900 dark:text-white">
+                                    {c.nombre || 'Sin nombre'}
+                                    <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${c.entorno === 'test' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}`}>
+                                        {c.entorno === 'test' ? 'Prueba' : 'Real'}
+                                    </span>
+                                </p>
                                 <p className="text-[11px] text-gray-500 dark:text-gray-400">
                                     <code>{c.prefijo}…{c.ultimosCuatro}</code> · creada {fecha(c.creadoEn)} · último uso {fecha(c.ultimoUsoEn)}
                                 </p>
@@ -178,6 +203,17 @@ export function ClavesApiCard() {
                 </ul>
             )}
 
+            {entorno === 'test' ? (
+                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                    Con una clave <b>de prueba</b> se lee tu catálogo real, pero lo que se crea, vende o ajusta no se guarda ni va a SUNAT: la respuesta dice cómo habría quedado.
+                </p>
+            ) : (
+                <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                    Con una clave <b>real</b> las ventas se emiten a SUNAT y el stock se mueve de verdad.
+                </p>
+            )}
+
+            {conNotas && (
             <details className="rounded-xl bg-gray-50 p-3 text-xs text-gray-600 dark:bg-slate-900 dark:text-gray-300">
                 <summary className="cursor-pointer font-bold">Para tu programador</summary>
                 <div className="mt-2 space-y-2">
@@ -227,6 +263,7 @@ export function ClavesApiCard() {
                     </ul>
                 </div>
             </details>
+            )}
 
             <ModalConfirm
                 isOpenModal={!!anular}
