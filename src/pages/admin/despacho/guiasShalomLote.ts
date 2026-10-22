@@ -40,6 +40,17 @@ export interface PendienteDeGuia {
 const vacio = (v: string | null | undefined) => !v || !String(v).trim() || String(v).trim() === '—';
 
 /**
+ * Celular peruano: 9 dígitos que empiezan con 9 (se acepta con +51 delante).
+ * Shalom registra la guía con cualquier número —aceptó "12345" en el QA—, y
+ * con uno así el destinatario no recibe sus avisos de llegada.
+ */
+export const celularValido = (v: string | null | undefined): boolean => {
+    let d = String(v ?? '').replace(/\D/g, '');
+    if (d.length === 11 && d.startsWith('51')) d = d.slice(2);
+    return /^9\d{8}$/.test(d);
+};
+
+/**
  * Los despachos de la lista que todavía necesitan guía de Shalom: courier
  * Shalom, en Preparando y sin N° de orden. Las notas que van en el paquete de
  * otra no tienen despacho propio (la guía es la de esa otra nota). Una venta
@@ -60,6 +71,7 @@ export const pendientesDeGuia = (filas: FilaPanelParaGuia[]): PendienteDeGuia[] 
         const faltan: string[] = [];
         if (vacio(f.agenciaDestino)) faltan.push('agencia de destino');
         if (vacio(celular)) faltan.push('celular');
+        else if (!celularValido(celular)) faltan.push(`un celular válido (${celular} no es un celular de 9 dígitos)`);
         salida.push({
             comprobanteId: f.comprobanteId,
             referencia: f.referencia,

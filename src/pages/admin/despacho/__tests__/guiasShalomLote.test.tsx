@@ -5,7 +5,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { generarEnLote, pendientesDeGuia, rotulosDeGeneradas, type FilaPanelParaGuia } from '../guiasShalomLote';
+import { celularValido, generarEnLote, pendientesDeGuia, rotulosDeGeneradas, type FilaPanelParaGuia } from '../guiasShalomLote';
 
 const crearGuia = jest.fn();
 jest.mock('@/services/shalom.service', () => ({
@@ -63,6 +63,19 @@ describe('qué despachos necesitan guía', () => {
         expect(sinAgencia.faltan).toEqual(['agencia de destino', 'celular']);
         expect(conTelefonoCliente.faltan).toEqual([]);
         expect(conTelefonoCliente.celular).toBe('911222333');
+    });
+});
+
+describe('celular', () => {
+    it('solo 9 dígitos que empiezan con 9, con o sin +51', () => {
+        expect(celularValido('987657463')).toBe(true);
+        expect(celularValido('+51 987 657 463')).toBe(true);
+        for (const malo of ['12345', '187657463', '98765746', '01 4567890', '', null]) expect(celularValido(malo as any)).toBe(false);
+    });
+
+    it('un celular corto bloquea la fila con el motivo (Shalom aceptó "12345" en el QA)', () => {
+        const [p] = pendientesDeGuia([fila({ celularDest: '12345' })]);
+        expect(p.faltan).toEqual(['un celular válido (12345 no es un celular de 9 dígitos)']);
     });
 });
 
