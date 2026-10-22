@@ -345,6 +345,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
       { codigo: 'leads:embudo', nombre: 'Embudo', ruta: '/administrador/leads/embudo' },
       { codigo: 'leads:analitica', nombre: 'Analítica', ruta: '/administrador/leads/analitica' },
       { codigo: 'leads:avisos', nombre: 'Avisos', ruta: '/administrador/leads/avisos' },
+      { codigo: 'leads:vendedor', nombre: 'Mi vendedor', ruta: '/administrador/leads/vendedor' },
     ],
   },
 

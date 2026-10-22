@@ -98,7 +98,7 @@ export function colorAvatar(telefono: string): string {
 }
 
 /** Vistas del módulo: cada una es una página con su entrada en el menú lateral. */
-export type VistaLeads = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos'
+export type VistaLeads = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos' | 'vendedor'
 
 export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
   chats: 'conversaciones',
@@ -106,6 +106,7 @@ export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
   analitica: 'analitica',
   avisos: 'avisos',
   demos: 'demos',
+  vendedor: 'vendedor',
 }
 
 export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: string }> = {
@@ -124,6 +125,10 @@ export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: strin
   avisos: {
     titulo: 'Avisos',
     descripcion: 'Los mensajes que salen solos a tus clientes: qué está por salir, qué salió y qué no salió y por qué.',
+  },
+  vendedor: {
+    titulo: 'Mi vendedor',
+    descripcion: 'Cómo habla, qué sabe y cómo cobra tu asesor de WhatsApp.',
   },
   demos: {
     titulo: 'Demos',

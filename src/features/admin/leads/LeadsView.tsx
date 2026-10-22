@@ -4,7 +4,6 @@ import { Icon } from '@iconify/react'
 import { format, isSameDay, isToday, isYesterday } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Button from '@/components/Button'
-import Modal from '@/components/Modal'
 import ModalConfirm from '@/components/ModalConfirm'
 import { useLeadsViewModel } from './useLeadsViewModel'
 import useAlertStore from '@/zustand/alert'
@@ -15,6 +14,8 @@ import { DemosPanel } from './DemosPanel'
 import { Ficha360 } from './Ficha360'
 import { formatoDuracion, MAX_SEGUNDOS_NOTA, textoDeNotaDeVoz, useGrabadoraNota } from './notaDeVoz'
 import { BandejaChats } from './BandejaChats'
+import { MiVendedorPanel } from './MiVendedorPanel'
+import { useAuthStore } from '@/zustand/auth'
 import {
   ESTADO_META,
   VISTA_META,
@@ -39,6 +40,8 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
   const vm = useLeadsViewModel()
   const navigate = useNavigate()
   const meta = VISTA_META[vista]
+  const empresa = useAuthStore((st) => st.auth?.empresa)
+  const negocio = empresa?.nombreComercial || empresa?.razonSocial || 'tu negocio'
 
   return (
     <div className="min-h-screen px-2 pb-4 dark:bg-[#0A0D14]">
@@ -74,22 +77,16 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
               Demos
             </Button>
           )}
-          <Button
-            color="secondary"
-            onClick={() => vm.actions.abrirEntrenar()}
-            className="flex items-center gap-2"
-          >
-            <Icon icon="solar:book-bold-duotone" className="text-lg" />
-            Entrenar IA
-          </Button>
-          <Button
-            color="secondary"
-            onClick={() => vm.setConfigOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Icon icon="solar:settings-bold-duotone" className="text-lg" />
-            Configurar IA
-          </Button>
+          {vista !== 'vendedor' && (
+            <Button
+              color="secondary"
+              onClick={() => navigate('/administrador/leads/vendedor')}
+              className="flex items-center gap-2"
+            >
+              <Icon icon="solar:user-speak-rounded-bold-duotone" className="text-lg" />
+              Mi vendedor
+            </Button>
+          )}
         </div>
       </div>
 
@@ -111,6 +108,7 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
       {vista === 'analitica' && <BiPanel />}
       {vista === 'avisos' && <DisparadoresPanel />}
       {vista === 'demos' && <DemosPanel />}
+      {vista === 'vendedor' && <MiVendedorPanel vm={vm} negocio={negocio} />}
       {vm.ficha360 && (
         <Ficha360 telefono={vm.ficha360} onCerrar={() => vm.setFicha360(null)} />
       )}
@@ -151,33 +149,6 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
         />
       )}
 
-      {/* Los modales viven fuera de la vista: "Configurar" y "Entrenar" se
-          abren desde el encabezado, que está en las tres pestañas. */}
-      {/* Modal de configuración */}
-      <Modal
-        isOpenModal={vm.configOpen}
-        closeModal={() => vm.setConfigOpen(false)}
-        title="Configurar IA de Ventas"
-        width="560px"
-        height="auto"
-      >
-        <ConfigForm
-          initial={vm.config}
-          onSave={vm.actions.guardarConfig}
-          onToggle={vm.actions.toggleIaVentas}
-        />
-      </Modal>
-
-      {/* Modal de entrenamiento (RAG) */}
-      <Modal
-        isOpenModal={vm.entrenarOpen}
-        closeModal={() => vm.setEntrenarOpen(false)}
-        title="Entrenar la IA"
-        width="600px"
-        height="auto"
-      >
-        <EntrenarPanel vm={vm} />
-      </Modal>
     </div>
   )
 }
@@ -719,7 +690,7 @@ function etiquetaDia(d: Date): string {
   return format(d, "d 'de' MMMM", { locale: es })
 }
 
-function EntrenarPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
+export function EntrenarPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
   const [tipo, setTipo] = useState<TipoLeadDocumento>('TEXTO')
   const [titulo, setTitulo] = useState('')
   const [contenido, setContenido] = useState('')
