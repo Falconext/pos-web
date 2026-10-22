@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
 import { ESTADO_META, colorAvatar, colorPuntaje, nombreVisible, iniciales } from './LeadsModel'
 import type { LeadProspecto, LeadConversacion } from '@/services/leads.service'
+import { useThemeStore } from '@/zustand/theme'
 
 /**
  * Bandeja de conversaciones en tres columnas: lista, chat y ficha del cliente.
@@ -49,16 +50,48 @@ const AIRE_ABAJO = 20
  * de suscripción, así que cualquier número fijo sobra o falta — sobraba, y
  * quedaba una franja muerta abajo.
  */
+/**
+ * El zoom del panel (100/90/82/75 %) es CSS `zoom` en un contenedor: la
+ * posición en pantalla ya viene achicada, pero la altura que se le pone al
+ * elemento se achica DESPUÉS. Sin dividir por el zoom, al 90% la bandeja
+ * quedaba un 10% más corta y dejaba una franja vacía abajo (22-10).
+ */
+function zoomDe(el: HTMLElement): number {
+  let z = 1
+  for (let n: HTMLElement | null = el; n; n = n.parentElement) {
+    const v = parseFloat(getComputedStyle(n).zoom)
+    if (v > 0 && Number.isFinite(v)) z *= v
+  }
+  return z
+}
+
+/** ¿La pantalla llega a `lg`? Plegar la lista solo tiene sentido ahí: más angosto, la lista ya va sola. */
+function useDesde(px: number): boolean {
+  const consulta = `(min-width: ${px}px)`
+  const [si, setSi] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(consulta).matches)
+  useLayoutEffect(() => {
+    if (!window.matchMedia) return
+    const mq = window.matchMedia(consulta)
+    const cambio = () => setSi(mq.matches)
+    cambio()
+    mq.addEventListener('change', cambio)
+    return () => mq.removeEventListener('change', cambio)
+  }, [consulta])
+  return si
+}
+
 function useAltoHastaElBorde() {
   const ref = useRef<HTMLDivElement | null>(null)
   const [alto, setAlto] = useState<number | undefined>(undefined)
+  const zoomLevel = useThemeStore((st) => st.zoomLevel)
 
   useLayoutEffect(() => {
     const medir = () => {
       const el = ref.current
       if (!el) return
+      const zoom = zoomDe(el)
       const arriba = el.getBoundingClientRect().top
-      setAlto(Math.max(360, window.innerHeight - arriba - AIRE_ABAJO))
+      setAlto(Math.max(360, (window.innerHeight - arriba) / zoom - AIRE_ABAJO))
     }
     medir()
     window.addEventListener('resize', medir)
@@ -70,7 +103,7 @@ function useAltoHastaElBorde() {
       window.removeEventListener('resize', medir)
       obs.disconnect()
     }
-  }, [])
+  }, [zoomLevel])
 
   return { ref, alto }
 }
@@ -96,12 +129,41 @@ function FilaConversacion({
   p,
   activa,
   onAbrir,
+  compacta = false,
 }: {
   p: LeadProspecto
   activa: boolean
   onAbrir: () => void
+  /** Lista plegada: solo el avatar, con el nombre al pasar el mouse. */
+  compacta?: boolean
 }) {
   const meta = ESTADO_META[p.estado]
+  if (compacta) {
+    return (
+      <button
+        type="button"
+        onClick={onAbrir}
+        title={nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
+        aria-label={nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
+        className={`flex w-full justify-center border-l-[3px] py-2.5 transition-colors ${
+          activa
+            ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10'
+            : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-800/50'
+        }`}
+      >
+        <span
+          className={`relative flex h-11 w-11 items-center justify-center rounded-full text-[13px] font-bold ${colorAvatar(p.telefonoProspecto)}`}
+        >
+          {iniciales(p.nombreProspecto, p.telefonoProspecto)}
+          <span
+            className={`absolute bottom-0 right-0 h-3 w-3 rounded-full ring-2 ring-white dark:ring-[#111827] ${
+              p.botActivo ? 'bg-emerald-500' : 'bg-orange-500'
+            }`}
+          />
+        </span>
+      </button>
+    )
+  }
   // El resumen de la IA dice más que el último mensaje suelto: "quiere 3
   // frascos, pregunta por envío a Arequipa" contra "ok".
   const resumen = p.proximaAccion || p.resumen || p.telefonoProspecto
@@ -414,6 +476,26 @@ export function BandejaChats({
 }: BandejaProps) {
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const { ref, alto } = useAltoHastaElBorde()
+  // Plegar la lista deja una columna de avatares y le da el ancho al chat.
+  // Se recuerda por navegador: quien la pliega suele querer seguir así.
+  const [plegada, setPlegada] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('LEADS_LISTA_PLEGADA') === '1'
+    } catch {
+      return false
+    }
+  })
+  const pantallaAncha = useDesde(1024)
+  const compacta = plegada && pantallaAncha
+  const alternarLista = () =>
+    setPlegada((v) => {
+      try {
+        localStorage.setItem('LEADS_LISTA_PLEGADA', v ? '0' : '1')
+      } catch {
+        /* sin almacenamiento: igual se pliega en esta visita */
+      }
+      return !v
+    })
 
   const lista = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
@@ -436,7 +518,11 @@ export function BandejaChats({
     <div
       ref={ref}
       style={{ height: alto }}
-      className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)] lg:grid-cols-[320px_1fr] xl:grid-cols-[320px_1fr_320px] dark:border-slate-800 dark:bg-[#111827]">
+      className={`grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)] transition-[grid-template-columns] duration-200 dark:border-slate-800 dark:bg-[#111827] ${
+        compacta
+          ? 'lg:grid-cols-[76px_1fr] xl:grid-cols-[76px_1fr_320px]'
+          : 'lg:grid-cols-[320px_1fr] xl:grid-cols-[320px_1fr_320px]'
+      }`}>
 
       {/* ── Columna 1: la lista ── */}
       <aside
@@ -444,12 +530,27 @@ export function BandejaChats({
           conversacionAbiertaId ? 'hidden' : 'flex'
         }`}
       >
-        <div className="px-4 pb-3 pt-4">
-          <p className="flex items-center gap-2 text-[17px] font-bold text-gray-900 dark:text-white">
-            <Icon icon="solar:hamburger-menu-linear" width={20} />
-            Chats
-            <span className="text-[13px] font-medium text-gray-400">{prospectos.length}</span>
-          </p>
+        <div className={compacta ? 'flex justify-center py-3' : 'px-4 pb-3 pt-4'}>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={alternarLista}
+              aria-label={compacta ? 'Mostrar la lista de chats' : 'Plegar la lista de chats'}
+              aria-expanded={!compacta}
+              title={compacta ? 'Mostrar la lista' : 'Plegar la lista'}
+              className={`${compacta ? '' : '-ml-1.5 '}hidden h-9 w-9 flex-none items-center justify-center rounded-xl text-gray-700 transition hover:bg-gray-100 lg:flex dark:text-gray-200 dark:hover:bg-slate-800`}
+            >
+              <Icon icon={compacta ? 'solar:hamburger-menu-linear' : 'solar:sidebar-minimalistic-linear'} width={20} />
+            </button>
+            {!compacta && (
+              <p className="flex items-center gap-2 text-[17px] font-bold text-gray-900 dark:text-white">
+                Chats
+                <span className="text-[13px] font-medium text-gray-400">{prospectos.length}</span>
+              </p>
+            )}
+          </div>
+          {!compacta && (
+          <>
           <div className="relative mt-3">
             <Icon
               icon="solar:magnifer-linear"
@@ -484,6 +585,8 @@ export function BandejaChats({
               </button>
             ))}
           </div>
+          </>
+          )}
         </div>
 
         <div className="min-h-0 flex-1 divide-y divide-gray-100/80 overflow-y-auto border-t border-gray-100 dark:divide-slate-800/60 dark:border-slate-800">
@@ -505,6 +608,7 @@ export function BandejaChats({
                 p={p}
                 activa={p.conversacionId === conversacionAbiertaId}
                 onAbrir={() => onAbrir(p.conversacionId)}
+                compacta={compacta}
               />
             ))
           )}
@@ -512,7 +616,7 @@ export function BandejaChats({
           {/* Los chats del propio negocio van al final y rotulados: son pruebas,
               no clientes, y mezclarlos con el embudo fue justo lo que se vino a
               arreglar. Pero tienen que poder abrirse y borrarse. */}
-          {chatsDePrueba.length > 0 && (
+          {chatsDePrueba.length > 0 && !compacta && (
             <div className="bg-gray-50/60 px-3 py-2.5 dark:bg-slate-900/40">
               <p className="mb-1.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 <Icon icon="solar:test-tube-bold-duotone" width={11} />
