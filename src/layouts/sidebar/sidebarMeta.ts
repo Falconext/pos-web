@@ -82,6 +82,7 @@ export const LEGACY_MODULE_ROUTES: Record<string, string> = {
   'contratos-vehiculares': '/administrador/vehiculos/contratos',
   logistica: '/administrador/logistica/dashboard',
   leads: '/administrador/leads',
+  api: '/administrador/perfil?tab=configuracion&seccion=claves-api',
 };
 
 // Fallback routes for submodules that don't have ruta set in DB yet
@@ -336,6 +337,15 @@ export const MODULE_META: Record<string, ModuleMeta> = {
     navRoute: () => '/administrador/leads',
     pathPrefix: () => '/administrador/leads',
     exactPath: true,
+  },
+
+  // API de Krezka: lleva directo a "Claves API". Solo el administrador saca
+  // claves, así que a los demás usuarios no se les muestra.
+  api: {
+    navRoute: () => '/administrador/perfil?tab=configuracion&seccion=claves-api',
+    pathPrefix: () => '/administrador/perfil?seccion=claves-api',
+    exactPath: true,
+    condition: (auth) => auth?.rol === 'ADMIN_EMPRESA',
   },
 };
 
