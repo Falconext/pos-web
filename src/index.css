@@ -128,6 +128,13 @@ html.is-admin .font-poppins {
   font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
 }
 
+/* Títulos del panel: Inter Tight, la de la landing de krezka.com. El :not()
+   saca a los comprobantes (siguen con la fuente de impresión) y además sube la
+   especificidad para ganarle a .font-sans/.font-poppins de arriba. */
+html.is-admin :is(h1, h2, h3, h4):not([data-print-root] *) {
+  font-family: 'Inter Tight', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+}
+
 /* Comprobantes: en pantalla usan LA MISMA fuente que al imprimir (ver
    src/utils/printStyles.ts), para que la vista previa del modal "Configurar
    formato" y del POS se vea igual que el papel: Inter en A4/A5 y VT323
