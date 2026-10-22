@@ -192,6 +192,8 @@ export function ClavesApiCard() {
                         <li><code>POST /products</code>: crear un producto (<code>name</code>, <code>price</code> y opcionales). Lleva la cabecera <code>Idempotency-Key</code>.</li>
                         <li><code>PATCH /products/:id</code>: cambiar nombre, precio, oferta, categoría, código…</li>
                         <li><code>POST /products/:id/stock_adjustments</code>: cambiar el stock con un motivo (queda en tu kardex). Lleva <code>Idempotency-Key</code>.</li>
+                        <li><code>POST /sales</code>: registrar una venta de tu web. Emite la boleta o factura igual que tu POS (baja el stock, queda en caja y va a SUNAT). Lleva <code>Idempotency-Key</code>.</li>
+                        <li><code>GET /sales/:id</code>: ver si SUNAT ya la aceptó (<code>status</code>) y su PDF.</li>
                     </ul>
                     <div className="flex items-start gap-2">
                         <pre className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-white p-2 text-[11px] dark:bg-[#0A0D14]">{ejemplo}</pre>
@@ -211,6 +213,17 @@ export function ClavesApiCard() {
                         <li><b>Stock:</b> <code>available</code> es lo que se puede vender (sin lo reservado en pedidos); usa ese y no <code>stock</code> para mostrar "agotado".</li>
                         <li><b>Ofertas con fecha:</b> <code>sale_price</code> con <code>sale_starts_on</code> y <code>sale_ends_on</code> (YYYY-MM-DD); fuera de esas fechas la oferta no aplica.</li>
                         <li>Si algo está mal, la respuesta dice qué campo (<code>param</code>) y qué hacer.</li>
+                    </ul>
+                    <p className="pt-1 font-bold">Antes de registrar ventas</p>
+                    <ul className="list-disc space-y-0.5 pl-5" data-testid="avisos-ventas">
+                        <li><b>Qué se emite:</b> con RUC sale factura; sin documento o con DNI, boleta. Para no ir a SUNAT manda <code>document_type: "sales_note"</code> (nota de venta).</li>
+                        <li><b>Boletas de más de S/ 700:</b> SUNAT exige el DNI del comprador en <code>customer</code>.</li>
+                        <li><b>Precio:</b> si no mandas <code>unit_price</code> (con IGV), se usa el de tu catálogo con su oferta vigente.</li>
+                        <li><b>Envío:</b> va como un ítem más sin producto: <code>description</code>, <code>quantity</code> y <code>unit_price</code>.</li>
+                        <li><b>Stock:</b> si falta, no se emite nada y la respuesta dice qué producto y cuánto hay. Lo reservado no se vende.</li>
+                        <li><b>Tallas:</b> manda el id de la variante. <b>Farmacia:</b> sale del lote que vence primero, o del que indiques en <code>batch</code>.</li>
+                        <li><b>Pago:</b> <code>payment.method</code> es <code>cash</code>, <code>card</code>, <code>yape</code>, <code>plin</code> o <code>transfer</code>. Las ventas por la API son al contado.</li>
+                        <li>Manda tu número de pedido en <code>external_id</code>: si llega dos veces, la segunda se rechaza y te dice cuál venta ya se hizo.</li>
                     </ul>
                 </div>
             </details>

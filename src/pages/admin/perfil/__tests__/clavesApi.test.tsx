@@ -96,3 +96,13 @@ it('si el backend no deja crear (plan sin la API), se muestra su motivo', async 
     fireEvent.click(await screen.findByTestId('clave-crear'))
     await waitFor(() => expect(alertMock).toHaveBeenCalledWith('Su plan no incluye acceso al módulo: api', 'error'))
 })
+
+it('al programador le explica cómo registrar ventas desde su web', async () => {
+    getMock.mockResolvedValue({ data: { data: [] } })
+    render(<ClavesApiCard />)
+    const avisos = await screen.findByTestId('avisos-ventas')
+    expect(avisos).toHaveTextContent('sales_note')
+    expect(avisos).toHaveTextContent('S/ 700')
+    expect(avisos).toHaveTextContent('external_id')
+    expect(screen.getByText(/POST \/sales/)).toBeInTheDocument()
+})
