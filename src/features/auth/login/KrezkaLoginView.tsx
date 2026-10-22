@@ -12,6 +12,7 @@ import {
 
 // Misma paleta que la landing de krezka.com (hero morado).
 const ACCENT = '#5B47E0';
+const ASESOR_WHATSAPP = '51986114148';
 
 const MODULOS = [
     { icon: Receipt, titulo: 'Facturación SUNAT', detalle: 'Boletas, facturas y guías' },
@@ -44,7 +45,8 @@ export default function KrezkaLoginView() {
         if (!enviando) handleLogin();
     };
 
-    const asesorUrl = `https://wa.me/${BRAND.whatsapp}?text=${encodeURIComponent('Hola, quiero conocer Krezka')}`;
+    // Línea de ventas, distinta del WhatsApp de soporte de BRAND.
+    const asesorUrl = `https://wa.me/${ASESOR_WHATSAPP}?text=${encodeURIComponent('Hola, quiero conocer Krezka')}`;
 
     return (
         <>
