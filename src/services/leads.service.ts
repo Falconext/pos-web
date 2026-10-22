@@ -38,9 +38,20 @@ export interface LeadProspecto {
   cotizacionId: number | null
   /** Cotización (COT) que la IA generó desde el chat, si aplica. */
   cotizacion: { id: number; codigo: string } | null
+  /** Último anuncio de Facebook/Instagram por el que llegó a escribir. */
+  anuncio?: AnuncioDeOrigen | null
   conversacionId: number
   creadoEn: string
   actualizadoEn: string
+}
+
+export interface AnuncioDeOrigen {
+  anuncioId: string
+  tipo: string | null
+  titulo: string | null
+  texto: string | null
+  url: string | null
+  creadoEn: string
 }
 
 export interface LeadConversacion {

@@ -144,6 +144,15 @@ function FilaConversacion({
             </span>
           )}
           <span className={`text-[10px] font-black ${colorPuntaje(p.puntaje)}`}>{p.puntaje}</span>
+          {p.anuncio && (
+            <span
+              className="inline-flex min-w-0 items-center gap-0.5 truncate rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+              title={p.anuncio.titulo || 'Llegó por un anuncio'}
+            >
+              <Icon icon="mdi:bullhorn" width={9} className="flex-none" />
+              Anuncio
+            </span>
+          )}
         </span>
       </span>
     </button>
@@ -233,6 +242,36 @@ function FichaLateral({
           </span>
         )}
       </div>
+
+      {/* Lo que vio antes de escribir: el vendedor responde sabiendo qué
+          producto o promoción le interesó. */}
+      {p.anuncio && (
+        <div
+          className="mt-4 rounded-xl bg-amber-50 p-3 dark:bg-amber-900/20"
+          data-testid="ficha-anuncio"
+        >
+          <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+            <Icon icon="mdi:bullhorn" width={12} />
+            Llegó por {p.anuncio.tipo === 'post' ? 'una publicación' : 'un anuncio'}
+          </p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900 dark:text-amber-100">
+            {p.anuncio.titulo || 'Sin título'}
+          </p>
+          {p.anuncio.texto && (
+            <p className="mt-0.5 line-clamp-2 text-[11px] text-amber-800/80 dark:text-amber-200/80">{p.anuncio.texto}</p>
+          )}
+          {p.anuncio.url && (
+            <a
+              href={p.anuncio.url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-1 inline-block text-[10px] font-bold text-amber-700 hover:underline dark:text-amber-300"
+            >
+              Ver {p.anuncio.tipo === 'post' ? 'publicación' : 'anuncio'}
+            </a>
+          )}
+        </div>
+      )}
 
       <div className="mt-5 rounded-xl border border-gray-100 p-3 dark:border-slate-800">
         <div className="flex items-baseline justify-between">
