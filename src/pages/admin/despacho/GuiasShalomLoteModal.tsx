@@ -42,7 +42,8 @@ export function GuiasShalomLoteModal({ pendientes, onClose, onTerminado, onImpri
             ok: valores.filter((e) => e.estado === 'ok').length,
             error: valores.filter((e) => e.estado === 'error').length,
             omitidas: valores.filter((e) => e.estado === 'omitida').length,
-            hechas: valores.filter((e) => e.estado !== 'esperando' && e.estado !== 'generando').length,
+            detenidas: valores.filter((e) => e.estado === 'detenida').length,
+            hechas: valores.filter((e) => e.estado !== 'esperando' && e.estado !== 'generando' && e.estado !== 'detenida').length,
         };
     }, [estados]);
     const aGenerar = pendientes.filter((p) => marcadas.has(p.comprobanteId)).map((p) => p.comprobanteId);
@@ -100,7 +101,9 @@ export function GuiasShalomLoteModal({ pendientes, onClose, onTerminado, onImpri
                     </span>
                 );
             case 'omitida':
-                return <span className="text-[11px] font-bold text-gray-500">Ya tenía guía</span>;
+                return <span className="text-[11px] font-bold text-gray-500" data-testid={`guia-lote-omitida-${p.comprobanteId}`}>Ya tenía guía</span>;
+            case 'detenida':
+                return <span className="text-[11px] font-bold text-gray-500" data-testid={`guia-lote-detenida-${p.comprobanteId}`}>No se generó (detenido)</span>;
             case 'error':
                 return (
                     <span className="text-[11px] font-bold text-rose-600" data-testid={`guia-lote-error-${p.comprobanteId}`}>
@@ -190,6 +193,7 @@ export function GuiasShalomLoteModal({ pendientes, onClose, onTerminado, onImpri
                         <span className="text-emerald-600">{cuenta.ok} generada{cuenta.ok === 1 ? '' : 's'}</span>
                         {cuenta.error > 0 && <span className="text-rose-600"> · {cuenta.error} con error</span>}
                         {cuenta.omitidas > 0 && <span className="text-gray-500"> · {cuenta.omitidas} ya tenían guía</span>}
+                        {cuenta.detenidas > 0 && <span className="text-gray-500"> · {cuenta.detenidas} sin generar (detenido)</span>}
                     </div>
                 )}
 

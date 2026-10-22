@@ -22,6 +22,8 @@ export interface FilaPanelParaGuia {
     celularDest: string;
     clienteTelefono: string;
     despachoEnComprobanteId?: number | null;
+    estadoSunat?: string;
+    estadoPagoRaw?: string;
 }
 
 export interface PendienteDeGuia {
@@ -40,7 +42,9 @@ const vacio = (v: string | null | undefined) => !v || !String(v).trim() || Strin
 /**
  * Los despachos de la lista que todavía necesitan guía de Shalom: courier
  * Shalom, en Preparando y sin N° de orden. Las notas que van en el paquete de
- * otra no tienen despacho propio (la guía es la de esa otra nota).
+ * otra no tienen despacho propio (la guía es la de esa otra nota). Una venta
+ * anulada o rechazada por SUNAT no se despacha, aunque su despacho siga en
+ * Preparando.
  */
 export const pendientesDeGuia = (filas: FilaPanelParaGuia[]): PendienteDeGuia[] => {
     const vistos = new Set<number>();
@@ -49,6 +53,7 @@ export const pendientesDeGuia = (filas: FilaPanelParaGuia[]): PendienteDeGuia[] 
         if (!f.comprobanteId || f.despachoEnComprobanteId) continue;
         if (!COURIERS_SHALOM.has(f.courier)) continue;
         if (f.estadoDespacho !== 'PREPARANDO' || !vacio(f.nroOrden)) continue;
+        if (f.estadoSunat === 'ANULADO' || f.estadoSunat === 'RECHAZADO' || f.estadoPagoRaw === 'ANULADO') continue;
         if (vistos.has(f.comprobanteId)) continue;
         vistos.add(f.comprobanteId);
         const celular = !vacio(f.celularDest) ? f.celularDest : (f.clienteTelefono || '');
@@ -73,7 +78,8 @@ export type EstadoGuiaLote =
     | { estado: 'generando' }
     | { estado: 'ok'; nroOrden: string | null }
     | { estado: 'error'; mensaje: string }
-    | { estado: 'omitida'; mensaje: string };
+    | { estado: 'omitida'; mensaje: string }
+    | { estado: 'detenida' };
 
 /**
  * Shalom ya tenía la guía de este despacho (otra pestaña, la guía automática
@@ -85,7 +91,7 @@ export const yaTeniaGuia = (mensaje: string) => /ya tiene la gu[ií]a/i.test(men
 /**
  * Corre el lote de a uno: Shalom Pro abre sesión por cada guía y no aguanta
  * varias a la vez. `detener()` corta antes de la siguiente, nunca a la mitad
- * de una que ya se mandó.
+ * de una que ya se mandó; las que faltaban quedan como "detenida".
  */
 export async function generarEnLote(
     ids: number[],
@@ -95,7 +101,10 @@ export async function generarEnLote(
     mensajeDeError: (e: unknown) => string,
 ): Promise<void> {
     for (const id of ids) {
-        if (detenido()) break;
+        if (detenido()) {
+            avisar(id, { estado: 'detenida' });
+            continue;
+        }
         avisar(id, { estado: 'generando' });
         try {
             const guia = await crear(id);

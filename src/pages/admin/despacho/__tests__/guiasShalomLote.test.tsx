@@ -48,6 +48,9 @@ describe('qué despachos necesitan guía', () => {
             fila({ comprobanteId: 5, courier: 'SHALOM_COD' }),
             fila({ comprobanteId: null }),
             fila({ comprobanteId: 6, despachoEnComprobanteId: 1 }),
+            fila({ comprobanteId: 7, estadoSunat: 'ANULADO' }),
+            fila({ comprobanteId: 8, estadoSunat: 'RECHAZADO' }),
+            fila({ comprobanteId: 9, estadoPagoRaw: 'ANULADO' }),
         ]);
         expect(r.map((p) => p.comprobanteId)).toEqual([1, 5]);
     });
@@ -92,11 +95,14 @@ describe('generarEnLote', () => {
         expect(estados[3].estado).toBe('omitida');
     });
 
-    it('detener corta antes de la siguiente', async () => {
+    it('detener corta antes de la siguiente y marca las que faltaban', async () => {
         let parar = false;
+        const estados: Record<number, any> = {};
         const crear = jest.fn(async () => { parar = true; return { nroOrden: '1' }; });
-        await generarEnLote([1, 2], crear, () => undefined, () => parar, () => '');
+        await generarEnLote([1, 2, 3], crear, (id, e) => { estados[id] = e; }, () => parar, () => '');
         expect(crear).toHaveBeenCalledTimes(1);
+        expect(estados[2]).toEqual({ estado: 'detenida' });
+        expect(estados[3]).toEqual({ estado: 'detenida' });
     });
 
     it('los rótulos son solo de las que salieron bien', () => {
