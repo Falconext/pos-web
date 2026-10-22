@@ -63,13 +63,10 @@ describe('Mi vendedor', () => {
     expect(screen.getByText(/Soy Ana de Café de Alba/)).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ }))
+    // Solo lo que cambió: envíos y pagos no se reescriben si no se tocaron.
     expect(vm.actions.guardarConfig).toHaveBeenCalledWith({
-      iaVentasContexto: '',
-      iaVentasBrochureUrl: '',
       asesor: 'Ana',
       vendedor: { longitud: 1 },
-      envio: { zonas: [], zonaPorDefecto: '' },
-      mediosPagoLista: [],
     })
   })
 
@@ -136,7 +133,20 @@ describe('Mi vendedor', () => {
     fireEvent.click(boton)
     expect(vm.actions.guardarConfig).toHaveBeenCalledWith({
       iaVentasContexto: texto + ' Recojo gratis.',
-      iaVentasBrochureUrl: '',
     })
+  })
+
+  it('guardar el nombre no reescribe los medios de pago que ya estaban', () => {
+    const largo = 'Yape: 955 947 892 (titular: Hierba Sana) · BCP: 191-12345678-0-12 · Interbank: 200-3001234567 · Contraentrega solo en Lima'
+    const vm = vmCon({
+      asesor: 'Claudio',
+      vendedor: {},
+      mediosPagoLista: [{ nombre: 'Medios de pago', detalle: largo }],
+      envio: { zonas: [{ nombre: 'Lima', tipo: 'DOMICILIO', tarifa: 15 }], zonaPorDefecto: 'Lima' },
+    })
+    abrir(vm)
+    fireEvent.change(screen.getByDisplayValue('Claudio'), { target: { value: 'Claudio R.' } })
+    fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ }))
+    expect(vm.actions.guardarConfig).toHaveBeenCalledWith({ asesor: 'Claudio R.' })
   })
 })
