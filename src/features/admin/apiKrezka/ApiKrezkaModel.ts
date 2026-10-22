@@ -11,7 +11,7 @@
 /** Documentación completa en el portal de desarrolladores. */
 export const PORTAL_DESARROLLADORES = 'https://developers.falconext.pe/erp';
 
-export type Metodo = 'GET' | 'POST' | 'PATCH';
+export type Metodo = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
 export interface Ruta {
     id: string;
@@ -26,7 +26,7 @@ export interface Ruta {
     cuerpo?: object;
     /** Lleva Idempotency-Key. */
     idempotente?: boolean;
-    grupo: 'Catálogo' | 'Stock' | 'Ventas' | 'Datos';
+    grupo: 'Catálogo' | 'Stock' | 'Ventas' | 'Clientes' | 'Avisos' | 'Datos';
 }
 
 export const RUTAS: Ruta[] = [
@@ -103,6 +103,25 @@ export const RUTAS: Ruta[] = [
         grupo: 'Ventas',
     },
     {
+        id: 'anular-venta',
+        metodo: 'POST',
+        ruta: '/sales/{id}/void',
+        idempotente: true,
+        titulo: 'Anular una venta',
+        descripcion: 'Nota de venta: se anula directo. Boleta o factura aceptada: se emite su nota de crédito. Devuelve el stock y quita el cobro.',
+        cuerpo: { reason: 'El cliente devolvió el pedido' },
+        grupo: 'Ventas',
+    },
+    {
+        id: 'pdf-venta',
+        metodo: 'GET',
+        ruta: '/sales/{id}/pdf',
+        query: 'format=a4',
+        titulo: 'PDF de una venta',
+        descripcion: 'El enlace al PDF (a4, ticket o a5), el mismo que imprime tu panel.',
+        grupo: 'Ventas',
+    },
+    {
         id: 'listar-ventas',
         metodo: 'GET',
         ruta: '/sales',
@@ -110,6 +129,67 @@ export const RUTAS: Ruta[] = [
         titulo: 'Listar ventas',
         descripcion: 'Las ventas que llegaron por la API, de la más reciente. Filtro: external_id.',
         grupo: 'Ventas',
+    },
+    {
+        id: 'listar-clientes',
+        metodo: 'GET',
+        ruta: '/customers',
+        query: 'search=&limit=10',
+        titulo: 'Listar clientes',
+        descripcion: 'Busca por nombre, documento, correo o celular. Filtro: document_number.',
+        grupo: 'Clientes',
+    },
+    { id: 'ver-cliente', metodo: 'GET', ruta: '/customers/{id}', titulo: 'Ver un cliente', descripcion: 'Un cliente con su documento y datos de contacto.', grupo: 'Clientes' },
+    {
+        id: 'crear-cliente',
+        metodo: 'POST',
+        ruta: '/customers',
+        idempotente: true,
+        titulo: 'Crear un cliente',
+        descripcion: 'document_type (dni, ruc, ce, passport), document_number y name. No se duplica por documento.',
+        cuerpo: { document_type: 'ruc', document_number: '20123456789', name: 'Empresa Cliente SAC', email: 'compras@cliente.pe', phone: '987654321' },
+        grupo: 'Clientes',
+    },
+    {
+        id: 'editar-cliente',
+        metodo: 'PATCH',
+        ruta: '/customers/{id}',
+        titulo: 'Editar un cliente',
+        descripcion: 'Nombre, correo, celular o dirección. El documento no se cambia.',
+        cuerpo: { email: 'nuevo@cliente.pe' },
+        grupo: 'Clientes',
+    },
+    {
+        id: 'crear-webhook',
+        metodo: 'POST',
+        ruta: '/webhook_endpoints',
+        titulo: 'Recibir avisos (webhook)',
+        descripcion: 'Tu servidor recibe un aviso firmado cuando SUNAT acepta, observa o rechaza una venta, o cuando se anula. Guarda el secret: se muestra una sola vez.',
+        cuerpo: { url: 'https://tu-web.pe/krezka/avisos', events: ['sale.accepted', 'sale.rejected', 'sale.voided'] },
+        grupo: 'Avisos',
+    },
+    { id: 'listar-webhooks', metodo: 'GET', ruta: '/webhook_endpoints', titulo: 'Tus webhooks', descripcion: 'Los endpoints registrados (sin el secret).', grupo: 'Avisos' },
+    { id: 'probar-webhook', metodo: 'POST', ruta: '/webhook_endpoints/{id}/test', titulo: 'Probar un webhook', descripcion: 'Manda un aviso de ejemplo firmado a tu servidor (id we_…).', grupo: 'Avisos' },
+    { id: 'borrar-webhook', metodo: 'DELETE', ruta: '/webhook_endpoints/{id}', titulo: 'Borrar un webhook', descripcion: 'Deja de mandar avisos a ese endpoint.', grupo: 'Avisos' },
+    {
+        id: 'crear-categoria',
+        metodo: 'POST',
+        ruta: '/categories',
+        idempotente: true,
+        titulo: 'Crear categoría',
+        descripcion: 'Si ya existe con ese nombre, la respuesta trae su id.',
+        cuerpo: { name: 'Bebidas' },
+        grupo: 'Datos',
+    },
+    {
+        id: 'crear-marca',
+        metodo: 'POST',
+        ruta: '/brands',
+        idempotente: true,
+        titulo: 'Crear marca',
+        descripcion: 'Si ya existe con ese nombre, la respuesta trae su id.',
+        cuerpo: { name: 'Inca Kola' },
+        grupo: 'Datos',
     },
     { id: 'sedes', metodo: 'GET', ruta: '/locations', titulo: 'Sedes', descripcion: 'Tus sedes, para location_id.', grupo: 'Datos' },
     { id: 'categorias', metodo: 'GET', ruta: '/categories', titulo: 'Categorías', descripcion: 'Tus categorías, para category_id.', grupo: 'Datos' },
