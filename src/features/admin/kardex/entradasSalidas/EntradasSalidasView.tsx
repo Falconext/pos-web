@@ -295,7 +295,7 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
                                             <div className="min-w-0 flex-1">
                                                 <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
                                                     {p.descripcion}
-                                                    {variante ? <span className="ml-1 text-[#6A5AF9]">· {variante}</span> : null}
+                                                    {variante ? <span className="ml-1 text-slate-900 dark:text-slate-100">· {variante}</span> : null}
                                                 </p>
                                                 <p className="text-[11px] text-slate-400">
                                                     <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{p.codigo}</span>
@@ -539,7 +539,7 @@ function DetalleModal({ doc, onCerrar, onImprimir }: { doc: DetalleDocumento; on
                                 <td className="py-2">
                                     <p className="font-semibold text-slate-700 dark:text-slate-200">
                                         {it.descripcion}
-                                        {it.variante ? <span className="text-[#6A5AF9]"> · {it.variante}</span> : null}
+                                        {it.variante ? <span className="text-slate-900 dark:text-slate-100"> · {it.variante}</span> : null}
                                     </p>
                                     <p className="font-mono text-[11px] text-slate-900 dark:text-slate-100">{it.codigo}</p>
                                 </td>
