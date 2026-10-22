@@ -27,6 +27,9 @@ import {
 import { EditarDespachoModal } from './EditarDespachoModal';
 import { ModalTrazabilidad } from './ModalTrazabilidad';
 import { ReporteEnviosModal } from './ReporteEnviosModal';
+import { GuiasShalomLoteModal } from './GuiasShalomLoteModal';
+import { pendientesDeGuia } from './guiasShalomLote';
+import { shalomService } from '@/services/shalom.service';
 import ModalDetalleComprobante from '@/pages/admin/facturacion/ModalDetalleComprobante';
 import ModalEnviarWhatsApp from '@/pages/admin/facturacion/ModalEnviarWhatsApp';
 import ModalRegistrarPago from '@/pages/admin/facturacion/ModalRegistrarPago';
@@ -410,6 +413,19 @@ export default function PanelVentasView() {
         () => resumenSeleccion(preparandoParaRotulo, seleccionRotulos),
         [preparandoParaRotulo, seleccionRotulos],
     );
+    // Guías Shalom en lote: solo si la empresa puede generar guías y tiene la
+    // cuenta conectada. Se pregunta una vez al abrir el panel.
+    const [shalomListo, setShalomListo] = useState(false);
+    const [guiasLoteAbierto, setGuiasLoteAbierto] = useState(false);
+    useEffect(() => {
+        let vivo = true;
+        shalomService
+            .getInstancia()
+            .then((i) => { if (vivo) setShalomListo(Boolean(i?.habilitadoPorPlan && i?.conectada)); })
+            .catch(() => undefined);
+        return () => { vivo = false; };
+    }, []);
+    const sinGuiaShalom = useMemo(() => pendientesDeGuia(vm.filtrados), [vm.filtrados]);
     const { cancelInvoice } = useInvoiceStore((s) => s);
 
     useEffect(() => {
@@ -953,6 +969,30 @@ export default function PanelVentasView() {
                     >
                         {ROTULO_FORMATOS.map((f) => <option key={f.value} value={f.value} title={f.hint}>{f.label}</option>)}
                     </select>
+                    {shalomListo && (
+                        <button
+                            type="button"
+                            onClick={() => setGuiasLoteAbierto(true)}
+                            title={
+                                sinGuiaShalom.length === 0
+                                    ? 'No hay despachos de Shalom sin guía en la lista'
+                                    : `Generar de una vez las guías de los ${sinGuiaShalom.length} despacho(s) de Shalom sin guía`
+                            }
+                            data-testid="guias-lote-abrir"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-sm font-bold transition-all whitespace-nowrap bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                        >
+                            <Icon icon="solar:box-bold-duotone" className="text-base" />
+                            Guías Shalom
+                            {sinGuiaShalom.length > 0 && (
+                                <span
+                                    data-testid="guias-lote-badge"
+                                    className="min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-amber-500 text-white text-[10px] font-black"
+                                >
+                                    {sinGuiaShalom.length}
+                                </span>
+                            )}
+                        </button>
+                    )}
                     {/* Rótulos de los paquetes en preparación (un rótulo por página).
                         El botón imprime; la flecha abre el selector para elegir
                         solo algunas filas en vez de todo lo que está en Preparando. */}
@@ -1526,6 +1566,21 @@ export default function PanelVentasView() {
                     isOpen={true}
                     onClose={() => setDetalleId(null)}
                     onUpdated={vm.cargar}
+                />
+            )}
+            {guiasLoteAbierto && (
+                <GuiasShalomLoteModal
+                    pendientes={sinGuiaShalom}
+                    onClose={() => setGuiasLoteAbierto(false)}
+                    onTerminado={() => { void vm.cargar(); }}
+                    onImprimirRotulos={(items) => setRotulosLote(items)}
+                    onCorregir={async (id) => {
+                        setGuiasLoteAbierto(false);
+                        // Recargar ANTES de abrir: el loading del panel desmonta lo
+                        // que esté abierto (pasó con "Coordinar envío").
+                        await vm.cargar();
+                        setEditDespachoId(id);
+                    }}
                 />
             )}
             {editDespachoId && (
