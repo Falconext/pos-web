@@ -77,3 +77,22 @@ export function iniciales(nombre: string | null, telefono: string): string {
   if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase()
   return base.slice(-2).toUpperCase()
 }
+
+/**
+ * Fondo pastel del avatar, fijo por teléfono: el mismo cliente sale siempre del
+ * mismo color y la lista no es un muro de círculos iguales.
+ */
+const PASTELES = [
+  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+  'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+]
+
+export function colorAvatar(telefono: string): string {
+  let h = 0
+  for (const c of telefono) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return PASTELES[h % PASTELES.length]
+}

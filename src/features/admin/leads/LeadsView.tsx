@@ -18,6 +18,7 @@ import {
   ESTADO_META,
   nombreVisible,
   iniciales,
+  colorAvatar,
 } from './LeadsModel'
 import type {
   LeadProspecto,
@@ -255,7 +256,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* Cabecera */}
-      <div className="sticky top-0 z-10 flex flex-none items-center gap-2.5 border-b border-gray-100 bg-white px-4 py-2.5 dark:border-slate-800 dark:bg-[#111827]">
+      <div className="sticky top-0 z-10 flex flex-none items-center gap-3 border-b border-gray-100 bg-white px-5 py-3 dark:border-slate-800 dark:bg-[#111827]">
         {/* Volver a la lista. Solo en pantalla chica: ahí la lista se oculta
             para que el chat ocupe todo el ancho, así que sin esto no hay
             manera de salir del chat. */}
@@ -268,7 +269,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
           <Icon icon="solar:alt-arrow-left-linear" width={20} />
         </button>
 
-        <span className="relative flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-violet-600 text-xs font-bold text-white">
+        <span className={`relative flex h-11 w-11 flex-none items-center justify-center rounded-full text-[13px] font-bold ${colorAvatar(conv.telefonoProspecto)}`}>
           {iniciales(conv.nombreProspecto, conv.telefonoProspecto)}
           <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#25D366] ring-2 ring-white dark:ring-[#111827]">
             <Icon icon="mdi:whatsapp" width={9} className="text-white" />
@@ -276,7 +277,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
         </span>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold leading-tight text-gray-900 dark:text-white">
+          <p className="truncate text-[16px] font-bold leading-tight text-gray-900 dark:text-white">
             {nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)}
           </p>
           <div className="mt-0.5 flex items-center gap-1.5">
@@ -311,10 +312,10 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                 ? 'La IA deja de responder y contestas tú'
                 : 'La IA vuelve a responder sola'
             }
-            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-3 text-[12.5px] font-bold transition-colors ${
+            className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-xl border px-3.5 text-[13px] font-semibold transition-colors ${
               botActivo
-                ? 'bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/40 dark:text-orange-200 dark:hover:bg-orange-900/60'
-                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/40 dark:text-emerald-200 dark:hover:bg-emerald-900/60'
+                ? 'border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800/50 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/50'
+                : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800/50 dark:bg-emerald-900/30 dark:text-emerald-200 dark:hover:bg-emerald-900/50'
             }`}
           >
             <Icon icon={botActivo ? 'solar:hand-stars-bold' : 'solar:play-bold'} width={15} />
@@ -421,7 +422,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
       />
 
       {/* Mensajes — estilo chat */}
-      <div className="min-h-0 flex-1 overflow-y-auto bg-[#f6f7fb] px-5 py-4 dark:bg-[#0b0f17]">
+      <div className="min-h-0 flex-1 overflow-y-auto bg-white px-6 py-5 dark:bg-[#0b0f17]">
         {conv.mensajes.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-gray-400">
             <Icon icon="solar:chat-round-line-linear" width={32} />
@@ -444,48 +445,43 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
               <div key={m.id}>
                 {showDay && (
                   <div className="my-3 flex justify-center">
-                    <span className="rounded-full bg-white px-3 py-0.5 text-[11px] font-medium text-gray-500 shadow-sm dark:bg-slate-800 dark:text-gray-400">
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-medium text-gray-500 dark:bg-slate-800 dark:text-gray-400">
                       {etiquetaDia(date)}
                     </span>
                   </div>
                 )}
-                {nuevoGrupo && !esUsuario && (
-                  <div className="mb-1 flex justify-end pr-1">
-                    <span
-                      className={`inline-flex items-center gap-1 text-[10px] font-semibold ${
-                        esManual
-                          ? 'text-emerald-600 dark:text-emerald-300'
-                          : 'text-violet-500 dark:text-violet-300'
-                      }`}
-                    >
-                      <Icon
-                        icon={esManual ? 'solar:user-bold' : 'solar:magic-stick-3-bold'}
-                        width={11}
-                      />
-                      {esManual ? 'Tú' : 'Asistente IA'}
-                    </span>
-                  </div>
-                )}
-                <div className={`flex items-end gap-2 ${nuevoGrupo ? 'mt-1' : 'mt-0.5'} ${esUsuario ? 'justify-start' : 'justify-end'}`}>
+                <div className={`flex items-end gap-2.5 ${nuevoGrupo ? 'mt-4' : 'mt-1'} ${esUsuario ? 'justify-start' : 'justify-end'}`}>
                   {esUsuario &&
                     (nuevoGrupo ? (
-                      <span className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-gray-300 text-[9px] font-bold text-white dark:bg-slate-600">
+                      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-full text-[10px] font-bold ${colorAvatar(conv.telefonoProspecto)}`}>
                         {iniciales(conv.nombreProspecto, conv.telefonoProspecto)}
                       </span>
                     ) : (
-                      <span className="w-6 flex-none" />
+                      <span className="w-8 flex-none" />
                     ))}
                   <div
-                    className={`max-w-[74%] px-3 py-2 text-sm shadow-sm ${
+                    className={`max-w-[72%] px-4 py-3 text-[14px] text-gray-800 dark:text-gray-100 ${
                       esUsuario
-                        ? `rounded-2xl bg-white text-gray-800 dark:bg-slate-800 dark:text-gray-100 ${nuevoGrupo ? 'rounded-bl-md' : ''}`
-                        : `rounded-2xl bg-gradient-to-br text-white ${
-                            esManual
-                              ? 'from-emerald-600 to-emerald-500'
-                              : 'from-violet-600 to-violet-500'
-                          } ${nuevoGrupo ? 'rounded-br-md' : ''}`
+                        ? `rounded-2xl bg-[#E8F8EE] dark:bg-emerald-900/30 ${nuevoGrupo ? 'rounded-bl-md' : ''}`
+                        : `rounded-2xl bg-gray-100 dark:bg-slate-800 ${nuevoGrupo ? 'rounded-br-md' : ''}`
                     }`}
                   >
+                    {nuevoGrupo && (
+                      <p className="mb-1 flex items-center gap-1.5 text-[13px] font-bold text-gray-900 dark:text-white">
+                        {esUsuario ? (
+                          nombreVisible(conv.nombreProspecto, conv.telefonoProspecto)
+                        ) : (
+                          <>
+                            <Icon
+                              icon={esManual ? 'solar:user-bold' : 'solar:magic-stick-3-bold'}
+                              width={13}
+                              className={esManual ? 'text-emerald-600' : 'text-violet-500'}
+                            />
+                            {esManual ? 'Tú' : 'Asistente IA'}
+                          </>
+                        )}
+                      </p>
+                    )}
                     {m.imagenUrl && (
                       <a href={m.imagenUrl} target="_blank" rel="noreferrer" className="-mx-1 -mt-0.5 mb-1 block">
                         <img
@@ -517,17 +513,9 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                         <p className="whitespace-pre-wrap break-words leading-relaxed">{texto}</p>
                       ) : null
                     })()}
-                    <span
-                      className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${
-                        esUsuario
-                          ? 'text-gray-400'
-                          : esManual
-                            ? 'text-emerald-100/80'
-                            : 'text-violet-100/80'
-                      }`}
-                    >
+                    <span className="mt-1.5 flex items-center justify-end gap-1 text-[10.5px] text-gray-400">
                       {format(date, 'HH:mm')}
-                      {!esUsuario && <Icon icon="mdi:check-all" width={13} />}
+                      {!esUsuario && <Icon icon="mdi:check-all" width={14} className="text-emerald-500" />}
                     </span>
                   </div>
                 </div>
@@ -599,7 +587,7 @@ export function Composer({
   }
 
   return (
-    <div className="flex-none border-t border-gray-100 px-4 pb-3 pt-3 dark:border-slate-800">
+    <div className="flex-none px-5 pb-4 pt-2">
       {imagen && (
         <div className="mb-2 flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50 p-2 dark:border-slate-700 dark:bg-slate-800/60">
           <img src={imagen.vista} alt="" className="h-14 w-14 flex-none rounded-lg object-cover" />
@@ -619,17 +607,17 @@ export function Composer({
         </div>
       )}
       {conNota ? (
-        <div className="flex items-center gap-2" data-testid="grabando-nota">
+        <div className="flex items-center gap-3" data-testid="grabando-nota">
           <button
             type="button"
             onClick={grabadora.cancelar}
             disabled={enviando}
             title="Descartar la nota de voz"
-            className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-rose-300 hover:text-rose-600 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
+            className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-2xl bg-gray-100 text-gray-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40 dark:bg-slate-800 dark:text-gray-300"
           >
             <Icon icon="solar:trash-bin-minimalistic-linear" width={19} />
           </button>
-          <div className="flex h-10 flex-1 items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
+          <div className="flex h-[52px] flex-1 items-center gap-2 rounded-2xl bg-rose-50 px-4 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
             {grabadora.grabando ? (
               <span className="h-2.5 w-2.5 flex-none animate-pulse rounded-full bg-rose-500" />
             ) : (
@@ -649,13 +637,15 @@ export function Composer({
             onClick={() => void enviarNota()}
             disabled={enviando}
             title="Enviar la nota de voz"
-            className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-2xl bg-gray-900 text-white shadow-sm transition hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-white dark:text-gray-900"
           >
-            <Icon icon={enviando ? 'svg-spinners:180-ring' : 'solar:plain-bold'} width={18} />
+            <Icon icon={enviando ? 'svg-spinners:180-ring' : 'solar:plain-linear'} width={22} />
           </button>
         </div>
       ) : (
-      <div className="flex items-end gap-2">
+      ) : (
+      <div className="flex items-end gap-3">
+        <div className="flex min-w-0 flex-1 items-end gap-1 rounded-2xl bg-gray-100 py-1.5 pl-4 pr-1.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-200 dark:bg-slate-800 dark:focus-within:ring-emerald-900/50">
         <input
           ref={inputImagen}
           type="file"
@@ -666,26 +656,6 @@ export function Composer({
             e.target.value = ''
           }}
         />
-        <button
-          type="button"
-          onClick={() => inputImagen.current?.click()}
-          disabled={enviando}
-          title="Enviar una imagen"
-          className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-violet-300 hover:text-violet-600 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
-        >
-          <Icon icon="solar:gallery-add-linear" width={19} />
-        </button>
-        {!imagen && !texto.trim() && (
-          <button
-            type="button"
-            onClick={() => void grabadora.empezar()}
-            disabled={enviando}
-            title="Grabar una nota de voz"
-            className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-violet-300 hover:text-violet-600 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
-          >
-            <Icon icon="solar:microphone-3-linear" width={19} />
-          </button>
-        )}
         <textarea
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
@@ -708,18 +678,42 @@ export function Composer({
           maxLength={imagen ? 1024 : 4096}
           disabled={enviando}
           placeholder={imagen ? 'Texto de la imagen (opcional)…' : 'Escribe tu respuesta…'}
-          className="max-h-28 min-h-[40px] flex-1 resize-y rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-violet-400 focus:ring-2 focus:ring-violet-100 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-100 dark:focus:ring-violet-900/40"
+          className="max-h-28 min-h-[40px] flex-1 resize-none !border-0 bg-transparent !shadow-none !ring-0 py-2.5 text-[14px] text-gray-800 outline-none placeholder:text-gray-400 disabled:opacity-60 dark:text-gray-100"
         />
+        <button
+          type="button"
+          onClick={() => inputImagen.current?.click()}
+          disabled={enviando}
+          title="Enviar una imagen"
+          aria-label="Enviar una imagen"
+          className="flex h-10 w-10 flex-none items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-200/70 hover:text-gray-800 disabled:opacity-40 dark:text-gray-300 dark:hover:bg-slate-700"
+        >
+          <Icon icon="solar:paperclip-linear" width={20} />
+        </button>
+        {!imagen && !texto.trim() && (
+          <button
+            type="button"
+            onClick={() => void grabadora.empezar()}
+            disabled={enviando}
+            title="Grabar una nota de voz"
+            aria-label="Grabar una nota de voz"
+            className="flex h-10 w-10 flex-none items-center justify-center rounded-xl text-gray-500 transition hover:bg-gray-200/70 hover:text-gray-800 disabled:opacity-40 dark:text-gray-300 dark:hover:bg-slate-700"
+          >
+            <Icon icon="solar:microphone-3-linear" width={19} />
+          </button>
+        )}
+        </div>
         <button
           type="button"
           onClick={() => void enviar()}
           disabled={!puedeEnviar}
           title="Enviar por WhatsApp"
-          className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-500 text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+          aria-label="Enviar por WhatsApp"
+          className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-2xl bg-gray-900 text-white shadow-sm transition hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-white dark:text-gray-900"
         >
           <Icon
-            icon={enviando ? 'svg-spinners:180-ring' : 'solar:plain-bold'}
-            width={18}
+            icon={enviando ? 'svg-spinners:180-ring' : 'solar:plain-linear'}
+            width={22}
           />
         </button>
       </div>

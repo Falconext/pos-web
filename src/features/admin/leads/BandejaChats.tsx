@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
-import { ESTADO_META, colorPuntaje, nombreVisible, iniciales } from './LeadsModel'
+import { ESTADO_META, colorAvatar, colorPuntaje, nombreVisible, iniciales } from './LeadsModel'
 import type { LeadProspecto, LeadConversacion } from '@/services/leads.service'
 
 /**
@@ -17,6 +17,10 @@ import type { LeadProspecto, LeadConversacion } from '@/services/leads.service'
  *
  * La columna derecha se esconde por debajo de 1280px y la lista por debajo de
  * 1024px, para que en una tablet quede el chat, que es lo que importa.
+ *
+ * Paleta (22-10): blanco, verde menta para lo del cliente y negro para la
+ * acción principal, como una bandeja de mensajería; el morado quedó para el
+ * resto del panel.
  */
 
 export interface BandejaProps {
@@ -106,15 +110,22 @@ function FilaConversacion({
     <button
       type="button"
       onClick={onAbrir}
-      className={`flex w-full gap-3 border-l-[3px] px-3 py-3 text-left transition-colors ${
+      className={`flex w-full gap-3 border-l-[3px] px-4 py-3.5 text-left transition-colors ${
         activa
-          ? 'border-violet-500 bg-violet-50/70 dark:bg-violet-500/10'
+          ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10'
           : 'border-transparent hover:bg-gray-50 dark:hover:bg-slate-800/50'
       }`}
     >
-      <span className="relative flex h-10 w-10 flex-none items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-violet-600 text-xs font-bold text-white">
+      <span
+        className={`relative flex h-11 w-11 flex-none items-center justify-center rounded-full text-[13px] font-bold ${colorAvatar(p.telefonoProspecto)}`}
+      >
         {iniciales(p.nombreProspecto, p.telefonoProspecto)}
-        {!p.botActivo && (
+        {p.botActivo ? (
+          <span
+            className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#111827]"
+            title="La IA atiende este chat"
+          />
+        ) : (
           <span
             className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 ring-2 ring-white dark:ring-[#111827]"
             title="IA en pausa"
@@ -126,34 +137,41 @@ function FilaConversacion({
 
       <span className="min-w-0 flex-1">
         <span className="flex items-baseline justify-between gap-2">
-          <span className="truncate text-[13px] font-bold text-gray-900 dark:text-white">
+          <span className="truncate text-[14px] font-semibold text-gray-900 dark:text-white">
             {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
           </span>
-          <span className="flex-none text-[10px] text-gray-500 dark:text-gray-400">
+          <span className="flex-none text-[11px] tabular-nums text-gray-400">
             {haceCuanto(p.actualizadoEn)}
           </span>
         </span>
-        <span className="mt-0.5 block truncate text-[11.5px] text-gray-600 dark:text-gray-400">
-          {resumen}
+        <span className="mt-0.5 flex items-center justify-between gap-2">
+          <span className="truncate text-[12.5px] text-gray-500 dark:text-gray-400">{resumen}</span>
+          <span
+            className="flex h-5 min-w-[20px] flex-none items-center justify-center rounded-full bg-gray-900 px-1.5 text-[10px] font-bold tabular-nums text-white dark:bg-white dark:text-gray-900"
+            title="Puntaje BANT"
+          >
+            {p.puntaje}
+          </span>
         </span>
-        <span className="mt-1.5 flex items-center gap-1.5">
-          {meta && (
-            <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${meta.badge}`}>
-              <Icon icon={meta.icon} width={9} />
-              {meta.label}
-            </span>
-          )}
-          <span className={`text-[10px] font-black ${colorPuntaje(p.puntaje)}`}>{p.puntaje}</span>
-          {p.anuncio && (
-            <span
-              className="inline-flex min-w-0 items-center gap-0.5 truncate rounded-full bg-amber-100 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-              title={p.anuncio.titulo || 'Llegó por un anuncio'}
-            >
-              <Icon icon="mdi:bullhorn" width={9} className="flex-none" />
-              Anuncio
-            </span>
-          )}
-        </span>
+        {(meta || p.anuncio) && (
+          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {meta && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
+                <Icon icon={meta.icon} width={10} />
+                {meta.label}
+              </span>
+            )}
+            {p.anuncio && (
+              <span
+                className="inline-flex min-w-0 items-center gap-1 truncate rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+                title={p.anuncio.titulo || 'Llegó por un anuncio'}
+              >
+                <Icon icon="mdi:bullhorn" width={10} className="flex-none" />
+                Anuncio
+              </span>
+            )}
+          </span>
+        )}
       </span>
     </button>
   )
@@ -165,17 +183,52 @@ function Barra({ label, valor, max }: { label: string; valor: number | null; max
   return (
     <div>
       <div className="flex items-baseline justify-between">
-        <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400">{label}</span>
-        <span className="text-[10px] font-bold tabular-nums text-gray-700 dark:text-gray-300">
+        <span className="text-[12px] text-gray-600 dark:text-gray-400">{label}</span>
+        <span className="text-[11px] font-semibold tabular-nums text-gray-500 dark:text-gray-400">
           {valor ?? 0}/{max}
         </span>
       </div>
       <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-slate-800">
         <div
-          className="h-full rounded-full bg-violet-500 motion-safe:transition-[width] motion-safe:duration-500"
+          className="h-full rounded-full bg-emerald-500 motion-safe:transition-[width] motion-safe:duration-500"
           style={{ width: `${Math.min(100, pct)}%` }}
         />
       </div>
+    </div>
+  )
+}
+
+/** Fila de dato con su ícono en cuadrito pastel, como los ajustes de un chat. */
+function Dato({
+  icon,
+  tono,
+  label,
+  children,
+}: {
+  icon: string
+  tono: string
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-gray-50/80 px-3 py-2.5 dark:bg-slate-800/40">
+      <span className={`flex h-8 w-8 flex-none items-center justify-center rounded-lg ${tono}`}>
+        <Icon icon={icon} width={16} />
+      </span>
+      <span className="flex-1 text-[13px] font-semibold text-gray-800 dark:text-gray-200">{label}</span>
+      <span className="text-[12.5px] text-gray-500 dark:text-gray-400">{children}</span>
+    </div>
+  )
+}
+
+function Seccion({ icon, titulo, children }: { icon: string; titulo: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-6">
+      <p className="flex items-center gap-2 text-[13px] font-bold text-gray-900 dark:text-white">
+        <Icon icon={icon} width={16} className="text-gray-500 dark:text-gray-400" />
+        {titulo}
+      </p>
+      <div className="mt-3">{children}</div>
     </div>
   )
 }
@@ -197,18 +250,16 @@ function FichaLateral({
     if (prueba) {
       return (
         <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-          <Icon
-            icon="solar:test-tube-bold-duotone"
-            width={34}
-            className="text-gray-400 opacity-60"
-          />
-          <p className="text-[13px] font-bold text-gray-900 dark:text-white">
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 dark:bg-amber-900/30">
+            <Icon icon="solar:test-tube-bold-duotone" width={28} />
+          </span>
+          <p className="text-[15px] font-bold text-gray-900 dark:text-white">
             {nombreVisible(prueba.nombreProspecto, prueba.telefonoProspecto)}
           </p>
           <p className="-mt-2 text-xs text-gray-500 dark:text-gray-400">
             {prueba.telefonoProspecto}
           </p>
-          <p className="text-[11px] leading-relaxed text-gray-600 dark:text-gray-400">
+          <p className="text-[12px] leading-relaxed text-gray-600 dark:text-gray-400">
             Este número es del negocio, así que la IA le responde pero no lo
             califica ni lo cuenta como lead. Sirve para probar sin ensuciar el
             embudo.
@@ -217,9 +268,11 @@ function FichaLateral({
       )
     }
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-gray-500 dark:text-gray-400">
-        <Icon icon="solar:user-id-bold-duotone" width={34} className="opacity-30" />
-        <p className="text-xs">Abre una conversación para ver la ficha del cliente</p>
+      <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-gray-500 dark:text-gray-400">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-50 dark:bg-slate-800">
+          <Icon icon="solar:user-id-bold-duotone" width={28} className="opacity-50" />
+        </span>
+        <p className="text-[13px]">Abre una conversación para ver la ficha del cliente</p>
       </div>
     )
   }
@@ -227,20 +280,21 @@ function FichaLateral({
 
   return (
     <div className="flex h-full flex-col overflow-y-auto px-5 py-5">
-      <div className="flex flex-col items-center text-center">
-        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-violet-600 text-lg font-bold text-white">
+      <div className="flex items-center gap-3">
+        <span
+          className={`flex h-14 w-14 flex-none items-center justify-center rounded-full text-lg font-bold ${colorAvatar(p.telefonoProspecto)}`}
+        >
           {iniciales(p.nombreProspecto, p.telefonoProspecto)}
         </span>
-        <p className="mt-2.5 text-[15px] font-bold text-gray-900 dark:text-white">
-          {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
-        </p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">{p.telefonoProspecto}</p>
-        {meta && (
-          <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${meta.badge}`}>
-            <Icon icon={meta.icon} width={11} />
-            {meta.label}
+        <div className="min-w-0">
+          <p className="truncate text-[17px] font-bold text-gray-900 dark:text-white">
+            {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
+          </p>
+          <span className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11.5px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+            <Icon icon="mdi:whatsapp" width={13} />
+            {p.telefonoProspecto}
           </span>
-        )}
+        </div>
       </div>
 
       {/* Lo que vio antes de escribir: el vendedor responde sabiendo qué
@@ -273,70 +327,75 @@ function FichaLateral({
         </div>
       )}
 
-      <div className="mt-5 rounded-xl border border-gray-100 p-3 dark:border-slate-800">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Puntaje BANT
-          </span>
-          <span className={`text-xl font-black tabular-nums ${colorPuntaje(p.puntaje)}`}>{p.puntaje}</span>
-        </div>
-        <div className="mt-3 space-y-2.5">
+      <button
+        type="button"
+        onClick={() => onVerHistorial(p.telefonoProspecto)}
+        className="mt-4 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-gray-900 px-3 text-[13px] font-semibold text-white transition hover:bg-black dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100"
+      >
+        <Icon icon="solar:clipboard-list-bold-duotone" width={16} />
+        Ver su historial de compras
+      </button>
+
+      <div className="mt-4 space-y-2">
+        <Dato icon="solar:pulse-2-bold" tono="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300" label="Estado">
+          {meta ? (
+            <span className="inline-flex items-center gap-1.5 font-semibold text-gray-700 dark:text-gray-200">
+              <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+              {meta.label}
+            </span>
+          ) : '—'}
+        </Dato>
+        <Dato icon="solar:chart-square-bold" tono="bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300" label="Puntaje">
+          <span className={`text-[15px] font-black tabular-nums ${colorPuntaje(p.puntaje)}`}>{p.puntaje}</span>
+        </Dato>
+        <Dato icon="solar:clock-circle-bold" tono="bg-rose-100 text-rose-500 dark:bg-rose-900/40 dark:text-rose-300" label="Último contacto">
+          hace {haceCuanto(p.actualizadoEn)}
+        </Dato>
+        <Dato icon="solar:bill-list-bold" tono="bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-300" label="Cotización">
+          {p.cotizacion ? (
+            <span className="font-semibold text-gray-700 dark:text-gray-200">{p.cotizacion.codigo}</span>
+          ) : '—'}
+        </Dato>
+      </div>
+
+      {p.proximaAccion && (
+        <Seccion icon="solar:bell-linear" titulo="Próxima acción">
+          <div className="flex gap-3">
+            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-sky-50 text-sky-600 dark:bg-sky-900/30 dark:text-sky-300">
+              <Icon icon="solar:target-linear" width={16} />
+            </span>
+            <p className="text-[13px] leading-relaxed text-gray-700 dark:text-gray-300">{p.proximaAccion}</p>
+          </div>
+        </Seccion>
+      )}
+
+      <Seccion icon="solar:chart-2-linear" titulo="Calificación BANT">
+        <div className="space-y-3">
           <Barra label="Presupuesto" valor={p.presupuesto} max={30} />
           <Barra label="Autoridad" valor={p.autoridad} max={20} />
           <Barra label="Necesidad" valor={p.necesidad} max={25} />
           <Barra label="Plazo" valor={p.plazo} max={25} />
         </div>
-      </div>
-
-      {p.proximaAccion && (
-        <div className="mt-3 rounded-xl bg-violet-50 p-3 dark:bg-violet-900/20">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700 dark:text-violet-300">
-            Próxima acción
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-violet-900 dark:text-violet-200">{p.proximaAccion}</p>
-        </div>
-      )}
+      </Seccion>
 
       {p.resumen && (
-        <div className="mt-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Resumen</p>
-          <p className="mt-1 text-xs leading-relaxed text-gray-700 dark:text-gray-300">{p.resumen}</p>
-        </div>
+        <Seccion icon="solar:document-text-linear" titulo="Resumen">
+          <p className="text-[13px] leading-relaxed text-gray-600 dark:text-gray-300">{p.resumen}</p>
+        </Seccion>
       )}
 
       {p.puntosClave?.length > 0 && (
-        <div className="mt-3">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            Puntos clave
-          </p>
-          <ul className="mt-1.5 space-y-1">
+        <Seccion icon="solar:checklist-minimalistic-linear" titulo="Puntos clave">
+          <ul className="space-y-2">
             {p.puntosClave.map((t, i) => (
-              <li key={i} className="flex gap-1.5 text-xs text-gray-700 dark:text-gray-300">
-                <Icon icon="solar:check-circle-bold" width={12} className="mt-0.5 flex-none text-violet-500" />
+              <li key={i} className="flex gap-2 text-[13px] text-gray-700 dark:text-gray-300">
+                <Icon icon="solar:check-circle-bold" width={15} className="mt-0.5 flex-none text-emerald-500" />
                 {t}
               </li>
             ))}
           </ul>
-        </div>
+        </Seccion>
       )}
-
-      {p.cotizacion && (
-        <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 dark:border-emerald-800/40 dark:bg-emerald-900/20">
-          <Icon icon="solar:bill-list-bold-duotone" width={16} className="text-emerald-600 dark:text-emerald-400" />
-          <span className="text-xs font-bold text-emerald-800 dark:text-emerald-300">
-            Cotización {p.cotizacion.codigo}
-          </span>
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => onVerHistorial(p.telefonoProspecto)}
-        className="mt-4 inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2.5 text-xs font-bold text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:text-gray-200 dark:hover:bg-slate-800"
-      >
-        <Icon icon="solar:clipboard-list-bold-duotone" width={14} />
-        Ver su historial de compras
-      </button>
     </div>
   )
 }
@@ -377,7 +436,7 @@ export function BandejaChats({
     <div
       ref={ref}
       style={{ height: alto }}
-      className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm lg:grid-cols-[300px_1fr] xl:grid-cols-[300px_1fr_290px] dark:border-slate-800 dark:bg-[#111827]">
+      className="grid grid-cols-1 overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)] lg:grid-cols-[320px_1fr] xl:grid-cols-[320px_1fr_320px] dark:border-slate-800 dark:bg-[#111827]">
 
       {/* ── Columna 1: la lista ── */}
       <aside
@@ -385,29 +444,34 @@ export function BandejaChats({
           conversacionAbiertaId ? 'hidden' : 'flex'
         }`}
       >
-        <div className="border-b border-gray-100 px-3 py-3 dark:border-slate-800">
-          <div className="relative">
+        <div className="px-4 pb-3 pt-4">
+          <p className="flex items-center gap-2 text-[17px] font-bold text-gray-900 dark:text-white">
+            <Icon icon="solar:hamburger-menu-linear" width={20} />
+            Chats
+            <span className="text-[13px] font-medium text-gray-400">{prospectos.length}</span>
+          </p>
+          <div className="relative mt-3">
             <Icon
               icon="solar:magnifer-linear"
-              width={14}
+              width={15}
               className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
             <input
               value={busqueda}
               onChange={(e) => onBuscar(e.target.value)}
-              placeholder="Buscar nombre o teléfono…"
+              placeholder="Buscar por nombre o teléfono"
               aria-label="Buscar conversación"
-              className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-8 pr-3 text-xs text-gray-900 placeholder:text-gray-400 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+              className="w-full rounded-xl border border-transparent bg-gray-100/80 py-2.5 pl-9 pr-3 text-[13px] text-gray-900 placeholder:text-gray-400 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:bg-slate-800 dark:text-white dark:focus:ring-emerald-900/40"
             />
           </div>
-          <div className="mt-2 flex gap-1">
+          <div className="mt-3 flex gap-1.5">
             {FILTROS.map((f) => (
               <button
                 key={f.id}
                 type="button"
                 onClick={() => setFiltro(f.id)}
                 aria-pressed={filtro === f.id}
-                className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors ${
+                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
                   filtro === f.id
                     ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-slate-800 dark:text-gray-400 dark:hover:bg-slate-700'
@@ -422,7 +486,7 @@ export function BandejaChats({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 divide-y divide-gray-50 overflow-y-auto dark:divide-slate-800/60">
+        <div className="min-h-0 flex-1 divide-y divide-gray-100/80 overflow-y-auto border-t border-gray-100 dark:divide-slate-800/60 dark:border-slate-800">
           {cargando ? (
             <div className="flex justify-center py-10 text-gray-400">
               <Icon icon="svg-spinners:180-ring" width={24} />
@@ -450,7 +514,7 @@ export function BandejaChats({
               arreglar. Pero tienen que poder abrirse y borrarse. */}
           {chatsDePrueba.length > 0 && (
             <div className="bg-gray-50/60 px-3 py-2.5 dark:bg-slate-900/40">
-              <p className="mb-1.5 flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+              <p className="mb-1.5 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 <Icon icon="solar:test-tube-bold-duotone" width={11} />
                 Pruebas · no son leads
               </p>
@@ -461,12 +525,12 @@ export function BandejaChats({
                   onClick={() => onAbrir(c.id)}
                   className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
                     c.id === conversacionAbiertaId
-                      ? 'bg-violet-100 dark:bg-violet-500/20'
+                      ? 'bg-emerald-100/70 dark:bg-emerald-500/20'
                       : 'hover:bg-gray-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   <Icon icon="mdi:whatsapp" width={12} className="flex-none text-[#25D366]" />
-                  <span className="min-w-0 flex-1 truncate text-[11.5px] font-semibold text-gray-700 dark:text-gray-300">
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-gray-700 dark:text-gray-300">
                     {nombreVisible(c.nombreProspecto, c.telefonoProspecto)}
                   </span>
                   <span className="flex-none text-[10px] tabular-nums text-gray-400">
