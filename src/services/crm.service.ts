@@ -89,6 +89,24 @@ export interface ReporteBi {
     ubicacion: { lima: number; provincia: number; recojo: number; sinDato: number }
     topDistritos: { lugar: string; total: number }[]
   }
+  /** Qué anuncio de Facebook/Instagram trajo cada venta. Ausente en un backend viejo. */
+  anuncios?: {
+    filas: FilaAnuncio[]
+    conversacionesPorAnuncio: number
+    conversacionesSinAnuncio: number
+  }
+}
+
+export interface FilaAnuncio {
+  anuncioId: string
+  tipo: string | null
+  titulo: string | null
+  url: string | null
+  imagenUrl: string | null
+  conversaciones: number
+  pedidos: number
+  vendido: number
+  conversion: number
 }
 
 export interface ConsultaCliente {
