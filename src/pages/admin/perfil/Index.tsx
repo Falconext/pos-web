@@ -14,6 +14,7 @@ import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import ShalomProConexion from '@/components/ShalomProConexion';
 import OlvaConfiguracion from '@/components/OlvaConfiguracion';
 import DespachoAutomatizacionCard from '@/components/DespachoAutomatizacionCard';
+import { ClavesApiCard } from './ClavesApiCard';
 
 /**
  * Pagos con tarjeta en la tienda (Culqi / Niubiz): apagado por ahora.
@@ -113,6 +114,8 @@ export default function PerfilIndex() {
     const { auth } = useAuthStore();
     // "Conectar WhatsApp" solo para quienes tienen el módulo IA de Ventas (plan de Ventas).
     const tieneVentas = hasPermission(auth as any, 'leads');
+    // La API de Krezka se vende aparte: módulo `api` del plan.
+    const tieneApi = hasPermission(auth as any, 'api');
     const esAdminEmpresa = auth?.rol === 'ADMIN_EMPRESA' || auth?.rol === 'ADMIN_SISTEMA';
     const { perfil, loading, usageStats, savingBarcodeConfig, savingFefoPriceConfig, savingVentaSinStockConfig, savingDirectorTecnico, savingWhatsAppConfig, whatsAppForm, whatsappConfigDirty, passwordForm, setPasswordForm, passwordErrors, savingPassword, handleChangePassword } = vm;
     const [showActual, setShowActual] = useState(false);
@@ -122,7 +125,11 @@ export default function PerfilIndex() {
     const [sireClientIdInput, setSireClientIdInput] = useState<string | null>(null);
     // Qué sección de Configuración está abierta como modal. No se recuerda entre
     // visitas a propósito: abrir un modal solo con entrar a la página estorba.
-    const [seccionAbierta, setSeccionAbierta] = useState<string | null>(null);
+    // Salvo cuando se llega con ?seccion= (el acceso directo del menú a
+    // "Claves API"): ahí se abre la que se pidió.
+    const [seccionAbierta, setSeccionAbierta] = useState<string | null>(
+        () => new URLSearchParams(window.location.search).get('seccion'),
+    );
     const toggleSeccion = (id: string) =>
         setSeccionAbierta((actual) => (actual === id ? null : id));
 
@@ -1338,6 +1345,13 @@ export default function PerfilIndex() {
                                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Aparece en el Libro de Control de Psicotrópicos — DS 023-2001-SA</p>
                                     </div>
                                 )}
+                        </SeccionConfig>
+                    )}
+                    {/* Claves API: solo con el módulo "API de Krezka" en el plan y para el
+                        administrador (una clave lee todo el catálogo y el stock). */}
+                    {tieneApi && esAdminEmpresa && (
+                        <SeccionConfig id="claves-api" icono="solar:code-square-bold-duotone" titulo="Claves API" resumen="Conecta tu página web con tus productos y tu stock" abierta={seccionAbierta === 'claves-api'} onToggle={toggleSeccion} className={configTab}>
+                            <ClavesApiCard />
                         </SeccionConfig>
                     )}
                     {/* Automatización de despacho: rastreo automático + plantillas WhatsApp
