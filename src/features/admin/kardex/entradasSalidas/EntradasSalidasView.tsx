@@ -298,7 +298,7 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
                                                     {variante ? <span className="ml-1 text-[#6A5AF9]">· {variante}</span> : null}
                                                 </p>
                                                 <p className="text-[11px] text-slate-400">
-                                                    <span className="font-mono font-bold text-[#6A5AF9]">{p.codigo}</span>
+                                                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{p.codigo}</span>
                                                     {variantes ? ` · ${variantes} tallas/colores — elige cuál` : ` · Stock aquí: ${stockEnSede(p, vm.sedeActiva?.id)}`}
                                                 </p>
                                             </div>
@@ -343,7 +343,7 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
                                                         <div className="min-w-0">
                                                             <p className="font-semibold text-slate-800 dark:text-slate-100">{l.descripcion}</p>
                                                             <p className="text-[11px] text-slate-400">
-                                                                <span className="font-mono font-bold text-[#6A5AF9]">{l.codigo}</span>
+                                                                <span className="font-mono font-bold text-slate-900 dark:text-slate-100">{l.codigo}</span>
                                                                 {l.variante ? <span className="ml-1 font-bold text-slate-600 dark:text-slate-300">· {l.variante}</span> : null}
                                                             </p>
                                                             {aviso ? (
@@ -436,7 +436,7 @@ function Formulario({ vm, onVolver }: { vm: EntradasSalidasVM; onVolver: () => v
                                                         />
                                                     </td>
                                                 ) : null}
-                                                <td className={`px-3 py-3 text-right font-bold leading-9 ${queda < 0 ? 'text-rose-500' : entrada ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300'}`}>{queda}</td>
+                                                <td className={`px-3 py-3 text-right font-bold leading-9 text-slate-900 dark:text-slate-100`}>{queda}</td>
                                                 <td className="px-2 py-3">
                                                     <button onClick={() => vm.quitarLinea(l.key)} title="Quitar" className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20">
                                                         <Icon icon="solar:trash-bin-trash-linear" width={16} />
@@ -541,7 +541,7 @@ function DetalleModal({ doc, onCerrar, onImprimir }: { doc: DetalleDocumento; on
                                         {it.descripcion}
                                         {it.variante ? <span className="text-[#6A5AF9]"> · {it.variante}</span> : null}
                                     </p>
-                                    <p className="font-mono text-[11px] text-slate-400">{it.codigo}</p>
+                                    <p className="font-mono text-[11px] text-slate-900 dark:text-slate-100">{it.codigo}</p>
                                 </td>
                                 {conLote ? <td className="py-2 text-slate-500">{it.lote ?? '—'}</td> : null}
                                 <td className="py-2 text-right font-bold">
