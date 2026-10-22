@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react'
 import { useSearchParams } from 'react-router-dom'
 import type {
   CategoriaConocimiento,
+  LeadsConfig,
   ConfigEnvio,
   LongitudRespuesta,
   MedioPago,
@@ -1256,22 +1257,29 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
   const puedeGuardar = sucio && (soportado || !tocoLoNuevo)
   const set = (fn: (b: Borrador) => Borrador) => setB(fn)
 
-  const guardar = () =>
-    vm.actions.guardarConfig({
-      iaVentasContexto: b.contexto,
-      iaVentasBrochureUrl: b.brochure.trim(),
-      ...(soportado ? camposNuevos(b) : {}),
-    })
-
-  const camposNuevos = (x: Borrador) => ({
-      asesor: x.asesor.trim(),
-      vendedor: x.vendedor,
-      envio: {
-        zonas: x.envio.zonas.filter((z) => z.nombre.trim()),
-        zonaPorDefecto: x.envio.zonaPorDefecto,
-      },
-      mediosPagoLista: x.medios.filter((m) => m.nombre.trim() && m.detalle.trim()),
-    })
+  // Solo se manda lo que cambió. Antes se reenviaba todo y, al guardar el
+  // nombre del vendedor, también se reescribían envíos y pagos que nadie tocó
+  // (los medios de pago escritos como un solo texto podían quedar cortados).
+  const guardar = () => {
+    const distinto = (x: unknown, y: unknown) => JSON.stringify(x) !== JSON.stringify(y)
+    const cambios: Partial<LeadsConfig> = {}
+    if (b.contexto !== original.contexto) cambios.iaVentasContexto = b.contexto
+    if (b.brochure !== original.brochure) cambios.iaVentasBrochureUrl = b.brochure.trim()
+    if (soportado) {
+      if (b.asesor !== original.asesor) cambios.asesor = b.asesor.trim()
+      if (distinto(b.vendedor, original.vendedor)) cambios.vendedor = b.vendedor
+      if (distinto(b.envio, original.envio)) {
+        cambios.envio = {
+          zonas: b.envio.zonas.filter((z) => z.nombre.trim()),
+          zonaPorDefecto: b.envio.zonaPorDefecto,
+        }
+      }
+      if (distinto(b.medios, original.medios)) {
+        cambios.mediosPagoLista = b.medios.filter((m) => m.nombre.trim() && m.detalle.trim())
+      }
+    }
+    return vm.actions.guardarConfig(cambios)
+  }
 
   return (
     <div className="space-y-5">
