@@ -98,7 +98,8 @@ export function ClavesApiCard() {
         <div className="space-y-4" data-testid="claves-api">
             <p className="text-sm text-gray-600 dark:text-gray-300">
                 Con una clave, tu página web o tu sistema puede leer tus productos, precios, fotos y stock
-                de Krezka, siempre al día. Pásale la clave a quien hizo tu web.
+                de Krezka, siempre al día, y también crear productos y ajustar el stock. Pásale la clave a
+                quien hizo tu web.
             </p>
 
             {nueva && (
@@ -188,6 +189,9 @@ export function ClavesApiCard() {
                         <li><code>GET /products/:id</code>: un producto.</li>
                         <li><code>GET /locations</code>: tus sedes.</li>
                         <li><code>GET /categories</code>: tus categorías.</li>
+                        <li><code>POST /products</code>: crear un producto (<code>name</code>, <code>price</code> y opcionales). Lleva la cabecera <code>Idempotency-Key</code>.</li>
+                        <li><code>PATCH /products/:id</code>: cambiar nombre, precio, oferta, categoría, código…</li>
+                        <li><code>POST /products/:id/stock_adjustments</code>: cambiar el stock con un motivo (queda en tu kardex). Lleva <code>Idempotency-Key</code>.</li>
                     </ul>
                     <div className="flex items-start gap-2">
                         <pre className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-white p-2 text-[11px] dark:bg-[#0A0D14]">{ejemplo}</pre>
