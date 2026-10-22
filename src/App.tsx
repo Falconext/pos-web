@@ -30,6 +30,7 @@ const KardexIndex = cargaPerezosa(() => import('./pages/admin/kardex/Index'))
 const InventarioDashboard = cargaPerezosa(() => import('./pages/admin/kardex/Dashboard'))
 const KardexProductos = cargaPerezosa(() => import('./pages/admin/kardex/Productos'))
 const KardexMermas = cargaPerezosa(() => import('./pages/admin/kardex/mermas'))
+const KardexEntradasSalidas = cargaPerezosa(() => import('./pages/admin/kardex/entradasSalidas'))
 const KardexTraslados = cargaPerezosa(() => import('./pages/admin/kardex/Traslados'))
 const Lotes = cargaPerezosa(() => import('./pages/admin/kardex/Lotes'))
 const LibroControl = cargaPerezosa(() => import('./pages/admin/kardex/LibroControl'))
@@ -211,6 +212,7 @@ function App() {
           <Route path="kardex/lotes" element={<Lotes />} />
           <Route path="kardex/libro-control" element={<LibroControl />} />
           <Route path="kardex/mermas" element={<KardexMermas />} />
+          <Route path="kardex/entradas-salidas" element={<KardexEntradasSalidas />} />
           <Route path="kardex/series-garantias" element={<SeriesGarantias />} />
           <Route path="reservas" element={<ReservasPage />} />
           {/* Alias: el submódulo kardex:reservas tuvo guardada esta ruta en BD y
