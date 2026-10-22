@@ -88,8 +88,11 @@ export default function KrezkaLoginView() {
                     <div className="krk-grid absolute inset-0 pointer-events-none" />
 
                     <div className="relative z-10 flex flex-1 flex-col px-12 xl:px-16 py-10">
-                        <img src={BRAND.logoWhite} alt={BRAND.name} className="h-11 w-auto self-start object-contain"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        {/* El logo es azul marino + morado: sobre el fondo morado se pierde, va en placa blanca */}
+                        <span className="self-start rounded-2xl bg-white px-3 py-1.5 shadow-[0_12px_32px_-12px_rgba(20,10,80,.6)] ring-1 ring-white/60">
+                            <img src={BRAND.logo} alt={BRAND.name} className="h-14 w-auto object-contain"
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                        </span>
 
                         <div className="mt-auto pt-10 max-w-[620px]">
                             <span className="krk-glass inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold tracking-wide">
