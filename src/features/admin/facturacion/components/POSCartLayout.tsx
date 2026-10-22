@@ -220,6 +220,57 @@ const QtyInput = ({ item, index, vm }: { item: any; index: number; vm: any }) =>
     );
 };
 
+// Kit vendido como una línea: ver lo que lleva y quitar algo solo en esta venta
+// ("el Detalle Te Amo pero sin chocolates"). El precio baja en lo que cuesta
+// suelto lo quitado; el kit del catálogo no cambia.
+const KitContenido = ({ item, index, vm }: { item: any; index: number; vm: any }) => {
+    const componentes: any[] = item?.kitComponentes || [];
+    const quitados: number[] = item?.kitQuitados || [];
+    const [abierto, setAbierto] = useState(false);
+    if (!item?.esKit || !componentes.length) return null;
+    const rebaja = Number(item?.kitPrecioCompleto ?? 0) - Number(item?.precioUnitario ?? 0);
+    return (
+        <div className="mt-1.5">
+            <button
+                type="button"
+                onClick={() => setAbierto((v) => !v)}
+                aria-expanded={abierto}
+                className="flex items-center gap-1 text-[11px] font-semibold text-gray-500 hover:text-fuchsia-600 dark:text-gray-400 dark:hover:text-fuchsia-400"
+            >
+                <Icon icon="solar:box-linear" width={13} />
+                {quitados.length ? `Lleva ${componentes.length - quitados.length} de ${componentes.length} productos` : `Qué lleva (${componentes.length})`}
+                <Icon icon="solar:alt-arrow-down-linear" width={12} className={`transition-transform ${abierto ? 'rotate-180' : ''}`} />
+            </button>
+            {abierto && (
+                <ul className="mt-1 space-y-0.5 rounded-lg border border-gray-100 bg-gray-50/70 p-1.5 dark:border-white/10 dark:bg-slate-800/60" data-testid="kit-contenido">
+                    {componentes.map((c) => {
+                        const fuera = quitados.includes(c.productoId);
+                        return (
+                            <li key={c.productoId} className="flex items-center justify-between gap-2 text-[11px]">
+                                <span className={`min-w-0 truncate ${fuera ? 'text-gray-400 line-through' : 'text-gray-700 dark:text-gray-200'}`}>
+                                    {c.cantidad} × {c.descripcion}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => vm.handleAlternarComponenteKit(index, c.productoId)}
+                                    className={`shrink-0 rounded-md px-1.5 py-0.5 font-semibold transition-colors ${fuera ? 'text-violet-600 hover:bg-violet-50 dark:text-violet-300 dark:hover:bg-violet-950/40' : 'text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30'}`}
+                                >
+                                    {fuera ? 'Devolver' : 'Quitar'}
+                                </button>
+                            </li>
+                        );
+                    })}
+                    {quitados.length > 0 && rebaja > 0.004 && (
+                        <li className="border-t border-gray-200 pt-1 text-[10px] text-gray-500 dark:border-white/10 dark:text-gray-400">
+                            Se restó S/ {rebaja.toFixed(2)}, lo que cuesta suelto lo quitado. Puedes cambiar el precio con el lápiz.
+                        </li>
+                    )}
+                </ul>
+            )}
+        </div>
+    );
+};
+
 export const POSCartLayout = ({ vm }: { vm: any }) => {
     const [brokenImages, setBrokenImages] = useState<Record<string, boolean>>({});
     const [afectPickerIndex, setAfectPickerIndex] = useState<number | null>(null);
@@ -349,6 +400,7 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                         <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 px-1.5 py-0.5 rounded-full font-semibold text-[10px]">⚖️ Por {getUnidadAtajos(item)!.sufijo}</span>
                                     )}
                                 </div>
+                                <KitContenido item={item} index={index} vm={vm} />
                                 {/* Marcar línea como operación gratuita (Catálogo 07) — solo aplica a
                                     Factura/Boleta, que declaran a SUNAT. No suma al importe a pagar. */}
                                 {esFacturaOBoleta && (
