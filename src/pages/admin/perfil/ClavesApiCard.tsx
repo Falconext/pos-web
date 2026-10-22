@@ -200,6 +200,16 @@ export function ClavesApiCard() {
                         </button>
                     </div>
                     <p>Las fotos tienen una dirección fija que puedes poner directo en tu web.</p>
+                    <p className="pt-1 font-bold">Antes de cargar productos</p>
+                    <ul className="list-disc space-y-0.5 pl-5" data-testid="avisos-programador">
+                        <li><b>Tallas y colores:</b> manda <code>variant_options</code> y <code>variants</code>; el stock va en cada variante y se ajusta con el id de la variante.</li>
+                        <li><b>Farmacia, botica o droguería:</b> el stock entra siempre con su lote y vencimiento (<code>batch</code>).</li>
+                        <li><b>Servicios</b> (<code>type: "service"</code>): no tienen stock.</li>
+                        <li><b>Paquetes</b> (six pack, caja x12): van en <code>packs</code> con su código de barras.</li>
+                        <li>Cada sku y código de barras es único en tu negocio. Las categorías y marcas se crean en el panel; la API usa sus ids.</li>
+                        <li>Hasta 3 fotos por producto, como URLs https. Los kits y combos se arman en el panel.</li>
+                        <li>Si algo está mal, la respuesta dice qué campo (<code>param</code>) y qué hacer.</li>
+                    </ul>
                 </div>
             </details>
 
