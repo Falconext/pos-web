@@ -45,7 +45,7 @@ describe('Mi vendedor', () => {
   it('con un servidor que no la soporta, avisa y no deja guardar', () => {
     const vm = vmCon({})
     abrir(vm)
-    expect(screen.getByText(/se activa con la próxima actualización/)).toBeTruthy()
+    expect(screen.getByText(/se activan con la próxima actualización/)).toBeTruthy()
     fireEvent.change(screen.getByPlaceholderText('Ej. Ana'), { target: { value: 'Ana' } })
     const boton = screen.getByRole('button', { name: /Guardar cambios/ }) as HTMLButtonElement
     expect(boton.disabled).toBe(true)
@@ -64,6 +64,8 @@ describe('Mi vendedor', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Guardar cambios/ }))
     expect(vm.actions.guardarConfig).toHaveBeenCalledWith({
+      iaVentasContexto: '',
+      iaVentasBrochureUrl: '',
       asesor: 'Ana',
       vendedor: { longitud: 1 },
       envio: { zonas: [], zonaPorDefecto: '' },
@@ -117,5 +119,24 @@ describe('Mi vendedor', () => {
     expect(vm.actions.guardarConfig.mock.calls[0][0].mediosPagoLista).toEqual([
       { nombre: 'Yape', detalle: '987654321', titular: 'Ana Torres' },
     ])
+  })
+
+  it('el texto general se ve completo y, con el servidor de antes, se guarda solo', () => {
+    const texto = 'Somos Hierba Sana, tienda naturista en La Merced. Delivery en Lima S/ 15.'
+    const vm = vmCon({ iaVentasContexto: texto })
+    abrir(vm, '/administrador/leads/vendedor?tab=conocimiento')
+
+    // Plegado muestra el inicio; abierto, el texto entero tal cual.
+    fireEvent.click(screen.getByRole('button', { name: /Texto general/ }))
+    const area = screen.getByDisplayValue(texto) as HTMLTextAreaElement
+    fireEvent.change(area, { target: { value: texto + ' Recojo gratis.' } })
+
+    const boton = screen.getByRole('button', { name: /Guardar cambios/ }) as HTMLButtonElement
+    expect(boton.disabled).toBe(false)
+    fireEvent.click(boton)
+    expect(vm.actions.guardarConfig).toHaveBeenCalledWith({
+      iaVentasContexto: texto + ' Recojo gratis.',
+      iaVentasBrochureUrl: '',
+    })
   })
 })

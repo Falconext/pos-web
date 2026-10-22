@@ -158,13 +158,18 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
 function SwitchIa({
   activa,
   onChange,
+  etiquetas = ['IA activa', 'IA apagada'],
 }: {
   activa: boolean
   onChange: (v: boolean) => void
+  /** Texto prendido/apagado. Los demás interruptores no son "la IA". */
+  etiquetas?: [string, string]
 }) {
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={activa}
       onClick={() => onChange(!activa)}
       className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
         activa
@@ -183,7 +188,7 @@ function SwitchIa({
           }`}
         />
       </span>
-      {activa ? 'IA activa' : 'IA apagada'}
+      {activa ? etiquetas[0] : etiquetas[1]}
     </button>
   )
 }
@@ -605,7 +610,6 @@ export function Composer({
           </button>
         </div>
       ) : (
-      ) : (
       <div className="flex items-end gap-3">
         <div className="flex min-w-0 flex-1 items-end gap-1 rounded-2xl bg-gray-100 py-1.5 pl-4 pr-1.5 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-emerald-200 dark:bg-slate-800 dark:focus-within:ring-emerald-900/50">
         <input
@@ -867,34 +871,11 @@ function DocRow({
   )
 }
 
-// Secciones de inserción rápida para el contexto (texto plano — la IA lo consume tal cual).
-const SECCIONES_CONTEXTO: { label: string; icon: string; snippet: string }[] = [
-  { label: 'Qué vendemos', icon: 'solar:box-bold-duotone', snippet: 'QUÉ VENDEMOS:\n- ' },
-  { label: 'Precios', icon: 'solar:tag-price-bold-duotone', snippet: 'PRECIOS:\n- Producto/plan: S/00 (qué incluye)\n- ' },
-  { label: 'Planes', icon: 'solar:layers-bold-duotone', snippet: 'PLANES:\n- Básico: ...\n- Pro: ...\n' },
-  { label: 'FAQs', icon: 'solar:question-circle-bold-duotone', snippet: 'PREGUNTAS FRECUENTES:\n- ¿...? R: ...\n- ' },
-  { label: 'Objeciones', icon: 'solar:shield-warning-bold-duotone', snippet: 'OBJECIONES Y RESPUESTAS:\n- "Es caro" → ...\n- ' },
-  { label: 'Tono', icon: 'solar:chat-round-line-bold-duotone', snippet: 'TONO Y ESTILO: cercano, profesional, respuestas cortas. Nunca inventes precios ni prometas lo que no existe.\n' },
-  { label: 'Horario', icon: 'solar:clock-circle-bold-duotone', snippet: 'HORARIO DE ATENCIÓN: Lun-Sáb 9am-7pm. Fuera de horario, avisa que responderás pronto.\n' },
-]
-
-const PLANTILLA_CONTEXTO = `NEGOCIO: (nombre y a qué se dedica)
-
-QUÉ VENDEMOS: (productos o servicios principales)
-
-PRECIOS:
-- ...
-
-OBJETIVO DE LA IA: calificar al prospecto y llevarlo a (comprar / agendar demo / dejar sus datos).
-
-PREGUNTAS FRECUENTES:
-- ¿...? R: ...
-
-OBJECIONES:
-- "..." → ...
-
-TONO: cercano, profesional, respuestas cortas. Nunca inventes precios ni prometas lo que no existe.`
-
+/**
+ * Ajustes de la IA: solo interruptores. El contexto del negocio y el brochure
+ * se movieron a Mi vendedor → Conocimiento (22-10), para que todo lo que la IA
+ * sabe esté en un solo lugar.
+ */
 export function ConfigForm({
   initial,
   onSave,
@@ -902,61 +883,29 @@ export function ConfigForm({
 }: {
   initial: {
     iaVentasActiva: boolean
-    iaVentasContexto: string
     iaVentasSeguimiento: boolean
     iaVentasCotizacion: boolean
-    iaVentasBrochureUrl: string
     cobroConLink?: boolean
     mpConectado?: boolean
   }
   onSave: (data: {
-    iaVentasContexto: string
     iaVentasSeguimiento: boolean
     iaVentasCotizacion: boolean
-    iaVentasBrochureUrl: string
     cobroConLink: boolean
   }) => void
   onToggle: (v: boolean) => void
 }) {
-  const [contexto, setContexto] = useState(initial.iaVentasContexto)
   const [activa, setActiva] = useState(initial.iaVentasActiva)
   const [seguimiento, setSeguimiento] = useState(initial.iaVentasSeguimiento)
   const [cotizacion, setCotizacion] = useState(initial.iaVentasCotizacion)
   const [cobroConLink, setCobroConLink] = useState(initial.cobroConLink ?? false)
-  const [brochure, setBrochure] = useState(initial.iaVentasBrochureUrl)
-  const taRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    setContexto(initial.iaVentasContexto)
     setActiva(initial.iaVentasActiva)
     setSeguimiento(initial.iaVentasSeguimiento)
     setCotizacion(initial.iaVentasCotizacion)
     setCobroConLink(initial.cobroConLink ?? false)
-    setBrochure(initial.iaVentasBrochureUrl)
   }, [initial])
-
-  // Auto-crecer el textarea según su contenido (tope de altura con scroll interno).
-  const autoGrow = useCallback(() => {
-    const el = taRef.current
-    if (!el) return
-    el.style.height = 'auto'
-    el.style.height = Math.min(el.scrollHeight, 460) + 'px'
-  }, [])
-  useEffect(() => {
-    autoGrow()
-  }, [contexto, autoGrow])
-
-  // Inserta un bloque al final del contexto (texto plano).
-  const insertar = (snippet: string) => {
-    setContexto((prev) => {
-      const base = prev.replace(/\s+$/, '')
-      return (base ? base + '\n\n' : '') + snippet
-    })
-    // Devuelve el foco al textarea tras insertar.
-    setTimeout(() => taRef.current?.focus(), 0)
-  }
-
-  const palabras = contexto.trim() ? contexto.trim().split(/\s+/).length : 0
 
   return (
     <div className="space-y-4 p-1">
@@ -987,7 +936,7 @@ export function ConfigForm({
             Si un prospecto deja de responder, la IA le manda un recordatorio (gratis, dentro de las 24h).
           </p>
         </div>
-        <SwitchIa activa={seguimiento} onChange={setSeguimiento} />
+        <SwitchIa activa={seguimiento} onChange={setSeguimiento} etiquetas={['Activado', 'Apagado']} />
       </div>
 
       <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3 dark:border-slate-800">
@@ -999,7 +948,7 @@ export function ConfigForm({
             Cuando el prospecto confirma qué productos y cantidades quiere, la IA arma un borrador de cotización (sin afectar stock ni caja) y lo deja listo en el panel.
           </p>
         </div>
-        <SwitchIa activa={cotizacion} onChange={setCotizacion} />
+        <SwitchIa activa={cotizacion} onChange={setCotizacion} etiquetas={['Activado', 'Apagado']} />
       </div>
 
       <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3 dark:border-slate-800">
@@ -1021,82 +970,19 @@ export function ConfigForm({
           onChange={(v) => {
             if (initial.mpConectado) setCobroConLink(v)
           }}
+          etiquetas={['Activado', 'Apagado']}
         />
       </div>
 
       <ReporteDiarioCard />
-
-      <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
-        <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-          Contexto del negocio
-        </label>
-        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-          Describe tu oferta, precios, planes y preguntas frecuentes. La IA usa esto como
-          conocimiento base para responder y calificar.
-        </p>
-
-        {/* Inserción rápida de secciones (texto plano, ideal para la IA) */}
-        <div className="mb-2 flex flex-wrap items-center gap-1.5">
-          {SECCIONES_CONTEXTO.map((s) => (
-            <button
-              key={s.label}
-              type="button"
-              onClick={() => insertar(s.snippet)}
-              className="inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-600 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300 dark:hover:border-violet-700 dark:hover:bg-violet-900/20"
-            >
-              <Icon icon={s.icon} width={13} /> {s.label}
-            </button>
-          ))}
-        </div>
-
-        <textarea
-          ref={taRef}
-          value={contexto}
-          onChange={(e) => setContexto(e.target.value)}
-          rows={8}
-          placeholder="Ej: Vendemos planes de software para restaurantes. Plan Básico S/99/mes, Plan Pro S/199/mes con delivery. Atendemos Lima y provincias..."
-          className="block max-h-[460px] min-h-[180px] w-full resize-none overflow-y-auto rounded-xl border border-gray-200 bg-white p-3 text-sm leading-relaxed text-gray-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:focus:ring-violet-900/30"
-        />
-
-        <div className="mt-2 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => insertar(PLANTILLA_CONTEXTO)}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-400"
-          >
-            <Icon icon="solar:magic-stick-3-bold-duotone" width={14} /> Usar plantilla sugerida
-          </button>
-          <span className="text-[11px] text-gray-400">
-            {palabras} {palabras === 1 ? 'palabra' : 'palabras'} · {contexto.length} caracteres
-          </span>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
-        <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
-          Enlace de brochure / catálogo (opcional)
-        </label>
-        <p className="mb-2 text-xs text-gray-500 dark:text-gray-400">
-          PDF o imagen que la IA envía por WhatsApp cuando el prospecto pide más información.
-        </p>
-        <input
-          type="url"
-          value={brochure}
-          onChange={(e) => setBrochure(e.target.value)}
-          placeholder="https://tuweb.com/brochure.pdf"
-          className="block w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:focus:ring-violet-900/30"
-        />
-      </div>
 
       <div className="flex justify-end gap-2 pt-1">
         <Button
           color="primary"
           onClick={() =>
             onSave({
-              iaVentasContexto: contexto,
               iaVentasSeguimiento: seguimiento,
               iaVentasCotizacion: cotizacion,
-              iaVentasBrochureUrl: brochure,
               cobroConLink,
             })
           }

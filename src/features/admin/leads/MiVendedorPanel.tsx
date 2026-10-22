@@ -13,6 +13,7 @@ import type {
 } from '@/services/leads.service'
 import type { useLeadsViewModel } from './useLeadsViewModel'
 import { ConfigForm, EntrenarPanel } from './LeadsView'
+import { PLANTILLA_CONTEXTO, SECCIONES_CONTEXTO } from './LeadsModel'
 
 /**
  * "Mi vendedor" (22-10): todo lo que define cómo atiende la IA, en una sola
@@ -41,6 +42,10 @@ const PESTANAS: { id: Pestana; label: string; icon: string }[] = [
 ]
 
 interface Borrador {
+  /** Texto general del negocio (iaVentasContexto). Lo de Hierba Sana vive aquí, intacto. */
+  contexto: string
+  /** PDF o imagen que la IA envía cuando piden más información. */
+  brochure: string
   asesor: string
   vendedor: PerfilVendedor
   envio: ConfigEnvio
@@ -51,6 +56,8 @@ const ENVIO_VACIO: ConfigEnvio = { zonas: [], zonaPorDefecto: '' }
 
 function borradorDe(config: Vm['config']): Borrador {
   return {
+    contexto: config.iaVentasContexto ?? '',
+    brochure: config.iaVentasBrochureUrl ?? '',
     asesor: config.asesor ?? '',
     vendedor: config.vendedor ?? {},
     envio: config.envio ?? ENVIO_VACIO,
@@ -637,6 +644,83 @@ function EditorTema({
   )
 }
 
+function TextoGeneral({ valor, onChange }: { valor: string; onChange: (v: string) => void }) {
+  // Plegado por defecto: lo principal son los temas. Quien ya tiene su
+  // información escrita (como Hierba Sana) la abre y la ve completa.
+  const [abierto, setAbierto] = useState(false)
+  const palabras = valor.trim() ? valor.trim().split(/\s+/).length : 0
+  const insertar = (snippet: string) => {
+    const base = valor.replace(/\s+$/, '')
+    onChange((base ? base + '\n\n' : '') + snippet)
+  }
+  return (
+    <div className="rounded-2xl border border-gray-200/80 dark:border-slate-700">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+        className="flex w-full items-center gap-3 px-4 py-3.5 text-left"
+      >
+        <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+          <Icon icon="solar:document-text-linear" width={18} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[14px] font-bold text-gray-900 dark:text-white">Texto general</span>
+          <span className="block truncate text-[12.5px] text-gray-500 dark:text-gray-400">
+            {palabras
+              ? `${palabras.toLocaleString('es-PE')} palabras · ${valor.trim().slice(0, 90)}…`
+              : '¿Ya tienes tu información escrita? Pégala aquí: guiones, respuestas oficiales, políticas.'}
+          </span>
+        </span>
+        <Icon
+          icon="solar:alt-arrow-down-linear"
+          width={18}
+          className={`flex-none text-gray-400 transition-transform ${abierto ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {abierto && (
+        <div className="space-y-2 border-t border-gray-100 px-4 pb-4 pt-3 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-1.5">
+            {SECCIONES_CONTEXTO.map((sec) => (
+              <button
+                key={sec.label}
+                type="button"
+                onClick={() => insertar(sec.snippet)}
+                className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2 py-1 text-[12px] font-medium text-gray-600 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 dark:border-slate-700 dark:text-gray-300"
+              >
+                <Icon icon={sec.icon} width={13} /> {sec.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={valor}
+            onChange={(e) => onChange(e.target.value)}
+            rows={14}
+            placeholder="Ej. Somos una tienda de productos naturales en La Merced. Delivery en Lima en 24 horas…"
+            className={`${inputBase} max-h-[560px] min-h-[220px] resize-y leading-relaxed`}
+          />
+          <div className="flex items-center justify-between">
+            {!valor.trim() ? (
+              <button
+                type="button"
+                onClick={() => onChange(PLANTILLA_CONTEXTO)}
+                className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-emerald-700 hover:text-emerald-800"
+              >
+                <Icon icon="solar:magic-stick-3-linear" width={14} /> Usar plantilla sugerida
+              </button>
+            ) : (
+              <span />
+            )}
+            <span className="text-[11.5px] tabular-nums text-gray-400">
+              {palabras.toLocaleString('es-PE')} palabras · {valor.length.toLocaleString('es-PE')} caracteres
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function TabConocimiento({ b, set, vm }: { b: Borrador; set: (fn: (b: Borrador) => Borrador) => void; vm: Vm }) {
   const temas = b.vendedor.conocimiento ?? []
   const [filtro, setFiltro] = useState<CategoriaConocimiento | 'TODAS'>('TODAS')
@@ -657,9 +741,24 @@ function TabConocimiento({ b, set, vm }: { b: Borrador; set: (fn: (b: Borrador) 
 
   return (
     <div className="space-y-5">
+      <div className="grid gap-2 rounded-2xl bg-white p-4 text-[12.5px] text-gray-600 shadow-[0_1px_2px_rgba(16,24,40,.04)] sm:grid-cols-3 dark:bg-[#111827] dark:text-gray-300">
+        {[
+          { icon: 'solar:notebook-bookmark-linear', t: 'Temas', d: 'datos puntuales: horarios, cambios, promociones.' },
+          { icon: 'solar:document-text-linear', t: 'Texto general', d: 'guiones y respuestas que ya tienes escritas.' },
+          { icon: 'solar:document-add-linear', t: 'Documentos', d: 'material largo: catálogos, PDFs o tu web.' },
+        ].map((x) => (
+          <p key={x.t} className="flex items-start gap-2">
+            <Icon icon={x.icon} width={16} className="mt-0.5 flex-none text-emerald-600" />
+            <span>
+              <b className="text-gray-900 dark:text-white">{x.t}</b> para {x.d}
+            </span>
+          </p>
+        ))}
+      </div>
+
       <Seccion
         icon="solar:notebook-bookmark-linear"
-        titulo="Base de conocimiento"
+        titulo="Temas"
         descripcion="Lo que tu vendedor necesita saber. No lo copia tal cual: lo usa para responder lo que pregunten."
         accion={
           <button
@@ -767,12 +866,30 @@ function TabConocimiento({ b, set, vm }: { b: Borrador; set: (fn: (b: Borrador) 
         )}
       </Seccion>
 
+      <TextoGeneral valor={b.contexto} onChange={(v) => set((x) => ({ ...x, contexto: v }))} />
+
       <Seccion
         icon="solar:document-add-linear"
         titulo="Documentos y páginas web"
         descripcion="Sube textos largos o el enlace de tu web: la IA busca ahí lo que le pregunten. Se guardan al instante."
       >
         <EntrenarPanel vm={vm} />
+      </Seccion>
+
+      <Seccion
+        icon="solar:gallery-send-linear"
+        titulo="Material que envía"
+        descripcion="Un PDF o imagen (brochure, catálogo, carta) que la IA manda cuando el cliente pide más información."
+      >
+        <Campo label="Enlace del brochure o catálogo">
+          <input
+            type="url"
+            value={b.brochure}
+            onChange={(e) => set((x) => ({ ...x, brochure: e.target.value }))}
+            placeholder="https://tuweb.com/catalogo.pdf"
+            className={inputBase}
+          />
+        </Campo>
       </Seccion>
     </div>
   )
@@ -1131,17 +1248,29 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
   const [b, setB] = useState<Borrador>(original)
   useEffect(() => setB(original), [original])
   const sucio = JSON.stringify(b) !== JSON.stringify(original)
+  const { contexto: _c, brochure: _b, ...nuevos } = b
+  const { contexto: _oc, brochure: _ob, ...nuevosOriginal } = original
+  // Con el servidor de antes solo se pueden guardar el texto general y el
+  // brochure; si se tocó algo más, no se guarda para no perderlo en silencio.
+  const tocoLoNuevo = JSON.stringify(nuevos) !== JSON.stringify(nuevosOriginal)
+  const puedeGuardar = sucio && (soportado || !tocoLoNuevo)
   const set = (fn: (b: Borrador) => Borrador) => setB(fn)
 
   const guardar = () =>
     vm.actions.guardarConfig({
-      asesor: b.asesor.trim(),
-      vendedor: b.vendedor,
+      iaVentasContexto: b.contexto,
+      iaVentasBrochureUrl: b.brochure.trim(),
+      ...(soportado ? camposNuevos(b) : {}),
+    })
+
+  const camposNuevos = (x: Borrador) => ({
+      asesor: x.asesor.trim(),
+      vendedor: x.vendedor,
       envio: {
-        zonas: b.envio.zonas.filter((z) => z.nombre.trim()),
-        zonaPorDefecto: b.envio.zonaPorDefecto,
+        zonas: x.envio.zonas.filter((z) => z.nombre.trim()),
+        zonaPorDefecto: x.envio.zonaPorDefecto,
       },
-      mediosPagoLista: b.medios.filter((m) => m.nombre.trim() && m.detalle.trim()),
+      mediosPagoLista: x.medios.filter((m) => m.nombre.trim() && m.detalle.trim()),
     })
 
   return (
@@ -1185,7 +1314,7 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
             <button
               type="button"
               onClick={guardar}
-              disabled={!sucio || !soportado}
+              disabled={!puedeGuardar}
               className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-gray-900 px-4 text-[13.5px] font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-gray-900"
             >
               <Icon icon={sucio ? 'solar:diskette-linear' : 'solar:check-circle-linear'} width={17} />
@@ -1199,11 +1328,13 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
         <div className="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[13px] text-sky-800 dark:border-sky-900/40 dark:bg-sky-900/20 dark:text-sky-200">
           <Icon icon="solar:info-circle-linear" width={18} className="mt-0.5 flex-none" />
           <span>
-            Esta pantalla se activa con la próxima actualización del sistema. Mientras tanto puedes revisarla, y en{' '}
+            Personalidad, temas, entrega y pagos se activan con la próxima actualización del sistema. Mientras tanto
+            ya puedes editar y guardar el texto general y el material que envía (en Conocimiento), y los interruptores
+            en{' '}
             <button type="button" onClick={() => irA('ajustes')} className="font-semibold underline">
               Ajustes
-            </button>{' '}
-            sigue funcionando la configuración de siempre.
+            </button>
+            .
           </span>
         </div>
       )}
@@ -1218,7 +1349,7 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
         <Seccion
           icon="solar:tuning-2-linear"
           titulo="Ajustes de la IA"
-          descripcion="Encender la IA, seguimientos, cotizaciones, link de pago y el contexto general del negocio."
+          descripcion="Encender la IA, seguimientos, cotizaciones y link de pago. Lo que la IA sabe está en Conocimiento."
         >
           <ConfigForm initial={vm.config} onSave={vm.actions.guardarConfig} onToggle={vm.actions.toggleIaVentas} />
         </Seccion>
