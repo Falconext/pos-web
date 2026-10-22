@@ -80,6 +80,12 @@ export const ProductDisponibilidadIa: React.FC<{ vm: ViewProps }> = ({ vm }) => 
   // producto que acaba de cargar.
   const actual = String(formValues?.disponibilidad ?? 'INMEDIATA');
   const prioridad = Number(formValues?.prioridadVenta ?? 0);
+  // Vacío = lo de la empresa; "0" = este producto no se recompra.
+  const diasRecompra =
+    formValues?.diasRecompra === null || formValues?.diasRecompra === undefined
+      ? ''
+      : String(formValues.diasRecompra);
+  const noSeRecompra = diasRecompra === '0';
   const productoId = Number(formValues?.productoId ?? 0);
 
   const poner = (name: string, value: string) =>
@@ -184,6 +190,49 @@ export const ProductDisponibilidadIa: React.FC<{ vm: ViewProps }> = ({ vm }) => 
         <p className="mt-1 text-[10px] text-gray-400">
           Entre productos que sirven para lo mismo, la IA ofrece primero el de
           mayor empuje.
+        </p>
+      </div>
+
+      {/* Cada producto se acaba a su ritmo: un suplemento de 30 cápsulas no
+          dura lo mismo que uno de 90, y un mueble no se repone. */}
+      <div className="mt-3 border-t border-gray-100 pt-2 dark:border-slate-800">
+        <p className="mb-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300">
+          Recordarle que reponga
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">A los</span>
+          <input
+            type="number"
+            min={1}
+            max={365}
+            inputMode="numeric"
+            data-testid="dias-recompra"
+            disabled={noSeRecompra}
+            value={noSeRecompra ? '' : diasRecompra}
+            placeholder="25"
+            onChange={(e) => {
+              const v = e.target.value.replace(/\D/g, '').slice(0, 3);
+              poner('diasRecompra', v === '' ? '' : String(Math.min(365, Math.max(1, Number(v)))));
+            }}
+            className="w-16 rounded-lg border border-gray-200 px-2 py-1 text-center text-[12px] font-bold disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900"
+          />
+          <span className="text-[11px] text-gray-500 dark:text-gray-400">días de entregado</span>
+        </div>
+        <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-gray-600 dark:text-gray-300">
+          <input
+            type="checkbox"
+            data-testid="no-se-recompra"
+            checked={noSeRecompra}
+            onChange={(e) => poner('diasRecompra', e.target.checked ? '0' : '')}
+          />
+          Este producto no se recompra
+        </label>
+        <p className="mt-1 text-[10px] text-gray-400">
+          {noSeRecompra
+            ? 'No se le manda recordatorio por este producto.'
+            : diasRecompra
+              ? `La IA le escribe ${diasRecompra} días después de recibirlo para ofrecerle reponer.`
+              : 'Vacío: lo que tengas en Avisos → Recompra (25 días si no lo cambiaste).'}
         </p>
       </div>
     </div>

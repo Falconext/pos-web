@@ -121,6 +121,8 @@ export type IFormProduct = {
     disponibilidad?: 'INMEDIATA' | 'BAJO_PEDIDO' | 'NO_DISPONIBLE';
     /** Empuje frente a productos equivalentes (1 media, 2 alta, 3 muy alta). */
     prioridadVenta?: number;
+    /** Días hasta el aviso de recompra. null = lo de la empresa; 0 = no se recompra. */
+    diasRecompra?: number | string | null;
   productoId: number
   descripcion: string,
   categoriaNombre: string

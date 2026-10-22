@@ -18,6 +18,8 @@ import {
   ICreationLote,
   IWholesaleOption,
 } from "./ProductModalModel";
+import { diasRecompraParaGuardar } from "./diasRecompra";
+
 
 export const useProductModalViewModel = (props: IPropsProducts) => {
   const {
@@ -1633,6 +1635,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             Number((formValues as any)?.prioridadVenta) >= 1
               ? Number((formValues as any).prioridadVenta)
               : undefined,
+          diasRecompra: diasRecompraParaGuardar((formValues as any)?.diasRecompra),
           preciosMayorista: Array.isArray(formValues?.preciosMayorista)
             ? formValues.preciosMayorista.map((p) => ({
                 cantidadMinima: Number(p.cantidadMinima),
@@ -1850,6 +1853,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             Number((formValues as any)?.prioridadVenta) >= 1
               ? Number((formValues as any).prioridadVenta)
               : undefined,
+          diasRecompra: diasRecompraParaGuardar((formValues as any)?.diasRecompra),
           preciosMayorista: Array.isArray(formValues?.preciosMayorista)
             ? formValues.preciosMayorista.map((p) => ({
                 cantidadMinima: Number(p.cantidadMinima),

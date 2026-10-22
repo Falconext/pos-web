@@ -136,6 +136,9 @@ export function BiPanel() {
         </Tarjeta>
       </div>
 
+      {/* Qué anuncio trae ventas */}
+      {bi.anuncios && <TarjetaAnuncios anuncios={bi.anuncios} />}
+
       {/* Quién compra */}
       <Tarjeta titulo="Quiénes compran" icono="solar:users-group-rounded-bold-duotone" acento="text-violet-500">
         <div className="grid gap-5 sm:grid-cols-3">
@@ -195,6 +198,96 @@ export function BiPanel() {
         )}
       </Tarjeta>
     </div>
+  )
+}
+
+/**
+ * Qué anuncio de Facebook/Instagram trajo cada venta. WhatsApp manda en el
+ * primer mensaje de qué anuncio vino el cliente; antes se descartaba y el
+ * negocio pagaba publicidad sin saber cuál le vendía.
+ */
+function TarjetaAnuncios({ anuncios }: { anuncios: NonNullable<ReporteBi['anuncios']> }) {
+  const { filas, conversacionesPorAnuncio, conversacionesSinAnuncio } = anuncios
+  return (
+    <Tarjeta
+      titulo="Qué anuncio te trajo ventas"
+      icono="mdi:bullhorn"
+      acento="text-amber-500"
+      pie={
+        conversacionesPorAnuncio + conversacionesSinAnuncio > 0
+          ? `${conversacionesPorAnuncio} conversaciones llegaron por un anuncio · ${conversacionesSinAnuncio} escribieron directo`
+          : undefined
+      }
+    >
+      {filas.length === 0 ? (
+        <p className="text-xs leading-relaxed text-gray-400" data-testid="anuncios-vacio">
+          Todavía nadie llegó por un anuncio en este rango. Cuando alguien toque un anuncio de
+          Facebook o Instagram con el botón de WhatsApp, aparece acá con lo que compró. Se cuenta
+          desde que se activó este reporte: lo de antes no quedó guardado.
+        </p>
+      ) : (
+        <div className="-mx-4 overflow-x-auto px-4">
+          <table className="w-full text-xs" data-testid="anuncios-tabla">
+            <thead>
+              <tr className="text-left text-[10px] font-black uppercase tracking-widest text-gray-400">
+                <th className="pb-2 pr-2">Anuncio</th>
+                <th className="pb-2 px-2 text-right">
+                  <span className="hidden sm:inline">Conversaciones</span>
+                  <span className="sm:hidden">Chats</span>
+                </th>
+                <th className="pb-2 px-2 text-right">Ventas</th>
+                {/* En el celular no entra: se deduce de las dos de al lado. */}
+                <th className="hidden pb-2 px-2 text-right sm:table-cell">Conversión</th>
+                <th className="pb-2 pl-2 text-right">Vendido</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {filas.map((f) => (
+                <tr key={f.anuncioId} data-testid={`anuncio-${f.anuncioId}`}>
+                  <td className="max-w-[140px] py-2 pr-2 sm:max-w-[260px]">
+                    <div className="flex items-center gap-2">
+                      {f.imagenUrl ? (
+                        <img
+                          src={f.imagenUrl}
+                          alt=""
+                          className="h-8 w-8 flex-shrink-0 rounded-md object-cover"
+                          onError={(e) => ((e.currentTarget as HTMLImageElement).style.display = 'none')}
+                        />
+                      ) : null}
+                      <div className="min-w-0">
+                        <p className="truncate font-bold text-gray-800 dark:text-gray-100">
+                          {f.titulo || (f.tipo === 'post' ? 'Publicación sin título' : 'Anuncio sin título')}
+                        </p>
+                        {f.url ? (
+                          <a
+                            href={f.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[10px] font-bold text-indigo-600 hover:underline"
+                          >
+                            Ver {f.tipo === 'post' ? 'publicación' : 'anuncio'}
+                          </a>
+                        ) : (
+                          <p className="truncate text-[10px] text-gray-400">{f.anuncioId}</p>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-2 text-right tabular-nums text-gray-700 dark:text-gray-300">{f.conversaciones}</td>
+                  <td className="px-2 text-right tabular-nums text-gray-700 dark:text-gray-300">{f.pedidos}</td>
+                  <td className="hidden px-2 text-right tabular-nums text-gray-700 dark:text-gray-300 sm:table-cell">
+                    {f.conversion}%
+                  </td>
+                  <td className="whitespace-nowrap pl-2 text-right font-black tabular-nums text-gray-900 dark:text-white">
+                    {soles(f.vendido)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Tarjeta>
   )
 }
 
