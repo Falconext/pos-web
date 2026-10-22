@@ -334,9 +334,18 @@ export const MODULE_META: Record<string, ModuleMeta> = {
   },
 
   leads: {
-    navRoute: () => '/administrador/leads',
+    navRoute: () => '/administrador/leads/chats',
     pathPrefix: () => '/administrador/leads',
     exactPath: true,
+    // Cada vista del módulo es su propia página. Demos no va acá: solo la usa
+    // quien entrega demos (Krezka) y eso se sabe recién con la config de la
+    // IA; se abre desde un botón en el encabezado del módulo.
+    extraItems: () => [
+      { codigo: 'leads:chats', nombre: 'Chats', ruta: '/administrador/leads/chats' },
+      { codigo: 'leads:embudo', nombre: 'Embudo', ruta: '/administrador/leads/embudo' },
+      { codigo: 'leads:analitica', nombre: 'Analítica', ruta: '/administrador/leads/analitica' },
+      { codigo: 'leads:avisos', nombre: 'Avisos', ruta: '/administrador/leads/avisos' },
+    ],
   },
 
   // API de Krezka: lleva directo a "Claves API". Solo el administrador saca

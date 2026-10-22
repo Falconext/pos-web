@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { format, isSameDay, isToday, isYesterday } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -16,6 +17,8 @@ import { formatoDuracion, MAX_SEGUNDOS_NOTA, textoDeNotaDeVoz, useGrabadoraNota 
 import { BandejaChats } from './BandejaChats'
 import {
   ESTADO_META,
+  VISTA_META,
+  type VistaLeads,
   nombreVisible,
   iniciales,
   colorAvatar,
@@ -27,32 +30,29 @@ import type {
 } from '@/services/leads.service'
 import { ReporteDiarioCard } from './ReporteDiarioCard'
 
-type Vista = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos'
-
-const VISTAS: { id: Vista; label: string; icon: string }[] = [
-  { id: 'conversaciones', label: 'Conversaciones', icon: 'solar:chat-round-dots-bold-duotone' },
-  { id: 'embudo', label: 'Embudo', icon: 'solar:filter-bold-duotone' },
-  { id: 'analitica', label: 'Analítica', icon: 'solar:chart-2-bold-duotone' },
-  { id: 'avisos', label: 'Avisos', icon: 'solar:bell-bold-duotone' },
-  // Solo para quien entrega demos por WhatsApp (Krezka): ver `tieneDemos`.
-  { id: 'demos', label: 'Demos', icon: 'solar:monitor-smartphone-bold-duotone' },
-]
-
-export default function LeadsView() {
+/**
+ * Cada vista (Chats, Embudo, Analítica, Avisos) es una página propia con su
+ * entrada en el menú lateral; antes eran pestañas apiladas en esta misma
+ * pantalla. Demos se abre desde el encabezado: solo la usa quien entrega demos.
+ */
+export default function LeadsView({ vista }: { vista: VistaLeads }) {
   const vm = useLeadsViewModel()
-  const [vista, setVista] = useState<Vista>('conversaciones')
+  const navigate = useNavigate()
+  const meta = VISTA_META[vista]
 
   return (
     <div className="min-h-screen px-2 pb-4 dark:bg-[#0A0D14]">
       {/* Encabezado */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+          <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-violet-600 dark:text-violet-400">
+            <Icon icon="solar:magic-stick-3-bold" width={13} />
             IA de Ventas
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Tu asesor por WhatsApp califica prospectos con BANT y te avisa cuando están calientes.
           </p>
+          <h1 className="mt-1 text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+            {meta.titulo}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{meta.descripcion}</p>
         </div>
         <div className="flex items-center gap-3">
           {/* El interruptor aparece cuando sabemos en qué posición va. Un
@@ -63,6 +63,16 @@ export default function LeadsView() {
               activa={vm.config.iaVentasActiva}
               onChange={vm.actions.toggleIaVentas}
             />
+          )}
+          {vm.config.tieneDemos && vista !== 'demos' && (
+            <Button
+              color="secondary"
+              onClick={() => navigate('/administrador/leads/demos')}
+              className="flex items-center gap-2"
+            >
+              <Icon icon="solar:monitor-smartphone-bold-duotone" className="text-lg" />
+              Demos
+            </Button>
           )}
           <Button
             color="secondary"
@@ -96,25 +106,6 @@ export default function LeadsView() {
           </span>
         </div>
       )}
-
-      {/* Conmutador de vistas */}
-      <div className="mb-4 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800/60 w-fit">
-        {VISTAS.filter((v) => v.id !== 'demos' || vm.config.tieneDemos).map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => setVista(v.id)}
-            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors ${
-              vista === v.id
-                ? 'bg-white text-indigo-600 shadow-sm dark:bg-[#111827] dark:text-indigo-400'
-                : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-            }`}
-          >
-            <Icon icon={v.icon} className="text-base" />
-            {v.label}
-          </button>
-        ))}
-      </div>
 
       {vista === 'embudo' && <EmbudoBoard onVerCliente={vm.setFicha360} />}
       {vista === 'analitica' && <BiPanel />}

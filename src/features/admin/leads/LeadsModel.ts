@@ -96,3 +96,37 @@ export function colorAvatar(telefono: string): string {
   for (const c of telefono) h = (h * 31 + c.charCodeAt(0)) >>> 0
   return PASTELES[h % PASTELES.length]
 }
+
+/** Vistas del módulo: cada una es una página con su entrada en el menú lateral. */
+export type VistaLeads = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos'
+
+export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
+  chats: 'conversaciones',
+  embudo: 'embudo',
+  analitica: 'analitica',
+  avisos: 'avisos',
+  demos: 'demos',
+}
+
+export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: string }> = {
+  conversaciones: {
+    titulo: 'Chats',
+    descripcion: 'Las conversaciones de WhatsApp que atiende tu asesor IA, con la ficha de cada cliente.',
+  },
+  embudo: {
+    titulo: 'Embudo',
+    descripcion: 'Cada pedido por etapa: desde el primer mensaje hasta la cotización, el pago y la entrega.',
+  },
+  analitica: {
+    titulo: 'Analítica',
+    descripcion: 'Lo que tus clientes piden y no tienes, conversión, ticket promedio y quién te compra.',
+  },
+  avisos: {
+    titulo: 'Avisos',
+    descripcion: 'Los mensajes que salen solos a tus clientes: qué está por salir, qué salió y qué no salió y por qué.',
+  },
+  demos: {
+    titulo: 'Demos',
+    descripcion: 'Prospectos que pidieron una demo del sistema.',
+  },
+}

@@ -93,7 +93,15 @@ const api = {
 }
 jest.mock('@/services/leads.service', () => api)
 
+import { MemoryRouter } from 'react-router-dom'
 import LeadsView from '../LeadsView'
+
+/** Chats es su propia página desde que cada vista tiene entrada en el menú. */
+const Bandeja = () => (
+  <MemoryRouter>
+    <LeadsView vista="conversaciones" />
+  </MemoryRouter>
+)
 
 /** Sin CSS, la lista y la cabecera del chat pintan el mismo nombre; en pantalla
  *  están en columnas distintas, así que acá basta con el primero. */
@@ -103,13 +111,13 @@ beforeEach(() => jest.clearAllMocks())
 
 describe('bandeja de conversaciones', () => {
   it('lista los chats sin que haya que abrir ninguno', async () => {
-    render(<LeadsView />)
+    render(<Bandeja />)
     await waitFor(() => expect(primero('Rosa Quispe')).toBeInTheDocument())
     expect(primero('Luis Ramos')).toBeInTheDocument()
   })
 
   it('al abrir un chat muestra "Tomar chat" y la ficha del cliente', async () => {
-    render(<LeadsView />)
+    render(<Bandeja />)
     await waitFor(() => expect(primero('Rosa Quispe')).toBeInTheDocument())
 
     fireEvent.click(primero('Rosa Quispe'))
@@ -121,7 +129,7 @@ describe('bandeja de conversaciones', () => {
   })
 
   it('"Tomar chat" pausa la IA en ese chat', async () => {
-    render(<LeadsView />)
+    render(<Bandeja />)
     await waitFor(() => expect(primero('Rosa Quispe')).toBeInTheDocument())
     fireEvent.click(primero('Rosa Quispe'))
     await waitFor(() => expect(screen.getByText('Tomar chat')).toBeInTheDocument())
@@ -143,7 +151,7 @@ describe('bandeja de conversaciones', () => {
    * cae antes de que lo vuelva a notar él.
    */
   it('el botón de la IA no se va con el scroll de los mensajes', async () => {
-    render(<LeadsView />)
+    render(<Bandeja />)
     await waitFor(() => expect(primero('Rosa Quispe')).toBeInTheDocument())
     fireEvent.click(primero('Rosa Quispe'))
 
@@ -165,7 +173,7 @@ describe('bandeja de conversaciones', () => {
    * bot, que son los únicos donde él necesita tomar el control.
    */
   it('también aparece en un chat de prueba, que no tiene lead', async () => {
-    render(<LeadsView />)
+    render(<Bandeja />)
     await waitFor(() => expect(primero('StiloColecta')).toBeInTheDocument())
 
     fireEvent.click(primero('StiloColecta'))
@@ -176,7 +184,7 @@ describe('bandeja de conversaciones', () => {
   })
 
   it('se salta de un chat a otro sin cerrar el anterior', async () => {
-    render(<LeadsView />)
+    render(<Bandeja />)
     await waitFor(() => expect(primero('Rosa Quispe')).toBeInTheDocument())
 
     fireEvent.click(primero('Rosa Quispe'))

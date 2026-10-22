@@ -290,6 +290,7 @@ function App() {
           {/* Módulo IA de Ventas / Leads — gateado por el módulo 'leads' del plan */}
           <Route element={<ModuleRoute module="leads" />}>
             <Route path="leads" element={<LeadsPage />} />
+            <Route path="leads/:vista" element={<LeadsPage />} />
           </Route>
 
           {/* Rutas de ADMIN_SISTEMA */}
