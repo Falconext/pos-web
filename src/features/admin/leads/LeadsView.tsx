@@ -24,6 +24,7 @@ import type {
   LeadDocumento,
   TipoLeadDocumento,
 } from '@/services/leads.service'
+import { ReporteDiarioCard } from './ReporteDiarioCard'
 
 type Vista = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos'
 
@@ -1066,6 +1067,8 @@ export function ConfigForm({
           }}
         />
       </div>
+
+      <ReporteDiarioCard />
 
       <div className="rounded-xl border border-gray-100 p-3 dark:border-slate-800">
         <label className="mb-1 block text-sm font-semibold text-gray-900 dark:text-white">
