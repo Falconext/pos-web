@@ -44,7 +44,7 @@ export function useApiKrezkaViewModel() {
     };
 
     const url = urlDe(base, ruta, id, query);
-    const conCuerpo = ruta.metodo !== 'GET';
+    const conCuerpo = ruta.metodo === 'POST' || ruta.metodo === 'PATCH';
     const cuerpoLeido = conCuerpo ? leerCuerpo(cuerpo) : ({ ok: true, valor: undefined } as const);
     const codigo = useMemo(
         () => codigoPara(lenguaje, ruta, url, cuerpoLeido.ok ? cuerpoLeido.valor : ruta.cuerpo),

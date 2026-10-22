@@ -14,6 +14,7 @@ const COLOR_METODO: Record<string, string> = {
     GET: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
     POST: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
     PATCH: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    DELETE: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
 
 const USOS = [
@@ -104,6 +105,8 @@ export default function ApiKrezkaView() {
                         <li><b>Precio:</b> sin <code>unit_price</code> se usa el de tu catálogo con su oferta. El envío va como ítem sin producto.</li>
                         <li><b>Sin stock no se emite nada</b>, y la respuesta dice qué falta.</li>
                         <li>Manda tu número de pedido en <code>external_id</code>: si llega dos veces, la segunda se rechaza.</li>
+                        <li><b>Avisos:</b> registra un webhook y tu servidor se entera solo cuando SUNAT acepta, rechaza o se anula una venta (firma en <code>Falconext-Signature</code>).</li>
+                        <li><b>Anular:</b> <code>POST /sales/{'{id}'}/void</code>; una boleta aceptada se anula con su nota de crédito. <b>PDF:</b> <code>GET /sales/{'{id}'}/pdf</code>.</li>
                         <li>Cada error dice qué campo (<code>param</code>) y qué hacer.</li>
                     </ul>
                 </div>
@@ -164,7 +167,7 @@ function Probador({ vm }: { vm: ApiKrezkaVM }) {
 
                     {necesitaId(vm.ruta) && (
                         <label className="block text-xs font-bold text-gray-600 dark:text-gray-300">
-                            Id {vm.ruta.ruta.startsWith('/sales') ? 'de la venta (sale_…)' : 'del producto'}
+                            Id {vm.ruta.ruta.startsWith('/sales') ? 'de la venta (sale_…)' : vm.ruta.ruta.startsWith('/customers') ? 'del cliente' : vm.ruta.ruta.startsWith('/webhook') ? 'del webhook (we_…)' : 'del producto'}
                             <input value={vm.id} onChange={(e) => vm.setId(e.target.value)} data-testid="api-id" className={`${campo} mt-1 font-mono`} />
                         </label>
                     )}

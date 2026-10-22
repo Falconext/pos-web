@@ -7,10 +7,22 @@ import { PORTAL_DESARROLLADORES, RUTAS, codigoPara, leerCuerpo, rutaPorId, tipoD
 const BASE = 'https://api.krezka.com/api/v1/erp';
 
 describe('rutas', () => {
-    it('cubre catálogo, stock y ventas, y los POST llevan Idempotency-Key', () => {
+    it('cubre catálogo, stock, ventas, clientes y avisos; los POST que crean llevan Idempotency-Key', () => {
         const ids = RUTAS.map((r) => r.id);
-        expect(ids).toEqual(expect.arrayContaining(['listar-productos', 'crear-producto', 'ajustar-stock', 'crear-venta', 'ver-venta']));
-        for (const r of RUTAS.filter((x) => x.metodo === 'POST')) expect(r.idempotente).toBe(true);
+        expect(ids).toEqual(
+            expect.arrayContaining([
+                'listar-productos', 'crear-producto', 'ajustar-stock', 'crear-venta', 'ver-venta', 'anular-venta', 'pdf-venta',
+                'crear-cliente', 'listar-clientes', 'crear-categoria', 'crear-marca', 'crear-webhook', 'probar-webhook', 'borrar-webhook',
+            ]),
+        );
+        // Los webhooks son configuración: el backend no les pide Idempotency-Key.
+        for (const r of RUTAS.filter((x) => x.metodo === 'POST' && !x.ruta.startsWith('/webhook'))) expect(r.idempotente).toBe(true);
+    });
+
+    it('un DELETE no lleva cuerpo en el código', () => {
+        const c = codigoPara('curl', rutaPorId('borrar-webhook'), 'https://x/v1/erp/webhook_endpoints/we_1');
+        expect(c).toContain('curl -X DELETE');
+        expect(c).not.toContain('-d ');
     });
 
     it('los ejemplos usan los nombres de campo que acepta la API', () => {
