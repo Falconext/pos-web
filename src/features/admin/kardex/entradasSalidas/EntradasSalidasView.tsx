@@ -505,9 +505,10 @@ function ElegirVariante({ vm }: { vm: EntradasSalidasVM }) {
 }
 
 function DetalleModal({ doc, onCerrar, onImprimir }: { doc: DetalleDocumento; onCerrar: () => void; onImprimir: () => void }) {
+    const conLote = doc.items.some((it) => it.lote);
     return (
         <Fondo onCerrar={onCerrar} ancho="max-w-3xl">
-            <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="mb-4 flex flex-wrap items-start justify-between gap-3 pr-10">
                 <div>
                     <span className={`inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-mono text-sm font-black ${ESTILO_TIPO[doc.tipo].chip}`}>
                         <Icon icon={ESTILO_TIPO[doc.tipo].icono} width={15} />
@@ -526,7 +527,7 @@ function DetalleModal({ doc, onCerrar, onImprimir }: { doc: DetalleDocumento; on
                     <thead>
                         <tr className="border-b border-slate-100 text-left text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:border-slate-800">
                             <th className="py-2">Producto</th>
-                            <th className="py-2">Lote</th>
+                            {conLote ? <th className="py-2">Lote</th> : null}
                             <th className="py-2 text-right">Cantidad</th>
                         </tr>
                     </thead>
@@ -540,7 +541,7 @@ function DetalleModal({ doc, onCerrar, onImprimir }: { doc: DetalleDocumento; on
                                     </p>
                                     <p className="font-mono text-[11px] text-slate-400">{it.codigo}</p>
                                 </td>
-                                <td className="py-2 text-slate-500">{it.lote ?? '—'}</td>
+                                {conLote ? <td className="py-2 text-slate-500">{it.lote ?? '—'}</td> : null}
                                 <td className="py-2 text-right font-bold">
                                     {it.cantidad} <span className="text-[10px] font-normal text-slate-400">{it.unidad}</span>
                                 </td>
