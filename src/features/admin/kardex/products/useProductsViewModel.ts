@@ -650,6 +650,12 @@ export const useProductsViewModel = () => {
                             seoTitulo: full.seoTitulo ?? '',
                             seoDescripcion: full.seoDescripcion ?? '',
                             seoPalabraClave: full.seoPalabraClave ?? '',
+                            // Lo del bloque "Para la IA de Ventas" tampoco viene en el
+                            // listado: la ficha abría "Disponible / Sin preferencia"
+                            // aunque el producto estuviera agotado o con empuje alto.
+                            disponibilidad: full.disponibilidad ?? undefined,
+                            prioridadVenta: full.prioridadVenta ?? 0,
+                            diasRecompra: full.diasRecompra ?? null,
                             atributosTecnicos: full.atributosTecnicos ?? (prev.formValues as any).atributosTecnicos,
                             codigosBarrasExtra: Array.isArray(full.codigosBarrasExtra)
                                 ? full.codigosBarrasExtra

@@ -85,7 +85,10 @@ describe('los tres estados de disponibilidad', () => {
     // rechaza (@Min(1) @Max(3)). El usuario se habría enterado al guardar.
     const { vm, cambios } = vmFalso();
     render(<ProductDisponibilidadIa vm={vm} />);
-    expect(screen.queryByRole('spinbutton')).toBeNull();
+    // El único número libre del bloque es el de días de recompra.
+    expect(screen.queryAllByRole('spinbutton').map((e) => e.getAttribute('data-testid'))).toEqual([
+      'dias-recompra',
+    ]);
     fireEvent.click(screen.getByTestId('prio-4'));
     expect(cambios).toEqual([{ name: 'prioridadVenta', value: '4' }]);
   });
