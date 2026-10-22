@@ -99,6 +99,74 @@ export interface LeadsConfig {
   cobroConLink?: boolean
   /** El negocio tiene su Mercado Pago conectado (sin eso no hay link). */
   mpConectado?: boolean
+  // ─── "Mi vendedor" ─────────────────────────────────────────────────────────
+  // Solo llegan de un servidor que ya tiene la pantalla nueva: que `vendedor`
+  // venga en la respuesta es lo que habilita guardarla.
+  /** Nombre con el que se presenta ("Ana"). Vacío = habla como el negocio. */
+  asesor?: string
+  vendedor?: PerfilVendedor
+  envio?: ConfigEnvio
+  mediosPagoLista?: MedioPago[]
+}
+
+/** Del 1 (muy conciso) al 5 (muy detallado). */
+export type LongitudRespuesta = 1 | 2 | 3 | 4 | 5
+
+export type CategoriaConocimiento =
+  | 'PRODUCTOS'
+  | 'HORARIOS'
+  | 'ENVIOS'
+  | 'PAGOS'
+  | 'DEVOLUCIONES'
+  | 'OTROS'
+
+export interface TemaConocimiento {
+  categoria: CategoriaConocimiento
+  titulo: string
+  texto: string
+}
+
+export interface PerfilVendedor {
+  audiencia?: string
+  reglas?: string
+  estiloComunicacion?: string
+  estiloVentas?: string
+  longitud?: LongitudRespuesta
+  emojis?: boolean
+  emojisPermitidos?: string[]
+  signosApertura?: boolean
+  palabrasEvitar?: string[]
+  mensajeBienvenida?: string
+  mensajeDerivacion?: string
+  conocimiento?: TemaConocimiento[]
+}
+
+export type TipoZona = 'DOMICILIO' | 'AGENCIA' | 'RECOJO'
+
+export interface LugarZona {
+  nombre: string
+  /** Como lo escribe la gente ("SJL"). El panel no los edita pero los conserva. */
+  alias?: string[]
+}
+
+export interface ZonaEnvio {
+  nombre: string
+  tipo: TipoZona
+  tarifa: number
+  lugares?: LugarZona[]
+  notaPago?: string
+  courier?: string
+}
+
+export interface ConfigEnvio {
+  zonas: ZonaEnvio[]
+  zonaPorDefecto: string
+}
+
+export interface MedioPago {
+  nombre: string
+  detalle: string
+  titular?: string
 }
 
 // ─── Llamadas a la API (todas scoped por empresa del token) ──────────────────

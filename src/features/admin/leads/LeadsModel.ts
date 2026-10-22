@@ -77,3 +77,89 @@ export function iniciales(nombre: string | null, telefono: string): string {
   if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase()
   return base.slice(-2).toUpperCase()
 }
+
+/**
+ * Fondo pastel del avatar, fijo por teléfono: el mismo cliente sale siempre del
+ * mismo color y la lista no es un muro de círculos iguales.
+ */
+const PASTELES = [
+  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+  'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+  'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300',
+  'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-300',
+  'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+]
+
+export function colorAvatar(telefono: string): string {
+  let h = 0
+  for (const c of telefono) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return PASTELES[h % PASTELES.length]
+}
+
+/** Vistas del módulo: cada una es una página con su entrada en el menú lateral. */
+export type VistaLeads = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos' | 'vendedor'
+
+export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
+  chats: 'conversaciones',
+  embudo: 'embudo',
+  analitica: 'analitica',
+  avisos: 'avisos',
+  demos: 'demos',
+  vendedor: 'vendedor',
+}
+
+export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: string }> = {
+  conversaciones: {
+    titulo: 'Chats',
+    descripcion: 'Las conversaciones de WhatsApp que atiende tu asesor IA, con la ficha de cada cliente.',
+  },
+  embudo: {
+    titulo: 'Embudo',
+    descripcion: 'Cada pedido por etapa: desde el primer mensaje hasta la cotización, el pago y la entrega.',
+  },
+  analitica: {
+    titulo: 'Analítica',
+    descripcion: 'Lo que tus clientes piden y no tienes, conversión, ticket promedio y quién te compra.',
+  },
+  avisos: {
+    titulo: 'Avisos',
+    descripcion: 'Los mensajes que salen solos a tus clientes: qué está por salir, qué salió y qué no salió y por qué.',
+  },
+  vendedor: {
+    titulo: 'Mi vendedor',
+    descripcion: 'Cómo habla, qué sabe y cómo cobra tu asesor de WhatsApp.',
+  },
+  demos: {
+    titulo: 'Demos',
+    descripcion: 'Prospectos que pidieron una demo del sistema.',
+  },
+}
+
+// Secciones de inserción rápida para el contexto (texto plano — la IA lo consume tal cual).
+export const SECCIONES_CONTEXTO: { label: string; icon: string; snippet: string }[] = [
+  { label: 'Qué vendemos', icon: 'solar:box-bold-duotone', snippet: 'QUÉ VENDEMOS:\n- ' },
+  { label: 'Precios', icon: 'solar:tag-price-bold-duotone', snippet: 'PRECIOS:\n- Producto/plan: S/00 (qué incluye)\n- ' },
+  { label: 'Planes', icon: 'solar:layers-bold-duotone', snippet: 'PLANES:\n- Básico: ...\n- Pro: ...\n' },
+  { label: 'FAQs', icon: 'solar:question-circle-bold-duotone', snippet: 'PREGUNTAS FRECUENTES:\n- ¿...? R: ...\n- ' },
+  { label: 'Objeciones', icon: 'solar:shield-warning-bold-duotone', snippet: 'OBJECIONES Y RESPUESTAS:\n- "Es caro" → ...\n- ' },
+  { label: 'Tono', icon: 'solar:chat-round-line-bold-duotone', snippet: 'TONO Y ESTILO: cercano, profesional, respuestas cortas. Nunca inventes precios ni prometas lo que no existe.\n' },
+  { label: 'Horario', icon: 'solar:clock-circle-bold-duotone', snippet: 'HORARIO DE ATENCIÓN: Lun-Sáb 9am-7pm. Fuera de horario, avisa que responderás pronto.\n' },
+]
+
+export const PLANTILLA_CONTEXTO = `NEGOCIO: (nombre y a qué se dedica)
+
+QUÉ VENDEMOS: (productos o servicios principales)
+
+PRECIOS:
+- ...
+
+OBJETIVO DE LA IA: calificar al prospecto y llevarlo a (comprar / agendar demo / dejar sus datos).
+
+PREGUNTAS FRECUENTES:
+- ¿...? R: ...
+
+OBJECIONES:
+- "..." → ...
+
+TONO: cercano, profesional, respuestas cortas. Nunca inventes precios ni prometas lo que no existe.`
