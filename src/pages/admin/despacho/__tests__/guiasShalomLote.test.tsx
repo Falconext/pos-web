@@ -22,6 +22,8 @@ jest.mock('@/components/Modal', () => ({
     ),
 }));
 jest.mock('@iconify/react', () => ({ Icon: () => null }));
+const alerta = jest.fn();
+jest.mock('@/zustand/alert', () => ({ __esModule: true, default: { getState: () => ({ alert: (...a: any[]) => alerta(...a) }) } }));
 
 import { GuiasShalomLoteModal } from '../GuiasShalomLoteModal';
 
@@ -116,6 +118,31 @@ describe('generarEnLote', () => {
         expect(crear).toHaveBeenCalledTimes(1);
         expect(estados[2]).toEqual({ estado: 'detenida' });
         expect(estados[3]).toEqual({ estado: 'detenida' });
+    });
+
+    it('se corta solo si 3 seguidas fallan con el mismo error de la cuenta', async () => {
+        const estados: Record<number, any> = {};
+        const crear = jest.fn(async () => { throw new Error('Tu sesión de Shalom Pro expiró. Reconecta tu cuenta.'); });
+        const r = await generarEnLote([1, 2, 3, 4, 5], crear, (id, e) => { estados[id] = e; }, () => false, (e) => (e as Error).message);
+        expect(crear).toHaveBeenCalledTimes(3);
+        expect(r.cortadoPor).toMatch(/Reconecta/);
+        expect(estados[4]).toEqual({ estado: 'detenida' });
+        expect(estados[5]).toEqual({ estado: 'detenida' });
+    });
+
+    it('NO se corta por errores de cada pedido aunque se repitan (tres clientes sin DNI)', async () => {
+        const crear = jest.fn(async () => { throw new Error('Falta el DNI del destinatario (el cliente no tiene un documento válido): escríbelo en el despacho.'); });
+        const r = await generarEnLote([1, 2, 3, 4], crear, () => undefined, () => false, (e) => (e as Error).message);
+        expect(crear).toHaveBeenCalledTimes(4);
+        expect(r.cortadoPor).toBeNull();
+    });
+
+    it('un acierto en medio reinicia la cuenta', async () => {
+        let n = 0;
+        const crear = jest.fn(async () => { n++; if (n === 3) return { nroOrden: '1' }; throw new Error('Internal server error'); });
+        const r = await generarEnLote([1, 2, 3, 4, 5], crear, () => undefined, () => false, (e) => (e as Error).message);
+        expect(crear).toHaveBeenCalledTimes(5);
+        expect(r.cortadoPor).toBeNull();
     });
 
     it('los rótulos son solo de las que salieron bien', () => {

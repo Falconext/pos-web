@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import Modal from '@/components/Modal';
 import { shalomService, mensajeErrorShalom } from '@/services/shalom.service';
+import useAlertStore from '@/zustand/alert';
 import type { RotuloLoteItem } from './RotulosLotePrint';
 import {
+    ERRORES_IGUALES_PARA_CORTAR,
     generarEnLote,
     rotulosDeGeneradas,
     type EstadoGuiaLote,
@@ -34,6 +36,18 @@ export function GuiasShalomLoteModal({ pendientes, onClose, onTerminado, onImpri
     const [corriendo, setCorriendo] = useState(false);
     const [terminado, setTerminado] = useState(false);
     const detener = useRef(false);
+    const [cortadoPor, setCortadoPor] = useState<string | null>(null);
+    // Si se sale del panel a mitad, el lote sigue (cada guía ya pedida se
+    // crea igual) y el resultado llega como aviso, no se pierde en silencio.
+    const montado = useRef(true);
+    useEffect(() => () => { montado.current = false; }, []);
+    // Cerrar o recargar la pestaña sí lo corta: se pregunta antes.
+    useEffect(() => {
+        if (!corriendo) return;
+        const avisar = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
+        window.addEventListener('beforeunload', avisar);
+        return () => window.removeEventListener('beforeunload', avisar);
+    }, [corriendo]);
 
     const listas = pendientes.filter((p) => p.faltan.length === 0);
     const cuenta = useMemo(() => {
@@ -63,14 +77,30 @@ export function GuiasShalomLoteModal({ pendientes, onClose, onTerminado, onImpri
         detener.current = false;
         setCorriendo(true);
         setTerminado(false);
+        setCortadoPor(null);
         setEstados(Object.fromEntries(aGenerar.map((id) => [id, { estado: 'esperando' } as EstadoGuiaLote])));
-        await generarEnLote(
+        const resultado: Record<number, EstadoGuiaLote> = {};
+        const { cortadoPor: corte } = await generarEnLote(
             aGenerar,
             (id) => shalomService.crearGuia(id),
-            (id, estado) => setEstados((prev) => ({ ...prev, [id]: estado })),
+            (id, estado) => {
+                resultado[id] = estado;
+                if (montado.current) setEstados((prev) => ({ ...prev, [id]: estado }));
+            },
             () => detener.current,
             (e) => mensajeErrorShalom(e, SIN_RESPUESTA),
         );
+        if (!montado.current) {
+            const valores = Object.values(resultado);
+            const hechas = valores.filter((e) => e.estado === 'ok').length;
+            const fallas = valores.filter((e) => e.estado === 'error').length;
+            useAlertStore.getState().alert(
+                `Guías Shalom: ${hechas} generada${hechas === 1 ? '' : 's'}${fallas ? `, ${fallas} con error (revísalas en el Panel de ventas)` : ''}.`,
+                fallas ? 'warning' : 'success',
+            );
+            return;
+        }
+        setCortadoPor(corte);
         setCorriendo(false);
         setTerminado(true);
     };
@@ -185,6 +215,14 @@ export function GuiasShalomLoteModal({ pendientes, onClose, onTerminado, onImpri
                             })}
                         </div>
                     </>
+                )}
+
+                {cortadoPor && (
+                    <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/20 px-4 py-3 text-xs text-amber-800 dark:text-amber-200" data-testid="guias-lote-cortado">
+                        <b>Se detuvo solo:</b> las últimas {ERRORES_IGUALES_PARA_CORTAR} fallaron con el mismo error, que parece de la cuenta y no de cada pedido.
+                        Revisa tu conexión con Shalom (Perfil → Shalom) y vuelve a intentar con las que quedaron.
+                        <div className="mt-1 font-bold">{cortadoPor}</div>
+                    </div>
                 )}
 
                 {(corriendo || terminado) && (

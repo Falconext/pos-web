@@ -100,10 +100,25 @@ export type EstadoGuiaLote =
  */
 export const yaTeniaGuia = (mensaje: string) => /ya tiene la gu[ií]a/i.test(mensaje);
 
+/** Cuántos errores iguales seguidos hacen sospechar de la cuenta, no del pedido. */
+export const ERRORES_IGUALES_PARA_CORTAR = 3;
+
+/**
+ * Errores propios de un pedido (su DNI, su celular, su agencia): que se
+ * repitan no dice nada de la cuenta, pueden ser tres clientes sin DNI.
+ */
+const esErrorDelPedido = (mensaje: string) =>
+    /destinatario|destino|celular|DNI|documento|ya tiene la gu[ií]a/i.test(mensaje);
+
 /**
  * Corre el lote de a uno: Shalom Pro abre sesión por cada guía y no aguanta
  * varias a la vez. `detener()` corta antes de la siguiente, nunca a la mitad
  * de una que ya se mandó; las que faltaban quedan como "detenida".
+ *
+ * También se corta solo si varias seguidas fallan con el mismo error que no
+ * es de un pedido (la cuenta Shalom se desconectó, Shalom está caído): con 37
+ * pedidos eran 37 errores iguales y varios minutos esperando. Devuelve ese
+ * error para explicarlo.
  */
 export async function generarEnLote(
     ids: number[],
@@ -111,9 +126,12 @@ export async function generarEnLote(
     avisar: (comprobanteId: number, estado: EstadoGuiaLote) => void,
     detenido: () => boolean,
     mensajeDeError: (e: unknown) => string,
-): Promise<void> {
+): Promise<{ cortadoPor: string | null }> {
+    let cortadoPor: string | null = null;
+    let ultimo = '';
+    let seguidos = 0;
     for (const id of ids) {
-        if (detenido()) {
+        if (detenido() || cortadoPor) {
             avisar(id, { estado: 'detenida' });
             continue;
         }
@@ -121,11 +139,20 @@ export async function generarEnLote(
         try {
             const guia = await crear(id);
             avisar(id, { estado: 'ok', nroOrden: guia?.nroOrden ?? null });
+            seguidos = 0;
         } catch (e) {
             const mensaje = mensajeDeError(e);
             avisar(id, yaTeniaGuia(mensaje) ? { estado: 'omitida', mensaje } : { estado: 'error', mensaje });
+            if (esErrorDelPedido(mensaje)) {
+                seguidos = 0;
+            } else {
+                seguidos = mensaje === ultimo ? seguidos + 1 : 1;
+                if (seguidos >= ERRORES_IGUALES_PARA_CORTAR) cortadoPor = mensaje;
+            }
+            ultimo = mensaje;
         }
     }
+    return { cortadoPor };
 }
 
 /** Para imprimir después los rótulos de las que salieron bien. */
