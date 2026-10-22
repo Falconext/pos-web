@@ -49,11 +49,21 @@ export interface CobroPropio {
 
 const desempacar = (res: any) => res?.data?.data ?? res?.data ?? null;
 
-/** Días que faltan para el vencimiento (negativo si ya pasó). */
-export const diasParaVencer = (iso?: string | null) => {
+/**
+ * Días que faltan para el vencimiento (negativo si ya pasó), en días de
+ * calendario de Lima.
+ *
+ * La fecha llega como medianoche UTC del día que vence ("2026-10-25T00:00Z" =
+ * vence el 25) y se trabaja todo ese día. Restar instantes la hacía vencer a
+ * las 7 p. m. del día anterior: de noche el aviso decía un día menos.
+ */
+export const diasParaVencer = (iso?: string | null, ahora: Date = new Date()) => {
     if (!iso) return null;
-    const ms = new Date(iso).getTime() - Date.now();
-    return Math.ceil(ms / 86400000);
+    const v = new Date(iso);
+    const vence = Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate());
+    const lima = new Date(ahora.getTime() - 5 * 3600000);
+    const hoy = Date.UTC(lima.getUTCFullYear(), lima.getUTCMonth(), lima.getUTCDate());
+    return Math.round((vence - hoy) / 86400000);
 };
 
 /**
