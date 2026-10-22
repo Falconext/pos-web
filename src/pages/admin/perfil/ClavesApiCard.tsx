@@ -207,7 +207,9 @@ export function ClavesApiCard() {
                         <li><b>Servicios</b> (<code>type: "service"</code>): no tienen stock.</li>
                         <li><b>Paquetes</b> (six pack, caja x12): van en <code>packs</code> con su código de barras.</li>
                         <li>Cada sku y código de barras es único en tu negocio. Las categorías y marcas se crean en el panel; la API usa sus ids.</li>
-                        <li>Hasta 3 fotos por producto, como URLs https. Los kits y combos se arman en el panel.</li>
+                        <li>Hasta 3 fotos por producto, como URLs https; cada variante puede tener su foto (<code>image</code>). Los kits y combos se arman en el panel.</li>
+                        <li><b>Stock:</b> <code>available</code> es lo que se puede vender (sin lo reservado en pedidos); usa ese y no <code>stock</code> para mostrar "agotado".</li>
+                        <li><b>Ofertas con fecha:</b> <code>sale_price</code> con <code>sale_starts_on</code> y <code>sale_ends_on</code> (YYYY-MM-DD); fuera de esas fechas la oferta no aplica.</li>
                         <li>Si algo está mal, la respuesta dice qué campo (<code>param</code>) y qué hacer.</li>
                     </ul>
                 </div>
