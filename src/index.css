@@ -135,6 +135,13 @@ html.is-admin :is(h1, h2, h3, h4):not([data-print-root] *) {
   font-family: 'Inter Tight', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
 }
 
+/* Módulo IA de Ventas (/administrador/leads): todo el texto en Inter Tight,
+   incluidos sus modales (se montan en <body>, fuera de #root). Los teléfonos
+   en .font-mono y los comprobantes conservan su fuente. */
+html.is-admin.modulo-leads :is([data-modulo-leads], [data-modulo-leads] *, body > :not(#root) *):not(.font-mono, [data-print-root], [data-print-root] *) {
+  font-family: 'Inter Tight', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+}
+
 /* Comprobantes: en pantalla usan LA MISMA fuente que al imprimir (ver
    src/utils/printStyles.ts), para que la vista previa del modal "Configurar
    formato" y del POS se vea igual que el papel: Inter en A4/A5 y VT323
