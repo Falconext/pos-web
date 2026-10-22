@@ -46,6 +46,7 @@ import CasillaSeleccion from "@/components/CasillaSeleccion";
 import BarraSeleccionNotas from "@/features/admin/facturacion/seleccion/BarraSeleccionNotas";
 import ModalCobrarVarias from "@/features/admin/facturacion/seleccion/ModalCobrarVarias";
 import { clienteConRuc, motivoNoFacturar, notaDeVentaDataConjunta } from "@/features/admin/facturacion/seleccion/facturarJuntas";
+import { notaParaFacturar } from "@/features/admin/facturacion/seleccion/deliveryDelPedido";
 import ModalEstadoCuentaWhatsApp from "@/features/admin/facturacion/seleccion/ModalEstadoCuentaWhatsApp";
 import { documentoCorto, envioConjunto, motivoNoCobrar, notaElegidaDe, resumirSeleccion, type NotaElegida } from "@/features/admin/facturacion/seleccion/seleccionNotas";
 
@@ -1278,14 +1279,14 @@ const ComprobantesInformales = () => {
                                     <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                     <button type="button" onClick={() => {
                                         const esRuc = item.cliente?.nroDoc?.length === 11;
-                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, origenReferencia: `${item.serie}-${String(item.correlativo).padStart(8, '0')}`, cliente: esRuc ? item.cliente : null, clienteId: esRuc ? item.clienteId : null, observaciones: item.observaciones, ...datosPagoDeNota(item), productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'FACTURA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, origenReferencia: `${item.serie}-${String(item.correlativo).padStart(8, '0')}`, cliente: esRuc ? item.cliente : null, clienteId: esRuc ? item.clienteId : null, observaciones: notaParaFacturar(item).observaciones, ...datosPagoDeNota(notaParaFacturar(item)), productos: (notaParaFacturar(item).detalles || []).map(mapDetalleToInvoiceProduct) } } });
                                         handleCloseMenu();
                                     }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30">
                                         <Icon icon="mdi:file-document-edit-outline" width={16} height={16} />
                                         <span>Convertir a Factura</span>
                                     </button>
                                     <button type="button" onClick={() => {
-                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'BOLETA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, origenReferencia: `${item.serie}-${String(item.correlativo).padStart(8, '0')}`, cliente: item.cliente, clienteId: item.clienteId, observaciones: item.observaciones, ...datosPagoDeNota(item), productos: (item.detalles || []).map(mapDetalleToInvoiceProduct) } } });
+                                        navigate('/administrador/facturacion/nuevo', { state: { defaultType: 'BOLETA', fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, origenReferencia: `${item.serie}-${String(item.correlativo).padStart(8, '0')}`, cliente: item.cliente, clienteId: item.clienteId, observaciones: notaParaFacturar(item).observaciones, ...datosPagoDeNota(notaParaFacturar(item)), productos: (notaParaFacturar(item).detalles || []).map(mapDetalleToInvoiceProduct) } } });
                                         handleCloseMenu();
                                     }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/30">
                                         <Icon icon="mdi:receipt-outline" width={16} height={16} />

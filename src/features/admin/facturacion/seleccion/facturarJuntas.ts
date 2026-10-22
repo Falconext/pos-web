@@ -1,5 +1,6 @@
 import { mapDetalleToInvoiceProduct } from '@/features/admin/facturacion/utils/comprobanteProductMapper';
 import { documentoCorto, resumirSeleccion, type NotaElegida } from './seleccionNotas';
+import { notaParaFacturar } from './deliveryDelPedido';
 
 /**
  * Varias notas de un cliente → una sola boleta o factura.
@@ -86,7 +87,14 @@ export const clienteConRuc = (notas: NotaElegida[]) => /^\d{11}$/.test(String(no
  * se escribe el RUC ahí.
  */
 export function notaDeVentaDataConjunta(notas: NotaElegida[], tipo: 'BOLETA' | 'FACTURA' = 'BOLETA') {
-    const ordenadas = [...notas].sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id - b.id);
+    // Las notas del chat se facturan sin su delivery (ver deliveryDelPedido.ts).
+    const ordenadas = notas
+        .map((n) => {
+            if (!n.origen?.pedidoDelChat) return n;
+            const p = notaParaFacturar(n.origen);
+            return p === n.origen ? n : { ...n, origen: p, total: Number(p.mtoImpVenta) || 0, saldo: Number(p.saldo) || 0 };
+        })
+        .sort((a, b) => a.fecha.localeCompare(b.fecha) || a.id - b.id);
     const primera = ordenadas[0];
     const r = resumirSeleccion(ordenadas);
     const o = (n: NotaElegida) => n.origen ?? {};
