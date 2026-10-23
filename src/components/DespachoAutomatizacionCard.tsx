@@ -3,12 +3,15 @@ import { Icon } from '@iconify/react';
 import { get, put, patch } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import { BRAND } from '@/lib/branding';
+import Select from '@/components/Select';
 
 interface DespachoConfig {
     mensajeEnCamino: string;
     mensajeEntregado: string;
     notificarEnCamino: boolean;
     notificarEntregado: boolean;
+    /** Días máximos de recordatorio de recojo en agencia; 0 = apagado. */
+    recordatorioRecojoDias: number;
 }
 
 const DEFAULTS: DespachoConfig = {
@@ -16,7 +19,13 @@ const DEFAULTS: DespachoConfig = {
     mensajeEntregado: 'Hola {{nombre}}, tu pedido {{pedido}} fue entregado exitosamente ✅. ¡Gracias por preferir {{empresa}}!',
     notificarEnCamino: true,
     notificarEntregado: true,
+    recordatorioRecojoDias: 0,
 };
+
+const OPCIONES_RECOJO = [
+    { id: '0', value: 'Apagado' },
+    ...[1, 2, 3, 4, 5, 6, 7].map((n) => ({ id: String(n), value: n === 1 ? 'Solo 1 día' : `Hasta ${n} días` })),
+];
 
 const EJEMPLO = { nombre: 'Juan Pérez', pedido: 'B001-00000123', repartidor: 'Carlos Quispe', empresa: 'Mi Empresa' };
 
@@ -116,6 +125,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                     mensajeEntregado: res.data.mensajeEntregado ?? DEFAULTS.mensajeEntregado,
                     notificarEnCamino: res.data.notificarEnCamino ?? true,
                     notificarEntregado: res.data.notificarEntregado ?? true,
+                    recordatorioRecojoDias: res.data.recordatorioRecojoDias ?? 0,
                 });
                 setAutoTracking(res.data.shalomAutoTrackingActivo ?? false);
                 setHabilitado(res.data.habilitadoPorPlan ?? false);
@@ -150,8 +160,14 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
     const guardar = async () => {
         setGuardando(true);
         try {
-            await put('/envio-despacho/config', config);
-            alert('Configuración de despacho guardada', 'success');
+            const res = await put<{ plantillas?: { errores?: string[] } }>('/envio-despacho/config', config);
+            const errores = res?.data?.plantillas?.errores ?? [];
+            alert(
+                errores.length
+                    ? `Guardado, pero WhatsApp no aceptó las plantillas del recordatorio: ${errores[0]}`
+                    : 'Configuración de despacho guardada',
+                errores.length ? 'warning' : 'success',
+            );
         } catch {
             alert('Error al guardar la configuración', 'error');
         } finally {
@@ -278,6 +294,46 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 onMensaje={v => set('mensajeEntregado', v)}
                                 bloqueado={!habilitado}
                             />
+                            <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div className="flex items-start gap-2.5">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-900/30">
+                                            <Icon icon="solar:alarm-bold-duotone" className="text-lg" />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white">Recordatorio de recojo en agencia</p>
+                                            <p className="mt-0.5 max-w-md text-[11px] leading-4 text-slate-500">
+                                                Si el paquete sigue en la agencia de Shalom u Olva, le recuerda al cliente una vez al
+                                                día que lo recoja (y el saldo, si falta pagar). Se corta cuando lo recoge o cuando te
+                                                responde. Cada recordatorio lo cobra WhatsApp a tu cuenta de Meta.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="w-44">
+                                        <Select
+                                            key={config.recordatorioRecojoDias}
+                                            name="recordatorioRecojoDias"
+                                            label=""
+                                            error=""
+                                            value={OPCIONES_RECOJO.find((o) => o.id === String(config.recordatorioRecojoDias))?.value ?? 'Apagado'}
+                                            options={OPCIONES_RECOJO}
+                                            disabled={!habilitado}
+                                            onChange={(id: string) => set('recordatorioRecojoDias', Number(id) || 0)}
+                                        />
+                                    </div>
+                                </div>
+                                {config.recordatorioRecojoDias > 0 && (
+                                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/40 dark:bg-emerald-900/20">
+                                        <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                            <Icon icon="mdi:whatsapp" /> Vista previa
+                                        </p>
+                                        <p className="text-xs text-slate-700 dark:text-slate-300">
+                                            Hola {EJEMPLO.nombre}, tu pedido {EJEMPLO.pedido} sigue esperándote en la agencia Shalom Pichanaki. Para
+                                            retirarlo falta el pago de S/ 25.00. Respóndenos por aquí y lo coordinamos.
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
 
