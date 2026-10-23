@@ -31,8 +31,8 @@ describe('rutas', () => {
         expect(rutaPorId('crear-venta').cuerpo).toMatchObject({ payment: { method: 'card' } });
     });
 
-    it('el portal es developers.falconext.pe/erp', () => {
-        expect(PORTAL_DESARROLLADORES).toBe('https://developers.falconext.pe/erp');
+    it('el portal es developers.krezka.com/erp', () => {
+        expect(PORTAL_DESARROLLADORES).toBe('https://developers.krezka.com/erp');
     });
 });
 
