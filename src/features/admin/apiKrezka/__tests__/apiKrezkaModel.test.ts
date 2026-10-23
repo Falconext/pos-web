@@ -11,7 +11,7 @@ describe('rutas', () => {
         const ids = RUTAS.map((r) => r.id);
         expect(ids).toEqual(
             expect.arrayContaining([
-                'listar-productos', 'crear-producto', 'ajustar-stock', 'crear-venta', 'ver-venta', 'anular-venta', 'pdf-venta',
+                'listar-productos', 'crear-producto', 'ajustar-stock', 'crear-venta', 'crear-venta-libre', 'ver-venta', 'anular-venta', 'pdf-venta',
                 'crear-cliente', 'listar-clientes', 'crear-categoria', 'crear-marca', 'crear-webhook', 'probar-webhook', 'borrar-webhook',
             ]),
         );

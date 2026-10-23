@@ -103,6 +103,23 @@ export const RUTAS: Ruta[] = [
         grupo: 'Ventas',
     },
     {
+        id: 'crear-venta-libre',
+        metodo: 'POST',
+        ruta: '/sales',
+        idempotente: true,
+        titulo: 'Facturar sin catálogo',
+        descripcion: 'Si tu web tiene su propio catálogo y stock: manda cada línea con description y unit_price (con IGV). tax: taxed, exempt o unaffected; unit: NIU o ZZ. No mueve stock en Krezka.',
+        cuerpo: {
+            items: [
+                { description: 'Polera algodón talla M', quantity: 2, unit_price: 59 },
+                { description: 'Envío a domicilio', quantity: 1, unit_price: 12, unit: 'ZZ' },
+            ],
+            payment: { method: 'card', reference: 'PAGO-8891' },
+            external_id: 'PEDIDO-1001',
+        },
+        grupo: 'Ventas',
+    },
+    {
         id: 'anular-venta',
         metodo: 'POST',
         ruta: '/sales/{id}/void',
