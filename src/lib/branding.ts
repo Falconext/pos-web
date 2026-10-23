@@ -8,6 +8,8 @@ export type BrandConfig = {
   email: string;
   phone: string;
   whatsapp: string;
+  /** A dónde lleva "Coordinar pago" cuando el plan vence: cobranza, no ventas. */
+  whatsappCobranza?: string;
   logo: string;
   logoWhite: string;
   favicon?: string;
@@ -58,6 +60,7 @@ const staticBrands: Record<string, BrandConfig> = {
     email: 'ventas@krezka.com',
     phone: '+51 932 332 556',
     whatsapp: '51932332556',
+    whatsappCobranza: '51986114148',
     logo: '/assets/krezka/krezka.png',
     logoWhite: '/assets/krezka/krezkawhite.png',
     favicon: '/assets/krezka/krezkalogo.png',

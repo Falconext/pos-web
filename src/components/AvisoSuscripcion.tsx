@@ -115,7 +115,7 @@ export default function AvisoSuscripcion() {
 
                 <div className="flex items-center gap-2 shrink-0">
                     <a
-                        href={`https://wa.me/${BRAND.whatsapp}?text=${mensajeWsp}`}
+                        href={`https://wa.me/${BRAND.whatsappCobranza || BRAND.whatsapp}?text=${mensajeWsp}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 rounded-xl text-white text-xs font-bold transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${urgente
