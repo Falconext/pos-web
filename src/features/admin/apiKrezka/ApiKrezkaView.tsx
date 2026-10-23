@@ -105,7 +105,7 @@ export default function ApiKrezkaView() {
                         <li><b>Precio:</b> sin <code>unit_price</code> se usa el de tu catálogo con su oferta. El envío va como ítem sin producto.</li>
                         <li><b>Sin stock no se emite nada</b>, y la respuesta dice qué falta.</li>
                         <li>Manda tu número de pedido en <code>external_id</code>: si llega dos veces, la segunda se rechaza.</li>
-                        <li><b>Avisos:</b> registra un webhook y tu servidor se entera solo cuando SUNAT acepta, rechaza o se anula una venta (firma en <code>Falconext-Signature</code>).</li>
+                        <li><b>Avisos:</b> registra un webhook y tu servidor se entera solo cuando SUNAT acepta, rechaza o se anula una venta (firma en <code>Krezka-Signature</code>).</li>
                         <li><b>Anular:</b> <code>POST /sales/{'{id}'}/void</code>; una boleta aceptada se anula con su nota de crédito. <b>PDF:</b> <code>GET /sales/{'{id}'}/pdf</code>.</li>
                         <li>Cada error dice qué campo (<code>param</code>) y qué hacer.</li>
                     </ul>
@@ -279,7 +279,7 @@ function Codigo({ vm }: { vm: ApiKrezkaVM }) {
             <p className="mt-2 text-[11px] text-gray-500">
                 La clave nunca va en el navegador de tus clientes: úsala desde tu servidor. Guías paso a paso en{' '}
                 <a href={PORTAL_DESARROLLADORES} target="_blank" rel="noopener noreferrer" className="font-bold text-violet-600 hover:underline dark:text-violet-400">
-                    developers.falconext.pe
+                    developers.krezka.com
                 </a>
                 .
             </p>
