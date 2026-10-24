@@ -13,6 +13,7 @@ import { DisparadoresPanel } from './DisparadoresPanel'
 import { DemosPanel } from './DemosPanel'
 import { Ficha360 } from './Ficha360'
 import { formatoDuracion, MAX_SEGUNDOS_NOTA, textoDeNotaDeVoz, useGrabadoraNota } from './notaDeVoz'
+import { TextoWhatsapp } from './textoWhatsapp'
 import { BandejaChats } from './BandejaChats'
 import { MiVendedorPanel } from './MiVendedorPanel'
 import { useAuthStore } from '@/zustand/auth'
@@ -477,7 +478,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                           ? textoDeNotaDeVoz(m.contenido)
                           : m.contenido
                       return texto ? (
-                        <p className="whitespace-pre-wrap break-words leading-relaxed">{texto}</p>
+                        <p className="whitespace-pre-wrap break-words leading-relaxed"><TextoWhatsapp texto={texto} /></p>
                       ) : null
                     })()}
                     <span className="mt-1.5 flex items-center justify-end gap-1 text-[10.5px] text-gray-400">
