@@ -12,6 +12,10 @@ interface DespachoConfig {
     notificarEntregado: boolean;
     /** Días máximos de recordatorio de recojo en agencia; 0 = apagado. */
     recordatorioRecojoDias: number;
+    /** Formas de pago del aviso "en camino" cuando reparte alguien del equipo. */
+    pagoRepartidorPropio: string;
+    /** … y cuando reparte un contratado. */
+    pagoRepartidorContratado: string;
 }
 
 const DEFAULTS: DespachoConfig = {
@@ -20,6 +24,8 @@ const DEFAULTS: DespachoConfig = {
     notificarEnCamino: true,
     notificarEntregado: true,
     recordatorioRecojoDias: 0,
+    pagoRepartidorPropio: '',
+    pagoRepartidorContratado: '',
 };
 
 const OPCIONES_RECOJO = [
@@ -126,6 +132,8 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                     notificarEnCamino: res.data.notificarEnCamino ?? true,
                     notificarEntregado: res.data.notificarEntregado ?? true,
                     recordatorioRecojoDias: res.data.recordatorioRecojoDias ?? 0,
+                    pagoRepartidorPropio: res.data.pagoRepartidorPropio ?? '',
+                    pagoRepartidorContratado: res.data.pagoRepartidorContratado ?? '',
                 });
                 setAutoTracking(res.data.shalomAutoTrackingActivo ?? false);
                 setHabilitado(res.data.habilitadoPorPlan ?? false);
@@ -294,6 +302,50 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 onMensaje={v => set('mensajeEntregado', v)}
                                 bloqueado={!habilitado}
                             />
+                            <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                                <div className="flex items-start gap-2.5">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 dark:bg-violet-900/30">
+                                        <Icon icon="solar:wallet-money-bold-duotone" className="text-lg" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900 dark:text-white">Cómo pagar al repartidor</p>
+                                        <p className="mt-0.5 max-w-md text-[11px] leading-4 text-slate-500">
+                                            Si el pedido tiene saldo por cobrar, el aviso de "En camino" le dice al cliente cuánto pagar
+                                            y cómo, según quién lo lleva. Déjalo vacío si no quieres que lo diga.
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                                    {([
+                                        ['pagoRepartidorPropio', 'Repartidor de tu equipo (planilla)', 'efectivo, Yape 955 947 892, transferencia o ZIPAGO desde tu banca móvil'],
+                                        ['pagoRepartidorContratado', 'Repartidor contratado (eventual)', 'Yape 955 947 892, transferencia o ZIPAGO a nombre del negocio. No en efectivo ni al Yape del repartidor'],
+                                    ] as const).map(([campo, titulo, ejemplo]) => (
+                                        <label key={campo} className="block">
+                                            <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-slate-400">{titulo}</span>
+                                            <textarea
+                                                value={config[campo]}
+                                                onChange={(e) => set(campo, e.target.value.slice(0, 300))}
+                                                placeholder={`Ej.: ${ejemplo}`}
+                                                rows={3}
+                                                disabled={!habilitado}
+                                                className={`w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white ${!habilitado ? 'cursor-not-allowed opacity-60' : ''}`}
+                                            />
+                                        </label>
+                                    ))}
+                                </div>
+                                {(config.pagoRepartidorPropio || config.pagoRepartidorContratado) && (
+                                    <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/40 dark:bg-emerald-900/20">
+                                        <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                                            <Icon icon="mdi:whatsapp" /> Vista previa
+                                        </p>
+                                        <p className="text-xs text-slate-700 dark:text-slate-300">
+                                            Hola {EJEMPLO.nombre}, tu pedido {EJEMPLO.pedido} ya está en camino con {EJEMPLO.repartidor} (cel. 955 111 222).
+                                            Monto a pagar al recibir: S/ 71.00. Formas de pago:{' '}
+                                            {(config.pagoRepartidorPropio || config.pagoRepartidorContratado).replace(/\s+/g, ' ').trim()}. ¡Pronto llega!
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
                             <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                                 <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="flex items-start gap-2.5">
