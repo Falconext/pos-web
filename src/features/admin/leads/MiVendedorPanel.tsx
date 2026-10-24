@@ -15,6 +15,7 @@ import type {
 import type { useLeadsViewModel } from './useLeadsViewModel'
 import { ConfigForm, EntrenarPanel } from './LeadsView'
 import { PLANTILLA_CONTEXTO, SECCIONES_CONTEXTO } from './LeadsModel'
+import { TextoWhatsapp } from './textoWhatsapp'
 
 /**
  * "Mi vendedor" (22-10): todo lo que define cómo atiende la IA, en una sola
@@ -336,7 +337,7 @@ function VistaPrevia({ negocio, b }: { negocio: string; b: Borrador }) {
         </div>
         <div className="flex">
           <span className="max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-[13px] leading-relaxed text-gray-800 shadow-sm dark:bg-slate-800 dark:text-gray-100">
-            {texto}
+            {typeof texto === 'string' ? <TextoWhatsapp texto={texto} /> : texto}
           </span>
         </div>
       </div>
