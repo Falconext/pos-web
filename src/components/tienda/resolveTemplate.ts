@@ -38,9 +38,17 @@ export type PlantillaId =
   | 'maquillaje'
   | 'bolsos'
   | 'retail'
+  | 'canasta'
   | 'floreria'
+  | 'maison'
   | 'mostrador'
-  | 'hogar';
+  | 'hogar'
+  | 'kartera'
+  | 'olmo'
+  | 'amora'
+  | 'esencial'
+  | 'celulares'
+  | 'carteras-market';
 
 export interface BannerSlotDef {
   orden: number;
@@ -766,6 +774,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     icon: 'ph:handbag-fill',
     rubrosPermitidos: ['Carteras', 'Bolsos', 'Carteras y bolsos', 'Carteras y accesorios', 'Accesorios', 'Accesorios de moda', 'Marroquinería', 'Marroquineria', 'Mochilas', 'Maletas', 'Moda', 'Moda, ropa y calzado', 'Moda, Ropa Y Calzado', 'Boutique'],
   },
+  canasta: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-[4/3]',
+    label: 'Abarrotes (Canasta)',
+    description: 'Supermercado online fresco y verde para bodegas, minimarkets y abarrotes: barra superior verde con envío gratis real, header con buscador de resultados en vivo, ubicación y carrito con total, barra de categorías con "Ofertas", hero slider de 3 slides con sello circular y beneficios reales, círculos de categoría, banner de temporada con sello "Hasta X%" calculado de tus ofertas, "Ofertas del día" con reloj solo si la oferta tiene fecha de fin, dos banners de categoría, recomendados + "Mejor valorados" con reseñas reales, beneficios, testimonios reales, comunidad por WhatsApp y footer verde oscuro con tus medios de pago. Tarjetas con unidad de venta, cantidad, favoritos y comparador. Colores personalizables; todo editable en vivo.',
+    accentColor: '#1F7A3A',
+    icon: 'solar:cart-large-2-bold',
+    rubrosPermitidos: ['Bodega y Abarrotes', 'Supermarket', 'Minimarket', 'Abarrotes', 'Mini market', 'Bodega', 'Supermercado', 'Supermercados', 'Market', 'Tienda de abarrotes', 'Comestibles', 'Alimentos', 'Alimentos y bebidas', 'Frutas y verduras', 'Productos naturales y suplementos', 'Carnicería y Embutidos', 'Comercio minorista'],
+  },
   retail: {
     cardComponent: 'ProductCardGlamora',
     gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
@@ -798,7 +823,24 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#9A7044',
     icon: 'ph:flower-tulip-fill',
     rubrosPermitidos: ['Florería', 'Floreria', 'Flores', 'Arreglos florales', 'Ramos', 'Regalos', 'Detalles', 'Artesanía y decoración', 'Eventos', 'Decoración de eventos', 'Comercio minorista'],
-  },  mostrador: {
+  },  maison: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Carteras (Maison)',
+    description: 'Boutique cálida para carteras, bolsos y accesorios: crema, cuero coñac y oliva profundo, titulares en serif clásica (Libre Caslon). Barra superior con tu envío gratis real, menú con desplegable de categorías, hero partido con palabra destacada en cursiva y sello circular "Nueva colección", franja de beneficios reales, compra por categoría con ícono y conteo real, destacados en 6 columnas, dos banners (el oscuro muestra tu descuento real máximo y el reloj solo si la oferta tiene fecha de fin), testimonios reales en carrusel y pie oliva con novedades por WhatsApp y tus medios de pago. Tarjetas con cantidad, favoritos, comparador y zoom; ficha con variantes por color. Colores personalizables; todo editable en vivo.',
+    accentColor: '#8A4B2C',
+    icon: 'ph:handbag-simple-fill',
+    rubrosPermitidos: ['Cartera y accesorios', 'Carteras', 'Bolsos', 'Carteras y bolsos', 'Carteras y accesorios', 'Accesorios', 'Accesorios de moda', 'Marroquinería', 'Marroquineria', 'Mochilas', 'Maletas', 'Moda', 'Moda, ropa y calzado', 'Moda, Ropa Y Calzado', 'Boutique', 'Bazar, Perfumería y accesorios'],
+  },
+  mostrador: {
     cardComponent: 'ProductCardGlamora',
     gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
     showDiscount: true,
@@ -832,6 +874,111 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#1C1A17',
     icon: 'ph:armchair-fill',
     rubrosPermitidos: ['Mueblería', 'Muebleria', 'Muebles', 'Decoración', 'Decoracion', 'Artesanía y decoración', 'Hogar', 'Hogar y decoración', 'Carpintería', 'Carpinteria', 'Colchones', 'Iluminación', 'Textiles para el hogar'],
+  },
+  kartera: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: false,
+    imageAspect: 'aspect-square',
+    label: 'Kartera (Ofertas)',
+    description: 'Carteras, bolsos y accesorios con el estilo enérgico de una tienda de ofertas: violeta + lima sobre crema, Rubik extra bold. Header oscuro de dos niveles con buscador ancho y mega-menú de categorías, hero con titular resaltado y tus productos reales flotando con su descuento real, categorías en mosaico, "Ofertas del día" con contador hasta la fecha fin real, banner "Arma tu look" y club por WhatsApp, más populares, últimas unidades con el stock real, beneficios de compra en forma de cupón, avisos de ofertas por WhatsApp, bloque "Compra rápida" con pasos, medios de pago reales y un mini pedido que se compra de verdad, y reseñas reales. Ficha con variantes, zoom y barra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#5B2EE6',
+    icon: 'ph:handbag-simple-fill',
+    rubrosPermitidos: ['Cartera y accesorios', 'Carteras', 'Carteras y accesorios', 'Bolsos', 'Marroquinería', 'Marroquineria', 'Accesorios', 'Bazar, Perfumería y accesorios', 'Moda, ropa y calzado', 'Moda', 'Ropa'],
+  },
+  olmo: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: false,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Olmo (Editorial)',
+    description: 'Carteras, mochilas y accesorios con estética editorial cálida: verde botella, crema y arena, Playfair Display con remate en cursiva. Barra de avisos con tus beneficios reales, hero con foto en arco sobre un gran círculo y una tarjeta flotante que rota tus productos reales, "Compra por categoría" en círculos con el conteo real de piezas, banner de ofertas con sello del descuento real máximo y contador hasta la fecha fin real, rieles "En oferta" y "Favoritas de la casa", círculo de clientas por WhatsApp, franja de valores y reseñas reales. Ficha con variantes, zoom y "Comprar ahora". Colores personalizables; todo editable en vivo.',
+    accentColor: '#24392F',
+    icon: 'ph:handbag-simple-fill',
+    rubrosPermitidos: ['Cartera y accesorios', 'Carteras', 'Carteras y accesorios', 'Bolsos', 'Marroquinería', 'Marroquineria', 'Accesorios', 'Bazar, Perfumería y accesorios', 'Moda, ropa y calzado', 'Moda', 'Ropa'],
+  },
+  amora: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: false,
+    imageAspect: 'aspect-square',
+    label: 'Amora (Fresca)',
+    description: 'Carteras, bolsos y accesorios con el estilo fresco y amable de una tienda moderna: blanco limpio, verde y coral, pasteles suaves, Poppins y un toque manuscrito. Header claro con buscador ancho, accesos con etiqueta (Mi pedido, Favoritos, Contacto) y fila "Comprar por categoría" con tus categorías reales; hero con palabra manuscrita, foto grande y tarjetas de tus beneficios reales; colecciones con su número real de productos, "Elegidos para ti" con tus destacados, franja de funciones que sí hacen algo, ofertas reales con reloj hasta la fecha fin real, "Comprar es así de fácil", banners de colección y comunidad por WhatsApp, inspiración por categoría, reseñas reales y footer menta con medios de pago reales. Ficha con variantes, zoom y barra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#2E7D32',
+    icon: 'ph:handbag-simple-fill',
+    rubrosPermitidos: ['Cartera y accesorios', 'Carteras', 'Carteras y accesorios', 'Bolsos', 'Marroquinería', 'Marroquineria', 'Accesorios', 'Bazar, Perfumería y accesorios', 'Moda, ropa y calzado', 'Moda', 'Ropa'],
+  },
+
+  esencial: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Esencial (Esencia)',
+    description: 'Moda y ropa con estética minimal cálida: fondo marfil, botones salvia y titulares serif (Gilda Display). Barra de anuncio con tus formas de entrega reales, header con menú lateral y logo centrado, hero slider de 3 slides a todo el ancho, compra por categoría en 6 bloques con tus fotos reales, looks curados editables, nuestra selección con tus destacados primero, favoritos con valoraciones reales (o básicos si aún no hay reseñas), promo de temporada que solo muestra el % si tienes ofertas reales, beneficios reales y footer con novedades por WhatsApp y tus medios de pago. Ficha con tallas y colores reales, zoom y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#8A9884',
+    icon: 'ph:coat-hanger-fill',
+    rubrosPermitidos: ['Moda', 'Ropa', 'Moda, ropa y calzado', 'Moda, Ropa Y Calzado', 'Boutique', 'Moda femenina', 'Ropa de mujer', 'Ropa de hombre', 'Textil y confección', 'Textil y confecciones', 'Accesorios de moda'],
+  },
+
+  celulares: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: false,
+    imageAspect: 'aspect-square',
+    label: 'Celulares (Nexo)',
+    description: 'Tienda de celulares, accesorios y tecnología: azul eléctrico, banner navy redondeado y botones píldora (Manrope + DM Sans). Barra superior con tus beneficios reales, header con buscador grande y fila de categorías con botón de ofertas (solo si tienes ofertas), hero slider de 3 slides con firma manuscrita, categorías en bloques, celulares destacados en tarjetas horizontales con la capacidad real de cada equipo, comparador real, "¿Por qué tu tienda?" con tus beneficios reales, accesorios de la categoría que elijas, ofertas con reloj solo si hay fecha de fin, dos promos editables, beneficios, novedades por WhatsApp y footer navy con tus medios de pago. Ficha con variantes, zoom y barra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#1F6BF0',
+    icon: 'solar:smartphone-2-bold',
+    rubrosPermitidos: ['Celulares', 'Telefonía', 'Telefonia', 'Tecnología', 'Tecnologia', 'Electrónica', 'Electronica', 'Accesorios de celulares', 'Accesorios', 'Gadgets', 'Ventas de accesorios y repuestos de cómputo', 'Cómputo', 'Computo'],
+  },
+
+  'carteras-market': {
+    cardComponent: 'ProductCardPio',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Carteras (Verena)',
+    description: 'Carteras y accesorios con estructura de marketplace premium: barra superior con tus beneficios reales, header con menú de categorías y buscador, hero en tarjeta crema con titular en serif, 3 diapositivas editables y tarjeta flotante con tus reseñas reales (o tus productos), "Compra por categoría" con fotos de tus categorías o productos, productos destacados en grilla de 6, ofertas con reloj solo si hay fecha de fin real, franja de beneficios con tarjeta de ayuda por WhatsApp, comunidad por WhatsApp y footer con tus medios de pago reales. Ficha con colores y opciones reales, zoom y barra de compra fija. Verde bosque, terracota y marfil personalizables; todo editable en vivo.',
+    accentColor: '#1F3B2D',
+    icon: 'solar:bag-4-bold',
+    rubrosPermitidos: ['Carteras', 'Cartera y accesorios', 'Carteras y accesorios', 'Carteras y bolsos', 'Bolsos', 'Marroquinería', 'Marroquineria', 'Accesorios', 'Accesorios de moda', 'Mochilas', 'Maletas', 'Moda', 'Moda, Ropa Y Calzado', 'Boutique', 'Comercio minorista', 'Retail'],
   },
 };
 

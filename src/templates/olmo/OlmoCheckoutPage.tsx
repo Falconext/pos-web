@@ -1,0 +1,211 @@
+import type { ReactNode } from 'react';
+import { Icon } from '@iconify/react';
+import { useNavigate } from 'react-router-dom';
+import { MotionConfig, motion } from 'framer-motion';
+import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
+import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
+import { BancoLogo } from '@/components/shared/BancoLogo';
+import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
+import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
+import { olTheme, useOlmoFont, editable, olMoney, Logo, type Theme } from './OlmoParts';
+import { mix, olEase, olItem, olStagger } from './motion';
+
+/** Campo sin bordes globales (border-0 + bg-none + focus:ring-0); el contorno es un box-shadow propio. */
+function Field({ t, error, className = '', children }: { t: Theme; error?: string; className?: string; children: ReactNode }) {
+  return (
+    <div className={className}>
+      <div className="rounded-2xl bg-white transition-shadow focus-within:shadow-[inset_0_0_0_1.5px_var(--cm-focus)]" style={{ boxShadow: `inset 0 0 0 1px ${error ? '#F43F5E' : t.line}`, ['--cm-focus' as any]: t.primaryInk }}>
+        {children}
+      </div>
+      {error && <p className="mt-1.5 pl-2 text-[12px] font-medium text-rose-500">{error}</p>}
+    </div>
+  );
+}
+const inputCls = 'h-12 w-full appearance-none rounded-2xl border-0 bg-transparent bg-none px-4 text-[14px] font-medium text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0';
+
+function Block({ t, icon, title, children }: { t: Theme; icon: string; title: string; children: ReactNode }) {
+  return (
+    <motion.section variants={olItem} className="rounded-[20px] p-5 sm:p-7" style={{ background: t.surface }}>
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-[12px]" style={{ background: t.soft, color: t.ink }}><Icon icon={icon} width={19} /></span>
+        <h2 className="text-[19px] font-medium tracking-[-0.01em]" style={{ color: t.ink, fontFamily: t.display }}>{title}</h2>
+      </div>
+      {children}
+    </motion.section>
+  );
+}
+
+export default function OlmoCheckoutPage(props: TemplateCheckoutPageProps) {
+  const {
+    slug, tienda, diseno, carritoState, updateQuantity, removeItem, formData, erroresForm, handleChange,
+    configPago, configEnvio, enviando, calcularSubtotal, calcularCostoEnvio, calcularTotal,
+    freeDeliveryThreshold, freeDeliveryRemaining, freeDeliveryProgress, onSubmit,
+  } = props as any;
+
+  useOlmoFont();
+  const navigate = useNavigate();
+  const t = olTheme(diseno);
+  const items: any[] = carritoState || [];
+  const errs = erroresForm || {};
+  const form = formData || {};
+  const subtotal = calcularSubtotal();
+  const envio = calcularCostoEnvio();
+  const total = calcularTotal();
+
+  const deliveryOption = (value: 'ENVIO' | 'RECOJO', icon: string, label: string, extra?: string) => {
+    const active = form.tipoEntrega === value;
+    return (
+      <label className="flex cursor-pointer items-center gap-3 rounded-2xl px-4 py-4 text-[13.5px] font-semibold transition-shadow" style={{ boxShadow: `inset 0 0 0 ${active ? 2 : 1}px ${active ? t.primaryInk : t.line}`, background: active ? mix(t.primary, 6, '#fff') : '#fff', color: t.ink }}>
+        <input type="radio" className="sr-only" name="tipoEntrega" value={value} checked={active} onChange={handleChange} />
+        <Icon icon={icon} width={21} style={{ color: t.primaryInk }} /> {label}
+        {extra && <span className="ml-auto text-[12px]" style={{ color: t.muted }}>{extra}</span>}
+      </label>
+    );
+  };
+
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="min-h-screen overflow-x-hidden" style={{ background: t.bg, fontFamily: t.font }}>
+        <header className="border-b" style={{ borderColor: t.line }}>
+          <div className="mx-auto flex h-[78px] max-w-[1320px] items-center justify-between px-4 sm:px-6">
+            <Logo tienda={tienda} diseno={diseno} t={t} onClick={() => navigate(`/tienda/${slug}`)} />
+            <div className="flex items-center gap-2 text-[11.5px] font-semibold uppercase tracking-[0.12em]" style={{ color: t.muted }}><Icon icon="ph:shield-check-light" width={19} style={{ color: t.primaryInk }} /> <span className="hidden sm:inline">Compra segura</span></div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-[1320px] px-4 py-8 sm:px-6">
+          <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mb-5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: t.muted }}><Icon icon="ph:arrow-left" width={16} /> Seguir comprando</button>
+          <h1 className="text-[40px] font-medium leading-[1.04] tracking-[-0.01em] sm:text-[56px]" style={{ color: t.ink, fontFamily: t.display }}>{editable(diseno?.olmoCheckoutTitle, 'Finalizar compra')}</h1>
+
+          <div className="mt-8 flex flex-col gap-6 md:flex-row md:items-start">
+            <motion.div variants={olStagger} initial="hidden" animate="show" className="min-w-0 flex-1 space-y-5">
+              {items.length === 0 ? (
+                <motion.div variants={olItem} className="rounded-[20px] px-8 py-16 text-center" style={{ background: t.surface }}>
+                  <Icon icon="ph:handbag-simple-light" width={64} className="mx-auto" style={{ color: t.muted }} />
+                  <h2 className="mt-5 text-[26px] font-medium tracking-[-0.01em]" style={{ color: t.ink, fontFamily: t.display }}>Tu carrito está vacío</h2>
+                  <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 rounded-full px-6 py-3 text-[12px] font-semibold uppercase tracking-[0.08em]" style={{ background: t.strong, color: t.onPrimary }}>Ver catálogo</button>
+                </motion.div>
+              ) : (
+                <>
+                  <Block t={t} icon="ph:handbag-light" title="Tu pedido">
+                    <ul className="divide-y" style={{ borderColor: t.line }}>
+                      {items.map((item) => {
+                        const id = item.cartId || item.id; const qty = Number(item.cantidad || 1); const price = Number(item.precioUnitario || 0);
+                        return (
+                          <li key={id} className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0" style={{ borderColor: t.line }}>
+                            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl" style={{ background: t.soft }}>
+                              {item.imagenUrl ? <img src={item.imagenUrl} alt="" className="h-full w-full object-contain p-1.5 mix-blend-multiply" /> : <Icon icon="ph:handbag-simple-light" width={30} style={{ color: t.muted }} />}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className="line-clamp-2 text-[13.5px] font-medium leading-snug" style={{ color: t.ink }}>{item.descripcion}</h3>
+                              <p className="mt-0.5 text-[12px]" style={{ color: t.muted }}>{olMoney(price)} c/u</p>
+                              <button type="button" onClick={() => removeItem(id)} className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-rose-500"><Icon icon="ph:trash-light" width={14} /> Quitar</button>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                              <div className="flex h-9 items-center overflow-hidden rounded-full border" style={{ borderColor: t.line }}>
+                                <button type="button" aria-label="Restar" onClick={() => updateQuantity(id, qty - 1)} className="flex w-8 items-center justify-center text-base font-bold" style={{ color: t.muted }}>−</button>
+                                <span className="w-7 text-center text-[13px] font-bold" style={{ color: t.ink }}>{qty}</span>
+                                <button type="button" aria-label="Sumar" onClick={() => updateQuantity(id, qty + 1)} className="flex w-8 items-center justify-center text-base font-bold" style={{ color: t.muted }}>+</button>
+                              </div>
+                              <span className="text-[15px] font-semibold" style={{ color: t.ink }}>{olMoney(price * qty)}</span>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </Block>
+
+                  {configEnvio && (configEnvio.aceptaEnvio || configEnvio.aceptaRecojo) && (
+                    <Block t={t} icon="ph:truck-light" title="Entrega">
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        {configEnvio.aceptaEnvio && deliveryOption('ENVIO', 'ph:truck-light', 'Envío a domicilio', Number(configEnvio.costoEnvio) > 0 ? olMoney(Number(configEnvio.costoEnvio)) : undefined)}
+                        {configEnvio.aceptaRecojo && deliveryOption('RECOJO', 'ph:storefront-light', 'Recojo en tienda', 'Gratis')}
+                      </div>
+                    </Block>
+                  )}
+
+                  <Block t={t} icon="ph:user-light" title="Tus datos">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Field t={t} error={errs.clienteNombre}><input type="text" name="clienteNombre" autoComplete="name" placeholder="Nombre completo *" value={form.clienteNombre || ''} onChange={handleChange} className={inputCls} /></Field>
+                      <Field t={t} error={errs.clienteTelefono}><input type="tel" name="clienteTelefono" autoComplete="tel" placeholder="Celular *" value={form.clienteTelefono || ''} onChange={handleChange} className={inputCls} /></Field>
+                      <Field t={t} className="sm:col-span-2"><input type="email" name="clienteEmail" autoComplete="email" placeholder="Correo (opcional)" value={form.clienteEmail || ''} onChange={handleChange} className={inputCls} /></Field>
+                      {form.tipoEntrega === 'ENVIO' && (
+                        <>
+                          <Field t={t} error={errs.clienteDireccion} className="sm:col-span-2"><input type="text" name="clienteDireccion" autoComplete="street-address" placeholder="Dirección de entrega *" value={form.clienteDireccion || ''} onChange={handleChange} className={inputCls} /></Field>
+                          <Field t={t} className="sm:col-span-2"><input type="text" name="clienteReferencia" placeholder="Referencia (opcional)" value={form.clienteReferencia || ''} onChange={handleChange} className={inputCls} /></Field>
+                        </>
+                      )}
+                    </div>
+                  </Block>
+
+                  <Block t={t} icon="ph:credit-card-light" title="Pago">
+                    <MedioPagoSelector configPago={configPago} value={form.medioPago} onChange={handleChange} accent={t.primary} radius="16px" />
+                    {form.medioPago === 'TRANSFERENCIA' && configPago?.cuentasBancarias?.length > 0 && (
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                        {configPago.cuentasBancarias.map((c: any) => (
+                          <div key={c.id} className="flex items-center gap-4 rounded-2xl p-4" style={{ background: t.soft }}>
+                            <BancoLogo banco={c.banco} size={44} />
+                            <div className="min-w-0"><p className="font-mono text-[13px] font-bold" style={{ color: t.ink }}>{c.numeroCuenta}</p>{c.cci && <p className="text-[11.5px]" style={{ color: t.muted }}>CCI: {c.cci}</p>}{c.titular && <p className="text-[11.5px]" style={{ color: t.muted }}>{c.titular}</p>}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </Block>
+
+                  <Block t={t} icon="ph:note-pencil-light" title="Nota (opcional)">
+                    <Field t={t}><textarea name="observaciones" rows={3} placeholder="Color preferido, horario de entrega, referencia…" value={form.observaciones || ''} onChange={handleChange} className="w-full resize-none appearance-none rounded-2xl border-0 bg-transparent bg-none p-4 text-[14px] font-medium text-stone-900 outline-none placeholder:text-stone-400 focus:ring-0" /></Field>
+                  </Block>
+                </>
+              )}
+            </motion.div>
+
+            <motion.aside initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: olEase, delay: 0.1 }} className="w-full shrink-0 md:sticky md:top-6 md:w-[380px]">
+              <div className="overflow-hidden rounded-[20px]" style={{ background: t.surface }}>
+                <div className="px-6 pb-4 pt-6">
+                  <h2 className="text-[24px] font-medium tracking-[-0.01em]" style={{ color: t.ink, fontFamily: t.display }}>Resumen</h2>
+                </div>
+                <div className="max-h-64 space-y-3 overflow-y-auto border-b px-6 pb-4" style={{ borderColor: t.line }}>
+                  {items.length === 0 ? <p className="py-6 text-center text-[13px]" style={{ color: t.muted }}>Sin productos.</p> : items.map((item) => (
+                    <div key={item.cartId || item.id} className="grid grid-cols-[48px_1fr_auto] items-center gap-3">
+                      <div className="relative"><div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl" style={{ background: t.soft }}>{item.imagenUrl ? <img src={item.imagenUrl} alt="" className="h-full w-full object-contain p-1 mix-blend-multiply" /> : <Icon icon="ph:handbag-simple-light" style={{ color: t.muted }} />}</div><span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold" style={{ background: t.strong, color: t.onPrimary }}>{item.cantidad}</span></div>
+                      <p className="line-clamp-2 text-[12px] font-medium leading-snug" style={{ color: t.ink }}>{item.descripcion}</p>
+                      <span className="text-[12.5px] font-bold" style={{ color: t.ink }}>{olMoney(Number(item.precioUnitario || 0) * Number(item.cantidad || 1))}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="space-y-3 px-6 py-5">
+                  <div className="flex justify-between text-[13px]" style={{ color: t.muted }}><span>Subtotal</span><span className="font-bold" style={{ color: t.ink }}>{olMoney(subtotal)}</span></div>
+                  <div className="flex justify-between text-[13px]" style={{ color: t.muted }}><span>Envío</span><span className="font-bold" style={{ color: t.ink }}>{envio === 0 ? 'Gratis' : olMoney(envio)}</span></div>
+                  {freeDeliveryThreshold > 0 && freeDeliveryRemaining > 0 && (
+                    <div className="rounded-2xl px-3.5 py-2.5" style={{ background: t.soft }}>
+                      <p className="text-[12px] font-semibold" style={{ color: t.ink }}>Agrega {olMoney(freeDeliveryRemaining)} para envío gratis</p>
+                      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white"><div className="h-full rounded-full" style={{ width: `${freeDeliveryProgress}%`, background: t.primary }} /></div>
+                    </div>
+                  )}
+                  {errs._minimo && <p className="rounded-2xl bg-rose-50 px-3.5 py-2.5 text-[12px] font-semibold text-rose-500">{errs._minimo}</p>}
+                  <div className="flex items-center justify-between border-t pt-4" style={{ borderColor: t.line }}><span className="text-[13px] font-medium" style={{ color: t.ink }}>Total</span><span className="text-[28px] font-medium" style={{ color: t.ink, fontFamily: t.display }}>{olMoney(total)}</span></div>
+                  <button type="button" onClick={onSubmit} disabled={enviando || items.length === 0} className="flex h-[54px] w-full items-center justify-center gap-2 rounded-full text-[12.5px] font-semibold uppercase tracking-[0.08em] transition-[filter] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50" style={{ background: t.strong, color: t.onPrimary }}>
+                    {enviando ? 'Procesando…' : editable(diseno?.olmoCheckoutButton, 'Confirmar pedido')}
+                    <Icon icon={enviando ? 'ph:arrows-clockwise' : 'ph:arrow-right'} width={18} className={enviando ? 'animate-spin' : ''} />
+                  </button>
+                  <p className="text-center text-[11px]" style={{ color: t.muted }}>Revisas y confirmas tu pedido antes de enviarlo.</p>
+                </div>
+              </div>
+            </motion.aside>
+          </div>
+        </main>
+
+        {props.pedidoCreado && (
+          <PaymentConfirmationModal
+            isOpen={props.showPaymentModal}
+            onClose={() => { props.setShowPaymentModal(false); window.location.href = `/tienda/${props.slug}/seguimiento?codigo=${props.pedidoCreado.codigoSeguimiento}`; }}
+            orderData={{ id: props.pedidoCreado.id, codigoSeguimiento: props.pedidoCreado.codigoSeguimiento, total: props.pedidoCreado.total || props.calcularTotal(), medioPago: form.medioPago, tipoEntrega: form.tipoEntrega, clienteNombre: form.clienteNombre }}
+            paymentConfig={props.configPago ? { yapeQR: props.configPago.yapeQR || props.configPago.yapeQrUrl || undefined, plinQR: props.configPago.plinQR || props.configPago.plinQrUrl || undefined, yapeNumero: props.configPago.yapeNumero || undefined, plinNumero: props.configPago.plinNumero || undefined, whatsappTienda: props.configPago?.whatsappTienda ?? props.tienda?.whatsappTienda ?? props.tienda?.diseno?.whatsappTienda, cuentasBancarias: props.configPago.cuentasBancarias || undefined } : undefined}
+            storeSlug={props.slug || ''}
+          />
+        )}
+        <ConfirmOrderModal isOpen={props.showConfirmModal} onClose={() => props.setShowConfirmModal(false)} onConfirm={props.enviarPedido} total={props.calcularTotal()} loading={props.enviando} tiendaColor={t.primary} />
+      </div>
+    </MotionConfig>
+  );
+}

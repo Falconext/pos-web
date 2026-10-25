@@ -118,19 +118,54 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides con palabra destacada y beneficios reales de tu tienda', 'Tarjeta de categorías con círculos de color y fotos reales de tus productos', 'Recomendados en carrusel con rating real o "Nuevo", cantidad, favoritos y comparador', 'Combos reales con el ahorro calculado de tus precios, guías de cuidado editables y testimonios con reseñas reales', 'Ficha con variantes reales (talla, sabor, peso), zoom y barra de compra fija; todo editable en vivo'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  celulares: {
+    headline: 'Tienda de celulares y accesorios: azul eléctrico, banner navy redondeado y botones píldora, lista para vender tecnología.',
+    features: ['Header con buscador grande, fila de categorías y botón de ofertas que aparece solo si tienes ofertas', 'Hero slider de 3 slides con firma manuscrita y tus beneficios reales', 'Celulares destacados en tarjetas horizontales con la capacidad real de cada equipo, comparador real y "¿Por qué tu tienda?"', 'Accesorios de la categoría que elijas, ofertas con reloj real, dos promos editables y novedades por WhatsApp', 'Ficha con variantes, zoom y barra fija; footer navy con tus medios de pago; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  esencial: {
+    headline: 'Tienda de moda minimal cálida: marfil, salvia y titulares serif, con logo centrado y fotos a todo el ancho.',
+    features: ['Barra de anuncio con tus formas de entrega reales y menú lateral con todas tus categorías', 'Hero slider de 3 slides a todo el ancho (solo imagen o con textos y dos botones, cada uno enlazable)', 'Compra por categoría en 6 bloques con tus fotos reales y looks curados editables', 'Nuestra selección con tus destacados, favoritos con valoraciones reales y promo de temporada con el % solo si hay ofertas reales', 'Ficha con tallas y colores reales, zoom y barra fija; novedades por WhatsApp; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Bolsa lateral'],
+  },
   hogar: {
     headline: 'Tienda en mosaico estilo escandinavo para mueblerías, decoración y hogar: gris cálido, tarjetas hueso, pasteles y titulares grandes.',
     features: ['Header flotante en píldora y hero en mosaico con tu producto estrella, sello giratorio, precio y "Agregar"', 'Categoría destacada y tarjeta de entrega con tus datos reales; cinta de palabras grandes', '"Encuentra tu rincón" con tus categorías en mosaico y selección de la casa con filtros por categoría', '"Nuestra forma" con texto que se enciende al bajar y cifras reales, promesas reales, reseñas reales y carta por WhatsApp', 'Ficha con variantes, zoom y barra fija; footer oscuro con tu nombre a todo el ancho; todo editable en vivo'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Bolsa lateral'],
   },
+  olmo: {
+    headline: 'Tienda editorial de carteras y accesorios: verde botella, crema y arena, Playfair Display con remate en cursiva.',
+    features: ['Barra de avisos con tus beneficios reales y header limpio con menú de categorías, búsqueda, mi pedido, favoritos y bolsa', 'Hero con foto en arco sobre un gran círculo y tarjeta flotante que rota tus productos reales', '"Compra por categoría" en círculos con el conteo real de piezas', 'Banner de ofertas con sello del descuento real máximo y contador hasta la fecha fin real; rieles "En oferta" y "Favoritas de la casa"', 'Círculo de clientas por WhatsApp, franja de valores, reseñas reales y ficha con variantes, zoom y "Comprar ahora"; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  kartera: {
+    headline: 'Tienda de carteras y accesorios con energía de "tienda de ofertas": violeta + lima, titulares extra bold y header oscuro con buscador.',
+    features: ['Header oscuro de dos niveles con buscador ancho, mega-menú de categorías y avisos de ofertas por WhatsApp', 'Hero con titular resaltado en lima y tus productos reales flotando con su descuento real', 'Ofertas del día con contador hasta la fecha fin real, últimas unidades con tu stock real y más populares', 'Banner "Arma tu look", club por WhatsApp, beneficios de compra en forma de cupón y bloque "Compra rápida" con un mini pedido que se compra de verdad', 'Reseñas reales, ficha con variantes, zoom y barra fija; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },  amora: {
+    headline: 'Tienda de carteras fresca y amable: blanco limpio, verde y coral, pasteles suaves y un toque manuscrito en los titulares.',
+    features: ['Header claro con buscador ancho, accesos con etiqueta (Mi pedido, Favoritos, Contacto) y fila "Comprar por categoría" con tus categorías reales', 'Hero con palabra manuscrita, foto grande editable y tarjetas con tu envío, recojo y horario reales', 'Colecciones con su número real de productos, "Elegidos para ti" con tus destacados y franja de funciones que sí hacen algo', 'Ofertas reales con reloj hasta la fecha fin real, "Comprar es así de fácil", banners de colección y comunidad por WhatsApp', 'Inspiración por categoría, reseñas reales, footer menta con medios de pago reales; ficha con variantes y zoom; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+
   mostrador: {
     headline: 'Tienda de UNA sola página: sin portada, el cliente entra directo al catálogo y compra en pocos toques.',
     features: ['Categorías con el número real de productos, buscador por nombre o código y orden por precio o nombre', 'Tarjetas con código, precio y "+" que se vuelve selector de cantidad del carrito', 'Vista rápida del producto (fotos, variantes, cantidad, descripción y video) sin salir del catálogo', 'Carga infinita al bajar y panel de información con tus datos reales (entrega, horario, pagos, WhatsApp)', 'Colores de tu marca en la cabecera; carrito y checkout incluidos'],
     pages: ['Catálogo (inicio)', 'Vista rápida', 'Carrito lateral', 'Checkout'],
   },
+  maison: {
+    headline: 'Boutique cálida para carteras y accesorios: crema, cuero coñac y oliva profundo, con titulares en serif clásica y botones rectangulares.',
+    features: ['Barra superior con tu envío gratis real, menú con desplegable de categorías y hero partido con sello "Nueva colección"', 'Franja de beneficios reales y "Compra por categoría" con ícono y número real de productos', 'Destacados en 6 columnas y dos banners: el oscuro usa tu descuento real máximo y el reloj solo con fecha de fin', 'Testimonios reales en carrusel y pie oliva con novedades por WhatsApp y tus medios de pago', 'Ficha con variantes por color, zoom y barra fija; checkout y contacto con tus canales reales; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
   floreria: {
     headline: 'Florería de lujo para ramos de rosas y arreglos florales: marfil, rubor y dorado, titulares en serif fina y pétalos que caen.',
     features: ['Hero slider con titular en dos tonos, botón de video opcional y barra de beneficios reales en vidrio', 'Catálogo de ocasiones con fotos y conteo real, y ramos populares con tus destacados primero', '"Arma tu ramo" con tus productos reales por paso (flores, envoltura, extras…) y total en vivo', 'Por qué elegirnos, opiniones reales aprobadas, suscripción por WhatsApp y banda final con foto', 'Ficha con variantes, video, zoom y barra fija; checkout con dedicatoria; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
+  },
+  canasta: {
+    headline: 'Supermercado online fresco y verde para bodegas, minimarkets y abarrotes: titulares grandes, sellos amarillos de descuento y footer verde oscuro.',
+    features: ['Barra superior con envío gratis real, buscador con resultados en vivo, ubicación de tu tienda y carrito con total', 'Hero de 3 slides con sello, beneficios reales y círculos de categoría con tus fotos', 'Ofertas del día con % y reloj solo si la oferta tiene fecha de fin real; sellos "Hasta X%" calculados de tus precios', 'Recomendados + "Mejor valorados" con reseñas reales, beneficios, testimonios reales y comunidad por WhatsApp', 'Tarjetas con unidad de venta (kg, litro…), cantidad, favoritos y comparador; todo editable en vivo'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
   retail: {
