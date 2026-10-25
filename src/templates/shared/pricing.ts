@@ -49,11 +49,13 @@ export function ofertaVigente(producto: any, now: Date = new Date()): boolean {
  * Idempotente: usa `precioRegular` si ya fue normalizado, si no `precioUnitario`.
  */
 export function getProductPricing(producto: any, now: Date = new Date()): ProductPricing {
-  const precioRegular = Number(producto?.precioRegular ?? producto?.precioOriginal ?? producto?.precio ?? producto?.precioUnitario ?? 0);
+  // `precioOriginal` (datos demo del preview): 0 significa "sin precio anterior", no "vale 0".
+  const precioOriginal = Number(producto?.precioOriginal ?? 0) > 0 ? Number(producto.precioOriginal) : undefined;
+  const precioRegular = Number(producto?.precioRegular ?? precioOriginal ?? producto?.precio ?? producto?.precioUnitario ?? 0);
   const precioUnitario = Number(producto?.precioUnitario ?? 0);
   const oferta = producto?.precioOferta != null
     ? Number(producto.precioOferta)
-    : producto?.enOferta && precioUnitario > 0 && precioUnitario < precioRegular
+    : (producto?.enOferta || precioOriginal !== undefined) && precioUnitario > 0 && precioUnitario < precioRegular
       ? precioUnitario
       : null;
 

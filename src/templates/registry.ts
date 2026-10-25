@@ -158,8 +158,16 @@ const VitrinaHomePage = cargaPerezosa(() => import('./retail/VitrinaHomePage'));
 const VitrinaCatalogoPage = cargaPerezosa(() => import('./retail/VitrinaCatalogoPage'));
 const VitrinaCheckoutPage = cargaPerezosa(() => import('./retail/VitrinaCheckoutPage'));
 
+// Abarrotes (Canasta — supermercado / bodega / minimarket, fresco y verde)
+const CanastaHomePage = cargaPerezosa(() => import('./canasta/CanastaHomePage'));
+const CanastaCatalogoPage = cargaPerezosa(() => import('./canasta/CanastaCatalogoPage'));
+const CanastaCheckoutPage = cargaPerezosa(() => import('./canasta/CanastaCheckoutPage'));
+
 // Florería (Pétala — ramos de rosas / arreglos florales, marfil + rubor + dorado)
 const PetalaHomePage = cargaPerezosa(() => import('./floreria/PetalaHomePage'));
+const MaisonHomePage = cargaPerezosa(() => import('./maison/MaisonHomePage'));
+const MaisonCatalogoPage = cargaPerezosa(() => import('./maison/MaisonCatalogoPage'));
+const MaisonCheckoutPage = cargaPerezosa(() => import('./maison/MaisonCheckoutPage'));
 const PetalaCatalogoPage = cargaPerezosa(() => import('./floreria/PetalaCatalogoPage'));
 const PetalaCheckoutPage = cargaPerezosa(() => import('./floreria/PetalaCheckoutPage'));
 
@@ -175,6 +183,31 @@ const RoseCheckoutPage = cargaPerezosa(() => import('./bolsos/RoseCheckoutPage')
 const CalmaHomePage = cargaPerezosa(() => import('./hogar/CalmaHomePage'));
 const CalmaCatalogoPage = cargaPerezosa(() => import('./hogar/CalmaCatalogoPage'));
 const CalmaCheckoutPage = cargaPerezosa(() => import('./hogar/CalmaCheckoutPage'));
+// Kartera (carteras / bolsos con estilo de tienda de ofertas: violeta + lima)
+const KarteraHomePage = cargaPerezosa(() => import('./kartera/KarteraHomePage'));
+const KarteraCatalogoPage = cargaPerezosa(() => import('./kartera/KarteraCatalogoPage'));
+const KarteraCheckoutPage = cargaPerezosa(() => import('./kartera/KarteraCheckoutPage'));
+// Olmo (carteras editorial: verde botella + crema + arena, serif con cursiva)
+const OlmoHomePage = cargaPerezosa(() => import('./olmo/OlmoHomePage'));
+const OlmoCatalogoPage = cargaPerezosa(() => import('./olmo/OlmoCatalogoPage'));
+const OlmoCheckoutPage = cargaPerezosa(() => import('./olmo/OlmoCheckoutPage'));
+// Amora (carteras con estilo de tienda fresca y amable: verde + coral sobre blanco)
+const AmoraHomePage = cargaPerezosa(() => import('./amora/AmoraHomePage'));
+const AmoraCatalogoPage = cargaPerezosa(() => import('./amora/AmoraCatalogoPage'));
+const AmoraCheckoutPage = cargaPerezosa(() => import('./amora/AmoraCheckoutPage'));
+// Esencial (Esencia — moda y ropa minimal, marfil y salvia con serif)
+const EsenciaHomePage = cargaPerezosa(() => import('./esencial/EsenciaHomePage'));
+const EsenciaCatalogoPage = cargaPerezosa(() => import('./esencial/EsenciaCatalogoPage'));
+const EsenciaCheckoutPage = cargaPerezosa(() => import('./esencial/EsenciaCheckoutPage'));
+// Celulares (Nexo — celulares y accesorios, azul eléctrico con banner navy)
+const NexoHomePage = cargaPerezosa(() => import('./celulares/NexoHomePage'));
+const NexoCatalogoPage = cargaPerezosa(() => import('./celulares/NexoCatalogoPage'));
+const NexoCheckoutPage = cargaPerezosa(() => import('./celulares/NexoCheckoutPage'));
+
+// Carteras Market (Verena — carteras con estructura de marketplace premium)
+const VerenaHomePage = cargaPerezosa(() => import('./carteras-market/VerenaHomePage'));
+const VerenaCatalogoPage = cargaPerezosa(() => import('./carteras-market/VerenaCatalogoPage'));
+const VerenaCheckoutPage = cargaPerezosa(() => import('./carteras-market/VerenaCheckoutPage'));
 
 // Moda Elegante (Élan — moda femenina, ropa y calzado, lujo minimal editorial)
 const ElanHomePage = cargaPerezosa(() => import('./moda-elegante/ElanHomePage'));
@@ -386,11 +419,23 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     CatalogoPage: VitrinaCatalogoPage,
     CheckoutPage: VitrinaCheckoutPage,
   },
+  canasta: {
+    id: 'canasta',
+    HomePage: CanastaHomePage,
+    CatalogoPage: CanastaCatalogoPage,
+    CheckoutPage: CanastaCheckoutPage,
+  },
   floreria: {
     id: 'floreria',
     HomePage: PetalaHomePage,
     CatalogoPage: PetalaCatalogoPage,
     CheckoutPage: PetalaCheckoutPage,
+  },
+  maison: {
+    id: 'maison',
+    HomePage: MaisonHomePage,
+    CatalogoPage: MaisonCatalogoPage,
+    CheckoutPage: MaisonCheckoutPage,
   },
   mostrador: {
     id: 'mostrador',
@@ -403,5 +448,41 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: CalmaHomePage,
     CatalogoPage: CalmaCatalogoPage,
     CheckoutPage: CalmaCheckoutPage,
+  },
+  kartera: {
+    id: 'kartera',
+    HomePage: KarteraHomePage,
+    CatalogoPage: KarteraCatalogoPage,
+    CheckoutPage: KarteraCheckoutPage,
+  },
+  olmo: {
+    id: 'olmo',
+    HomePage: OlmoHomePage,
+    CatalogoPage: OlmoCatalogoPage,
+    CheckoutPage: OlmoCheckoutPage,
+  },
+  amora: {
+    id: 'amora',
+    HomePage: AmoraHomePage,
+    CatalogoPage: AmoraCatalogoPage,
+    CheckoutPage: AmoraCheckoutPage,
+  },
+  esencial: {
+    id: 'esencial',
+    HomePage: EsenciaHomePage,
+    CatalogoPage: EsenciaCatalogoPage,
+    CheckoutPage: EsenciaCheckoutPage,
+  },
+  celulares: {
+    id: 'celulares',
+    HomePage: NexoHomePage,
+    CatalogoPage: NexoCatalogoPage,
+    CheckoutPage: NexoCheckoutPage,
+  },
+  'carteras-market': {
+    id: 'carteras-market',
+    HomePage: VerenaHomePage,
+    CatalogoPage: VerenaCatalogoPage,
+    CheckoutPage: VerenaCheckoutPage,
   },
 };

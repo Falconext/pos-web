@@ -33,11 +33,19 @@ const NordicaProductoDetalle = cargaPerezosa(() => import('./NordicaProductoDeta
 const PatitasProductoDetalle = cargaPerezosa(() => import('./PatitasProductoDetalle'));
 const BlushProductoDetalle = cargaPerezosa(() => import('./BlushProductoDetalle'));
 const VitrinaProductoDetalle = cargaPerezosa(() => import('./VitrinaProductoDetalle'));
+const CanastaProductoDetalle = cargaPerezosa(() => import('./CanastaProductoDetalle'));
 const PetalaProductoDetalle = cargaPerezosa(() => import('./PetalaProductoDetalle'));
+const MaisonProductoDetalle = cargaPerezosa(() => import('./MaisonProductoDetalle'));
 const MostradorProductoDetalle = cargaPerezosa(() => import('./MostradorProductoDetalle'));
 const ElanProductoDetalle = cargaPerezosa(() => import('./ElanProductoDetalle'));
 const RoseProductoDetalle = cargaPerezosa(() => import('./RoseProductoDetalle'));
 const CalmaProductoDetalle = cargaPerezosa(() => import('./CalmaProductoDetalle'));
+const KarteraProductoDetalle = cargaPerezosa(() => import('./KarteraProductoDetalle'));
+const OlmoProductoDetalle = cargaPerezosa(() => import('./OlmoProductoDetalle'));
+const AmoraProductoDetalle = cargaPerezosa(() => import('./AmoraProductoDetalle'));
+const EsenciaProductoDetalle = cargaPerezosa(() => import('./EsenciaProductoDetalle'));
+const NexoProductoDetalle = cargaPerezosa(() => import('./NexoProductoDetalle'));
+const VerenaProductoDetalle = cargaPerezosa(() => import('./VerenaProductoDetalle'));
 
 const UrbanoProductoDetalle = cargaPerezosa(() => import('./UrbanoProductoDetalle'));
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -76,11 +84,19 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   mascotas: PatitasProductoDetalle,
   maquillaje: BlushProductoDetalle,
   retail: VitrinaProductoDetalle,
+  canasta: CanastaProductoDetalle,
   floreria: PetalaProductoDetalle,
+  maison: MaisonProductoDetalle,
   mostrador: MostradorProductoDetalle,
   'moda-elegante': ElanProductoDetalle,
   bolsos: RoseProductoDetalle,
   hogar: CalmaProductoDetalle,
+  kartera: KarteraProductoDetalle,
+  olmo: OlmoProductoDetalle,
+  amora: AmoraProductoDetalle,
+  esencial: EsenciaProductoDetalle,
+  celulares: NexoProductoDetalle,
+  'carteras-market': VerenaProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {

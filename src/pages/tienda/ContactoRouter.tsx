@@ -26,9 +26,17 @@ import NordicaContactPage from '@/templates/muebleria/NordicaContactPage';
 import PatitasContactPage from '@/templates/mascotas/PatitasContactPage';
 import RoseContactPage from '@/templates/bolsos/RoseContactPage';
 import CalmaContactPage from '@/templates/hogar/CalmaContactPage';
+import KarteraContactPage from '@/templates/kartera/KarteraContactPage';
+import OlmoContactPage from '@/templates/olmo/OlmoContactPage';
+import AmoraContactPage from '@/templates/amora/AmoraContactPage';
+import EsenciaContactPage from '@/templates/esencial/EsenciaContactPage';
+import NexoContactPage from '@/templates/celulares/NexoContactPage';
+import VerenaContactPage from '@/templates/carteras-market/VerenaContactPage';
 import BlushContactPage from '@/templates/maquillaje/BlushContactPage';
 import VitrinaContactPage from '@/templates/retail/VitrinaContactPage';
+import CanastaContactPage from '@/templates/canasta/CanastaContactPage';
 import PetalaContactPage from '@/templates/floreria/PetalaContactPage';
+import MaisonContactPage from '@/templates/maison/MaisonContactPage';
 import ElanContactPage from '@/templates/moda-elegante/ElanContactPage';
 import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 
@@ -340,6 +348,32 @@ export default function ContactoRouter() {
           setMostrarCarrito={setMostrarCarrito}
           actualizarCantidad={updateQuantity}
         />
+      ) : templateId === 'canasta' ? (
+        <CanastaContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'maison' ? (
+        <MaisonContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
       ) : templateId === 'retail' ? (
         <VitrinaContactPage
           tienda={tienda}
@@ -366,8 +400,86 @@ export default function ContactoRouter() {
           setMostrarCarrito={setMostrarCarrito}
           actualizarCantidad={updateQuantity}
         />
+      ) : templateId === 'kartera' ? (
+        <KarteraContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'olmo' ? (
+        <OlmoContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'amora' ? (
+        <AmoraContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'carteras-market' ? (
+        <VerenaContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
       ) : templateId === 'hogar' ? (
         <CalmaContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'esencial' ? (
+        <EsenciaContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'celulares' ? (
+        <NexoContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}
