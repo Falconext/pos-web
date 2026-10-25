@@ -118,6 +118,11 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides con palabra destacada y beneficios reales de tu tienda', 'Tarjeta de categorías con círculos de color y fotos reales de tus productos', 'Recomendados en carrusel con rating real o "Nuevo", cantidad, favoritos y comparador', 'Combos reales con el ahorro calculado de tus precios, guías de cuidado editables y testimonios con reseñas reales', 'Ficha con variantes reales (talla, sabor, peso), zoom y barra de compra fija; todo editable en vivo'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  hogar: {
+    headline: 'Tienda en mosaico estilo escandinavo para mueblerías, decoración y hogar: gris cálido, tarjetas hueso, pasteles y titulares grandes.',
+    features: ['Header flotante en píldora y hero en mosaico con tu producto estrella, sello giratorio, precio y "Agregar"', 'Categoría destacada y tarjeta de entrega con tus datos reales; cinta de palabras grandes', '"Encuentra tu rincón" con tus categorías en mosaico y selección de la casa con filtros por categoría', '"Nuestra forma" con texto que se enciende al bajar y cifras reales, promesas reales, reseñas reales y carta por WhatsApp', 'Ficha con variantes, zoom y barra fija; footer oscuro con tu nombre a todo el ancho; todo editable en vivo'],
+    pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Bolsa lateral'],
+  },
   mostrador: {
     headline: 'Tienda de UNA sola página: sin portada, el cliente entra directo al catálogo y compra en pocos toques.',
     features: ['Categorías con el número real de productos, buscador por nombre o código y orden por precio o nombre', 'Tarjetas con código, precio y "+" que se vuelve selector de cantidad del carrito', 'Vista rápida del producto (fotos, variantes, cantidad, descripción y video) sin salir del catálogo', 'Carga infinita al bajar y panel de información con tus datos reales (entrega, horario, pagos, WhatsApp)', 'Colores de tu marca en la cabecera; carrito y checkout incluidos'],

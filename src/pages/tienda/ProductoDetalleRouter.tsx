@@ -37,6 +37,7 @@ const PetalaProductoDetalle = cargaPerezosa(() => import('./PetalaProductoDetall
 const MostradorProductoDetalle = cargaPerezosa(() => import('./MostradorProductoDetalle'));
 const ElanProductoDetalle = cargaPerezosa(() => import('./ElanProductoDetalle'));
 const RoseProductoDetalle = cargaPerezosa(() => import('./RoseProductoDetalle'));
+const CalmaProductoDetalle = cargaPerezosa(() => import('./CalmaProductoDetalle'));
 
 const UrbanoProductoDetalle = cargaPerezosa(() => import('./UrbanoProductoDetalle'));
 import { resolveTemplateId } from '@/components/tienda/resolveTemplate';
@@ -79,6 +80,7 @@ const DETAIL_PAGE_BY_TEMPLATE: Record<string, ComponentType> = {
   mostrador: MostradorProductoDetalle,
   'moda-elegante': ElanProductoDetalle,
   bolsos: RoseProductoDetalle,
+  hogar: CalmaProductoDetalle,
 };
 
 export default function ProductoDetalleRouter() {

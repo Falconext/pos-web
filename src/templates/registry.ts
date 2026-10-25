@@ -171,6 +171,10 @@ const MostradorCheckoutPage = cargaPerezosa(() => import('./mostrador/MostradorC
 const RoseHomePage = cargaPerezosa(() => import('./bolsos/RoseHomePage'));
 const RoseCatalogoPage = cargaPerezosa(() => import('./bolsos/RoseCatalogoPage'));
 const RoseCheckoutPage = cargaPerezosa(() => import('./bolsos/RoseCheckoutPage'));
+// Hogar (Calma — mueblería / decoración / hogar, bento estilo escandinavo)
+const CalmaHomePage = cargaPerezosa(() => import('./hogar/CalmaHomePage'));
+const CalmaCatalogoPage = cargaPerezosa(() => import('./hogar/CalmaCatalogoPage'));
+const CalmaCheckoutPage = cargaPerezosa(() => import('./hogar/CalmaCheckoutPage'));
 
 // Moda Elegante (Élan — moda femenina, ropa y calzado, lujo minimal editorial)
 const ElanHomePage = cargaPerezosa(() => import('./moda-elegante/ElanHomePage'));
@@ -393,5 +397,11 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: MostradorHomePage,
     CatalogoPage: MostradorCatalogoPage,
     CheckoutPage: MostradorCheckoutPage,
+  },
+  hogar: {
+    id: 'hogar',
+    HomePage: CalmaHomePage,
+    CatalogoPage: CalmaCatalogoPage,
+    CheckoutPage: CalmaCheckoutPage,
   },
 };

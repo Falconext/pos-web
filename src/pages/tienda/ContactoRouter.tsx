@@ -25,6 +25,7 @@ import StrideContactPage from '@/templates/zapatos/StrideContactPage';
 import NordicaContactPage from '@/templates/muebleria/NordicaContactPage';
 import PatitasContactPage from '@/templates/mascotas/PatitasContactPage';
 import RoseContactPage from '@/templates/bolsos/RoseContactPage';
+import CalmaContactPage from '@/templates/hogar/CalmaContactPage';
 import BlushContactPage from '@/templates/maquillaje/BlushContactPage';
 import VitrinaContactPage from '@/templates/retail/VitrinaContactPage';
 import PetalaContactPage from '@/templates/floreria/PetalaContactPage';
@@ -354,6 +355,19 @@ export default function ContactoRouter() {
         />
       ) : templateId === 'maquillaje' ? (
         <BlushContactPage
+          tienda={tienda}
+          slug={slug || ''}
+          diseno={diseno}
+          cp={cp}
+          allCategories={categories}
+          carrito={carrito}
+          setCarrito={setCarrito}
+          mostrarCarrito={mostrarCarrito}
+          setMostrarCarrito={setMostrarCarrito}
+          actualizarCantidad={updateQuantity}
+        />
+      ) : templateId === 'hogar' ? (
+        <CalmaContactPage
           tienda={tienda}
           slug={slug || ''}
           diseno={diseno}

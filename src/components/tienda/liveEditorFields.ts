@@ -2414,6 +2414,87 @@ const BOLSOS_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'bolsosBanner3Action', label: 'Banner 3: enlace', group: 'Banners promocionales', defaultType: 'catalog' },
 ];
 
+// ── Hogar (Calma) ──
+const HOGAR_IMAGE_FIELDS: ImageFieldDef[] = [
+  { key: 'hogarFeaturedImage', label: 'Hero · producto estrella: imagen (opcional)', hint: 'Por defecto se usa la foto del producto estrella. Sube una solo si quieres otra imagen (rec. 1000×1100px, fondo claro).', fallback: '' },
+  { key: 'hogarSpotImage', label: 'Hero · categoría destacada: imagen (opcional)', hint: 'Por defecto, la foto de un producto de esa categoría (rec. 800×800px, fondo blanco).', fallback: '' },
+  { key: 'hogarRoomImage', label: 'Nuestra forma: foto del ambiente', hint: 'Foto de un ambiente con tus piezas (rec. 1400×1200px).', fallback: 'https://images.unsplash.com/photo-1631679706909-1844bbd07221?auto=format&fit=crop&w=1400&q=80' },
+  { key: 'hogarLetterImage', label: 'Carta: foto', hint: 'Foto a la derecha del bloque oscuro (rec. 1200×900px).', fallback: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?auto=format&fit=crop&w=1200&q=80' },
+  { key: 'hogarContactImage', label: 'Contacto: imagen de portada', hint: 'Imagen a la derecha del encabezado de contacto (rec. 1400×600px).', fallback: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1400&q=80' },
+  ...categoryTileImageFields('hogar', 5, [], 'cuadrada, rec. 800×800px'),
+];
+
+const HOGAR_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'hogarLogoText', label: 'Nombre en el logo', placeholder: 'Nombre comercial de la tienda', group: 'Marca', hint: 'Solo se usa si la tienda no tiene logo subido.' },
+  { key: 'hogarNavHome', label: 'Menú móvil: Inicio', placeholder: 'Inicio', group: 'Header' },
+  { key: 'hogarNavShop', label: 'Menú: ver todo', placeholder: 'Ver todo', group: 'Header', hint: 'El menú muestra además tus primeras 4 categorías reales.' },
+  { key: 'hogarNavContact', label: 'Menú: Contacto', placeholder: 'Contacto', group: 'Header' },
+  { key: 'hogarNavCart', label: 'Botón de la bolsa', placeholder: 'Bolsa', group: 'Header' },
+  { key: 'hogarSearchPlaceholder', label: 'Buscador: texto de ayuda', placeholder: 'Busca roble, lino, lámpara…', group: 'Header' },
+  { key: 'hogarHeroChip', label: 'Hero: etiqueta superior', placeholder: 'Nueva temporada · piezas que acaban de llegar', group: 'Hero', hint: 'Déjalo vacío para ocultarla.' },
+  { key: 'hogarHeroTitle', label: 'Hero: título', placeholder: 'Objetos serenos para hogares sin prisa.', group: 'Hero' },
+  { key: 'hogarHeroSubtitle', label: 'Hero: texto', placeholder: 'Madera, lino y cerámica elegidos para durar…', group: 'Hero', hint: 'Déjalo vacío para ocultarlo.' },
+  { key: 'hogarHeroButton', label: 'Hero: botón principal', placeholder: 'Ver la colección', group: 'Hero' },
+  { key: 'hogarHeroButton2', label: 'Hero: segundo botón', placeholder: 'Por defecto: Explorar <tu segunda categoría>', group: 'Hero', hint: 'Déjalo vacío para ocultarlo. Si no configuras su enlace, lleva a esa categoría.' },
+  { key: 'hogarFeaturedEyebrow', label: 'Producto estrella: etiqueta (sin productos)', placeholder: 'Colección', group: 'Hero · producto estrella', hint: 'Solo se usa mientras la tienda no tiene productos con foto.' },
+  { key: 'hogarFeaturedTitle', label: 'Producto estrella: título (sin productos)', placeholder: 'Piezas para quedarse', group: 'Hero · producto estrella', hint: 'Solo se usa mientras la tienda no tiene productos con foto.' },
+  { key: 'hogarBadgeText', label: 'Sello giratorio: texto', placeholder: 'Por defecto: <tienda> · <categoría>', group: 'Hero · producto estrella' },
+  { key: 'hogarSpotCat', label: 'Categoría destacada', placeholder: 'Automática (tu segunda categoría)', group: 'Hero · categoría', type: 'categorySelect' },
+  { key: 'hogarSpotEyebrow', label: 'Categoría destacada: etiqueta', placeholder: 'Categoría', group: 'Hero · categoría' },
+  { key: 'hogarSpotTitle', label: 'Categoría destacada: título', placeholder: 'Se usa el nombre de la categoría', group: 'Hero · categoría' },
+  { key: 'hogarDeliveryEyebrow', label: 'Entrega: etiqueta', placeholder: 'Entrega', group: 'Hero · entrega' },
+  { key: 'hogarDeliveryTitle', label: 'Entrega: título', placeholder: 'Por defecto: tu costo de envío real', group: 'Hero · entrega' },
+  { key: 'hogarDeliveryText', label: 'Entrega: texto', placeholder: 'Por defecto: tu tiempo de recojo real', group: 'Hero · entrega', hint: 'Déjalo vacío para ocultarlo.' },
+  { key: 'hogarMarqueeHidden', label: 'Ocultar cinta de palabras', placeholder: '', group: 'Cinta', type: 'toggle' },
+  { key: 'hogarMarquee', label: 'Cinta: palabras (separadas por coma)', placeholder: 'Por defecto: tus categorías', group: 'Cinta', hint: 'Ej.: Roble macizo, Lino lavado, Cerámica hecha a mano.' },
+  { key: 'hogarCategoriesEyebrow', label: 'Categorías: etiqueta', placeholder: 'Explora', group: 'Categorías' },
+  { key: 'hogarCategoriesTitle', label: 'Categorías: título', placeholder: 'Encuentra tu rincón', group: 'Categorías' },
+  { key: 'hogarCategoriesMore', label: 'Categorías: enlace', placeholder: 'Todos los productos', group: 'Categorías' },
+  ...categoryTileTextFields('hogar', 5, 'Categorías'),
+  { key: 'hogarFavEyebrow', label: 'Selección: etiqueta', placeholder: 'Los más queridos', group: 'Selección de la casa' },
+  { key: 'hogarFavTitle', label: 'Selección: título', placeholder: 'Selección de la casa', group: 'Selección de la casa', hint: 'Muestra primero tus productos destacados; los filtros salen de tus categorías reales.' },
+  { key: 'hogarStoryHidden', label: 'Ocultar "Nuestra forma"', placeholder: '', group: 'Nuestra forma', type: 'toggle' },
+  { key: 'hogarStoryEyebrow', label: 'Nuestra forma: etiqueta', placeholder: 'Nuestra forma', group: 'Nuestra forma' },
+  { key: 'hogarStoryText', label: 'Nuestra forma: texto', placeholder: 'Cada pieza está hecha para vivirse…', group: 'Nuestra forma', hint: 'Se ilumina palabra por palabra al bajar. Las cifras salen de tu tienda.' },
+  { key: 'hogarRoomLabel', label: 'Ambiente: texto de la tarjeta', placeholder: 'En este ambiente', group: 'Nuestra forma' },
+  { key: 'hogarPromiseHidden', label: 'Ocultar promesas', placeholder: '', group: 'Promesas', type: 'toggle' },
+  { key: 'hogarPromiseEyebrow', label: 'Promesas: etiqueta', placeholder: 'La promesa', group: 'Promesas' },
+  { key: 'hogarPromiseTitle', label: 'Promesas: título', placeholder: 'Compra con calma', group: 'Promesas', hint: 'Las tarjetas salen de tu configuración real de entrega.' },
+  { key: 'hogarReviewsHidden', label: 'Ocultar reseñas', placeholder: '', group: 'Reseñas', type: 'toggle', hint: 'Aparecen solo si tienes reseñas aprobadas con comentario.' },
+  { key: 'hogarReviewsEyebrow', label: 'Reseñas: etiqueta', placeholder: 'Reseñas', group: 'Reseñas' },
+  { key: 'hogarReviewsTitle', label: 'Reseñas: título', placeholder: 'Vivido y querido', group: 'Reseñas' },
+  { key: 'hogarLetterHidden', label: 'Ocultar la carta', placeholder: '', group: 'Carta', type: 'toggle', hint: 'Aparece solo si tienes WhatsApp configurado.' },
+  { key: 'hogarLetterEyebrow', label: 'Carta: etiqueta', placeholder: 'La carta', group: 'Carta' },
+  { key: 'hogarLetterTitle', label: 'Carta: título', placeholder: 'Mira primero lo nuevo.', group: 'Carta' },
+  { key: 'hogarLetterText', label: 'Carta: texto', placeholder: 'Te escribimos por WhatsApp cuando llegan piezas nuevas…', group: 'Carta' },
+  { key: 'hogarLetterPlaceholder', label: 'Carta: campo', placeholder: 'Tu nombre', group: 'Carta' },
+  { key: 'hogarLetterButton', label: 'Carta: botón', placeholder: 'Unirme', group: 'Carta' },
+  { key: 'hogarCatalogTitle', label: 'Catálogo: título', placeholder: 'Ver todo', group: 'Catálogo' },
+  { key: 'hogarCatalogSubtitle', label: 'Catálogo: texto (opcional)', placeholder: '', group: 'Catálogo' },
+  { key: 'hogarRelatedTitle', label: 'Ficha: título de relacionados', placeholder: 'Combina bien con', group: 'Ficha de producto' },
+  { key: 'hogarContactEyebrow', label: 'Contacto: etiqueta', placeholder: 'Estamos para ti', group: 'Contacto' },
+  { key: 'hogarContactTitle', label: 'Contacto: título', placeholder: 'Hablemos', group: 'Contacto' },
+  { key: 'hogarContactSubtitle', label: 'Contacto: subtítulo', placeholder: 'Dudas sobre medidas, materiales, pedidos…', group: 'Contacto' },
+  { key: 'hogarFormEyebrow', label: 'Formulario: etiqueta', placeholder: 'Escríbenos', group: 'Contacto' },
+  { key: 'hogarFormTitle', label: 'Formulario: título', placeholder: '¿En qué te ayudamos?', group: 'Contacto' },
+  { key: 'hogarFaqTitle', label: 'Preguntas frecuentes: título', placeholder: 'Preguntas frecuentes', group: 'Contacto' },
+  { key: 'hogarCheckoutTitle', label: 'Checkout: título', placeholder: 'Finalizar compra', group: 'Checkout' },
+  { key: 'hogarCheckoutButton', label: 'Checkout: botón', placeholder: 'Confirmar pedido', group: 'Checkout' },
+  { key: 'hogarFooterTagline', label: 'Footer: frase', placeholder: 'Objetos serenos, hechos para vivirse.', group: 'Footer', hint: 'Déjalo vacío para ocultarla.' },
+  { key: 'hogarFooterText', label: 'Footer: texto', placeholder: 'Por defecto: la descripción de tu tienda', group: 'Footer' },
+  { key: 'hogarFooterWordmark', label: 'Footer: nombre gigante', placeholder: 'Por defecto: el nombre de tu tienda', group: 'Footer', hint: 'Se ajusta solo al ancho. Mejor con nombres cortos.' },
+];
+
+const HOGAR_LINK_FIELDS: LinkFieldDef[] = [
+  { key: 'hogarHeroAction', label: 'Hero: enlace del botón principal', group: 'Hero', defaultType: 'catalog' },
+  { key: 'hogarHeroAction2', label: 'Hero: enlace del segundo botón', group: 'Hero', defaultType: 'catalog' },
+];
+
+const HOGAR_PRODUCT_FIELDS: ProductFieldDef[] = [
+  { key: 'hogarFeaturedProducts', label: 'Producto estrella del hero (se usa el primero)' },
+  { key: 'hogarRoomProducts', label: "Producto de la tarjeta 'En este ambiente' (se usa el primero)" },
+];
+
 export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   autopartes: { textFields: AUTOPARTES_TEXT_FIELDS, imageFields: AUTOPARTES_IMAGE_FIELDS, productFields: [], linkFields: [] },
   urbano: { textFields: URBANO_TEXT_FIELDS, imageFields: URBANO_IMAGE_FIELDS, productFields: URBANO_PRODUCT_FIELDS, linkFields: [] },
@@ -2443,6 +2524,7 @@ export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   retail: { textFields: RETAIL_TEXT_FIELDS, imageFields: RETAIL_IMAGE_FIELDS, productFields: [], linkFields: RETAIL_LINK_FIELDS },
   floreria: { textFields: FLORERIA_TEXT_FIELDS, imageFields: FLORERIA_IMAGE_FIELDS, productFields: [], linkFields: FLORERIA_LINK_FIELDS },
   mostrador: { textFields: MOSTRADOR_TEXT_FIELDS, imageFields: [], productFields: [], linkFields: [] },
+  hogar: { textFields: HOGAR_TEXT_FIELDS, imageFields: HOGAR_IMAGE_FIELDS, productFields: HOGAR_PRODUCT_FIELDS, linkFields: HOGAR_LINK_FIELDS },
   bolsos: { textFields: BOLSOS_TEXT_FIELDS, imageFields: BOLSOS_IMAGE_FIELDS, productFields: [], linkFields: BOLSOS_LINK_FIELDS },
   'moda-elegante': { textFields: MODA_ELEGANTE_TEXT_FIELDS, imageFields: MODA_ELEGANTE_IMAGE_FIELDS, productFields: [], linkFields: MODA_ELEGANTE_LINK_FIELDS },
 };

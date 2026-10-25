@@ -39,7 +39,8 @@ export type PlantillaId =
   | 'bolsos'
   | 'retail'
   | 'floreria'
-  | 'mostrador';
+  | 'mostrador'
+  | 'hogar';
 
 export interface BannerSlotDef {
   orden: number;
@@ -815,6 +816,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
   },
 
 
+  hogar: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: false,
+    showCategoryCircles: true,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: false,
+    imageAspect: 'aspect-[3/4]',
+    label: 'Hogar (Calma)',
+    description: 'Mueblería, decoración y objetos para el hogar con estética escandinava en mosaico (bento): gris cálido, tarjetas hueso redondeadas, pasteles suaves y titulares grandes en Bricolage Grotesque. Header flotante en píldora, hero en mosaico con tu producto estrella (sello giratorio, precio y "Agregar"), categoría destacada y entrega con tus datos reales, cinta de palabras grandes, "Encuentra tu rincón" con tus categorías en mosaico, selección de la casa con filtros por categoría, bloque "Nuestra forma" con texto que se enciende al bajar y cifras reales, promesas con tus beneficios reales, reseñas reales, carta por WhatsApp y footer oscuro con tu nombre a todo el ancho. Ficha con variantes, zoom y barra de compra fija. Colores personalizables; todo editable en vivo.',
+    accentColor: '#1C1A17',
+    icon: 'ph:armchair-fill',
+    rubrosPermitidos: ['Mueblería', 'Muebleria', 'Muebles', 'Decoración', 'Decoracion', 'Artesanía y decoración', 'Hogar', 'Hogar y decoración', 'Carpintería', 'Carpinteria', 'Colchones', 'Iluminación', 'Textiles para el hogar'],
+  },
 };
 
 export const DEFAULT_TEMPLATE: PlantillaId = 'moderna';
