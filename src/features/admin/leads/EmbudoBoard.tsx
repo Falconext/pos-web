@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
+import { nombreVisible, contactoVisible } from './LeadsModel'
 import moment from 'moment'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -299,9 +300,9 @@ function Tarjeta({
         className="block w-full text-left"
       >
         <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
-          {pedido.nombreProspecto || pedido.telefonoProspecto}
+          {nombreVisible(pedido.nombreProspecto, pedido.telefonoProspecto)}
         </p>
-        <p className="font-mono text-[11px] text-gray-400">{pedido.telefonoProspecto}</p>
+        <p className="font-mono text-[11px] text-gray-400">{contactoVisible(pedido.telefonoProspecto)}</p>
       </button>
 
       {pendiente && (
@@ -375,7 +376,7 @@ function ModalVoucher({
           Comprobante de pago
         </p>
         <h3 className="text-lg font-black text-gray-900 dark:text-white">
-          {pedido.nombreProspecto || pedido.telefonoProspecto}
+          {nombreVisible(pedido.nombreProspecto, pedido.telefonoProspecto)}
         </h3>
         <p className="mb-3 text-xs text-gray-500">
           Enviado {moment(pago.recibidoEn).format('DD/MM/YYYY HH:mm')}
