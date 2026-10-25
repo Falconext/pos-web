@@ -162,6 +162,11 @@ const VitrinaCheckoutPage = cargaPerezosa(() => import('./retail/VitrinaCheckout
 const PetalaHomePage = cargaPerezosa(() => import('./floreria/PetalaHomePage'));
 const PetalaCatalogoPage = cargaPerezosa(() => import('./floreria/PetalaCatalogoPage'));
 const PetalaCheckoutPage = cargaPerezosa(() => import('./floreria/PetalaCheckoutPage'));
+
+// Mostrador (tienda de una sola página: arranca en el catálogo, vista rápida y carrito)
+const MostradorHomePage = cargaPerezosa(() => import('./mostrador/MostradorHomePage'));
+const MostradorCatalogoPage = cargaPerezosa(() => import('./mostrador/MostradorCatalogoPage'));
+const MostradorCheckoutPage = cargaPerezosa(() => import('./mostrador/MostradorCheckoutPage'));
 // Bolsos (Rosé — carteras / bolsos / marroquinería, rosa y vino con serif de lujo)
 const RoseHomePage = cargaPerezosa(() => import('./bolsos/RoseHomePage'));
 const RoseCatalogoPage = cargaPerezosa(() => import('./bolsos/RoseCatalogoPage'));
@@ -382,5 +387,11 @@ export const templateRegistry: Record<string, TemplateConfig> = {
     HomePage: PetalaHomePage,
     CatalogoPage: PetalaCatalogoPage,
     CheckoutPage: PetalaCheckoutPage,
+  },
+  mostrador: {
+    id: 'mostrador',
+    HomePage: MostradorHomePage,
+    CatalogoPage: MostradorCatalogoPage,
+    CheckoutPage: MostradorCheckoutPage,
   },
 };
