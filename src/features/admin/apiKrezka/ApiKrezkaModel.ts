@@ -9,7 +9,7 @@
  */
 
 /** Documentación completa en el portal de desarrolladores. */
-export const PORTAL_DESARROLLADORES = 'https://developers.falconext.pe/erp';
+export const PORTAL_DESARROLLADORES = 'https://developers.krezka.com/erp';
 
 export type Metodo = 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
