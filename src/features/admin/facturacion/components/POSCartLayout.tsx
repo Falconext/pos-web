@@ -37,7 +37,13 @@ const esAfectacionGratuitaCode = (codigo: any): boolean => {
  */
 const presentacionesDe = (item: any, vm: any) => {
     const catalogo = vm?.products || vm?.filteredProducts || [];
-    const producto = catalogo.find((p: any) => Number(p?.id) === Number(item?.id));
+    const idProducto = Number(item?.productoId ?? item?.id);
+    // El catálogo es la página cargada (20 de cientos). Si el producto de la
+    // línea no cayó ahí —al editar un comprobante nunca cae— se usa el que el
+    // ViewModel trajo aparte para las líneas del carrito. Sin ese respaldo la
+    // línea se quedaba sin presentaciones y el desplegable no se dibujaba.
+    const producto = catalogo.find((p: any) => Number(p?.id) === idProducto)
+        ?? vm?.productosDeLineas?.[idProducto];
     // El catálogo guarda los precios en la moneda NATIVA del producto. La línea
     // trae en `tipoCambio` el factor con que se la llevó a la moneda del
     // documento, así que los precios del catálogo pasan por el mismo factor:
