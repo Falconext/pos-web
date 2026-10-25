@@ -151,6 +151,11 @@ export function ClavesApiCard({ onCreada, conNotas = true }: { onCreada?: (clave
                 </div>
                 <input
                     type="text"
+                    // Sin esto Chrome lo llenaba con el correo de la sesión
+                    // (prueba como integrador, 24-10) y la clave quedaba con
+                    // ese nombre.
+                    name="nombre-clave-api"
+                    autoComplete="off"
                     value={nombre}
                     maxLength={60}
                     onChange={(e) => setNombre(e.target.value)}
