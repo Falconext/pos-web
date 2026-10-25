@@ -118,6 +118,11 @@ const PREMIUM_TEMPLATE_DETAILS: Record<string, { headline: string; features: str
     features: ['Hero slider de 3 slides con palabra destacada y beneficios reales de tu tienda', 'Tarjeta de categorías con círculos de color y fotos reales de tus productos', 'Recomendados en carrusel con rating real o "Nuevo", cantidad, favoritos y comparador', 'Combos reales con el ahorro calculado de tus precios, guías de cuidado editables y testimonios con reseñas reales', 'Ficha con variantes reales (talla, sabor, peso), zoom y barra de compra fija; todo editable en vivo'],
     pages: ['Inicio', 'Catálogo', 'Detalle de producto', 'Checkout', 'Contacto', 'Carrito lateral'],
   },
+  mostrador: {
+    headline: 'Tienda de UNA sola página: sin portada, el cliente entra directo al catálogo y compra en pocos toques.',
+    features: ['Categorías con el número real de productos, buscador por nombre o código y orden por precio o nombre', 'Tarjetas con código, precio y "+" que se vuelve selector de cantidad del carrito', 'Vista rápida del producto (fotos, variantes, cantidad, descripción y video) sin salir del catálogo', 'Carga infinita al bajar y panel de información con tus datos reales (entrega, horario, pagos, WhatsApp)', 'Colores de tu marca en la cabecera; carrito y checkout incluidos'],
+    pages: ['Catálogo (inicio)', 'Vista rápida', 'Carrito lateral', 'Checkout'],
+  },
   floreria: {
     headline: 'Florería de lujo para ramos de rosas y arreglos florales: marfil, rubor y dorado, titulares en serif fina y pétalos que caen.',
     features: ['Hero slider con titular en dos tonos, botón de video opcional y barra de beneficios reales en vidrio', 'Catálogo de ocasiones con fotos y conteo real, y ramos populares con tus destacados primero', '"Arma tu ramo" con tus productos reales por paso (flores, envoltura, extras…) y total en vivo', 'Por qué elegirnos, opiniones reales aprobadas, suscripción por WhatsApp y banda final con foto', 'Ficha con variantes, video, zoom y barra fija; checkout con dedicatoria; todo editable en vivo'],

@@ -2287,6 +2287,20 @@ const FLORERIA_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'floreriaSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
 ];
 
+// ── Mostrador (catálogo de una página) ──
+const MOSTRADOR_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'mostradorLogoText', label: 'Nombre en la cabecera', placeholder: 'Nombre comercial de la tienda', group: 'Cabecera', hint: 'Se muestra junto al logo, sobre el degradado de tu color principal.' },
+  { key: 'mostradorLogoNameHidden', label: 'Ocultar el nombre (solo logo)', placeholder: '', group: 'Cabecera', type: 'toggle', hint: 'Útil si tu logo ya incluye el nombre.' },
+  { key: 'mostradorInfoLabel', label: 'Botón de información', placeholder: 'Información', group: 'Cabecera', hint: 'Abre un panel con tus datos reales: entrega, horario, dirección, medios de pago y WhatsApp.' },
+  { key: 'mostradorInfoText', label: 'Texto del panel de información', placeholder: 'Por defecto: descripción de la tienda', group: 'Cabecera' },
+  { key: 'mostradorAllLabel', label: 'Categorías: opción "todo"', placeholder: 'Todo', group: 'Catálogo' },
+  { key: 'mostradorSearchPlaceholder', label: 'Buscador: texto de ayuda', placeholder: 'Nombre o código del producto', group: 'Catálogo' },
+  { key: 'mostradorSearchButton', label: 'Buscador: botón', placeholder: 'Buscar', group: 'Catálogo' },
+  { key: 'mostradorInfiniteHidden', label: 'Desactivar carga automática al bajar', placeholder: '', group: 'Catálogo', type: 'toggle', hint: 'Por defecto los productos siguientes cargan solos al llegar al final; desactívalo para usar solo el botón "Ver más".' },
+  { key: 'mostradorCheckoutTitle', label: 'Checkout: título', placeholder: 'Finalizar compra', group: 'Checkout' },
+  { key: 'mostradorCheckoutButton', label: 'Checkout: botón', placeholder: 'Confirmar pedido', group: 'Checkout' },
+];
+
 const EMPTY: LiveEditorPlantillaConfig = { textFields: [], imageFields: [], productFields: [], linkFields: [] };
 
 // ── Bolsos (Rosé) ──
@@ -2428,6 +2442,7 @@ export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   maquillaje: { textFields: MAQUILLAJE_TEXT_FIELDS, imageFields: MAQUILLAJE_IMAGE_FIELDS, productFields: [], linkFields: MAQUILLAJE_LINK_FIELDS },
   retail: { textFields: RETAIL_TEXT_FIELDS, imageFields: RETAIL_IMAGE_FIELDS, productFields: [], linkFields: RETAIL_LINK_FIELDS },
   floreria: { textFields: FLORERIA_TEXT_FIELDS, imageFields: FLORERIA_IMAGE_FIELDS, productFields: [], linkFields: FLORERIA_LINK_FIELDS },
+  mostrador: { textFields: MOSTRADOR_TEXT_FIELDS, imageFields: [], productFields: [], linkFields: [] },
   bolsos: { textFields: BOLSOS_TEXT_FIELDS, imageFields: BOLSOS_IMAGE_FIELDS, productFields: [], linkFields: BOLSOS_LINK_FIELDS },
   'moda-elegante': { textFields: MODA_ELEGANTE_TEXT_FIELDS, imageFields: MODA_ELEGANTE_IMAGE_FIELDS, productFields: [], linkFields: MODA_ELEGANTE_LINK_FIELDS },
 };

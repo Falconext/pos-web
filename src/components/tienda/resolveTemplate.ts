@@ -38,7 +38,8 @@ export type PlantillaId =
   | 'maquillaje'
   | 'bolsos'
   | 'retail'
-  | 'floreria';
+  | 'floreria'
+  | 'mostrador';
 
 export interface BannerSlotDef {
   orden: number;
@@ -796,7 +797,23 @@ export const TEMPLATES: Record<PlantillaId, TemplateConfig> = {
     accentColor: '#9A7044',
     icon: 'ph:flower-tulip-fill',
     rubrosPermitidos: ['Florería', 'Floreria', 'Flores', 'Arreglos florales', 'Ramos', 'Regalos', 'Detalles', 'Artesanía y decoración', 'Eventos', 'Decoración de eventos', 'Comercio minorista'],
+  },  mostrador: {
+    cardComponent: 'ProductCardGlamora',
+    gridCols: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+    showDiscount: true,
+    showStock: true,
+    showCategoryCircles: false,
+    bannerIsSlider: false,
+    bannerSlots: [],
+    showCombos: false,
+    showSidebar: true,
+    imageAspect: 'aspect-square',
+    label: 'Mostrador (catálogo de una página)',
+    description: 'Tienda de UNA sola página para el negocio que no quiere portada: el cliente entra directo al catálogo. Cabecera con el degradado de tu marca, categorías con su número real de productos, buscador por nombre o código, orden por precio o nombre, carga infinita y tarjetas con código, precio y botón "+" que se vuelve selector de cantidad del carrito. El producto se abre en una vista rápida (fotos, variantes, cantidad, descripción, video) y todo termina en el carrito y el checkout. Panel de información con tus datos reales (entrega, horario, dirección, medios de pago, WhatsApp). Colores personalizables.',
+    accentColor: '#F0782E',
+    icon: 'solar:widget-4-bold',
   },
+
 
 };
 
