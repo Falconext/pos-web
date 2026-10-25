@@ -43,30 +43,24 @@ export default function ComprasView() {
         vm.actions.refresh();
     }, [vm.currentPage, vm.itemsPerPage, vm.debounce, vm.filters.estadoPago, vm.filters.fechaInicio, vm.filters.fechaFin, vm.filters.sedeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Van en el menú "⋯" de cada fila: primero lo que se consulta, al final lo
+    // que no tiene vuelta (anular).
     const tableActions = [
         {
-            icon: <Icon icon="solar:history-bold-duotone" width="20" height="20" color="#6366f1" />,
-            tooltip: 'Ver Historial',
+            icon: <Icon icon="solar:eye-linear" />,
+            tooltip: 'Ver detalle',
+            className: 'edit',
+            onClick: (row: any) => actions.openDetalle(row.id),
+        },
+        {
+            icon: <Icon icon="solar:history-linear" />,
+            tooltip: 'Ver historial de pagos',
             className: 'history',
             onClick: (row: any) => actions.openHistorial(row._raw),
         },
         {
-            icon: <Icon icon="solar:check-circle-bold-duotone" width="20" height="20" color="#10b981" />,
-            tooltip: 'Aprobar compra (ingresa el stock)',
-            className: 'payment',
-            onClick: (row: any) => actions.aprobarCompra(row._raw),
-            hide: (row: any) => !isAdmin || row._raw?.estado !== 'PENDIENTE_APROBACION',
-        },
-        {
-            icon: <Icon icon="solar:close-circle-bold-duotone" width="20" height="20" color="#f97316" />,
-            tooltip: 'Rechazar compra',
-            className: 'delete',
-            onClick: (row: any) => actions.rechazarCompra(row._raw),
-            hide: (row: any) => !isAdmin || row._raw?.estado !== 'PENDIENTE_APROBACION',
-        },
-        {
-            icon: <Icon icon="solar:hand-money-bold-duotone" width="20" height="20" color="#10b981" />,
-            tooltip: 'Registrar Pago',
+            icon: <Icon icon="solar:hand-money-linear" />,
+            tooltip: 'Registrar pago',
             className: 'payment',
             onClick: (row: any) => actions.openPago(row._raw),
             hide: (row: any) =>
@@ -76,19 +70,27 @@ export default function ComprasView() {
                 row._raw?.estado === 'RECHAZADA',
         },
         {
-            icon: <Icon icon="solar:eye-bold" />,
-            tooltip: 'Ver detalle',
-            className: 'edit',
-            onClick: (row: any) => actions.openDetalle(row.id),
+            icon: <Icon icon="solar:check-circle-linear" />,
+            tooltip: 'Aprobar compra (ingresa el stock)',
+            className: 'payment',
+            onClick: (row: any) => actions.aprobarCompra(row._raw),
+            hide: (row: any) => !isAdmin || row._raw?.estado !== 'PENDIENTE_APROBACION',
         },
         {
-            icon: <Icon icon="solar:pen-2-bold-duotone" width="20" height="20" color="#0ea5e9" />,
+            icon: <Icon icon="solar:pen-2-linear" />,
             tooltip: 'Editar compra',
             className: 'edit',
             onClick: (row: any) => actions.openEditar(row._raw),
         },
         {
-            icon: <Icon icon="solar:trash-bin-trash-bold-duotone" width="20" height="20" color="#ef4444" />,
+            icon: <Icon icon="solar:close-circle-linear" />,
+            tooltip: 'Rechazar compra',
+            className: 'delete',
+            onClick: (row: any) => actions.rechazarCompra(row._raw),
+            hide: (row: any) => !isAdmin || row._raw?.estado !== 'PENDIENTE_APROBACION',
+        },
+        {
+            icon: <Icon icon="solar:trash-bin-trash-linear" />,
             tooltip: 'Anular compra',
             className: 'delete',
             onClick: (row: any) => actions.openAnular(row._raw),
@@ -182,8 +184,8 @@ export default function ComprasView() {
                 </div>
 
                 {/* Filters */}
-                <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3 sm:hidden">
+                <div data-krk-filtros-seccion className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                    <div data-krk-filtros-head className="mb-4 flex items-center justify-between gap-3 sm:hidden">
                         <div className="flex min-w-0 items-center gap-2">
                             <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600 dark:text-blue-400" />
                             <div className="min-w-0">
@@ -200,7 +202,7 @@ export default function ComprasView() {
                             <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
                         </button>
                     </div>
-                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 sm:grid sm:grid-cols-2 xl:grid-cols-4`}>
+                    <div data-krk-filtros className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 sm:grid sm:grid-cols-2 xl:grid-cols-4`}>
                         <div className="sm:col-span-2 xl:col-span-1">
                             <InputPro
                                 name="search"
@@ -335,6 +337,8 @@ export default function ComprasView() {
                                     bodyData={tableData}
                                     headerColumns={vm.VISIBLE_COMPRAS_COLUMNS}
                                     actions={tableActions}
+                                    actionsMenu
+                                    onRowClick={(row: any) => row?.id && actions.openDetalle(row.id)}
                                 />
                             </div>
                              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">

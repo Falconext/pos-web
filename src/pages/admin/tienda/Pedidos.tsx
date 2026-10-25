@@ -335,8 +335,8 @@ export default function PedidosTienda() {
 
       <section className="rounded-[22px] border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827]">
         {/* Filtros */}
-        <div className="rounded-t-[22px] border-b border-gray-100 bg-white p-4 dark:border-slate-800 dark:bg-[#111827] sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-3 md:hidden">
+        <div data-krk-filtros-seccion className="rounded-t-[22px] border-b border-gray-100 bg-white p-4 dark:border-slate-800 dark:bg-[#111827] sm:p-5">
+          <div data-krk-filtros-head className="mb-4 flex items-center justify-between gap-3 md:hidden">
             <div className="flex min-w-0 items-center gap-2">
               <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600" />
               <div className="min-w-0">
@@ -353,7 +353,7 @@ export default function PedidosTienda() {
               <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
             </button>
           </div>
-          <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4 md:grid md:grid-cols-2 xl:grid-cols-[1.4fr_0.7fr_0.7fr_auto]`}>
+          <div data-krk-filtros className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} gap-4 md:grid md:grid-cols-2 xl:grid-cols-[1.4fr_0.7fr_0.7fr_auto]`}>
             <label className="space-y-2">
               <span className="text-sm text-gray-600 dark:text-gray-300">Buscar pedido</span>
               <div className="relative">

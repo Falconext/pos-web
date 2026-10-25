@@ -147,11 +147,11 @@ export default function MovementsView() {
 
             {/* Filtros */}
             <div className="p-4 sm:p-5">
-                <div className="flex items-center gap-2 mb-4">
+                <div data-krk-filtros-head className="flex items-center gap-2 mb-4">
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-gray-200">Filtros</h3>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+                <div data-krk-filtros className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
                     <div>
                         <Calendar
                             text="Fecha Inicio"

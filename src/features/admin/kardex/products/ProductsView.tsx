@@ -612,8 +612,8 @@ export default function ProductsView() {
 
             {/* Main Content */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 relative z-0 overflow-hidden">
-                <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-slate-800">
-                    <div className="flex flex-col lg:flex-row gap-4">
+                <div data-krk-filtros-seccion className="p-4 sm:p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div data-krk-filtros className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <InputPro
                                 name="search"

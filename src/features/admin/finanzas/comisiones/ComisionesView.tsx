@@ -179,7 +179,7 @@ export default function ComisionesView() {
                     )}
                 </div>
 
-                <div className="flex flex-wrap gap-3 items-end">
+                <div data-krk-filtros className="flex flex-wrap gap-3 items-end">
                     {/* Filtro por vendedor */}
                     {todosLosVendedores.length > 1 && (
                         <div>

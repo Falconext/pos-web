@@ -198,12 +198,12 @@ const TabFormal = () => {
     const nExcluidos = vm.excluidos?.length ?? 0;
     return (
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
-            <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
-                <div className="flex items-center gap-2 mb-4">
+            <div data-krk-filtros-seccion className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                <div data-krk-filtros-head className="flex items-center gap-2 mb-4">
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto_auto] xl:items-end">
+                <div data-krk-filtros className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto_auto] xl:items-end">
                     <Calendar name="fechaInicio" value={moment(vm.fechaInicio).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
                     <Calendar name="fechaFin" value={moment(vm.fechaFin).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
                     {vm.canFilterSede && (
@@ -332,12 +332,12 @@ const TabInformal = () => {
     const r = vm.resumenReporteInformal;
     return (
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
-            <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
-                <div className="flex items-center gap-2 mb-4">
+            <div data-krk-filtros-seccion className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                <div data-krk-filtros-head className="flex items-center gap-2 mb-4">
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto] xl:items-end">
+                <div data-krk-filtros className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto] xl:items-end">
                     <Calendar name="fechaInicio" value={moment(vm.fechaInicio).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
                     <Calendar name="fechaFin" value={moment(vm.fechaFin).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
                     {vm.canFilterSede && (
@@ -402,12 +402,12 @@ const TabCompras = () => {
     const r = vm.resumenReporteCompras;
     return (
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
-            <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
-                <div className="flex items-center gap-2 mb-4">
+            <div data-krk-filtros-seccion className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                <div data-krk-filtros-head className="flex items-center gap-2 mb-4">
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto] xl:items-end">
+                <div data-krk-filtros className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_0.9fr_auto] xl:items-end">
                     <Calendar name="fechaInicio" value={moment(vm.fechaInicio).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
                     <Calendar name="fechaFin" value={moment(vm.fechaFin).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
                     {vm.canFilterSede && (
@@ -470,12 +470,12 @@ const TabGastos = () => {
     const r = vm.resumenReporteGastos;
     return (
         <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
-            <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
-                <div className="flex items-center gap-2 mb-4">
+            <div data-krk-filtros-seccion className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                <div data-krk-filtros-head className="flex items-center gap-2 mb-4">
                     <Icon icon="solar:filter-bold-duotone" className="text-blue-600 text-xl" />
                     <h3 className="font-semibold text-gray-800 dark:text-white">Filtros</h3>
                 </div>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_auto] xl:items-end">
+                <div data-krk-filtros className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.8fr_0.8fr_auto] xl:items-end">
                     <Calendar name="fechaInicio" value={moment(vm.fechaInicio).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha inicio" className="admin-date-filter" portal />
                     <Calendar name="fechaFin" value={moment(vm.fechaFin).format('DD/MM/YYYY')} onChange={vm.handleDate} text="Fecha Fin" className="admin-date-filter" portal />
                     <button

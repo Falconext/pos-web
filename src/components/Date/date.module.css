@@ -11,39 +11,39 @@
     margin-bottom: 6px;
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    color: #64748b;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #6b645c;
 }
 
 :global(.admin-date-filter) input {
     height: 40px;
     border-radius: 12px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
+    border: 1px solid rgba(40, 30, 20, 0.12);
+    background: #fffdfa;
     padding: 0 40px 0 12px;
     font-size: 14px;
-    font-weight: 400;
-    color: #1e293b;
+    font-weight: 500;
+    color: #1d1915;
     box-shadow: none;
     transition: all 0.15s ease;
 }
 
 :global(.admin-date-filter) input:focus {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
+    border-color: rgba(40, 30, 20, 0.32);
+    box-shadow: 0 0 0 3px rgba(40, 30, 20, 0.07);
 }
 
 :global(.admin-date-filter) svg {
     top: 32px;
     right: 12px;
-    color: #94a3b8;
+    color: #6b645c;
 }
 
 :global(.admin-date-filter) > div:nth-child(2) {
-    border: 1px solid #eef0f4;
-    border-radius: 18px;
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.14);
+    border: 1px solid rgba(40, 30, 20, 0.09);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px -18px rgba(40, 30, 20, 0.32), 0 2px 6px rgba(40, 30, 20, 0.08);
 }
 
 .text__label {
@@ -71,26 +71,28 @@
     font-weight: 500;
 }
 
+/* ─── Panel del calendario (alineado al tema: crema / superficie oscura) ─── */
 .date > div:nth-child(2),
 .panel {
     border-radius: 20px;
-    background: #fff;
-    padding: 10px;
+    background: #fffdfa;
+    border: 1px solid rgba(40, 30, 20, 0.09);
+    padding: 14px;
     width: 300px;
     position: absolute;
     z-index: 999999;
-    box-shadow: 0px 0px 20px 0px rgb(76 87 125 / 10%);
+    box-shadow: 0 24px 60px -18px rgba(40, 30, 20, 0.32), 0 2px 6px rgba(40, 30, 20, 0.08);
 }
 
 .month {
-    font-weight: 800;
-    color: #5E6278;
-    font-size: 16px;
+    font: 700 16px 'Bricolage Grotesque', 'Manrope', sans-serif;
+    letter-spacing: -0.01em;
+    color: #1d1915;
 }
 
 .date button {
-    border: 1px solid #E1E3EA;
-    border-radius: 100%;
+    border: 1px solid rgba(40, 30, 20, 0.12);
+    border-radius: 10px;
     cursor: pointer;
     padding: 5px 6px;
 }
@@ -108,7 +110,7 @@
     z-index: 1;
     right: 0;
     top: 27px;
-    color: #5E6278;
+    color: #6b645c;
 }
 
 .noLabel svg {
@@ -133,21 +135,31 @@
     content: '';
     width: 100%;
     height: 1px;
-    background: #ededed;
-    bottom: -20px;
+    background: rgba(40, 30, 20, 0.09);
+    bottom: -14px;
 }
 
 .header>button {
-    /*  border: 1px solid red; */
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid rgba(40, 30, 20, 0.12);
+    border-radius: 10px;
     background: transparent;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    color: #1d1915;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.header>button:hover {
+    background: rgba(40, 30, 20, 0.055);
+    border-color: rgba(40, 30, 20, 0.2);
 }
 
 .header>button>svg {
-    width: 2rem;
-    height: 2rem;
+    width: 18px;
+    height: 18px;
 }
 
 .month:first-letter {
@@ -157,159 +169,110 @@
 .days {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    grid-gap: 10px 0px;
-    margin-top: 35px;
+    grid-gap: 4px 2px;
+    margin-top: 28px;
 }
 
 .day-label {
-    font-size: 11px;
-    color: #5E6278;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: center;
+    color: #978f86;
+    padding-bottom: 4px;
 }
 
 .day {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 12px;
+    height: 36px;
+    font-size: 13px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
     cursor: pointer;
-    color: #5E6278;
-    background-color: #fff;
-    border-radius: 5px;
-    padding: 12px 8px !important;
-    transition: 0.5s;
+    color: #1d1915;
+    background-color: transparent;
+    border-radius: 10px;
+    transition: background-color 0.15s, color 0.15s;
 }
 
 .day:hover {
-    background: #039AF1; 
-    border-radius:100%;
-    color: #fff;
-    transition: 0.5s;
+    background: rgba(40, 30, 20, 0.055);
 }
 
-.day.selected {
-    background: #039AF1; 
-    border-radius:100%;
-    color: #fff;
-    transition: 0.5s;
+/* Hoy: anillo, sin rellenar (el relleno es la selección) */
+.day.today {
+    box-shadow: inset 0 0 0 1.5px rgba(40, 30, 20, 0.22);
+    font-weight: 700;
 }
 
-.date__select > div
-
-.day.active {
-    background-color: red;
-    color: #fff;
+/* Selección en tinta, como la página activa de la paginación */
+.day.selected,
+.day.selected:hover {
+    background: #1d1915;
+    color: #fbf8f2;
+    box-shadow: none;
 }
 
 .day.has-event {
-    background-color: #52C773;
-    color: #fff;
-}
-
-.day-label {
-    font-weight: bold;
-    text-align: center;
+    background-color: #dcf2ec;
+    color: #0a7a63;
 }
 
 .event-tooltip {
     position: absolute;
     z-index: 1;
     padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    background-color: #fff;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(40, 30, 20, 0.12);
+    border-radius: 8px;
+    background-color: #fffdfa;
+    box-shadow: 0 8px 20px -10px rgba(40, 30, 20, 0.3);
 }
 
-/* ─── Dark mode ─────────────────────────────────────────────────────────────── */
+/* ─── Dark mode: superficie del fondo elegido (cálido o azul noche) ───────── */
 
+/* .dark marca el contenido del panel; el fondo lo pone el panel mismo (estilo
+   en línea en index.tsx), así no queda un recuadro dentro de otro. */
 .dark {
-    background: #1e2435;
-    border: 1px solid #2d3748;
-    border-radius: 20px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    background: transparent;
 }
 
-.dark .month {
-    color: #e2e8f0;
-}
-
-.dark .header::after {
-    background: #2d3748;
-}
-
-.dark .header > button {
-    border-color: #374151;
-    color: #94a3b8;
-}
-
-.dark .header > button:hover {
-    background: #374151;
-}
-
-.dark .header > button svg {
-    color: #94a3b8;
-}
-
-.dark .day-label {
-    color: #64748b;
-}
-
-.dark .day {
-    color: #cbd5e1;
-    background-color: transparent;
-}
-
-.dark .day:hover {
-    background: #039AF1;
-    color: #fff;
-}
-
-.dark .day.selected {
-    background: #039AF1;
-    color: #fff;
-}
-
-.dark .day.today:not(.selected) {
-    background: #1e3a5f;
-    color: #60a5fa;
-}
-
-.dark .day.has-event {
-    background-color: #16a34a;
-    color: #fff;
-}
-
-/* Dark mode para el wrapper del popup */
-.date > div:nth-child(2).dark,
-.date > div:nth-child(3).dark {
-    background: #1e2435;
-    border: 1px solid #2d3748;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
-}
+.dark .month { color: rgb(var(--slate-100)); }
+.dark .header::after { background: rgb(255 255 255 / 0.08); }
+.dark .header > button { border-color: rgb(255 255 255 / 0.1); color: rgb(var(--slate-200)); }
+.dark .header > button:hover { background: rgb(255 255 255 / 0.06); }
+.dark .header > button svg { color: rgb(var(--slate-200)); }
+.dark .day-label { color: rgb(var(--slate-500)); }
+.dark .day { color: rgb(var(--slate-200)); background-color: transparent; }
+.dark .day:hover { background: rgb(255 255 255 / 0.06); color: rgb(var(--slate-100)); }
+.dark .day.today:not(.selected) { box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.22); color: rgb(var(--slate-100)); }
+.dark .day.selected,
+.dark .day.selected:hover { background: rgb(var(--slate-100)); color: rgb(var(--slate-900)); }
+.dark .day.has-event { background-color: rgb(31 158 130 / 0.18); color: #5ccfb1; }
 
 /* admin-date-filter dark */
 :global(.dark) :global(.admin-date-filter) label {
-    color: #94a3b8;
+    color: rgb(var(--slate-400));
 }
 
 :global(.dark) :global(.admin-date-filter) input {
-    background: #1e293b;
-    border-color: #334155;
-    color: #ffffff;
+    background: rgb(var(--slate-800));
+    border-color: rgb(var(--slate-700));
+    color: rgb(var(--slate-100));
 }
 
 :global(.dark) :global(.admin-date-filter) input:focus {
-    border-color: #818cf8;
-    box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.3);
+    border-color: rgb(var(--slate-500));
+    box-shadow: 0 0 0 3px rgb(255 255 255 / 0.08);
 }
 
 :global(.dark) :global(.admin-date-filter) svg {
-    color: #64748b;
+    color: rgb(var(--slate-400));
 }
 
 :global(.dark) :global(.admin-date-filter) > div:nth-child(2) {
-    border-color: #2d3748;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    border-color: rgb(255 255 255 / 0.08);
+    box-shadow: 0 24px 60px -14px rgb(0 0 0 / 0.75);
 }
 
 @media (max-width: 768px) {

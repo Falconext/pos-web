@@ -95,8 +95,8 @@ export default function ClientsView() {
             {/* Main Content Card — Pacientes / Empresas / todos */}
             {!isMedicos && <div className="bg-white dark:bg-[#111827] relative z-0 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Search and Actions Toolbar */}
-                <div className="p-5 border-b border-gray-100 dark:border-slate-800 relative z-50 overflow-visible">
-                    <div className="flex flex-col lg:flex-row gap-4">
+                <div data-krk-filtros-seccion className="p-5 border-b border-gray-100 dark:border-slate-800 relative z-50 overflow-visible">
+                    <div data-krk-filtros className="flex flex-col lg:flex-row gap-4">
                         <div className="flex-1">
                             <InputPro
                                 name="cliente"

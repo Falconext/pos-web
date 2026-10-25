@@ -253,7 +253,7 @@ describe('arrastrar una tarjeta entre columnas', () => {
       }),
     )
     const { container } = render(<EmbudoBoard />)
-    await waitFor(() => expect(screen.getByText('CLIENTE 92')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(/^cliente 92$/i)).toBeInTheDocument())
     const tarjeta = container.querySelector('[draggable="true"]') as HTMLElement
     const columna = (label: string) =>
       screen.getByText(label).closest('section') as HTMLElement

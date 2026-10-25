@@ -1,5 +1,5 @@
 import { Icon } from '@iconify/react';
-import { useThemeStore, SidebarColor, SidebarType } from '../../zustand/theme';
+import { useThemeStore, SidebarColor, SidebarType, DarkVariant } from '../../zustand/theme';
 import { BRAND, getBrandByKey } from '@/lib/branding';
 import { useAuthStore } from '../../zustand/auth';
 
@@ -20,18 +20,26 @@ export default function Configurator() {
         sidebarCollapsed,
         setSidebarCollapsed,
         navbarFixed,
-        setNavbarFixed
+        setNavbarFixed,
+        darkVariant,
+        setDarkVariant,
     } = useThemeStore();
 
     if (!isOpen) return null;
 
     const colors: { name: string; value: SidebarColor; color: string }[] = [
+        { name: 'Cálido', value: 'ember', color: 'bg-[#e4572e]' },
         { name: 'Primary', value: 'primary', color: 'bg-fuchsia-600' }, // Pink/Fuchsia
-        { name: 'Dark', value: 'dark', color: 'bg-gray-900' },
+        { name: 'Dark', value: 'dark', color: 'bg-slate-600' },
         { name: 'Info', value: 'info', color: 'bg-blue-500' },
         { name: 'Success', value: 'success', color: 'bg-emerald-500' },
-        { name: 'Warning', value: 'warning', color: 'bg-orange-500' },
+        { name: 'Warning', value: 'warning', color: 'bg-amber-500' },
         { name: 'Error', value: 'error', color: 'bg-red-500' },
+    ];
+
+    const darkVariants: { name: string; value: DarkVariant; bg: string; card: string }[] = [
+        { name: 'Cálido', value: 'warm', bg: '#141210', card: '#1e1b19' },
+        { name: 'Azul noche', value: 'navy', bg: '#0A0D14', card: '#111827' },
     ];
 
     const types: { name: string; value: SidebarType }[] = [
@@ -78,6 +86,33 @@ export default function Configurator() {
                                 className={`w-6 h-6 rounded-full ${c.color} transition-transform hover:scale-110 flex items-center justify-center ${sidebarColor === c.value ? 'ring-2 ring-gray-400 dark:ring-gray-500 ring-offset-2 dark:ring-offset-[#111827]' : ''}`}
                             >
                                 {sidebarColor === c.value && <Icon icon="solar:check-circle-bold" className="text-white text-xs" />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Fondo del modo oscuro */}
+                <div className="mb-6">
+                    <h4 className="font-bold text-gray-800 dark:text-white mb-2">Fondo del Modo Oscuro</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Se nota con el modo oscuro encendido (luna, arriba).</p>
+                    <div className="grid grid-cols-2 gap-2">
+                        {darkVariants.map((v) => (
+                            <button
+                                key={v.value}
+                                type="button"
+                                onClick={() => setDarkVariant(v.value)}
+                                className={`rounded-xl border p-2 text-left transition-all ${darkVariant === v.value
+                                    ? 'border-gray-800 dark:border-white ring-2 ring-gray-800/10 dark:ring-white/20'
+                                    : 'border-gray-200 dark:border-slate-700 hover:border-gray-400 dark:hover:border-slate-500'
+                                    }`}
+                            >
+                                <span className="block h-12 rounded-lg p-1.5" style={{ background: v.bg }}>
+                                    <span className="block h-full w-2/3 rounded-md" style={{ background: v.card }} />
+                                </span>
+                                <span className="mt-1.5 flex items-center justify-between text-xs font-bold text-gray-700 dark:text-gray-200">
+                                    {v.name}
+                                    {darkVariant === v.value && <Icon icon="solar:check-circle-bold" className="text-sm" />}
+                                </span>
                             </button>
                         ))}
                     </div>

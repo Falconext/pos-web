@@ -325,8 +325,8 @@ const GuiaRemision = () => {
             </div>
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 transition-all">
-                <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3 px-1">
+                <div data-krk-filtros-seccion className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                    <div data-krk-filtros-head className="mb-4 flex items-center justify-between gap-3 px-1">
                         <div className="flex min-w-0 items-center gap-2">
                             <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600 dark:text-blue-400" />
                             <div className="min-w-0">
@@ -345,7 +345,7 @@ const GuiaRemision = () => {
                             <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
                         </button>
                     </div>
-                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-5 lg:items-end`}>
+                    <div data-krk-filtros className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-5 lg:items-end`}>
                         <div className="lg:col-span-2">
                             <InputPro
                                 label="Búsqueda rápida"
