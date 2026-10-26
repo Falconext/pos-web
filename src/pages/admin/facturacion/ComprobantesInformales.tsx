@@ -38,7 +38,7 @@ import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCoti
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
 import { puedeHacerNotaDeVenta } from '@/features/admin/facturacion/utils/puedeHacerNotaDeVenta';
 import { datosPagoDeNota } from "@/features/admin/facturacion/utils/datosPagoDeNota";
-import { notaPorSaldo } from "@/features/admin/facturacion/utils/notaPorSaldo";
+import { notaPorSaldo, totalDelSaldo } from "@/features/admin/facturacion/utils/notaPorSaldo";
 import apiClient from "@/utils/apiClient";
 import { EditarDespachoModal, type NotasDelEnvio } from "@/pages/admin/despacho/EditarDespachoModal";
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
@@ -1312,7 +1312,7 @@ const ComprobantesInformales = () => {
                                     <>
                                         <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
                                         <div className="px-3 pt-1 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500">
-                                            Falta convertir S/ {Number(item.porConvertir.total).toFixed(2)}
+                                            Falta convertir S/ {totalDelSaldo(item).toFixed(2)}
                                         </div>
                                         <button type="button" onClick={() => ir('FACTURA')} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30">
                                             <Icon icon="mdi:file-document-edit-outline" width={16} height={16} />
