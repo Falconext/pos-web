@@ -65,17 +65,38 @@ export function colorPuntaje(p: number): string {
   return 'text-sky-600 dark:text-sky-400'
 }
 
+/**
+ * El cliente que escribe por Instagram se guarda como "ig:<id>": ese id no es
+ * un teléfono y no le dice nada a nadie, así que nunca se muestra.
+ */
+export function esInstagram(telefono: string | null | undefined): boolean {
+  return String(telefono ?? '').startsWith('ig:')
+}
+
+/** Cómo se muestra el contacto: el número en WhatsApp, "Instagram" en Instagram. */
+export function contactoVisible(telefono: string): string {
+  return esInstagram(telefono) ? 'Instagram' : telefono
+}
+
+/** Ícono y color del canal por el que escribe el cliente. */
+export function canalDe(telefono: string): { icono: string; color: string; fondo: string; nombre: string } {
+  return esInstagram(telefono)
+    ? { icono: 'mdi:instagram', color: 'text-[#E1306C]', fondo: 'bg-[#E1306C]', nombre: 'Instagram' }
+    : { icono: 'mdi:whatsapp', color: 'text-[#25D366]', fondo: 'bg-[#25D366]', nombre: 'WhatsApp' }
+}
+
 /** Nombre a mostrar del prospecto (nombre o teléfono). */
 export function nombreVisible(nombre: string | null, telefono: string): string {
-  return nombre?.trim() || telefono
+  return nombre?.trim() || (esInstagram(telefono) ? 'Cliente de Instagram' : telefono)
 }
 
 /** Iniciales para el avatar. */
 export function iniciales(nombre: string | null, telefono: string): string {
-  const base = nombre?.trim() || telefono
+  const base = nombre?.trim().replace(/^@/, '') || (esInstagram(telefono) ? 'IG' : telefono)
   const partes = base.split(/\s+/).filter(Boolean)
   if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase()
-  return base.slice(-2).toUpperCase()
+  // Un teléfono se reconoce por sus últimos dígitos; un nombre, por el inicio.
+  return (/^\+?\d+$/.test(base) ? base.slice(-2) : base.slice(0, 2)).toUpperCase()
 }
 
 /**
@@ -112,7 +133,7 @@ export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
 export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: string }> = {
   conversaciones: {
     titulo: 'Chats',
-    descripcion: 'Las conversaciones de WhatsApp que atiende tu asesor IA, con la ficha de cada cliente.',
+    descripcion: 'Las conversaciones de WhatsApp e Instagram que atiende tu asesor IA, con la ficha de cada cliente.',
   },
   embudo: {
     titulo: 'Embudo',

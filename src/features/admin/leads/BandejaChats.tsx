@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
-import { ESTADO_META, colorAvatar, colorPuntaje, nombreVisible, iniciales } from './LeadsModel'
+import { ESTADO_META, colorAvatar, colorPuntaje, nombreVisible, iniciales, esInstagram, canalDe, contactoVisible } from './LeadsModel'
 import type { LeadProspecto, LeadConversacion } from '@/services/leads.service'
 import { useThemeStore } from '@/zustand/theme'
 
@@ -352,9 +352,9 @@ function FichaLateral({
           <p className="truncate text-[17px] font-bold text-gray-900 dark:text-white">
             {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
           </p>
-          <span className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[11.5px] font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-            <Icon icon="mdi:whatsapp" width={13} />
-            {p.telefonoProspecto}
+          <span className={`mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium ${esInstagram(p.telefonoProspecto) ? 'bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}`}>
+            <Icon icon={canalDe(p.telefonoProspecto).icono} width={13} />
+            {contactoVisible(p.telefonoProspecto)}
           </span>
         </div>
       </div>
@@ -633,7 +633,7 @@ export function BandejaChats({
                       : 'hover:bg-gray-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <Icon icon="mdi:whatsapp" width={12} className="flex-none text-[#25D366]" />
+                  <Icon icon={canalDe(c.telefonoProspecto).icono} width={12} className={`flex-none ${canalDe(c.telefonoProspecto).color}`} />
                   <span className="min-w-0 flex-1 truncate text-[12px] font-semibold text-gray-700 dark:text-gray-300">
                     {nombreVisible(c.nombreProspecto, c.telefonoProspecto)}
                   </span>

@@ -11,6 +11,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 import Button from '@/components/Button';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
+import ConectarInstagramButton from '@/components/ConectarInstagramButton';
 import ShalomProConexion from '@/components/ShalomProConexion';
 import OlvaConfiguracion from '@/components/OlvaConfiguracion';
 import DespachoAutomatizacionCard from '@/components/DespachoAutomatizacionCard';
@@ -576,6 +577,28 @@ export default function PerfilIndex() {
                                         : null
                                 }
                             />
+                        </div>
+                    </div>
+                    )}
+
+                    {/* ── Conectar Instagram: la IA de Ventas responde los DM ── */}
+                    {tieneVentas && (
+                    <div className={`lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-pink-100 bg-white shadow-sm dark:border-pink-900/30 dark:bg-[#111827] ${configTab}`}>
+                        <div className="relative border-b border-pink-100/70 bg-gradient-to-br from-pink-50 via-white to-purple-50 p-5 dark:border-pink-900/30 dark:from-pink-950/30 dark:via-[#111827] dark:to-purple-950/20">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-white shadow-lg shadow-pink-500/20">
+                                    <Icon icon="mdi:instagram" width={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-gray-950 dark:text-white">Conectar mi Instagram</h2>
+                                    <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                                        Conecta tu cuenta de <strong>Instagram</strong> y la <strong>IA de Ventas</strong> responderá tus mensajes directos igual que en WhatsApp: precios, stock, pedidos y link de pago. Los chats llegan a la misma bandeja.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <ConectarInstagramButton />
                         </div>
                     </div>
                     )}

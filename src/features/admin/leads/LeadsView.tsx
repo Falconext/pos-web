@@ -24,6 +24,9 @@ import {
   nombreVisible,
   iniciales,
   colorAvatar,
+  canalDe,
+  contactoVisible,
+  esInstagram,
 } from './LeadsModel'
 import type {
   LeadProspecto,
@@ -239,8 +242,8 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
 
         <span className={`relative flex h-11 w-11 flex-none items-center justify-center rounded-full text-[13px] font-bold ${colorAvatar(conv.telefonoProspecto)}`}>
           {iniciales(conv.nombreProspecto, conv.telefonoProspecto)}
-          <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#25D366] ring-2 ring-white dark:ring-[#111827]">
-            <Icon icon="mdi:whatsapp" width={9} className="text-white" />
+          <span className={`absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full ${canalDe(conv.telefonoProspecto).fondo} ring-2 ring-white dark:ring-[#111827]`}>
+            <Icon icon={canalDe(conv.telefonoProspecto).icono} width={9} className="text-white" />
           </span>
         </span>
 
@@ -250,7 +253,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
           </p>
           <div className="mt-0.5 flex items-center gap-1.5">
             <span className="text-[11px] text-gray-500 dark:text-gray-400">
-              {conv.telefonoProspecto}
+              {contactoVisible(conv.telefonoProspecto)}
             </span>
             {meta && (
               <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${meta.badge}`}>
@@ -495,7 +498,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
         <div ref={finDelChat} />
       </div>
 
-      <Composer vm={vm} botActivo={botActivo} />
+      <Composer vm={vm} botActivo={botActivo} telefono={conv.telefonoProspecto} />
 
     </div>
   )
@@ -508,10 +511,14 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
 export function Composer({
   vm,
   botActivo,
+  telefono = '',
 }: {
   vm: ReturnType<typeof useLeadsViewModel>
   botActivo: boolean
+  /** Contacto de la conversación: decide el canal (WhatsApp o Instagram). */
+  telefono?: string
 }) {
+  const canal = canalDe(telefono)
   const [texto, setTexto] = useState('')
   // Imagen elegida y todavía sin enviar; el texto pasa a ser su pie.
   const [imagen, setImagen] = useState<{ archivo: File; vista: string } | null>(null)
@@ -657,7 +664,8 @@ export function Composer({
         >
           <Icon icon="solar:paperclip-linear" width={20} />
         </button>
-        {!imagen && !texto.trim() && (
+        {/* Por Instagram todavía no salen notas de voz desde el panel. */}
+        {!imagen && !texto.trim() && !esInstagram(telefono) && (
           <button
             type="button"
             onClick={() => void grabadora.empezar()}
@@ -674,8 +682,8 @@ export function Composer({
           type="button"
           onClick={() => void enviar()}
           disabled={!puedeEnviar}
-          title="Enviar por WhatsApp"
-          aria-label="Enviar por WhatsApp"
+          title={`Enviar por ${canal.nombre}`}
+          aria-label={`Enviar por ${canal.nombre}`}
           className="flex h-[52px] w-[52px] flex-none items-center justify-center rounded-2xl bg-gray-900 text-white shadow-sm transition hover:bg-black active:scale-95 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-white dark:text-gray-900"
         >
           <Icon
