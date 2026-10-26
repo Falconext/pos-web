@@ -18,7 +18,11 @@ type Estado = {
     motivoReconectar?: string | null;
     comentarios?: boolean;
     comentariosClave?: string;
+    /** Texto fijo que se deja en el comentario; vacío = solo el privado. */
+    comentarioPublico?: string;
 };
+
+const PUBLICO_POR_DEFECTO = '¡Hola! Te escribimos por DM 📩';
 
 /**
  * Conecta la cuenta profesional de Instagram del negocio a la IA de Ventas.
@@ -30,6 +34,7 @@ export default function ConectarInstagramButton() {
     const [estado, setEstado] = useState<Estado | null>(null);
     const [cargando, setCargando] = useState(false);
     const [clave, setClave] = useState('');
+    const [publico, setPublico] = useState('');
     const [guardandoComentarios, setGuardandoComentarios] = useState(false);
 
     const cargar = async () => {
@@ -38,6 +43,7 @@ export default function ConectarInstagramButton() {
             const e: Estado = data?.data ?? data;
             setEstado(e);
             setClave(e?.comentariosClave ?? '');
+            setPublico(e?.comentarioPublico ?? '');
         } catch {
             setEstado({ disponible: false, conectado: false, usuario: null, venceToken: null });
         }
@@ -76,13 +82,14 @@ export default function ConectarInstagramButton() {
         }
     };
 
-    const guardarComentarios = async (activo: boolean) => {
+    const guardarComentarios = async (activo: boolean, textoPublico = estado?.comentarioPublico ? publico : '') => {
         setGuardandoComentarios(true);
         try {
-            const { data } = await apiClient.put('/instagram/comentarios', { activo, clave });
+            const { data } = await apiClient.put('/instagram/comentarios', { activo, clave, publico: textoPublico });
             const e: Estado = data?.data ?? data;
             setEstado(e);
             setClave(e?.comentariosClave ?? '');
+            setPublico(e?.comentarioPublico ?? '');
             useAlertStore
                 .getState()
                 .alert(activo ? 'Listo: la IA responderá por privado a quien comente.' : 'La IA ya no responde los comentarios.', 'success');
@@ -178,7 +185,10 @@ export default function ConectarInstagramButton() {
                             <button
                                 type="button"
                                 onClick={() => void guardarComentarios(Boolean(estado.comentarios))}
-                                disabled={guardandoComentarios || clave === (estado.comentariosClave ?? '')}
+                                disabled={
+                                    guardandoComentarios ||
+                                    (clave === (estado.comentariosClave ?? '') && publico === (estado.comentarioPublico ?? ''))
+                                }
                                 className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-40 dark:bg-slate-700"
                             >
                                 Guardar
@@ -186,6 +196,34 @@ export default function ConectarInstagramButton() {
                         </div>
                         <span className="text-[11px] text-gray-400">Separa las palabras con comas. Vacío = responde todos los comentarios.</span>
                     </div>
+                    {estado.comentarios && (
+                        <div className="mt-3 flex flex-col gap-1.5 pl-7">
+                            <label className="flex cursor-pointer items-start gap-2">
+                                <input
+                                    type="checkbox"
+                                    checked={Boolean(estado.comentarioPublico)}
+                                    disabled={guardandoComentarios}
+                                    onChange={(e) => void guardarComentarios(true, e.target.checked ? publico.trim() || PUBLICO_POR_DEFECTO : '')}
+                                    className="mt-0.5 h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500 dark:border-slate-700 dark:bg-slate-800"
+                                />
+                                <span>
+                                    <span className="block text-[12px] font-semibold text-gray-700 dark:text-gray-300">Responder también en el comentario</span>
+                                    <span className="block text-[11px] text-gray-400">
+                                        Deja este texto a la vista de todos, para que sepan que les escribiste. Siempre es el mismo: los precios van solo por privado.
+                                    </span>
+                                </span>
+                            </label>
+                            {estado.comentarioPublico && (
+                                <input
+                                    value={publico}
+                                    maxLength={300}
+                                    onChange={(e) => setPublico(e.target.value)}
+                                    placeholder={PUBLICO_POR_DEFECTO}
+                                    className="min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>
