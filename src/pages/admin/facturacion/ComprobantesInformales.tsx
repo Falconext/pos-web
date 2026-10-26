@@ -38,6 +38,7 @@ import ModalConfigCotizacion from "@/features/admin/cotizaciones/ModalConfigCoti
 import { mapDetalleToInvoiceProduct } from "@/features/admin/facturacion/utils/comprobanteProductMapper";
 import { puedeHacerNotaDeVenta } from '@/features/admin/facturacion/utils/puedeHacerNotaDeVenta';
 import { datosPagoDeNota } from "@/features/admin/facturacion/utils/datosPagoDeNota";
+import { notaPorSaldo, totalDelSaldo } from "@/features/admin/facturacion/utils/notaPorSaldo";
 import apiClient from "@/utils/apiClient";
 import { EditarDespachoModal, type NotasDelEnvio } from "@/pages/admin/despacho/EditarDespachoModal";
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
@@ -1296,6 +1297,36 @@ const ComprobantesInformales = () => {
                                     </button>
                                 </>
                             )}
+                            {/* Convertida solo en parte (p. ej. 3 productos con factura y 2 con
+                                boleta): lo que falta se emite desde la misma nota, así no
+                                vuelve a descontar stock ni a cobrarse. El backend solo deja
+                                pasar las líneas pendientes. */}
+                            {['NV', 'NP'].includes(String(item?.tipoDoc))
+                                && row.estadoEnvioSunat !== 'ANULADO'
+                                && item?.convertidoA && item?.porConvertir && (() => {
+                                const saldoNota = notaPorSaldo(notaParaFacturar(item));
+                                const ir = (defaultType: 'FACTURA' | 'BOLETA') => {
+                                    const conCliente = defaultType === 'BOLETA' || item.cliente?.nroDoc?.length === 11;
+                                    navigate('/administrador/facturacion/nuevo', { state: { defaultType, fromNotaDeVenta: true, notaDeVentaData: { origenComprobanteId: item.id, origenReferencia: `${item.serie}-${String(item.correlativo).padStart(8, '0')}`, cliente: conCliente ? item.cliente : null, clienteId: conCliente ? item.clienteId : null, observaciones: saldoNota.observaciones, ...datosPagoDeNota(saldoNota), productos: (saldoNota.detalles || []).map(mapDetalleToInvoiceProduct) } } });
+                                    handleCloseMenu();
+                                };
+                                return (
+                                    <>
+                                        <div className="border-t border-gray-100 dark:border-slate-700 my-1" />
+                                        <div className="px-3 pt-1 pb-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                                            Falta convertir S/ {totalDelSaldo(item).toFixed(2)}
+                                        </div>
+                                        <button type="button" onClick={() => ir('FACTURA')} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/30">
+                                            <Icon icon="mdi:file-document-edit-outline" width={16} height={16} />
+                                            <span>Saldo a Factura</span>
+                                        </button>
+                                        <button type="button" onClick={() => ir('BOLETA')} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-950/30">
+                                            <Icon icon="mdi:receipt-outline" width={16} height={16} />
+                                            <span>Saldo a Boleta</span>
+                                        </button>
+                                    </>
+                                );
+                            })()}
                         </>
                     );
                 })()}

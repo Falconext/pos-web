@@ -20,3 +20,13 @@ describe('Cliente de Instagram en la bandeja', () => {
     expect(contactoVisible('51987654321')).toBe('51987654321')
   })
 })
+
+describe('Cliente de Messenger en la bandeja', () => {
+  it('se muestra como Messenger, nunca con el id fb:<id>', () => {
+    expect(contactoVisible('fb:2468')).toBe('Messenger')
+    expect(nombreVisible(null, 'fb:2468')).toBe('Cliente de Messenger')
+    expect(nombreVisible('Ana Pérez', 'fb:2468')).toBe('Ana Pérez')
+    expect(iniciales(null, 'fb:2468')).toBe('FB')
+    expect(canalDe('fb:2468').icono).toBe('mdi:facebook-messenger')
+  })
+})

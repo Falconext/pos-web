@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
-import { ESTADO_META, colorAvatar, colorPuntaje, nombreVisible, iniciales, esInstagram, canalDe, contactoVisible } from './LeadsModel'
+import { ESTADO_META, colorAvatar, colorPuntaje, nombreVisible, iniciales, canalDe, contactoVisible } from './LeadsModel'
 import type { LeadProspecto, LeadConversacion } from '@/services/leads.service'
 import { useThemeStore } from '@/zustand/theme'
 
@@ -352,7 +352,7 @@ function FichaLateral({
           <p className="truncate text-[17px] font-bold text-gray-900 dark:text-white">
             {nombreVisible(p.nombreProspecto, p.telefonoProspecto)}
           </p>
-          <span className={`mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium ${esInstagram(p.telefonoProspecto) ? 'bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300' : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'}`}>
+          <span className={`mt-1 inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium ${canalDe(p.telefonoProspecto).insignia}`}>
             <Icon icon={canalDe(p.telefonoProspecto).icono} width={13} />
             {contactoVisible(p.telefonoProspecto)}
           </span>

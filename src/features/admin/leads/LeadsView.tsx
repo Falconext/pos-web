@@ -27,7 +27,7 @@ import {
   colorAvatar,
   canalDe,
   contactoVisible,
-  esInstagram,
+  sinTelefono,
 } from './LeadsModel'
 import type {
   LeadProspecto,
@@ -668,8 +668,8 @@ export function Composer({
         >
           <Icon icon="solar:paperclip-linear" width={20} />
         </button>
-        {/* Por Instagram todavía no salen notas de voz desde el panel. */}
-        {!imagen && !texto.trim() && !esInstagram(telefono) && (
+        {/* Por Instagram y Messenger todavía no salen notas de voz desde el panel. */}
+        {!imagen && !texto.trim() && !sinTelefono(telefono) && (
           <button
             type="button"
             onClick={() => void grabadora.empezar()}

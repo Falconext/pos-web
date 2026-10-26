@@ -73,16 +73,52 @@ export function esInstagram(telefono: string | null | undefined): boolean {
   return String(telefono ?? '').startsWith('ig:')
 }
 
-/** Cómo se muestra el contacto: el número en WhatsApp, "Instagram" en Instagram. */
-export function contactoVisible(telefono: string): string {
-  return esInstagram(telefono) ? 'Instagram' : telefono
+/** Lo mismo en Messenger: el cliente se guarda como "fb:<id>". */
+export function esMessenger(telefono: string | null | undefined): boolean {
+  return String(telefono ?? '').startsWith('fb:')
 }
 
+/** Instagram o Messenger: no hay número, así que no hay llamada ni nota de voz. */
+export function sinTelefono(telefono: string | null | undefined): boolean {
+  return esInstagram(telefono) || esMessenger(telefono)
+}
+
+/** Cómo se muestra el contacto: el número en WhatsApp, el nombre de la red en las otras. */
+export function contactoVisible(telefono: string): string {
+  if (esInstagram(telefono)) return 'Instagram'
+  if (esMessenger(telefono)) return 'Messenger'
+  return telefono
+}
+
+type Canal = { icono: string; color: string; fondo: string; nombre: string; insignia: string }
+
 /** Ícono y color del canal por el que escribe el cliente. */
-export function canalDe(telefono: string): { icono: string; color: string; fondo: string; nombre: string } {
-  return esInstagram(telefono)
-    ? { icono: 'mdi:instagram', color: 'text-[#E1306C]', fondo: 'bg-[#E1306C]', nombre: 'Instagram' }
-    : { icono: 'mdi:whatsapp', color: 'text-[#25D366]', fondo: 'bg-[#25D366]', nombre: 'WhatsApp' }
+export function canalDe(telefono: string): Canal {
+  if (esInstagram(telefono)) {
+    return {
+      icono: 'mdi:instagram',
+      color: 'text-[#E1306C]',
+      fondo: 'bg-[#E1306C]',
+      nombre: 'Instagram',
+      insignia: 'bg-pink-50 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
+    }
+  }
+  if (esMessenger(telefono)) {
+    return {
+      icono: 'mdi:facebook-messenger',
+      color: 'text-[#0084FF]',
+      fondo: 'bg-[#0084FF]',
+      nombre: 'Messenger',
+      insignia: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+    }
+  }
+  return {
+    icono: 'mdi:whatsapp',
+    color: 'text-[#25D366]',
+    fondo: 'bg-[#25D366]',
+    nombre: 'WhatsApp',
+    insignia: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  }
 }
 
 /**
@@ -112,12 +148,16 @@ export function linkAlChat(meta: unknown): string | null {
 
 /** Nombre a mostrar del prospecto (nombre o teléfono). */
 export function nombreVisible(nombre: string | null, telefono: string): string {
-  return nombre?.trim() || (esInstagram(telefono) ? 'Cliente de Instagram' : telefono)
+  if (nombre?.trim()) return nombre.trim()
+  if (esInstagram(telefono)) return 'Cliente de Instagram'
+  if (esMessenger(telefono)) return 'Cliente de Messenger'
+  return telefono
 }
 
 /** Iniciales para el avatar. */
 export function iniciales(nombre: string | null, telefono: string): string {
-  const base = nombre?.trim().replace(/^@/, '') || (esInstagram(telefono) ? 'IG' : telefono)
+  const base =
+    nombre?.trim().replace(/^@/, '') || (esInstagram(telefono) ? 'IG' : esMessenger(telefono) ? 'FB' : telefono)
   const partes = base.split(/\s+/).filter(Boolean)
   if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase()
   // Un teléfono se reconoce por sus últimos dígitos; un nombre, por el inicio.

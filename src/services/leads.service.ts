@@ -61,8 +61,8 @@ export interface LeadConversacion {
   estado: EstadoLeadConversacion
   cantidadMensajes: number
   numeroWhatsappId: string | null
-  /** Por qué red escribe: WHATSAPP o INSTAGRAM. */
-  canal?: 'WHATSAPP' | 'INSTAGRAM'
+  /** Por qué red escribe: WHATSAPP, INSTAGRAM o MESSENGER. */
+  canal?: 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER'
   /** false = alguien tomó el chat y la IA no responde en ESTA conversación. */
   botActivo: boolean
   actualizadoEn: string
