@@ -85,6 +85,31 @@ export function canalDe(telefono: string): { icono: string; color: string; fondo
     : { icono: 'mdi:whatsapp', color: 'text-[#25D366]', fondo: 'bg-[#25D366]', nombre: 'WhatsApp' }
 }
 
+/**
+ * Ruta a Chats con la conversación de ese cliente abierta.
+ *
+ * Hierba Sana (26-10): desde el embudo, la ficha o un aviso no había cómo
+ * llegar al chat; había que copiar el número y buscarlo a mano. Con el id se
+ * abre directo; con solo el teléfono, la bandeja lo busca.
+ */
+export function rutaAlChat(destino: {
+  telefono?: string | null
+  conversacionId?: number | null
+}): string {
+  if (destino.conversacionId) return `/administrador/leads/chats?conv=${destino.conversacionId}`
+  return `/administrador/leads/chats?tel=${encodeURIComponent(destino.telefono ?? '')}`
+}
+
+/** Ruta al chat desde el metaData de una notificación de IA de Ventas; null si no es una. */
+export function linkAlChat(meta: unknown): string | null {
+  const m = (meta ?? {}) as { origen?: unknown; conversacionId?: unknown; telefono?: unknown }
+  if (typeof m.origen !== 'string' || !m.origen.startsWith('ia-ventas')) return null
+  const conversacionId = Number(m.conversacionId) || null
+  const telefono = typeof m.telefono === 'string' ? m.telefono : null
+  if (!conversacionId && !telefono) return null
+  return rutaAlChat({ conversacionId, telefono })
+}
+
 /** Nombre a mostrar del prospecto (nombre o teléfono). */
 export function nombreVisible(nombre: string | null, telefono: string): string {
   return nombre?.trim() || (esInstagram(telefono) ? 'Cliente de Instagram' : telefono)

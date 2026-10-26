@@ -198,6 +198,33 @@ export async function fetchConversaciones(): Promise<LeadConversacion[]> {
   return r.data
 }
 
+/** La conversación de un teléfono con el resumen del prospecto; null si nunca escribió. */
+export interface ConversacionDeTelefono {
+  id: number
+  telefonoProspecto: string
+  nombreProspecto: string | null
+  actualizadoEn: string
+  prospecto: {
+    id: number
+    estado: EstadoLeadProspecto
+    etapa: string
+    puntaje: number
+    resumen: string | null
+    proximaAccion: string | null
+    sintomas: string | null
+  } | null
+}
+
+export async function fetchConversacionPorTelefono(
+  telefono: string,
+): Promise<ConversacionDeTelefono | null> {
+  const r = await get<ConversacionDeTelefono | null>(
+    `/leads/conversaciones/por-telefono/${encodeURIComponent(telefono)}`,
+  )
+  if (!r.success) throw new Error(r.error || 'Error al buscar la conversación')
+  return r.data ?? null
+}
+
 export async function fetchConversacion(id: number): Promise<LeadConversacionDetalle> {
   const r = await get<LeadConversacionDetalle>(`/leads/conversaciones/${id}`)
   if (!r.success || !r.data) throw new Error(r.error || 'Error al cargar la conversación')

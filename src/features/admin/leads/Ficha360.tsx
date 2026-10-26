@@ -11,6 +11,8 @@
  */
 import { useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
+import { Link } from 'react-router-dom'
+import { rutaAlChat } from './LeadsModel'
 import moment from 'moment'
 import { crmService, ETAPA_META, type Ficha360 as Ficha } from '@/services/crm.service'
 
@@ -62,6 +64,14 @@ export function Ficha360({
               {ficha?.cliente.nombreProspecto || telefono}
             </h2>
             <p className="font-mono text-xs text-gray-400">{telefono}</p>
+            <Link
+              to={rutaAlChat({ telefono, conversacionId: ficha?.cliente.conversacionId })}
+              onClick={onCerrar}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300"
+            >
+              <Icon icon="solar:chat-round-dots-bold-duotone" className="text-sm" />
+              Abrir chat
+            </Link>
           </div>
           <button
             type="button"

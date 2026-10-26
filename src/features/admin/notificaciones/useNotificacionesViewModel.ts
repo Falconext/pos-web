@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { linkAlChat } from '@/features/admin/leads/LeadsModel';
 import { useNotificacionesStore } from '@/zustand/notificaciones';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export const useNotificacionesViewModel = () => {
     const { notificaciones, noLeidas, loading, obtenerNotificaciones, marcarComoLeida, marcarTodasComoLeidas } = useNotificacionesStore();
+
+    const navigate = useNavigate();
 
     useEffect(() => { obtenerNotificaciones(); }, [obtenerNotificaciones]);
 
@@ -23,6 +27,9 @@ export const useNotificacionesViewModel = () => {
 
     const handleNotificacionClick = async (notificacion: any) => {
         if (!notificacion.leida) await marcarComoLeida(notificacion.id);
+        // Los avisos de IA de Ventas abren el chat de ese cliente.
+        const chat = linkAlChat(notificacion.metaData);
+        if (chat) navigate(chat);
     };
 
     return { notificaciones, noLeidas, loading, getTipoIcon, formatFecha, handleNotificacionClick, marcarTodasComoLeidas };

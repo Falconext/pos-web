@@ -10,6 +10,7 @@
  * prospecto en pantalla haría creer que falló.
  */
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 
 const alertMock = jest.fn();
 jest.mock('@/zustand/alert', () => ({
@@ -52,7 +53,7 @@ describe('borrar el chat abierto', () => {
     it('lo borra, lo cierra y vuelve a cargar el tablero', async () => {
         // Las tres cosas importan: si el chat se queda abierto o la tarjeta
         // sigue en el tablero, parece que no se borró.
-        const { result } = renderHook(() => useLeadsViewModel());
+        const { result } = renderHook(() => useLeadsViewModel(), { wrapper: MemoryRouter });
         await act(async () => {
             await result.current.actions.abrirConversacion(69);
         });
@@ -69,7 +70,7 @@ describe('borrar el chat abierto', () => {
     });
 
     it('avisa que ya se puede volver a probar', async () => {
-        const { result } = renderHook(() => useLeadsViewModel());
+        const { result } = renderHook(() => useLeadsViewModel(), { wrapper: MemoryRouter });
         await act(async () => {
             await result.current.actions.borrarConversacion(69);
         });
@@ -82,7 +83,7 @@ describe('borrar el chat abierto', () => {
     it('si falla lo dice y no cierra el chat', async () => {
         // Cerrarlo daría por bueno un borrado que no pasó.
         api.eliminarConversacion.mockRejectedValue(new Error('Conversación no encontrada'));
-        const { result } = renderHook(() => useLeadsViewModel());
+        const { result } = renderHook(() => useLeadsViewModel(), { wrapper: MemoryRouter });
         await act(async () => {
             await result.current.actions.abrirConversacion(69);
         });
@@ -103,7 +104,7 @@ describe('los chats de prueba', () => {
             { ...CONV, prospecto: null },
             { id: 52, telefonoProspecto: '51991065217', nombreProspecto: 'Diego', cantidadMensajes: 10, prospecto: { puntaje: 95, estado: 'CONVERTIDO' } },
         ]);
-        const { result } = renderHook(() => useLeadsViewModel());
+        const { result } = renderHook(() => useLeadsViewModel(), { wrapper: MemoryRouter });
         await waitFor(() => expect(result.current.chatsDePrueba).toHaveLength(1));
         expect(result.current.chatsDePrueba[0].id).toBe(69);
     });
@@ -111,7 +112,7 @@ describe('los chats de prueba', () => {
     it('si el listado falla, el tablero igual carga', async () => {
         // Es información secundaria: no puede tumbar la pantalla principal.
         api.fetchConversaciones.mockRejectedValue(new Error('500'));
-        const { result } = renderHook(() => useLeadsViewModel());
+        const { result } = renderHook(() => useLeadsViewModel(), { wrapper: MemoryRouter });
         await waitFor(() => expect(result.current.isLoading).toBe(false));
         expect(result.current.chatsDePrueba).toEqual([]);
         expect(alertMock).not.toHaveBeenCalledWith(

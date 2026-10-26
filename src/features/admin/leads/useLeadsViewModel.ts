@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import useAlertStore from '@/zustand/alert'
 import { useDebounce } from '@/hooks/useDebounce'
 import * as api from '@/services/leads.service'
@@ -147,6 +148,39 @@ export function useLeadsViewModel() {
       setLoadingConversacion(false)
     }
   }
+
+  // Enlace directo a un chat (?conv=ID o ?tel=NUMERO), desde el embudo, la
+  // ficha o una notificación. Se consume y se borra de la URL para que
+  // cerrar el chat no lo vuelva a abrir.
+  const [params, setParams] = useSearchParams()
+  const convParam = params.get('conv')
+  const telParam = params.get('tel')
+  useEffect(() => {
+    if (!convParam && !telParam) return
+    setParams(
+      (prev) => {
+        const sig = new URLSearchParams(prev)
+        sig.delete('conv')
+        sig.delete('tel')
+        return sig
+      },
+      { replace: true },
+    )
+    if (convParam && Number(convParam) > 0) {
+      abrirConversacion(Number(convParam))
+      return
+    }
+    if (telParam) {
+      api
+        .fetchConversacionPorTelefono(telParam)
+        .then((c) => {
+          if (c) abrirConversacion(c.id)
+          else alertStore.alert('Ese cliente todavía no tiene un chat de WhatsApp.', 'warning')
+        })
+        .catch((e) => alertStore.alert(e.message || 'No se pudo abrir el chat', 'error'))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [convParam, telParam])
 
   const cerrarConversacion = () => {
     convAbiertaRef.current = null
