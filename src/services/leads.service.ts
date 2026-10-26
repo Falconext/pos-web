@@ -109,6 +109,11 @@ export interface LeadsConfig {
   vendedor?: PerfilVendedor
   envio?: ConfigEnvio
   mediosPagoLista?: MedioPago[]
+  /**
+   * Mensaje al cerrar la conversación: venta cerrada, "lo consulto con mi
+   * médico" o reenganche sin respuesta a las 2 h. Sale tal cual.
+   */
+  despedida?: { activa: boolean; texto: string }
 }
 
 /** Del 1 (muy conciso) al 5 (muy detallado). */

@@ -52,6 +52,7 @@ interface Borrador {
   vendedor: PerfilVendedor
   envio: ConfigEnvio
   medios: MedioPago[]
+  despedida: { activa: boolean; texto: string }
 }
 
 const ENVIO_VACIO: ConfigEnvio = { zonas: [], zonaPorDefecto: '' }
@@ -64,6 +65,7 @@ function borradorDe(config: Vm['config']): Borrador {
     vendedor: config.vendedor ?? {},
     envio: config.envio ?? ENVIO_VACIO,
     medios: config.mediosPagoLista ?? [],
+    despedida: config.despedida ?? { activa: false, texto: '' },
   }
 }
 
@@ -552,6 +554,32 @@ function TabPersonalidad({
               onChange={(e) => setP({ mensajeDerivacion: e.target.value })}
               rows={2}
               placeholder="Para atenderte mejor, te paso con una persona del equipo. Te escribe en un momento 🙌"
+              className={`${inputBase} resize-y leading-relaxed`}
+            />
+          </Campo>
+        </Seccion>
+
+        <Seccion
+          icon="solar:hand-shake-linear"
+          titulo="Mensaje de despedida"
+          descripcion="Se manda una vez, tal cual lo escribas, cuando la conversación termina."
+        >
+          <Interruptor
+            activo={b.despedida.activa}
+            onChange={(activa) => set((x) => ({ ...x, despedida: { ...x.despedida, activa } }))}
+            label="Despedirse al cerrar la conversación"
+            ayuda="Venta cerrada, cuando dice que lo consultará (con su médico o su familia), o si no contesta el seguimiento en 2 horas."
+          />
+          <Campo
+            label="Texto de la despedida"
+            ayuda="Pon aquí tus redes y el link de tu catálogo. Solo sale dentro de las 24 h desde el último mensaje del cliente."
+            contador={{ actual: b.despedida.texto.length, max: 1000 }}
+          >
+            <textarea
+              value={b.despedida.texto}
+              onChange={(e) => set((x) => ({ ...x, despedida: { ...x.despedida, texto: e.target.value } }))}
+              rows={6}
+              placeholder={`¡Un gusto ayudarte! Quedamos a tu disposición 😊\n\nGuarda nuestro número para no perderte nuestras promos y mira nuestro catálogo:\n👉 https://…`}
               className={`${inputBase} resize-y leading-relaxed`}
             />
           </Campo>
@@ -1278,6 +1306,7 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
       if (distinto(b.medios, original.medios)) {
         cambios.mediosPagoLista = b.medios.filter((m) => m.nombre.trim() && m.detalle.trim())
       }
+      if (distinto(b.despedida, original.despedida)) cambios.despedida = b.despedida
     }
     return vm.actions.guardarConfig(cambios)
   }
