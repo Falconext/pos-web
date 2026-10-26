@@ -121,6 +121,31 @@ export function canalDe(telefono: string): Canal {
   }
 }
 
+/**
+ * Ruta a Chats con la conversación de ese cliente abierta.
+ *
+ * Hierba Sana (26-10): desde el embudo, la ficha o un aviso no había cómo
+ * llegar al chat; había que copiar el número y buscarlo a mano. Con el id se
+ * abre directo; con solo el teléfono, la bandeja lo busca.
+ */
+export function rutaAlChat(destino: {
+  telefono?: string | null
+  conversacionId?: number | null
+}): string {
+  if (destino.conversacionId) return `/administrador/leads/chats?conv=${destino.conversacionId}`
+  return `/administrador/leads/chats?tel=${encodeURIComponent(destino.telefono ?? '')}`
+}
+
+/** Ruta al chat desde el metaData de una notificación de IA de Ventas; null si no es una. */
+export function linkAlChat(meta: unknown): string | null {
+  const m = (meta ?? {}) as { origen?: unknown; conversacionId?: unknown; telefono?: unknown }
+  if (typeof m.origen !== 'string' || !m.origen.startsWith('ia-ventas')) return null
+  const conversacionId = Number(m.conversacionId) || null
+  const telefono = typeof m.telefono === 'string' ? m.telefono : null
+  if (!conversacionId && !telefono) return null
+  return rutaAlChat({ conversacionId, telefono })
+}
+
 /** Nombre a mostrar del prospecto (nombre o teléfono). */
 export function nombreVisible(nombre: string | null, telefono: string): string {
   if (nombre?.trim()) return nombre.trim()
@@ -159,11 +184,19 @@ export function colorAvatar(telefono: string): string {
 }
 
 /** Vistas del módulo: cada una es una página con su entrada en el menú lateral. */
-export type VistaLeads = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos' | 'vendedor'
+export type VistaLeads =
+  | 'conversaciones'
+  | 'embudo'
+  | 'visitas'
+  | 'analitica'
+  | 'avisos'
+  | 'demos'
+  | 'vendedor'
 
 export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
   chats: 'conversaciones',
   embudo: 'embudo',
+  visitas: 'visitas',
   analitica: 'analitica',
   avisos: 'avisos',
   demos: 'demos',
@@ -178,6 +211,10 @@ export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: strin
   embudo: {
     titulo: 'Embudo',
     descripcion: 'Cada pedido por etapa: desde el primer mensaje hasta la cotización, el pago y la entrega.',
+  },
+  visitas: {
+    titulo: 'Visitas',
+    descripcion: 'Quién dijo que va a ir a tu tienda, cuándo, y si ya le llegó cómo encontrarte.',
   },
   analitica: {
     titulo: 'Analítica',

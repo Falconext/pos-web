@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/zustand/auth';
 import { useRubroFeatures } from '@/utils/rubro-features';
 import apiClient from '@/utils/apiClient';
+import { linkAlChat } from '@/features/admin/leads/LeadsModel';
 
 interface LoteAlerta {
   id: number;
@@ -311,11 +312,15 @@ const NotificacionesCampana: React.FC = () => {
                 const cleanTitle = notificacion.titulo.replace(/📦|⚠️|❗|✅/g, '').trim();
 
                 const meta = notificacion.metaData as any;
-                const sunatLink = meta?.comprobanteId
+                // Los avisos de IA de Ventas (lead caliente, alto riesgo, pedido,
+                // visita…) llevan al chat de ese cliente, antes que al comprobante.
+                const chatLink = linkAlChat(meta);
+                const sunatLink = chatLink
+                  ?? (meta?.comprobanteId
                   ? `/administrador/facturacion/comprobantes`
                   : meta?.guiaId
                   ? `/administrador/guia-remision`
-                  : null;
+                  : null);
 
                 const cardContent = (
                   <div className="flex items-start gap-3">
@@ -336,7 +341,7 @@ const NotificacionesCampana: React.FC = () => {
                       </p>
                       {sunatLink && (
                         <span className="text-[11px] font-semibold mt-1 inline-block" style={{ color: styles.color.includes('red') ? '#dc2626' : styles.color.includes('orange') ? '#ea580c' : '#2563eb' }}>
-                          Ver comprobante →
+                          {chatLink ? 'Abrir chat →' : 'Ver comprobante →'}
                         </span>
                       )}
                     </div>

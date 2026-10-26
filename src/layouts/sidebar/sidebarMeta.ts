@@ -347,6 +347,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
     extraItems: () => [
       { codigo: 'leads:chats', nombre: 'Chats', ruta: '/administrador/leads/chats' },
       { codigo: 'leads:embudo', nombre: 'Embudo', ruta: '/administrador/leads/embudo' },
+      { codigo: 'leads:visitas', nombre: 'Visitas', ruta: '/administrador/leads/visitas' },
       { codigo: 'leads:analitica', nombre: 'Analítica', ruta: '/administrador/leads/analitica' },
       { codigo: 'leads:avisos', nombre: 'Avisos', ruta: '/administrador/leads/avisos' },
       { codigo: 'leads:vendedor', nombre: 'Mi vendedor', ruta: '/administrador/leads/vendedor' },

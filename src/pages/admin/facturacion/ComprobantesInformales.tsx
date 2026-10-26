@@ -43,6 +43,7 @@ import apiClient from "@/utils/apiClient";
 import { EditarDespachoModal, type NotasDelEnvio } from "@/pages/admin/despacho/EditarDespachoModal";
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
 import { hasPermission } from "@/utils/permissions";
+import { BotonVerChat } from "@/features/admin/leads/BotonVerChat";
 import CasillaSeleccion from "@/components/CasillaSeleccion";
 import BarraSeleccionNotas from "@/features/admin/facturacion/seleccion/BarraSeleccionNotas";
 import ModalCobrarVarias from "@/features/admin/facturacion/seleccion/ModalCobrarVarias";
@@ -1178,6 +1179,7 @@ const ComprobantesInformales = () => {
                                 <Icon icon="mdi:whatsapp" width={16} height={16} />
                                 <span>Enviar WhatsApp</span>
                             </button>
+                            <BotonVerChat telefono={item?.cliente?.telefono} onElegir={handleCloseMenu} />
                             {/* Despacho: NV/ticket/etc. sin seguimiento → "Coordinar envío" (crea el
                                 seguimiento y abre el modal); con seguimiento → editarlo aquí mismo y,
                                 si ya está completo, verlo en el Panel de ventas. */}

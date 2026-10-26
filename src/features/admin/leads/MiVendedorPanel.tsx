@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Icon } from '@iconify/react'
 import { useSearchParams } from 'react-router-dom'
+import { subirFotoTienda } from '@/services/leads.service'
+import useAlertStore from '@/zustand/alert'
 import type {
   CategoriaConocimiento,
   LeadsConfig,
   ConfigEnvio,
+  ConfigTienda,
   LongitudRespuesta,
   MedioPago,
   PerfilVendedor,
@@ -52,6 +55,12 @@ interface Borrador {
   vendedor: PerfilVendedor
   envio: ConfigEnvio
   medios: MedioPago[]
+  despedida: { activa: boolean; texto: string }
+  /**
+   * Lo que se escribe de la tienda física. La foto no va acá: se guarda al
+   * subirla, y las coordenadas las saca el servidor del link de Maps.
+   */
+  tienda: { direccion: string; mapsUrl: string; indicaciones: string }
 }
 
 const ENVIO_VACIO: ConfigEnvio = { zonas: [], zonaPorDefecto: '' }
@@ -64,8 +73,16 @@ function borradorDe(config: Vm['config']): Borrador {
     vendedor: config.vendedor ?? {},
     envio: config.envio ?? ENVIO_VACIO,
     medios: config.mediosPagoLista ?? [],
+    despedida: config.despedida ?? { activa: false, texto: '' },
+    tienda: {
+      direccion: config.tienda?.direccion ?? '',
+      mapsUrl: config.tienda?.mapsUrl ?? '',
+      indicaciones: config.tienda?.indicaciones ?? '',
+    },
   }
 }
+
+const TIENDA_VACIA: ConfigTienda = { direccion: '', mapsUrl: '', lat: null, lng: null, indicaciones: '', fotoUrl: '' }
 
 // ─── Piezas de formulario ───────────────────────────────────────────────────
 
@@ -556,6 +573,32 @@ function TabPersonalidad({
             />
           </Campo>
         </Seccion>
+
+        <Seccion
+          icon="solar:hand-shake-linear"
+          titulo="Mensaje de despedida"
+          descripcion="Se manda una vez, tal cual lo escribas, cuando la conversación termina."
+        >
+          <Interruptor
+            activo={b.despedida.activa}
+            onChange={(activa) => set((x) => ({ ...x, despedida: { ...x.despedida, activa } }))}
+            label="Despedirse al cerrar la conversación"
+            ayuda="Venta cerrada, cuando dice que lo consultará (con su médico o su familia), o si no contesta el seguimiento en 2 horas."
+          />
+          <Campo
+            label="Texto de la despedida"
+            ayuda="Pon aquí tus redes y el link de tu catálogo. Solo sale dentro de las 24 h desde el último mensaje del cliente."
+            contador={{ actual: b.despedida.texto.length, max: 1000 }}
+          >
+            <textarea
+              value={b.despedida.texto}
+              onChange={(e) => set((x) => ({ ...x, despedida: { ...x.despedida, texto: e.target.value } }))}
+              rows={6}
+              placeholder={`¡Un gusto ayudarte! Quedamos a tu disposición 😊\n\nGuarda nuestro número para no perderte nuestras promos y mira nuestro catálogo:\n👉 https://…`}
+              className={`${inputBase} resize-y leading-relaxed`}
+            />
+          </Campo>
+        </Seccion>
       </div>
 
       <div className="xl:sticky xl:top-4 xl:self-start">
@@ -1035,61 +1078,243 @@ function TarjetaZona({
   )
 }
 
-function TabEntrega({ b, set }: { b: Borrador; set: (fn: (b: Borrador) => Borrador) => void }) {
+function TabEntrega({
+  b,
+  set,
+  tienda,
+}: {
+  b: Borrador
+  set: (fn: (b: Borrador) => Borrador) => void
+  /** null = el servidor todavía no conoce la tienda física: no se muestra. */
+  tienda: SeccionTiendaProps | null
+}) {
   const { zonas, zonaPorDefecto } = b.envio
   const setEnvio = (e: ConfigEnvio) => set((x) => ({ ...x, envio: e }))
   return (
+    <div className="space-y-5">
+      <Seccion
+        icon="solar:delivery-linear"
+        titulo="Zonas de entrega"
+        descripcion="Con esto tu vendedor cotiza el envío y sabe qué datos pedir. Sin zonas, pasa el chat a una persona."
+        accion={
+          <button
+            type="button"
+            onClick={() =>
+              setEnvio({
+                zonas: [...zonas, { nombre: '', tipo: 'DOMICILIO', tarifa: 0 }],
+                zonaPorDefecto,
+              })
+            }
+            className="inline-flex flex-none items-center gap-1.5 rounded-xl bg-gray-900 px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-black dark:bg-white dark:text-gray-900"
+          >
+            <Icon icon="solar:add-circle-linear" width={16} />
+            Agregar zona
+          </button>
+        }
+      >
+        {zonas.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-200 px-6 py-10 text-center dark:border-slate-700">
+            <Icon icon="solar:map-point-wave-linear" width={30} className="text-gray-300" />
+            <p className="text-[13.5px] font-semibold text-gray-700 dark:text-gray-200">Aún no tienes zonas</p>
+            <p className="max-w-md text-[12.5px] text-gray-500 dark:text-gray-400">
+              Ej. "Lima Metropolitana" a domicilio por S/ 10 y "Provincia" a agencia Shalom por S/ 15.
+            </p>
+          </div>
+        ) : (
+          zonas.map((z, i) => (
+            <TarjetaZona
+              key={i}
+              z={z}
+              porDefecto={!!z.nombre && z.nombre === zonaPorDefecto}
+              onChange={(nueva) =>
+                setEnvio({
+                  zonas: zonas.map((x, j) => (j === i ? nueva : x)),
+                  // Renombrar la zona por defecto no la deja huérfana.
+                  zonaPorDefecto: zonaPorDefecto === z.nombre ? nueva.nombre : zonaPorDefecto,
+                })
+              }
+              onQuitar={() =>
+                setEnvio({
+                  zonas: zonas.filter((_, j) => j !== i),
+                  zonaPorDefecto: zonaPorDefecto === z.nombre ? '' : zonaPorDefecto,
+                })
+              }
+              onPorDefecto={() => setEnvio({ zonas, zonaPorDefecto: z.nombre })}
+            />
+          ))
+        )}
+      </Seccion>
+      {tienda && <SeccionTienda b={b} set={set} {...tienda} />}
+    </div>
+  )
+}
+
+interface SeccionTiendaProps {
+  /** Lo guardado en el servidor: de acá salen la foto y si hay coordenadas. */
+  guardada: ConfigTienda
+  subiendo: boolean
+  onSubirFoto: (archivo: File) => void
+  onQuitarFoto: () => void
+}
+
+/**
+ * La tienda física (26-10). Hierba Sana está dentro del Mercado La Merced y
+ * los clientes que decían "mañana paso" se perdían buscándola. Al agendar la
+ * visita, el asesor les manda esto: el mapa, la foto de la fachada y las
+ * indicaciones, una sola vez.
+ */
+function SeccionTienda({
+  b,
+  set,
+  guardada,
+  subiendo,
+  onSubirFoto,
+  onQuitarFoto,
+}: SeccionTiendaProps & { b: Borrador; set: (fn: (b: Borrador) => Borrador) => void }) {
+  const t = b.tienda
+  const setT = (cambio: Partial<Borrador['tienda']>) => set((x) => ({ ...x, tienda: { ...x.tienda, ...cambio } }))
+  const inputFoto = useRef<HTMLInputElement>(null)
+  // Si el link cambió, lo que diga el servidor de las coordenadas es del link
+  // anterior: hasta guardar no se sabe.
+  const linkSinGuardar = t.mapsUrl.trim() !== guardada.mapsUrl.trim()
+  const conMapa = guardada.lat != null && guardada.lng != null
+
+  return (
     <Seccion
-      icon="solar:delivery-linear"
-      titulo="Zonas de entrega"
-      descripcion="Con esto tu vendedor cotiza el envío y sabe qué datos pedir. Sin zonas, pasa el chat a una persona."
-      accion={
-        <button
-          type="button"
-          onClick={() =>
-            setEnvio({
-              zonas: [...zonas, { nombre: '', tipo: 'DOMICILIO', tarifa: 0 }],
-              zonaPorDefecto,
-            })
-          }
-          className="inline-flex flex-none items-center gap-1.5 rounded-xl bg-gray-900 px-3.5 py-2 text-[13px] font-semibold text-white transition hover:bg-black dark:bg-white dark:text-gray-900"
-        >
-          <Icon icon="solar:add-circle-linear" width={16} />
-          Agregar zona
-        </button>
-      }
+      icon="solar:shop-2-linear"
+      titulo="Tu tienda física"
+      descripcion="A quien dice que va a ir a tu tienda se le manda la ubicación, la foto y cómo llegar, una sola vez."
     >
-      {zonas.length === 0 ? (
-        <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-gray-200 px-6 py-10 text-center dark:border-slate-700">
-          <Icon icon="solar:map-point-wave-linear" width={30} className="text-gray-300" />
-          <p className="text-[13.5px] font-semibold text-gray-700 dark:text-gray-200">Aún no tienes zonas</p>
-          <p className="max-w-md text-[12.5px] text-gray-500 dark:text-gray-400">
-            Ej. "Lima Metropolitana" a domicilio por S/ 10 y "Provincia" a agencia Shalom por S/ 15.
-          </p>
-        </div>
-      ) : (
-        zonas.map((z, i) => (
-          <TarjetaZona
-            key={i}
-            z={z}
-            porDefecto={!!z.nombre && z.nombre === zonaPorDefecto}
-            onChange={(nueva) =>
-              setEnvio({
-                zonas: zonas.map((x, j) => (j === i ? nueva : x)),
-                // Renombrar la zona por defecto no la deja huérfana.
-                zonaPorDefecto: zonaPorDefecto === z.nombre ? nueva.nombre : zonaPorDefecto,
-              })
-            }
-            onQuitar={() =>
-              setEnvio({
-                zonas: zonas.filter((_, j) => j !== i),
-                zonaPorDefecto: zonaPorDefecto === z.nombre ? '' : zonaPorDefecto,
-              })
-            }
-            onPorDefecto={() => setEnvio({ zonas, zonaPorDefecto: z.nombre })}
+      <Campo label="Dirección" ayuda="Como la dirías por teléfono: calle, número, mercado o centro comercial, stand.">
+        <input
+          value={t.direccion}
+          onChange={(e) => setT({ direccion: e.target.value })}
+          maxLength={300}
+          placeholder="Av. Emancipación 687, Mercado La Merced, stand D-27"
+          className={inputBase}
+        />
+      </Campo>
+
+      <Campo
+        label="Link de Google Maps"
+        ayuda="Abre Google Maps, busca tu local, toca Compartir y pega el link."
+      >
+        <input
+          value={t.mapsUrl}
+          onChange={(e) => setT({ mapsUrl: e.target.value })}
+          maxLength={500}
+          inputMode="url"
+          placeholder="https://maps.app.goo.gl/…"
+          className={inputBase}
+        />
+      </Campo>
+      {t.mapsUrl.trim() && (
+        <div
+          data-testid="estado-mapa"
+          className={`-mt-2 flex items-start gap-2 rounded-xl px-3 py-2 text-[12.5px] ${
+            linkSinGuardar
+              ? 'bg-gray-50 text-gray-600 dark:bg-slate-800/60 dark:text-gray-300'
+              : conMapa
+                ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300'
+                : 'bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300'
+          }`}
+        >
+          <Icon
+            icon={linkSinGuardar ? 'solar:info-circle-linear' : conMapa ? 'solar:map-point-wave-linear' : 'solar:link-linear'}
+            width={16}
+            className="mt-0.5 flex-none"
           />
-        ))
+          <span>
+            {linkSinGuardar ? (
+              'Guarda los cambios para ver si el link trae la ubicación exacta.'
+            ) : conMapa ? (
+              <>
+                <b>Se enviará como mapa</b>: el cliente lo toca y le abre la ruta en su celular.
+              </>
+            ) : (
+              <>
+                <b>Se enviará como enlace</b>: los links cortos no traen la ubicación exacta. Si quieres que llegue
+                como mapa, abre el link en el navegador y pega la dirección larga que sale arriba.
+              </>
+            )}
+          </span>
+        </div>
       )}
+
+      <Campo
+        label="Cómo llegar"
+        ayuda="Lo que le dirías a alguien que nunca vino: por qué puerta entrar, qué hay al lado, dónde voltear."
+        contador={{ actual: t.indicaciones.length, max: 800 }}
+      >
+        <textarea
+          value={t.indicaciones}
+          onChange={(e) => setT({ indicaciones: e.target.value })}
+          rows={4}
+          placeholder="Entra al mercado por la puerta 3 (la de Emancipación), sigue de frente hasta el fondo y voltea a la derecha. Estamos frente a la juguería."
+          className={`${inputBase} resize-y leading-relaxed`}
+        />
+      </Campo>
+
+      <div>
+        <span className="mb-1.5 block text-[13px] font-semibold text-gray-800 dark:text-gray-200">Foto de la fachada</span>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          {guardada.fotoUrl ? (
+            <img
+              src={guardada.fotoUrl}
+              alt="Foto de la fachada de la tienda"
+              className="h-32 w-full rounded-xl border border-gray-200 object-cover sm:w-48 dark:border-slate-700"
+            />
+          ) : (
+            <div className="flex h-32 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gray-200 text-gray-400 sm:w-48 dark:border-slate-700">
+              <Icon icon="solar:camera-linear" width={26} />
+              <span className="text-[12px]">Sin foto</span>
+            </div>
+          )}
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => inputFoto.current?.click()}
+                disabled={subiendo}
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-gray-900 px-3.5 text-[13px] font-semibold text-white transition hover:bg-black disabled:opacity-50 dark:bg-white dark:text-gray-900"
+              >
+                <Icon
+                  icon={subiendo ? 'eos-icons:loading' : 'solar:upload-linear'}
+                  width={16}
+                  className={subiendo ? 'animate-spin' : undefined}
+                />
+                {subiendo ? 'Subiendo…' : guardada.fotoUrl ? 'Cambiar foto' : 'Subir foto'}
+              </button>
+              {guardada.fotoUrl && (
+                <button
+                  type="button"
+                  onClick={onQuitarFoto}
+                  disabled={subiendo}
+                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
+                >
+                  <Icon icon="solar:trash-bin-trash-linear" width={16} />
+                  Quitar
+                </button>
+              )}
+            </div>
+            <span className="text-[12px] text-gray-500 dark:text-gray-400">
+              La entrada o tu stand, que se reconozca desde el pasillo. JPG o PNG de hasta 5 MB. Se guarda al subirla.
+            </span>
+          </div>
+        </div>
+        <input
+          ref={inputFoto}
+          type="file"
+          accept="image/jpeg,image/png"
+          className="hidden"
+          data-testid="input-foto-tienda"
+          onChange={(e) => {
+            const archivo = e.target.files?.[0]
+            e.target.value = ''
+            if (archivo) onSubirFoto(archivo)
+          }}
+        />
+      </div>
     </Seccion>
   )
 }
@@ -1248,7 +1473,11 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
   const soportado = vm.configCargada && vm.config.vendedor !== undefined
   const original = useMemo(() => borradorDe(vm.config), [vm.config])
   const [b, setB] = useState<Borrador>(original)
-  useEffect(() => setB(original), [original])
+  // Se reinicia el borrador solo si cambió lo que se edita aquí. Subir la foto
+  // de la tienda refresca la config entera, y eso no puede borrar lo que el
+  // dueño está escribiendo y aún no guardó.
+  const claveOriginal = JSON.stringify(original)
+  useEffect(() => setB(JSON.parse(claveOriginal) as Borrador), [claveOriginal])
   const sucio = JSON.stringify(b) !== JSON.stringify(original)
   const { contexto: _c, brochure: _b, ...nuevos } = b
   const { contexto: _oc, brochure: _ob, ...nuevosOriginal } = original
@@ -1278,8 +1507,52 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
       if (distinto(b.medios, original.medios)) {
         cambios.mediosPagoLista = b.medios.filter((m) => m.nombre.trim() && m.detalle.trim())
       }
+      if (distinto(b.despedida, original.despedida)) cambios.despedida = b.despedida
+      if (vm.config.tienda && distinto(b.tienda, original.tienda)) {
+        const guardada = vm.config.tienda
+        const mapsUrl = b.tienda.mapsUrl.trim()
+        // Va el objeto entero. Si el link cambió, las coordenadas viejas se
+        // mandan vacías para que el servidor las saque del link nuevo.
+        const mismoLink = mapsUrl === guardada.mapsUrl.trim()
+        cambios.tienda = {
+          ...guardada,
+          direccion: b.tienda.direccion.trim(),
+          mapsUrl,
+          indicaciones: b.tienda.indicaciones.trim(),
+          lat: mismoLink ? guardada.lat : null,
+          lng: mismoLink ? guardada.lng : null,
+        }
+      }
     }
     return vm.actions.guardarConfig(cambios)
+  }
+
+  // La foto no espera al botón "Guardar": el servidor la guarda al subirla.
+  const { alert } = useAlertStore()
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
+  const subirFoto = async (archivo: File) => {
+    if (!['image/jpeg', 'image/png'].includes(archivo.type)) {
+      alert('La foto tiene que ser JPG o PNG.', 'error')
+      return
+    }
+    if (archivo.size > 5 * 1024 * 1024) {
+      alert('La foto pesa más de 5 MB. Prueba con una más liviana.', 'error')
+      return
+    }
+    setSubiendoFoto(true)
+    try {
+      await subirFotoTienda(archivo)
+      await vm.actions.recargarConfig()
+      alert('Foto de la tienda guardada', 'success')
+    } catch (e: any) {
+      alert(e?.message || 'No se pudo subir la foto', 'error')
+    } finally {
+      setSubiendoFoto(false)
+    }
+  }
+  const quitarFoto = () => {
+    const guardada = vm.config.tienda ?? TIENDA_VACIA
+    return vm.actions.guardarConfig({ tienda: { ...guardada, fotoUrl: '' } })
   }
 
   return (
@@ -1350,7 +1623,17 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
 
       {pestana === 'personalidad' && <TabPersonalidad b={b} set={set} negocio={negocio} />}
       {pestana === 'conocimiento' && <TabConocimiento b={b} set={set} vm={vm} />}
-      {pestana === 'entrega' && <TabEntrega b={b} set={set} />}
+      {pestana === 'entrega' && (
+        <TabEntrega
+          b={b}
+          set={set}
+          tienda={
+            soportado && vm.config.tienda
+              ? { guardada: vm.config.tienda, subiendo: subiendoFoto, onSubirFoto: subirFoto, onQuitarFoto: quitarFoto }
+              : null
+          }
+        />
+      )}
       {pestana === 'pagos' && (
         <TabPagos b={b} set={set} irAAjustes={() => irA('ajustes')} cobroConLink={!!vm.config.cobroConLink} />
       )}

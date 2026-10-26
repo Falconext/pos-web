@@ -9,6 +9,7 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import { MemoryRouter } from 'react-router-dom'
 
 const getMock = jest.fn()
 const patchMock = jest.fn()
@@ -74,7 +75,7 @@ beforeEach(() => {
 describe('el tablero', () => {
   it('pinta las 12 columnas del anexo, incluso vacías', async () => {
     getMock.mockResolvedValue(tablero())
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     await waitFor(() => expect(screen.getByText('Nuevo')).toBeInTheDocument())
     for (const e of ETAPAS) {
       expect(screen.getByText(ETAPA_META[e].label)).toBeInTheDocument()
@@ -84,7 +85,7 @@ describe('el tablero', () => {
 
   it('avisa arriba cuántos pagos esperan validación', async () => {
     getMock.mockResolvedValue(tablero({ pagosPorValidar: 3 }))
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     const aviso = await screen.findByTestId('aviso-pagos')
     expect(aviso).toHaveTextContent('3 pagos por validar')
     expect(aviso).toHaveTextContent(/ningún pedido pasa a despacho/i)
@@ -92,7 +93,7 @@ describe('el tablero', () => {
 
   it('sin pagos pendientes no mete un aviso que no aporta', async () => {
     getMock.mockResolvedValue(tablero({ pagosPorValidar: 0 }))
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     await waitFor(() => expect(screen.getByText('Nuevo')).toBeInTheDocument())
     expect(screen.queryByTestId('aviso-pagos')).toBeNull()
   })
@@ -115,7 +116,7 @@ describe('mover un pedido', () => {
 
   it('no ofrece mover a la etapa en la que ya está', async () => {
     getMock.mockResolvedValue(conUno())
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText('Mover'))
     // "Cotizado" sigue como título de columna, pero no como opción del menú.
     expect(opcion('Cotizado')).toBeUndefined()
@@ -124,7 +125,7 @@ describe('mover un pedido', () => {
 
   it('no ofrece En ruta ni Entregado: eso lo pone la logística', async () => {
     getMock.mockResolvedValue(conUno())
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText('Mover'))
     // Mover el envío a mano desde acá desincronizaría el despacho.
     expect(opcion('En ruta')).toBeUndefined()
@@ -140,7 +141,7 @@ describe('mover un pedido', () => {
         },
       },
     })
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText('Mover'))
     fireEvent.click(opcion('Por despachar')!)
 
@@ -176,7 +177,7 @@ describe('el comprobante de pago', () => {
 
   it('se puede abrir y ver la imagen antes de aprobar', async () => {
     getMock.mockResolvedValue(conVoucher('https://s3/voucher.webp'))
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText(/revisar el comprobante/i))
     expect(screen.getByRole('img')).toHaveAttribute('src', 'https://s3/voucher.webp')
     expect(screen.getByText(/el pago está bien/i)).toBeInTheDocument()
@@ -184,7 +185,7 @@ describe('el comprobante de pago', () => {
 
   it('la constancia en PDF se abre como PDF, no como una imagen rota', async () => {
     getMock.mockResolvedValue(conVoucher('https://s3/voucher.pdf'))
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText(/revisar el comprobante/i))
     expect(screen.getByText(/ver comprobante \(pdf\)/i).closest('a')).toHaveAttribute('href', 'https://s3/voucher.pdf')
     expect(screen.queryByRole('img')).toBeNull()
@@ -193,7 +194,7 @@ describe('el comprobante de pago', () => {
   it('si la imagen no se guardó, lo dice en vez de dejar un hueco', async () => {
     // Aprobar un pago sin verlo es exactamente lo que este paso evita.
     getMock.mockResolvedValue(conVoucher(null))
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText(/revisar el comprobante/i))
     expect(screen.getByText(/ábrela en el chat de whatsapp antes de validar/i)).toBeInTheDocument()
     expect(screen.queryByRole('img')).toBeNull()
@@ -202,7 +203,7 @@ describe('el comprobante de pago', () => {
   it('validarlo llama al endpoint del candado', async () => {
     getMock.mockResolvedValue(conVoucher('https://s3/v.webp'))
     postMock.mockResolvedValue({ data: { data: { validado: true } } })
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText(/revisar el comprobante/i))
     fireEvent.click(screen.getByText(/el pago está bien/i))
 
@@ -216,7 +217,7 @@ describe('el comprobante de pago', () => {
   it('rechazar sin escribir motivo no manda nada', async () => {
     getMock.mockResolvedValue(conVoucher('https://s3/v.webp'))
     const prompt = jest.spyOn(window, 'prompt').mockReturnValue('  ')
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText(/revisar el comprobante/i))
     fireEvent.click(screen.getByText(/rechazar/i))
     expect(postMock).not.toHaveBeenCalled()
@@ -227,7 +228,7 @@ describe('el comprobante de pago', () => {
     getMock.mockResolvedValue(conVoucher('https://s3/v.webp'))
     postMock.mockResolvedValue({ data: { data: { rechazado: true } } })
     const prompt = jest.spyOn(window, 'prompt').mockReturnValue('el voucher es de otra cuenta')
-    render(<EmbudoBoard />)
+    render(<EmbudoBoard />, { wrapper: MemoryRouter })
     fireEvent.click(await screen.findByText(/revisar el comprobante/i))
     fireEvent.click(screen.getByText(/rechazar/i))
     await waitFor(() =>
@@ -252,7 +253,7 @@ describe('arrastrar una tarjeta entre columnas', () => {
         })),
       }),
     )
-    const { container } = render(<EmbudoBoard />)
+    const { container } = render(<EmbudoBoard />, { wrapper: MemoryRouter })
     await waitFor(() => expect(screen.getByText('CLIENTE 92')).toBeInTheDocument())
     const tarjeta = container.querySelector('[draggable="true"]') as HTMLElement
     const columna = (label: string) =>

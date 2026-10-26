@@ -8,6 +8,7 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import { MemoryRouter } from 'react-router-dom'
 
 const getMock = jest.fn()
 jest.mock('@/utils/apiClient', () => ({
@@ -62,7 +63,7 @@ beforeEach(() => getMock.mockReset())
 describe('el panel de analítica', () => {
   it('pone primero lo accionable: lo que piden y no hay', async () => {
     getMock.mockResolvedValue({ data: { data: BI } })
-    render(<BiPanel />)
+    render(<BiPanel />, { wrapper: MemoryRouter })
     await waitFor(() =>
       expect(screen.getByText(/lo que piden y no tenemos/i)).toBeInTheDocument(),
     )
@@ -74,7 +75,7 @@ describe('el panel de analítica', () => {
 
   it('trae las métricas del negocio con sus unidades', async () => {
     getMock.mockResolvedValue({ data: { data: BI } })
-    render(<BiPanel />)
+    render(<BiPanel />, { wrapper: MemoryRouter })
     await waitFor(() => expect(screen.getByText('25%')).toBeInTheDocument())
     expect(screen.getByText('S/ 134.05')).toBeInTheDocument()
     expect(screen.getByText('S/ 90.00')).toBeInTheDocument()
@@ -83,7 +84,7 @@ describe('el panel de analítica', () => {
 
   it('explica el "sin dato" en vez de dejarlo pasar por un cero', async () => {
     getMock.mockResolvedValue({ data: { data: BI } })
-    render(<BiPanel />)
+    render(<BiPanel />, { wrapper: MemoryRouter })
     await waitFor(() =>
       expect(screen.getByText(/no se adivinan/i)).toBeInTheDocument(),
     )
@@ -100,7 +101,7 @@ describe('el panel de analítica', () => {
         },
       },
     })
-    render(<BiPanel />)
+    render(<BiPanel />, { wrapper: MemoryRouter })
     await waitFor(() =>
       expect(screen.getByText(/todavía no hay conversaciones/i)).toBeInTheDocument(),
     )
@@ -155,7 +156,7 @@ describe('la ficha 360°', () => {
         data: { data: u.includes('posibles-duplicados') ? duplicados : ficha },
       }),
     )
-    return render(<Ficha360 telefono="51900000111" onCerrar={() => {}} />)
+    return render(<Ficha360 telefono="51900000111" onCerrar={() => {}} />, { wrapper: MemoryRouter })
   }
 
   it('dice en pantalla que el historial está unido por DNI', async () => {

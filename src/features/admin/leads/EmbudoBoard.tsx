@@ -7,7 +7,8 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { Icon } from '@iconify/react'
-import { nombreVisible, contactoVisible } from './LeadsModel'
+import { Link } from 'react-router-dom'
+import { nombreVisible, contactoVisible, rutaAlChat } from './LeadsModel'
 import moment from 'moment'
 import { formatDistanceToNow } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -319,6 +320,16 @@ function Tarjeta({
       <div className="mt-2 flex items-center justify-between">
         <span className="text-[10px] text-gray-400">
           {fechaRelativa(pedido.etapaEn)}
+        </span>
+        <span className="ml-auto mr-1">
+          <Link
+            to={rutaAlChat({ telefono: pedido.telefonoProspecto, conversacionId: pedido.conversacion?.id })}
+            title="Abrir su chat"
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-900/20"
+          >
+            <Icon icon="solar:chat-round-dots-bold-duotone" className="text-sm" />
+            Chat
+          </Link>
         </span>
         <button
           type="button"

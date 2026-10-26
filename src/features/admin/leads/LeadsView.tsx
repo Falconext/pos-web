@@ -11,6 +11,7 @@ import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
 import { DisparadoresPanel } from './DisparadoresPanel'
 import { DemosPanel } from './DemosPanel'
+import { VisitasPanel } from './VisitasPanel'
 import { Ficha360 } from './Ficha360'
 import { formatoDuracion, MAX_SEGUNDOS_NOTA, textoDeNotaDeVoz, useGrabadoraNota } from './notaDeVoz'
 import { TextoWhatsapp } from './textoWhatsapp'
@@ -36,7 +37,7 @@ import type {
 import { ReporteDiarioCard } from './ReporteDiarioCard'
 
 /**
- * Cada vista (Chats, Embudo, Analítica, Avisos) es una página propia con su
+ * Cada vista (Chats, Embudo, Visitas, Analítica, Avisos) es una página propia con su
  * entrada en el menú lateral; antes eran pestañas apiladas en esta misma
  * pantalla. Demos se abre desde el encabezado: solo la usa quien entrega demos.
  */
@@ -109,6 +110,9 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
       )}
 
       {vista === 'embudo' && <EmbudoBoard onVerCliente={vm.setFicha360} />}
+      {vista === 'visitas' && (
+        <VisitasPanel tienda={vm.configCargada ? vm.config.tienda ?? null : undefined} />
+      )}
       {vista === 'analitica' && <BiPanel />}
       {vista === 'avisos' && <DisparadoresPanel />}
       {vista === 'demos' && <DemosPanel />}

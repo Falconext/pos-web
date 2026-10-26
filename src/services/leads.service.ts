@@ -109,6 +109,27 @@ export interface LeadsConfig {
   vendedor?: PerfilVendedor
   envio?: ConfigEnvio
   mediosPagoLista?: MedioPago[]
+  /**
+   * Mensaje al cerrar la conversación: venta cerrada, "lo consulto con mi
+   * médico" o reenganche sin respuesta a las 2 h. Sale tal cual.
+   */
+  despedida?: { activa: boolean; texto: string }
+  /**
+   * La tienda física, para quien dice que va a ir. Al agendar la visita se le
+   * manda la ubicación, la foto de la fachada y las indicaciones.
+   */
+  tienda?: ConfigTienda
+}
+
+export interface ConfigTienda {
+  direccion: string
+  /** Link de Google Maps que pegó el dueño. */
+  mapsUrl: string
+  /** Las saca el servidor del link; null = el link no las trae y va como enlace. */
+  lat: number | null
+  lng: number | null
+  indicaciones: string
+  fotoUrl: string
 }
 
 /** Del 1 (muy conciso) al 5 (muy detallado). */
@@ -196,6 +217,33 @@ export async function fetchConversaciones(): Promise<LeadConversacion[]> {
   const r = await get<LeadConversacion[]>('/leads/conversaciones')
   if (!r.success || !r.data) throw new Error(r.error || 'Error al cargar conversaciones')
   return r.data
+}
+
+/** La conversación de un teléfono con el resumen del prospecto; null si nunca escribió. */
+export interface ConversacionDeTelefono {
+  id: number
+  telefonoProspecto: string
+  nombreProspecto: string | null
+  actualizadoEn: string
+  prospecto: {
+    id: number
+    estado: EstadoLeadProspecto
+    etapa: string
+    puntaje: number
+    resumen: string | null
+    proximaAccion: string | null
+    sintomas: string | null
+  } | null
+}
+
+export async function fetchConversacionPorTelefono(
+  telefono: string,
+): Promise<ConversacionDeTelefono | null> {
+  const r = await get<ConversacionDeTelefono | null>(
+    `/leads/conversaciones/por-telefono/${encodeURIComponent(telefono)}`,
+  )
+  if (!r.success) throw new Error(r.error || 'Error al buscar la conversación')
+  return r.data ?? null
 }
 
 export async function fetchConversacion(id: number): Promise<LeadConversacionDetalle> {
@@ -337,6 +385,25 @@ export async function updateConfig(
   const r = await patch<LeadsConfig>('/leads/config', data)
   if (!r.success || !r.data) throw new Error(r.error || 'Error al guardar la configuración')
   return r.data
+}
+
+/**
+ * Sube la foto de la fachada o del stand (JPG/PNG, máx. 5 MB). El servidor ya
+ * la deja guardada en la configuración: no hace falta tocar "Guardar".
+ */
+export async function subirFotoTienda(archivo: File): Promise<string> {
+  const fd = new FormData()
+  fd.append('archivo', archivo)
+  try {
+    const resp = await apiClient.post('/leads/tienda-foto', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    const url = resp.data?.data?.fotoUrl as string | undefined
+    if (!url) throw new Error('No se pudo subir la foto')
+    return url
+  } catch (e: any) {
+    throw new Error(e?.response?.data?.message || e?.message || 'No se pudo subir la foto')
+  }
 }
 
 // ─── Entrenamiento de la IA (RAG) ────────────────────────────────────────────
