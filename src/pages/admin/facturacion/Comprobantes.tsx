@@ -21,6 +21,7 @@ import { get, post } from "@/utils/fetch";
 import { AvisoHuecosCorrelativo } from "./AvisoHuecosCorrelativo";
 import ModalConfirm from "@/components/ModalConfirm";
 import { useNavigate } from "react-router-dom";
+import { BotonVerChat } from "@/features/admin/leads/BotonVerChat";
 import { useDebounce } from "@/hooks/useDebounce";
 import InputPro from "@/components/InputPro";
 import ComprobantePrintPage from "./comprobanteImprimir";
@@ -357,6 +358,7 @@ const Comprobantes = () => {
             document: item?.cliente?.nroDoc,
             s3PdfUrl: item?.s3PdfUrl,
             client: item?.cliente?.nombre,
+            telefonoCliente: item?.cliente?.telefono ?? null,
             // Cobranza en campo: si hay vendedor de campo atribuido, se muestra ese
             // en vez del usuario que registró la venta.
             vendedor: item?.vendedorCampoNombre || item?.usuario?.nombre || '-',
@@ -1257,6 +1259,7 @@ const Comprobantes = () => {
                                 <Icon icon="mdi:whatsapp" width={16} height={16} />
                                 <span>Enviar WhatsApp</span>
                             </button>
+                            <BotonVerChat telefono={rowBase.telefonoCliente} onElegir={handleCloseMenu} />
 
                             {/* Verificar contra SUNAT (Consulta de Validez): confirma si está
                                 ACEPTADO y, de estarlo, lo marca EMITIDO automáticamente. Se ofrece en

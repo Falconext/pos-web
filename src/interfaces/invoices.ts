@@ -66,6 +66,8 @@ export type IInvoices = {
     nombre: string
     nroDoc: string
     persona: string
+    /** Lo devuelve el listado; sirve para ir al chat de IA de Ventas. */
+    telefono?: string | null
   }
   detalles: Array<{
     producto: {
