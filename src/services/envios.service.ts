@@ -1,4 +1,5 @@
-import { get, post, del } from '@/utils/fetch'
+import { get, post, patch, del } from '@/utils/fetch'
+import apiClient from '@/utils/apiClient'
 
 // ─── Envíos masivos de la IA de Ventas: segmentos, plantillas y envíos ─────
 
@@ -98,4 +99,109 @@ export async function productosPorId(ids: number[]) {
     await get<ProductoBuscado[]>(`/leads/segmentos/productos?ids=${ids.join(',')}`),
     'No se pudieron cargar los productos',
   )
+}
+
+// ─── Plantillas ─────────────────────────────────────────────────────────────
+
+export type EstadoPlantilla = 'BORRADOR' | 'PENDIENTE' | 'APROBADA' | 'RECHAZADA' | 'PAUSADA' | 'DESACTIVADA'
+export type CategoriaPlantilla = 'MARKETING' | 'UTILITY'
+export type TipoCabecera = 'NINGUNA' | 'TEXTO' | 'IMAGEN'
+
+export interface BotonPlantilla {
+  tipo: 'RESPUESTA' | 'URL'
+  texto: string
+  url?: string
+}
+
+export interface DatosPlantilla {
+  titulo: string
+  categoria: CategoriaPlantilla
+  cabeceraTipo: TipoCabecera
+  cabeceraTexto?: string | null
+  cabeceraImagenUrl?: string | null
+  cuerpo: string
+  pie?: string | null
+  botones: BotonPlantilla[]
+  ejemplos: { dato1?: string; dato2?: string }
+}
+
+export interface Plantilla {
+  id: number
+  titulo: string
+  nombreMeta: string
+  categoria: CategoriaPlantilla
+  cabeceraTipo: TipoCabecera
+  cabeceraTexto: string | null
+  cabeceraImagenUrl: string | null
+  cuerpo: string
+  pie: string | null
+  botonesJson: BotonPlantilla[] | null
+  ejemplosJson: { dato1?: string; dato2?: string } | null
+  estado: EstadoPlantilla
+  motivoRechazo: string | null
+  enviadaEn: string | null
+  revisadaEn: string | null
+  actualizadoEn: string
+}
+
+export function datosDePlantilla(p: Plantilla): DatosPlantilla {
+  return {
+    titulo: p.titulo,
+    categoria: p.categoria,
+    cabeceraTipo: p.cabeceraTipo,
+    cabeceraTexto: p.cabeceraTexto,
+    cabeceraImagenUrl: p.cabeceraImagenUrl,
+    cuerpo: p.cuerpo,
+    pie: p.pie,
+    botones: p.botonesJson ?? [],
+    ejemplos: p.ejemplosJson ?? {},
+  }
+}
+
+export async function fetchPlantillas() {
+  return datos(await get<Plantilla[]>('/leads/plantillas'), 'No se pudieron cargar las plantillas')
+}
+
+export async function validarPlantilla(plantilla: DatosPlantilla) {
+  return datos(
+    await post<{ errores: string[]; vistaPrevia: string; pie: string | null }>('/leads/plantillas/validar', { plantilla }),
+    'No se pudo revisar la plantilla',
+  )
+}
+
+export async function guardarPlantilla(plantilla: DatosPlantilla, id?: number) {
+  const r = id
+    ? await patch<Plantilla>(`/leads/plantillas/${id}`, { plantilla })
+    : await post<Plantilla>('/leads/plantillas', { plantilla })
+  return datos(r, 'No se pudo guardar la plantilla')
+}
+
+export async function enviarPlantillaARevision(id: number) {
+  return datos(await post<Plantilla>(`/leads/plantillas/${id}/enviar`, {}), 'No se pudo enviar a Meta')
+}
+
+export async function sincronizarPlantilla(id: number) {
+  return datos(await post<Plantilla>(`/leads/plantillas/${id}/sincronizar`, {}), 'No se pudo consultar a Meta')
+}
+
+export async function duplicarPlantilla(id: number) {
+  return datos(await post<Plantilla>(`/leads/plantillas/${id}/duplicar`, {}), 'No se pudo duplicar')
+}
+
+export async function eliminarPlantilla(id: number) {
+  const r = await del(`/leads/plantillas/${id}`)
+  if (!r.success) throw new Error(r.error || 'No se pudo borrar la plantilla')
+}
+
+export async function subirImagenPlantilla(archivo: File): Promise<string> {
+  const fd = new FormData()
+  fd.append('archivo', archivo)
+  try {
+    const resp = await apiClient.post('/leads/plantillas/imagen', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return resp.data?.data?.url
+  } catch (e: any) {
+    throw new Error(e?.response?.data?.message || 'No se pudo subir la imagen')
+  }
 }

@@ -1,16 +1,18 @@
 import { useSearchParams } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { SegmentosPanel } from './SegmentosPanel'
+import { PlantillasPanel } from './PlantillasPanel'
 
 /**
  * Envíos masivos: mandarle un mensaje a un grupo de contactos que ya le
  * escribieron al negocio. Tres partes: a quién (segmentos), qué (plantillas
  * aprobadas por Meta) y el envío con sus resultados.
  */
-type Pestana = 'segmentos'
+type Pestana = 'segmentos' | 'plantillas'
 
 const PESTANAS: { id: Pestana; label: string; icono: string }[] = [
   { id: 'segmentos', label: 'Segmentos', icono: 'solar:users-group-rounded-linear' },
+  { id: 'plantillas', label: 'Plantillas', icono: 'solar:document-text-linear' },
 ]
 
 export function EnviosPanel() {
@@ -43,6 +45,7 @@ export function EnviosPanel() {
         ))}
       </div>
       {pestana === 'segmentos' && <SegmentosPanel />}
+      {pestana === 'plantillas' && <PlantillasPanel />}
     </div>
   )
 }
