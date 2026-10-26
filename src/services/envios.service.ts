@@ -231,7 +231,18 @@ export interface EnvioResumen {
   nota: string | null
   plantilla: { id: number; titulo: string }
   conteos: ConteosEnvio
+  /** Lo que avisa Meta y lo que hizo el cliente después. */
+  resultados?: ResultadosEnvio
   creadoEn: string
+}
+
+export interface ResultadosEnvio {
+  entregados: number
+  leidos: number
+  respondieron: number
+  /** Solo en el detalle. */
+  compraron?: number
+  ventas?: number
 }
 
 export interface DestinatarioEnvio {
@@ -243,7 +254,12 @@ export interface DestinatarioEnvio {
   estado: EstadoDestinatario
   motivo: string | null
   enviadoEn: string | null
+  entregadoEn: string | null
+  leidoEn: string | null
   textoEnviado: string | null
+  respondio: boolean
+  /** Monto comprado dentro de los 7 días, o null. */
+  compra: number | null
 }
 
 export interface EnvioDetalle extends EnvioResumen {

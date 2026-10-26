@@ -16,6 +16,7 @@ import {
   probarEnvio,
   type EnvioDetalle,
   type EnvioResumen,
+  type ResultadosEnvio,
   type EstadoDestinatario,
   type EstadoEnvio,
   type FiltrosSegmento,
@@ -77,6 +78,52 @@ function Progreso({ c }: { c: EnvioResumen['conteos'] }) {
         {c.omitidos + c.cancelados > 0 && <> · {c.omitidos + c.cancelados} no se enviaron</>}
         {c.fallidos > 0 && <> · <span className="text-red-600 dark:text-red-400">{c.fallidos} fallaron</span></>}
       </p>
+    </div>
+  )
+}
+
+const soles = (n: number) => `S/ ${n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const pct = (parte: number, total: number) => (total ? `${Math.round((parte / total) * 100)}%` : '—')
+
+/**
+ * El embudo del envío: de los que se les mandó, cuántos lo recibieron, lo
+ * leyeron, respondieron y compraron. Cada paso con su porcentaje sobre los
+ * enviados, que es la pregunta que se hace el dueño.
+ */
+function EmbudoResultados({ enviados, r }: { enviados: number; r: ResultadosEnvio }) {
+  const pasos: { label: string; n: number; icono: string; clase: string }[] = [
+    { label: 'Enviados', n: enviados, icono: 'solar:plain-2-linear', clase: 'text-gray-900 dark:text-white' },
+    { label: 'Entregados', n: r.entregados, icono: 'solar:check-read-linear', clase: 'text-gray-900 dark:text-white' },
+    { label: 'Leídos', n: r.leidos, icono: 'solar:eye-linear', clase: 'text-sky-600 dark:text-sky-300' },
+    { label: 'Respondieron', n: r.respondieron, icono: 'solar:chat-round-dots-linear', clase: 'text-violet-600 dark:text-violet-300' },
+    ...(r.compraron !== undefined
+      ? [{ label: 'Compraron', n: r.compraron, icono: 'solar:bag-check-linear', clase: 'text-emerald-600 dark:text-emerald-300' }]
+      : []),
+  ]
+  return (
+    <div>
+      <div className={`grid grid-cols-2 gap-2 sm:grid-cols-3 ${r.compraron !== undefined ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
+        {pasos.map((p, i) => (
+          <div key={p.label} className="rounded-xl bg-gray-50 p-3 dark:bg-slate-800/50">
+            <p className="flex items-center gap-1.5 text-[11.5px] text-gray-500 dark:text-gray-400">
+              <Icon icon={p.icono} width={13} />
+              {p.label}
+            </p>
+            <p className={`text-[22px] font-black tabular-nums ${p.clase}`}>{p.n}</p>
+            {i > 0 && <p className="text-[11px] tabular-nums text-gray-400">{pct(p.n, enviados)}</p>}
+          </div>
+        ))}
+      </div>
+      {r.ventas !== undefined && (
+        <p className="mt-3 text-[13px] text-gray-600 dark:text-gray-300">
+          Vendiste <b className="text-emerald-700 dark:text-emerald-300">{soles(r.ventas)}</b> a quienes recibieron este envío,
+          en los 7 días siguientes.
+          <span className="block text-[11.5px] text-gray-400">
+            Cuenta las compras por el chat y en caja (mismo celular). Respondieron = escribieron dentro de las 72 h; si
+            recibió otro envío en ese plazo, la respuesta cuenta para los dos.
+          </span>
+        </p>
+      )}
     </div>
   )
 }
@@ -157,6 +204,21 @@ function ListaEnvios({ onNuevo, onAbrir }: { onNuevo: () => void; onAbrir: (id: 
               <div className="mt-3">
                 <Progreso c={e.conteos} />
               </div>
+              {e.nota && (
+                <p className="mt-2 line-clamp-2 text-[11.5px] text-amber-700 dark:text-amber-300">{e.nota}</p>
+              )}
+              {e.resultados && e.conteos.enviados > 0 && (
+                <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11.5px] text-gray-500 dark:text-gray-400">
+                  <span className="inline-flex items-center gap-1">
+                    <Icon icon="solar:eye-linear" width={12} />
+                    {pct(e.resultados.leidos, e.conteos.enviados)} leídos
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Icon icon="solar:chat-round-dots-linear" width={12} />
+                    {e.resultados.respondieron} respondieron
+                  </span>
+                </p>
+              )}
             </button>
           ))}
         </div>
@@ -705,7 +767,12 @@ function DetalleEnvio({ id, onVolver }: { id: number; onVolver: () => void }) {
             {envio.nota && (
               <p className="mt-3 rounded-xl bg-amber-50 p-3 text-[12.5px] text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">{envio.nota}</p>
             )}
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {envio.resultados && c.enviados > 0 && (
+              <div className="mt-4">
+                <EmbudoResultados enviados={c.enviados} r={envio.resultados} />
+              </div>
+            )}
+            <div className={`mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4 ${c.enviados > 0 ? 'hidden' : ''}`}>
               {[
                 ['Enviados', c.enviados, 'text-emerald-600 dark:text-emerald-300'],
                 ['Pendientes', c.pendientes, 'text-sky-600 dark:text-sky-300'],
@@ -752,7 +819,27 @@ function DetalleEnvio({ id, onVolver }: { id: number; onVolver: () => void }) {
                       {d.motivo && <p className="mt-0.5 text-[12px] text-gray-500 dark:text-gray-400">{d.motivo}</p>}
                     </div>
                     <div className="flex flex-none flex-col items-end gap-1">
-                      <span className={`text-[12px] font-semibold ${ESTADO_DEST[d.estado].clase}`}>{ESTADO_DEST[d.estado].label}</span>
+                      <span className="flex items-center gap-1.5">
+                        {d.estado === 'ENVIADO' && (
+                          <Icon
+                            icon={d.leidoEn ? 'solar:check-read-linear' : d.entregadoEn ? 'solar:check-read-linear' : 'solar:check-circle-linear'}
+                            width={15}
+                            className={d.leidoEn ? 'text-sky-500' : 'text-gray-400'}
+                            aria-label={d.leidoEn ? 'Leído' : d.entregadoEn ? 'Entregado' : 'Enviado'}
+                          />
+                        )}
+                        {d.respondio && (
+                          <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                            Respondió
+                          </span>
+                        )}
+                        {d.compra != null && (
+                          <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            Compró {soles(d.compra)}
+                          </span>
+                        )}
+                        <span className={`text-[12px] font-semibold ${ESTADO_DEST[d.estado].clase}`}>{ESTADO_DEST[d.estado].label}</span>
+                      </span>
                       {d.enviadoEn && <span className="text-[11px] tabular-nums text-gray-400">{fecha(d.enviadoEn)}</span>}
                     </div>
                     {d.conversacionId && (
