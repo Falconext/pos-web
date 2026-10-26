@@ -12,6 +12,7 @@ import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 import Button from '@/components/Button';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import ConectarInstagramButton from '@/components/ConectarInstagramButton';
+import ConectarMessengerButton from '@/components/ConectarMessengerButton';
 import ShalomProConexion from '@/components/ShalomProConexion';
 import OlvaConfiguracion from '@/components/OlvaConfiguracion';
 import DespachoAutomatizacionCard from '@/components/DespachoAutomatizacionCard';
@@ -599,6 +600,28 @@ export default function PerfilIndex() {
                         </div>
                         <div className="p-5">
                             <ConectarInstagramButton />
+                        </div>
+                    </div>
+                    )}
+
+                    {/* ── Conectar Messenger: la IA de Ventas responde en la página de Facebook ── */}
+                    {tieneVentas && (
+                    <div className={`lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-sky-100 bg-white shadow-sm dark:border-sky-900/30 dark:bg-[#111827] ${configTab}`}>
+                        <div className="relative border-b border-sky-100/70 bg-gradient-to-br from-sky-50 via-white to-blue-50 p-5 dark:border-sky-900/30 dark:from-sky-950/30 dark:via-[#111827] dark:to-blue-950/20">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#0084FF] text-white shadow-lg shadow-sky-500/20">
+                                    <Icon icon="mdi:facebook-messenger" width={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-gray-950 dark:text-white">Conectar mi Messenger</h2>
+                                    <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                                        Conecta la <strong>página de Facebook</strong> del negocio y la <strong>IA de Ventas</strong> responderá los mensajes de Messenger igual que en WhatsApp. Los chats llegan a la misma bandeja.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <ConectarMessengerButton />
                         </div>
                     </div>
                     )}
