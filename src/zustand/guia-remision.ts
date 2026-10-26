@@ -283,9 +283,20 @@ export const useGuiaRemisionStore = create<IGuiaRemisionState>()(devtools((set, 
             useAlertStore.setState({ loading: true });
             const resp: any = await post(`guia-remision/${id}/enviar-sunat`, {});
 
-            // El backend devuelve { code: 1, message, data: { success: true ... } }
-            // 'post' retorna el body. Si es éxito, resp.data.success es true.
-            const isSuccess = resp?.data?.success || resp?.success;
+            // El backend devuelve { code: 1, message, data: { success, guia, message } }.
+            // `resp.success` solo dice que la llamada salió bien (lo agrega `post`);
+            // el veredicto de SUNAT es `resp.data.success`. Con `||` un rechazo
+            // se mostraba como "Éxito".
+            const isSuccess = resp?.success === true && resp?.data?.success === true;
+            const guiaRespuesta = resp?.data?.guia;
+            if (!isSuccess && guiaRespuesta) {
+                // Rechazo o error de SUNAT: la lista refleja el estado real.
+                set((state) => ({
+                    guiasRemision: state.guiasRemision.map((guia: any) =>
+                        guia.id === id ? { ...guia, ...guiaRespuesta } : guia
+                    ),
+                }), false, 'ENVIAR_SUNAT_RECHAZO');
+            }
 
             if (isSuccess) {
                 const guiaData = resp?.data?.guia || resp?.guia;
@@ -303,9 +314,10 @@ export const useGuiaRemisionStore = create<IGuiaRemisionState>()(devtools((set, 
 
                 return { success: true };
             } else {
+                const motivo = resp?.data?.message || resp?.error || resp?.message || 'Error al enviar a SUNAT';
                 useAlertStore.setState({ loading: false });
-                useAlertStore.getState().alert(resp?.message || 'Error al enviar a SUNAT', 'error');
-                return { success: false, error: resp?.message || 'Error al enviar a SUNAT' };
+                useAlertStore.getState().alert(motivo, 'error');
+                return { success: false, error: motivo };
             }
         } catch (error: any) {
             useAlertStore.setState({ loading: false });
