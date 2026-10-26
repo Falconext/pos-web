@@ -128,6 +128,12 @@ describe('en la bandeja de chats', () => {
       onVerHistorial={() => undefined}
       chat={null}
       prospectoActivo={p}
+      etiquetas={[]}
+      onPonerEtiqueta={() => undefined}
+      onQuitarEtiqueta={() => undefined}
+      onCrearEtiqueta={async () => true}
+      onEditarEtiqueta={async () => true}
+      onEliminarEtiqueta={() => undefined}
     />
   )
 

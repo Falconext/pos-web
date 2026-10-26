@@ -140,6 +140,12 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
           prospectoActivo={
             vm.prospectos.find((p) => p.conversacionId === vm.conversacion?.id) ?? null
           }
+          etiquetas={vm.etiquetas}
+          onPonerEtiqueta={vm.actions.ponerEtiqueta}
+          onQuitarEtiqueta={vm.actions.quitarEtiqueta}
+          onCrearEtiqueta={vm.actions.crearEtiqueta}
+          onEditarEtiqueta={vm.actions.editarEtiqueta}
+          onEliminarEtiqueta={vm.actions.eliminarEtiqueta}
           chat={
             vm.conversacion || vm.loadingConversacion ? (
               <ChatPanel vm={vm} />
