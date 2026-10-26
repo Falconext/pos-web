@@ -144,11 +144,19 @@ export function colorAvatar(telefono: string): string {
 }
 
 /** Vistas del módulo: cada una es una página con su entrada en el menú lateral. */
-export type VistaLeads = 'conversaciones' | 'embudo' | 'analitica' | 'avisos' | 'demos' | 'vendedor'
+export type VistaLeads =
+  | 'conversaciones'
+  | 'embudo'
+  | 'visitas'
+  | 'analitica'
+  | 'avisos'
+  | 'demos'
+  | 'vendedor'
 
 export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
   chats: 'conversaciones',
   embudo: 'embudo',
+  visitas: 'visitas',
   analitica: 'analitica',
   avisos: 'avisos',
   demos: 'demos',
@@ -163,6 +171,10 @@ export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: strin
   embudo: {
     titulo: 'Embudo',
     descripcion: 'Cada pedido por etapa: desde el primer mensaje hasta la cotización, el pago y la entrega.',
+  },
+  visitas: {
+    titulo: 'Visitas',
+    descripcion: 'Quién dijo que va a ir a tu tienda, cuándo, y si ya le llegó cómo encontrarte.',
   },
   analitica: {
     titulo: 'Analítica',

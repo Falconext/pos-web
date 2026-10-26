@@ -222,6 +222,48 @@ export const crmService = {
       .then(datos<{ telefono: string; nombre: string; parecido: number }[]>),
 }
 
+// ── Visitas a la tienda física ──────────────────────────────────────────
+
+export type EstadoVisita = 'AGENDADA' | 'VINO' | 'NO_VINO' | 'CANCELADA'
+export type FiltroVisitas = 'proximas' | 'sin_fecha' | 'con_reserva' | 'pasadas' | 'todas'
+
+export interface VisitaTienda {
+  id: number
+  conversacionId: number | null
+  telefono: string
+  nombre: string | null
+  /** Lo que dijo el cliente, tal cual ("el sábado en la mañana"). */
+  cuando: string
+  /** 'YYYY-MM-DD'; null = "dice que vendrá" sin día. */
+  fecha: string | null
+  estado: EstadoVisita
+  conPedido: boolean
+  comprobanteId: number | null
+  /** Lo que adelantó con voucher para esta visita. */
+  reserva: { monto: number; validada: boolean } | null
+  indicacionesEnviadas: boolean
+  resumen: string | null
+  creadoEn: string
+}
+
+export const visitasService = {
+  listar: (filtro: FiltroVisitas = 'proximas') =>
+    apiClient
+      .get(`/leads/crm/visitas?filtro=${filtro}`)
+      .then(datos<VisitaTienda[]>),
+
+  marcar: (id: number, estado: EstadoVisita) =>
+    apiClient
+      .patch(`/leads/crm/visitas/${id}`, { estado })
+      .then(datos<{ id: number; estado: EstadoVisita }>),
+
+  /** Reenvía ubicación, foto e indicaciones. 400 con el motivo si no salió. */
+  reenviarComoLlegar: (id: number) =>
+    apiClient
+      .post(`/leads/crm/visitas/${id}/como-llegar`, {})
+      .then(datos<{ enviado: boolean }>),
+}
+
 // ── F — disparadores y re-engagement ────────────────────────────────────
 
 export type TipoDisparo =

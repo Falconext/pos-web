@@ -398,6 +398,15 @@ export function useLeadsViewModel() {
     }
   }
 
+  /** Vuelve a leer la configuración (p. ej. tras subir la foto de la tienda, que el servidor ya guardó). */
+  const recargarConfig = async () => {
+    try {
+      setConfig(await api.fetchConfig())
+    } catch {
+      /* silencioso: queda la que había */
+    }
+  }
+
   const toggleIaVentas = async (activa: boolean) => {
     // Optimista: refleja el switch de inmediato.
     setConfig((c) => ({ ...c, iaVentasActiva: activa }))
@@ -527,6 +536,7 @@ export function useLeadsViewModel() {
       enviarAudioManual,
       convertirCliente,
       guardarConfig,
+      recargarConfig,
       toggleIaVentas,
       abrirEntrenar,
       crearDocumento,
