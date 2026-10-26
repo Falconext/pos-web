@@ -42,6 +42,7 @@ const VendedoresView = cargaPerezosa(() => import('./features/admin/users/Vended
 const SedesIndex = cargaPerezosa(() => import('./pages/admin/sedes/Index'))
 const ListasPrecioIndex = cargaPerezosa(() => import('./pages/admin/listas-precio/Index'))
 const InstagramCallback = cargaPerezosa(() => import('./pages/admin/instagram/Callback'))
+const MessengerCallback = cargaPerezosa(() => import('./pages/admin/messenger/Callback'))
 const NotificacionesIndex = cargaPerezosa(() => import('./pages/admin/notificaciones/Index'))
 const ConfiguracionTienda = cargaPerezosa(() => import('./pages/admin/tienda/Configuracion'))
 const TemplateTienda = cargaPerezosa(() => import('./pages/admin/tienda/Template'))
@@ -173,6 +174,7 @@ function App() {
           <Route index element={<AdminIndex />} />
           <Route path="perfil" element={<PerfilIndex />} />
           <Route path="instagram/callback" element={<InstagramCallback />} />
+          <Route path="messenger/callback" element={<MessengerCallback />} />
           <Route path="empresas" element={<EmpresasIndex />} />
           {/* Rutas de crear/editar migradas a modal: redirigir al listado */}
           <Route path="empresas/crear" element={<Navigate to="/administrador/empresas" replace />} />
