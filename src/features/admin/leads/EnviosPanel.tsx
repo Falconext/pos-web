@@ -2,15 +2,17 @@ import { useSearchParams } from 'react-router-dom'
 import { Icon } from '@iconify/react'
 import { SegmentosPanel } from './SegmentosPanel'
 import { PlantillasPanel } from './PlantillasPanel'
+import { EnviosMasivosPanel } from './EnviosMasivosPanel'
 
 /**
  * Envíos masivos: mandarle un mensaje a un grupo de contactos que ya le
  * escribieron al negocio. Tres partes: a quién (segmentos), qué (plantillas
  * aprobadas por Meta) y el envío con sus resultados.
  */
-type Pestana = 'segmentos' | 'plantillas'
+type Pestana = 'envios' | 'segmentos' | 'plantillas'
 
 const PESTANAS: { id: Pestana; label: string; icono: string }[] = [
+  { id: 'envios', label: 'Envíos', icono: 'solar:plain-2-linear' },
   { id: 'segmentos', label: 'Segmentos', icono: 'solar:users-group-rounded-linear' },
   { id: 'plantillas', label: 'Plantillas', icono: 'solar:document-text-linear' },
 ]
@@ -28,11 +30,8 @@ export function EnviosPanel() {
             type="button"
             role="tab"
             aria-selected={pestana === p.id}
-            onClick={() => setParams((prev) => {
-              const n = new URLSearchParams(prev)
-              n.set('tab', p.id)
-              return n
-            })}
+            // Cambiar de pestaña cierra el envío o el asistente que estuviera abierto.
+            onClick={() => setParams({ tab: p.id })}
             className={`-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
               pestana === p.id
                 ? 'border-gray-900 text-gray-900 dark:border-white dark:text-white'
@@ -44,6 +43,7 @@ export function EnviosPanel() {
           </button>
         ))}
       </div>
+      {pestana === 'envios' && <EnviosMasivosPanel />}
       {pestana === 'segmentos' && <SegmentosPanel />}
       {pestana === 'plantillas' && <PlantillasPanel />}
     </div>

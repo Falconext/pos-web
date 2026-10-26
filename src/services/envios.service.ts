@@ -205,3 +205,93 @@ export async function subirImagenPlantilla(archivo: File): Promise<string> {
     throw new Error(e?.response?.data?.message || 'No se pudo subir la imagen')
   }
 }
+
+// ─── Envíos ─────────────────────────────────────────────────────────────────
+
+export type EstadoEnvio = 'PROGRAMADO' | 'ENVIANDO' | 'TERMINADO' | 'CANCELADO'
+export type EstadoDestinatario = 'PROGRAMADO' | 'ENVIADO' | 'OMITIDO' | 'FALLIDO' | 'CANCELADO'
+
+export interface ConteosEnvio {
+  total: number
+  pendientes: number
+  enviados: number
+  omitidos: number
+  fallidos: number
+  cancelados: number
+}
+
+export interface EnvioResumen {
+  id: number
+  nombre: string
+  estado: EstadoEnvio
+  programadoPara: string
+  iniciadoEn: string | null
+  terminadoEn: string | null
+  porMinuto: number
+  nota: string | null
+  plantilla: { id: number; titulo: string }
+  conteos: ConteosEnvio
+  creadoEn: string
+}
+
+export interface DestinatarioEnvio {
+  id: number
+  telefono: string
+  conversacionId: number | null
+  nombre: string | null
+  canal: CanalEnvio
+  estado: EstadoDestinatario
+  motivo: string | null
+  enviadoEn: string | null
+  textoEnviado: string | null
+}
+
+export interface EnvioDetalle extends EnvioResumen {
+  plantillaJson: DatosPlantilla & { titulo: string; nombreMeta: string }
+  valores: { dato1?: string; dato2?: string } | null
+  filtros: FiltrosSegmento
+  destinatarios: DestinatarioEnvio[]
+}
+
+export interface NuevoEnvio {
+  nombre?: string
+  segmentoId?: number
+  filtros?: FiltrosSegmento
+  plantillaId: number
+  valores?: { dato1?: string; dato2?: string }
+  programadoPara?: string | null
+  porMinuto?: number
+}
+
+export async function fetchEnvios() {
+  return datos(await get<EnvioResumen[]>('/leads/envios'), 'No se pudieron cargar los envíos')
+}
+
+export async function fetchEnvio(id: number, estado?: EstadoDestinatario) {
+  return datos(
+    await get<EnvioDetalle>(`/leads/envios/${id}${estado ? `?estado=${estado}` : ''}`),
+    'No se pudo cargar el envío',
+  )
+}
+
+export async function crearEnvio(e: NuevoEnvio) {
+  return datos(await post<EnvioDetalle>('/leads/envios', e), 'No se pudo programar el envío')
+}
+
+export async function cancelarEnvio(id: number) {
+  return datos(await post<EnvioDetalle>(`/leads/envios/${id}/cancelar`, {}), 'No se pudo detener el envío')
+}
+
+export async function probarEnvio(plantillaId: number, valores?: { dato1?: string; dato2?: string }) {
+  return datos(
+    await post<{ resultados: { telefono: string; ok: boolean; error?: string }[] }>('/leads/envios/prueba', {
+      plantillaId,
+      valores,
+    }),
+    'No se pudo mandar la prueba',
+  )
+}
+
+export async function fetchNivelMensajeria() {
+  return datos(await get<{ nivel: number | null }>('/leads/envios/nivel'), 'No se pudo consultar el nivel')
+}
