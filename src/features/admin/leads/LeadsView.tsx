@@ -10,6 +10,7 @@ import useAlertStore from '@/zustand/alert'
 import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
 import { DisparadoresPanel } from './DisparadoresPanel'
+import { EnviosPanel } from './EnviosPanel'
 import { DemosPanel } from './DemosPanel'
 import { VisitasPanel } from './VisitasPanel'
 import { Ficha360 } from './Ficha360'
@@ -116,6 +117,7 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
       )}
       {vista === 'analitica' && <BiPanel />}
       {vista === 'avisos' && <DisparadoresPanel />}
+      {vista === 'envios' && <EnviosPanel />}
       {vista === 'demos' && <DemosPanel />}
       {vista === 'vendedor' && <MiVendedorPanel vm={vm} negocio={negocio} />}
       {vm.ficha360 && (
