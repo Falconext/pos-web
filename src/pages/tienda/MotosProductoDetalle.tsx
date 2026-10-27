@@ -23,6 +23,22 @@ const marcaOf = (p: any) => (typeof p?.marca === 'object' ? p?.marca?.nombre : p
 const optionsOf = (p: any): { nombre: string; valores: string[] }[] => (Array.isArray(p?.opcionesAtributos) ? p.opcionesAtributos : []);
 /** Identidad de una línea del carrito: cada variante (color, cilindrada…) va en su propia línea. */
 const lineaId = (c: any) => String(c?.cartId ?? c?.productoId ?? c?.id);
+/** Texto del primer párrafo de un HTML, para el resumen de arriba. */
+const primerParrafo = (html: string) => {
+  if (!html) return '';
+  const m = /<p[^>]*>([\s\S]*?)<\/p>/i.exec(html);
+  const texto = (m ? m[1] : html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  return texto.length > 240 ? `${texto.slice(0, 237).trimEnd()}…` : texto;
+};
+const PROSA_MOTO = [
+  'text-[15px] leading-7 break-words',
+  '[&_p]:mb-4',
+  '[&_ul]:mb-4 [&_ul]:list-disc [&_ul]:space-y-2.5 [&_ul]:pl-5 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:space-y-2.5 [&_ol]:pl-5',
+  '[&_li]:pl-1 [&_li::marker]:text-neutral-400',
+  '[&_strong]:font-bold [&_strong]:text-neutral-900 [&_b]:font-bold [&_b]:text-neutral-900',
+  '[&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-neutral-900 [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-bold [&_h3]:text-neutral-900',
+  '[&_a]:underline [&_table]:mb-4 [&_table]:w-full [&_table]:text-sm [&_td]:border [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left',
+].join(' ');
 
 export function MotosProductoDetalleView({
   tienda,
@@ -82,18 +98,14 @@ export function MotosProductoDetalleView({
   const canAdd = hasVariants ? allSelected && !!activeVariant && !sinStock(stock) : !sinStock(stock);
   const price = activeVariant ? Number(activeVariant.precioUnitario || pricing.precioFinal) : pricing.precioFinal;
   const showStrike = !activeVariant && pricing.enOferta;
-  const desc = producto?.detalle || producto?.descripcionCorta ||
-    'Una moto pensada para el día a día: torque instantáneo, autonomía real y mantenimiento mínimo. Entrega lista para rodar, con garantía oficial y respaldo de taller propio.';
+  const descripcionLarga = String(producto?.descripcionLarga || '').trim();
+  // Arriba va un resumen: el primer párrafo de la descripción larga, si no hay
+  // uno corto propio. El texto genérico de "moto eléctrica" queda solo de
+  // último recurso (se veía en cascos y repuestos).
+  const desc = producto?.detalle || producto?.descripcionCorta || primerParrafo(descripcionLarga) ||
+    'Una moto pensada para el día a día. Entrega lista para rodar, con garantía y respaldo de taller propio.';
   const ratingAvg = Number(producto?.ratingAvg || producto?.ratingPromedio || 0);
   const stars = Math.max(1, Math.min(5, Math.round(ratingAvg || 5)));
-
-  const seed = Number(producto?.id || 0);
-  const specs = [
-    { icon: 'solar:battery-charge-linear', label: 'Autonomía', value: `${60 + (seed % 9) * 10} km` },
-    { icon: 'solar:bolt-linear', label: 'Potencia', value: `${3 + (seed % 5)} kW` },
-    { icon: 'solar:speedometer-max-linear', label: 'Velocidad máx.', value: `${70 + (seed % 6) * 10} km/h` },
-    { icon: 'solar:clock-circle-linear', label: 'Carga', value: `${3 + (seed % 4)} h` },
-  ];
 
   const gallery: string[] = useMemo(() => {
     const byColor = hasVariants && selectedColor ? getFashionColorGallery(producto, selectedColor) : [];
@@ -396,29 +408,17 @@ export function MotosProductoDetalleView({
           </motion.div>
         </div>
 
-        {/* Ficha técnica */}
-        <motion.section initial="hidden" whileInView="show" viewport={motoViewport} variants={motoSection} className="mt-12 md:mt-16">
-          <div className="mb-6 flex items-center gap-2.5">
-            <span className="h-px w-6" style={{ backgroundColor: primary }} />
-            <h2 className="text-2xl font-extrabold uppercase tracking-[0.02em]" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>Ficha técnica</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {specs.map((s) => (
-              <div key={s.label} className="rounded-2xl border p-5 text-center shadow-[0_1px_2px_rgba(15,18,26,0.04)]" style={{ backgroundColor: MOTO.card, borderColor: MOTO.line }}>
-                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: withAlpha(primary, '14'), color: primary }}>
-                  <Icon icon={s.icon} width={22} />
-                </span>
-                <p className="mt-3 text-lg font-extrabold" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>{s.value}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: MOTO.faint }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </motion.section>
-
         {/* Descripción larga */}
         <motion.section initial="hidden" whileInView="show" viewport={motoViewport} variants={motoSection} className="mt-8 rounded-3xl border p-8 shadow-[0_1px_2px_rgba(15,18,26,0.04)] md:p-10" style={{ backgroundColor: MOTO.card, borderColor: MOTO.line }}>
-          <h2 className="text-2xl font-extrabold uppercase tracking-[0.02em]" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>Sobre esta moto</h2>
-          <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: MOTO.body }}>{producto?.descripcionLarga ? String(producto.descripcionLarga).replace(/<[^>]+>/g, ' ') : desc}</p>
+          <div className="flex items-center gap-2.5">
+            <span className="h-px w-6" style={{ backgroundColor: primary }} />
+            <h2 className="text-2xl font-extrabold uppercase tracking-[0.02em]" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>Descripción</h2>
+          </div>
+          {/* HTML del editor de producto, como en la plantilla clásica. Antes se
+              le quitaban las etiquetas y la lista quedaba en un solo párrafo. */}
+          {descripcionLarga
+            ? <div className={`mt-5 max-w-4xl ${PROSA_MOTO}`} style={{ color: MOTO.body }} dangerouslySetInnerHTML={{ __html: descripcionLarga }} />
+            : <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: MOTO.body }}>{desc}</p>}
           <div className="mt-6 grid gap-3 border-t pt-6 text-sm sm:grid-cols-2" style={{ borderColor: MOTO.line }}>
             <p><span className="font-semibold" style={{ color: MOTO.ink }}>Categoría:</span> <span style={{ color: MOTO.muted }}>{categoria || '—'}</span></p>
             <p><span className="font-semibold" style={{ color: MOTO.ink }}>Marca:</span> <span style={{ color: MOTO.muted }}>{marca || '—'}</span></p>
