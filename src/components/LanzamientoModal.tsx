@@ -348,7 +348,6 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
 
     const indice = useMemo(
         () => [
-            { id: 'resumen', titulo: 'Resumen', icono: 'solar:home-2-bold-duotone' },
             ...LANZAMIENTO.destacados.map((d) => ({ id: d.id, titulo: d.titulo, icono: d.icono })),
             ...(LANZAMIENTO.proximamente ? [{ id: LANZAMIENTO.proximamente.id, titulo: LANZAMIENTO.proximamente.etiqueta, icono: LANZAMIENTO.proximamente.icono }] : []),
             ...SECCIONES_LISTA.filter((s) => listas[s.tipo].length > 0).map((s) => ({ id: s.id, titulo: s.titulo, icono: s.icono })),
