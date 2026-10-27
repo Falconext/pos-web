@@ -51,10 +51,6 @@ const SECCIONES_LISTA: Array<{ id: string; tipo: TipoNovedad; titulo: string; ic
 ];
 
 /**
- * Imagen del bloque. Si no existe (todavía) se dibuja un marcador con el icono
- * sobre un degradado, para que la portada se pueda publicar sin todas las fotos.
- */
-/**
  * Qué imágenes de la portada existen, averiguado ANTES de abrirla.
  *
  * Sin esto el modal dibujaba el espacio de cada imagen y, una fracción de
@@ -89,55 +85,6 @@ const PRECARGA = typeof window === 'undefined' ? Promise.resolve() : Promise.all
 
 const existeImagen = (src?: string) => Boolean(src) && ESTADO_IMAGEN.get(src!) !== 'fallo';
 
-function Imagen({ src, alt, icono, acento, clase = '' }: { src?: string; alt: string; icono: string; acento: DestacadoLanzamiento['acento']; clase?: string }) {
-    const [fallo, setFallo] = useState(false);
-    const [cargada, setCargada] = useState(() => Boolean(src) && ESTADO_IMAGEN.get(src!) === 'ok');
-    const reducido = useReducedMotion();
-    const a = ACENTO[acento];
-    if (existeImagen(src) && !fallo) {
-        return (
-            <div className={`relative ${clase}`}>
-                {/* Halo del color del bloque detrás de la imagen, para que no quede
-                    "pegada" como un rectángulo sobre el fondo plano. */}
-                <div className={`pointer-events-none absolute -inset-6 sm:-inset-10 rounded-[40px] blur-3xl ${a.halo}`} />
-                <motion.div
-                    className={`relative h-full overflow-hidden rounded-2xl ring-1 ${a.borde} bg-[#0B0F1A] shadow-[0_30px_80px_-20px_rgba(0,0,0,.8)]`}
-                    whileHover={reducido ? undefined : { scale: 1.02, rotate: -0.4 }}
-                    transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-                >
-                    <motion.img
-                        src={src}
-                        alt={alt}
-                        onLoad={() => setCargada(true)}
-                        onError={() => setFallo(true)}
-                        initial={false}
-                        animate={{ opacity: cargada ? 1 : 0, scale: cargada || reducido ? 1 : 1.06 }}
-                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full h-full object-cover"
-                    />
-                    {/* Viñeta suave + reflejo superior: integra la foto con el fondo oscuro. */}
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_40%,transparent_55%,rgba(7,9,15,.55)_100%)]" />
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                    <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl" />
-                </motion.div>
-            </div>
-        );
-    }
-    return (
-        <div
-            className={`relative overflow-hidden rounded-2xl ring-1 ${a.borde} bg-gradient-to-br ${a.glow} to-[#0B0F1A] ${clase}`}
-            aria-label={alt}
-            role="img"
-        >
-            <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,.4)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.4)_1px,transparent_1px)] [background-size:32px_32px]" />
-            <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute inset-0 flex items-center justify-center">
-                <Icon icon={icono} className="w-24 h-24 sm:w-32 sm:h-32 text-white/80 drop-shadow-[0_10px_30px_rgba(0,0,0,.5)]" />
-            </div>
-        </div>
-    );
-}
-
 function ChipPlan({ planes, planEmpresa, modulo }: { planes?: PlanNovedad[]; planEmpresa: PlanNovedad | null; modulo?: DestacadoLanzamiento['modulo'] }) {
     const { auth } = useAuthStore();
     if (modulo) {
@@ -171,57 +118,86 @@ function ChipPlan({ planes, planEmpresa, modulo }: { planes?: PlanNovedad[]; pla
     );
 }
 
-function Destacado({ d, invertido, planEmpresa, root }: { d: DestacadoLanzamiento; invertido: boolean; planEmpresa: PlanNovedad | null; root: RefObject<HTMLDivElement | null> }) {
+/**
+ * Bloque destacado como banner, igual que la portada: la imagen ocupa todo el
+ * ancho sin recortarse y el texto entra sobre su franja de abajo con un
+ * degradado oscuro, para que la escena se vea entera y el texto se lea.
+ */
+function Destacado({ d, planEmpresa, root }: { d: DestacadoLanzamiento; planEmpresa: PlanNovedad | null; root: RefObject<HTMLDivElement | null> }) {
     const a = ACENTO[d.acento];
     const reducido = Boolean(useReducedMotion());
     const item = aparecer(reducido);
+    const [fallo, setFallo] = useState(false);
+    const [cargada, setCargada] = useState(() => Boolean(d.imagen) && ESTADO_IMAGEN.get(d.imagen!) === 'ok');
+    const conImagen = existeImagen(d.imagen) && !fallo;
     return (
-        <section
-            id={`lz-${d.id}`}
-            data-seccion={d.id}
-            className="relative scroll-mt-6 px-6 sm:px-10 py-12 sm:py-16 border-t border-white/[0.06] overflow-hidden"
-        >
-            {/* Mancha de color del bloque, del lado de la imagen, para que cada sección tenga su propia atmósfera. */}
+        <section id={`lz-${d.id}`} data-seccion={d.id} className="relative scroll-mt-6 border-t border-white/[0.06] overflow-hidden">
+            {/* El alto queda reservado por la proporción: nada salta si la imagen llega tarde. */}
+            <div className={`relative w-full ${d.formato === 'panoramica' ? 'aspect-[21/9]' : 'aspect-video'}`}>
+                {conImagen ? (
+                    <motion.img
+                        src={d.imagen}
+                        alt={d.titulo}
+                        onLoad={() => setCargada(true)}
+                        onError={() => setFallo(true)}
+                        initial={false}
+                        animate={{ opacity: cargada ? 1 : 0, scale: cargada || reducido ? 1 : 1.04 }}
+                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute inset-0 w-full h-full object-cover"
+                    />
+                ) : (
+                    <div className={`absolute inset-0 bg-gradient-to-br ${a.glow} to-[#07090F]`}>
+                        <div className="absolute inset-0 opacity-[0.1] [background-image:linear-gradient(rgba(255,255,255,.4)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.4)_1px,transparent_1px)] [background-size:40px_40px]" />
+                        <Icon icon={d.icono} className="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-36 sm:h-36 text-white/70" />
+                    </div>
+                )}
+                {/* Fundido con la sección de arriba y oscurecido del tercio inferior, donde entra el texto. */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#07090F]/80 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#07090F] via-[#07090F]/60 to-transparent" />
+            </div>
+
+            {/* Mancha de color del bloque detrás del texto, para que cada sección tenga su atmósfera. */}
             <div
-                className={`pointer-events-none absolute top-1/2 -translate-y-1/2 w-[70%] h-[140%] blur-[100px] ${invertido ? 'right-[-20%]' : 'left-[-20%]'}`}
-                style={{ background: `radial-gradient(closest-side, ${a.fondo}, transparent)` }}
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 blur-[90px] opacity-80"
+                style={{ background: `radial-gradient(60% 60% at 30% 70%, ${a.fondo}, transparent)` }}
             />
+
             <motion.div
-                className={`relative grid gap-10 lg:gap-16 items-center lg:grid-cols-2 ${invertido ? 'lg:[&>*:first-child]:order-2' : ''}`}
+                className="relative -mt-6 sm:-mt-20 lg:-mt-32 px-6 sm:px-10 pb-12 sm:pb-16"
                 variants={contenedorEscalonado}
                 initial="oculto"
                 whileInView="visible"
-                viewport={{ root, once: true, amount: 0.25 }}
+                viewport={{ root, once: true, amount: 0.2 }}
             >
-                <motion.div
-                    variants={{
-                        oculto: { opacity: 0, x: reducido ? 0 : invertido ? 40 : -40, scale: reducido ? 1 : 0.96 },
-                        visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-                    }}
-                >
-                    <Imagen src={d.imagen} alt={d.titulo} icono={d.icono} acento={d.acento} clase={`${d.formato === 'panoramica' ? 'aspect-[21/9]' : 'aspect-video'} w-full`} />
-                </motion.div>
-                <div>
-                    <motion.p variants={item} className={`text-[11px] font-black uppercase tracking-[0.25em] ${a.texto}`}>{d.etiqueta}</motion.p>
-                    <motion.h2 variants={item} className="mt-2 text-2xl sm:text-4xl font-black uppercase leading-[1.02] tracking-tight text-white">{d.titulo}</motion.h2>
-                    <motion.p variants={item} className="mt-4 text-[15px] leading-7 text-white/70">{d.descripcion}</motion.p>
-                    <ul className="mt-5 space-y-2.5">
+                <motion.p variants={item} className={`text-[11px] font-black uppercase tracking-[0.25em] ${a.texto} drop-shadow-[0_2px_10px_rgba(0,0,0,.8)]`}>{d.etiqueta}</motion.p>
+                <motion.h2 variants={item} className="mt-2 max-w-4xl text-3xl sm:text-5xl font-black uppercase leading-[0.98] tracking-tight text-white drop-shadow-[0_6px_30px_rgba(0,0,0,.7)]">
+                    {d.titulo}
+                </motion.h2>
+                <div className="mt-6 grid gap-6 lg:gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+                    <div>
+                        <motion.p variants={item} className="text-[15px] leading-7 text-white/75">{d.descripcion}</motion.p>
+                        <motion.div variants={item} className="mt-5 flex flex-wrap items-center gap-2">
+                            <ChipPlan planes={d.planes} planEmpresa={planEmpresa} modulo={d.modulo} />
+                            {d.donde && (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
+                                    <Icon icon="solar:map-point-bold-duotone" width={14} className="text-white/40" />
+                                    {d.donde}
+                                </span>
+                            )}
+                        </motion.div>
+                    </div>
+                    <ul className="grid gap-2.5 sm:grid-cols-2">
                         {d.puntos.map((p) => (
-                            <motion.li key={p} variants={item} className="flex items-start gap-3 text-sm text-white/85">
-                                <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 ${a.punto}`} />
+                            <motion.li
+                                key={p}
+                                variants={item}
+                                className="flex items-start gap-3 rounded-xl bg-white/[0.04] ring-1 ring-white/[0.07] px-4 py-3 text-[13.5px] leading-6 text-white/85"
+                            >
+                                <span className={`mt-[9px] w-1.5 h-1.5 rounded-full shrink-0 ${a.punto}`} />
                                 <span>{p}</span>
                             </motion.li>
                         ))}
                     </ul>
-                    <motion.div variants={item} className="mt-6 flex flex-wrap items-center gap-2">
-                        <ChipPlan planes={d.planes} planEmpresa={planEmpresa} modulo={d.modulo} />
-                        {d.donde && (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
-                                <Icon icon="solar:map-point-bold-duotone" width={14} className="text-white/40" />
-                                {d.donde}
-                            </span>
-                        )}
-                    </motion.div>
                 </div>
             </motion.div>
         </section>
@@ -592,8 +568,8 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                 ))}
                             </div>
 
-                            {LANZAMIENTO.destacados.map((d, i) => (
-                                <Destacado key={d.id} d={d} invertido={i % 2 === 1} planEmpresa={planEmpresa} root={scrollRef} />
+                            {LANZAMIENTO.destacados.map((d) => (
+                                <Destacado key={d.id} d={d} planEmpresa={planEmpresa} root={scrollRef} />
                             ))}
 
                             {LANZAMIENTO.proximamente && <Proximamente p={LANZAMIENTO.proximamente} root={scrollRef} />}
