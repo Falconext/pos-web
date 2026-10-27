@@ -58,6 +58,750 @@ export const TODOS_LOS_PLANES: PlanNovedad[] = ['EMPRENDEDOR', 'NEGOCIO', 'CORPO
 
 /** Novedades ordenadas de la más reciente a la más antigua. */
 export const NOVEDADES: Novedad[] = [
+    // ── Octubre 2026 (19-09 → 26-10) ────────────────────────────────────────
+    {
+        id: '2026-10-whatsapp-coexistencia',
+        fecha: '2026-10-26',
+        titulo: 'Sigue usando el WhatsApp Business de tu celular mientras la IA responde',
+        descripcion:
+            'Conectas tu número sin perder la app del teléfono: lo que contestas desde el celular aparece en el chat del panel y la IA se calla 2 horas en esa conversación para no pisarte. Ideal para anuncios de TikTok que llevan directo a tu WhatsApp.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'Perfil → Configuración → WhatsApp → Usar el WhatsApp Business de mi celular',
+        nota: 'Requiere el módulo IA de Ventas contratado. En la app se desactivan las listas de difusión y WhatsApp para Windows.',
+        estado: 'BETA',
+    },
+    {
+        id: '2026-10-ia-visitas-tienda',
+        fecha: '2026-10-26',
+        titulo: 'La IA agenda visitas a tu tienda y recuerda la víspera',
+        descripcion:
+            'Cuando el cliente dice "voy a ir", la IA agenda la visita, le manda la ubicación, la foto de la fachada y cómo llegar, y le recuerda un día antes. En Visitas marcas si vino o no.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Visitas · Mi vendedor → Entrega → Tu tienda física',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-ia-despedida',
+        fecha: '2026-10-26',
+        titulo: 'Mensaje de despedida al cerrar la conversación',
+        descripcion:
+            'Escribes cómo se despide tu negocio y sale al cerrar la venta, cuando el cliente lo va a pensar o cuando deja de responder.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor',
+        nota: 'Requiere el módulo IA de Ventas contratado. Viene apagado.',
+    },
+    {
+        id: '2026-10-ir-al-chat-cliente',
+        fecha: '2026-10-26',
+        titulo: 'Abre el chat del cliente desde la venta, el embudo o un aviso',
+        descripcion:
+            '"Ver chat del cliente" en el menú de cada comprobante y nota de venta, botón Chat en el embudo y en la ficha, y los avisos de la campana te llevan directo a la conversación.',
+        categoria: 'IA de Ventas',
+        tipo: 'MEJORA',
+        donde: 'Comprobantes / Notas de venta → menú · IA de Ventas → Embudo',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-saldo-nota-a-factura',
+        fecha: '2026-10-26',
+        titulo: 'Emite lo que faltó de una nota de venta facturada en parte',
+        descripcion:
+            'Si de una nota facturaste solo algunos productos, su menú muestra cuánto falta y ofrece "Saldo a Factura" o "Saldo a Boleta": el POS abre con lo pendiente, sin descontar stock ni cobrar dos veces.',
+        categoria: 'Facturación',
+        tipo: 'NUEVO',
+        donde: 'Comprobantes → Notas de venta → menú de la nota',
+    },
+    {
+        id: '2026-10-guia-rechazo-correlativo',
+        fecha: '2026-10-26',
+        titulo: 'Guía de remisión: el rechazo de SUNAT se ve claro y el número no se pierde',
+        descripcion:
+            'Si SUNAT rechaza la guía ves un aviso rojo con el motivo y la lista muestra su estado real. Editarla ya no le cambia el correlativo.',
+        categoria: 'Facturación',
+        tipo: 'CORRECCION',
+        donde: 'Comprobantes → Guías de remisión',
+    },
+    {
+        id: '2026-10-reprecio-masivo',
+        fecha: '2026-10-25',
+        titulo: 'Reprecio masivo: cambia los precios de toda una lista de una vez',
+        descripcion:
+            'Sube, baja o fija la utilidad sobre el costo, por monto o por porcentaje. Ves el antes y el después de cada producto (packs incluidos) antes de guardar, y todo queda en un historial que puedes deshacer.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Kardex → Reprecio masivo',
+        nota: 'Solo el administrador de la empresa.',
+    },
+    {
+        id: '2026-10-plantillas-tienda',
+        fecha: '2026-10-25',
+        titulo: '19 plantillas nuevas para tu tienda virtual',
+        descripcion:
+            'Florería con "Arma tu ramo", Mostrador (una sola página directo al catálogo), Hogar, Canasta, Celulares, Esencial, Farmacia, Zapatos, Retail, Mueblería, Mascotas, Moda elegante, Maquillaje, Bolsos y cinco de carteras (Maison, Verena, Kartera, Olmo y Amora). Todas gratis y editables en vivo.',
+        categoria: 'Tienda virtual',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Tienda virtual → Diseño y template',
+        nota: 'Cada plantilla aparece según el rubro de tu empresa.',
+    },
+    {
+        id: '2026-10-rotulo-sin-clave',
+        fecha: '2026-10-24',
+        titulo: 'La clave de retiro de Shalom ya no se imprime en el rótulo',
+        descripcion:
+            'Con la clave a la vista en el paquete cualquiera podía retirarlo: ahora solo le llega al cliente por WhatsApp. Si la quieres en el rótulo, hay una casilla para volver a ponerla.',
+        categoria: 'Envíos',
+        tipo: 'MEJORA',
+        planes: ['CORPORATIVO'],
+        donde: 'Perfil → Configuración → Crear guías en Shalom Pro',
+    },
+    {
+        id: '2026-10-pago-segun-repartidor',
+        fecha: '2026-10-24',
+        titulo: 'El aviso "pedido en camino" dice cómo pagarle al repartidor',
+        descripcion:
+            'Configuras qué formas de pago acepta tu repartidor propio y cuáles uno contratado, y el WhatsApp de "en camino" le dice al cliente cuánto pagar y cómo.',
+        categoria: 'Envíos',
+        tipo: 'NUEVO',
+        planes: ['CORPORATIVO'],
+        donde: 'Perfil → Configuración → Automatización de despacho → Cómo pagar al repartidor',
+        nota: 'Necesita tu WhatsApp conectado.',
+    },
+    {
+        id: '2026-10-recordatorio-recojo-agencia',
+        fecha: '2026-10-23',
+        titulo: 'Recordatorio automático para recoger el pedido en la agencia',
+        descripcion:
+            'Mientras el paquete siga en la agencia de Shalom u Olva, el cliente recibe un WhatsApp al día (de 1 a 7 días, tú eliges) con el saldo si falta pagar. Se corta cuando lo recoge o responde.',
+        categoria: 'Envíos',
+        tipo: 'NUEVO',
+        planes: ['CORPORATIVO'],
+        donde: 'Perfil → Configuración → Automatización de despacho',
+        nota: 'Viene apagado. Necesita el rastreo automático y tu WhatsApp conectado. Meta cobra cada mensaje a tu cuenta.',
+    },
+    {
+        id: '2026-10-mi-vendedor',
+        fecha: '2026-10-22',
+        titulo: '"Mi vendedor": configura tu vendedor IA en una sola pantalla',
+        descripcion:
+            'Personalidad, conocimiento, entrega, pagos y ajustes ordenados por pestañas. El módulo tiene su propio menú: Chats, Embudo, Visitas, Analítica, Avisos y Mi vendedor.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-reporte-diario-whatsapp',
+        fecha: '2026-10-22',
+        titulo: 'Resumen del día por WhatsApp a las 9 p. m.',
+        descripcion:
+            'Si lo activas, cada noche te llega por WhatsApp lo que se vendió en el día. Un botón te manda el de hoy para probarlo.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor → Ajustes → Reporte diario',
+        nota: 'Requiere el módulo IA de Ventas contratado. Llega a los administradores con celular registrado.',
+    },
+    {
+        id: '2026-10-anuncio-trajo-venta',
+        fecha: '2026-10-22',
+        titulo: 'Qué anuncio de Facebook o Instagram te trajo cada venta',
+        descripcion:
+            'El chat marca a los clientes que llegaron desde un anuncio y en Analítica ves cuánto vendió cada uno, para saber dónde poner tu presupuesto.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Analítica · chip "Anuncio" en Chats',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-recompra-por-producto',
+        fecha: '2026-10-22',
+        titulo: 'Cada producto dice a los cuántos días se vuelve a comprar',
+        descripcion:
+            'Pones los días de recompra en la ficha del producto y la IA le escribe al cliente cuando se le está por acabar.',
+        categoria: 'IA de Ventas',
+        tipo: 'MEJORA',
+        donde: 'Productos → ficha → bloque IA de Ventas',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-notas-de-voz-imagenes-chat',
+        fecha: '2026-10-22',
+        titulo: 'Manda notas de voz e imágenes desde el chat del panel',
+        descripcion:
+            'Grabas un audio y al cliente le llega como nota de voz de WhatsApp, transcrita para la IA. También envías imágenes o pegas una captura.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Chats',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-entradas-salidas',
+        fecha: '2026-10-22',
+        titulo: 'Entradas y salidas de varios productos en un solo documento',
+        descripcion:
+            'Registras de una vez la mercadería que entra o sale sin ser compra ni venta (inventario inicial, bonificación, consumo, regalo), con su motivo. Queda como documento NE/NS imprimible y en el kardex.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Kardex → Entradas y salidas',
+    },
+    {
+        id: '2026-10-compra-pago-mixto',
+        fecha: '2026-10-22',
+        titulo: 'Paga una compra con varios medios a la vez',
+        descripcion:
+            'Una compra al contado se reparte, por ejemplo, una parte en efectivo y otra por Yape o transferencia.',
+        categoria: 'Compras',
+        tipo: 'MEJORA',
+        donde: 'Compras → Nueva compra → Pago mixto',
+    },
+    {
+        id: '2026-10-caja-ingresos-turnos',
+        fecha: '2026-10-22',
+        titulo: 'Ingresos de caja y turnos que pasan la medianoche',
+        descripcion:
+            'Registras el dinero que entra a la caja sin ser venta y se suma al esperado del cierre. El turno de noche sigue abierto después de las 12 (hasta 48 horas) y el dueño ve las cajas abiertas de su equipo.',
+        categoria: 'Caja',
+        tipo: 'MEJORA',
+        donde: 'Ventas → Caja y bancos → Ingreso de caja',
+    },
+    {
+        id: '2026-10-kit-quitar-producto',
+        fecha: '2026-10-22',
+        titulo: 'Quita un producto de un kit solo en esa venta',
+        descripcion:
+            'Desde el carrito, en "Qué lleva", quitas un componente: el precio baja y el stock descuenta solo lo entregado, sin tocar el kit del catálogo.',
+        categoria: 'Ventas',
+        tipo: 'NUEVO',
+        donde: 'Nuevo comprobante → carrito → kit → Qué lleva',
+    },
+    {
+        id: '2026-10-api-krezka',
+        fecha: '2026-10-22',
+        titulo: 'Conecta la página web de tu negocio con Krezka',
+        descripcion:
+            'Tu web muestra tu catálogo, precios y stock al día y puede registrar ventas en Krezka. Las claves se generan en el panel y hay modo de prueba.',
+        categoria: 'Integraciones',
+        tipo: 'NUEVO',
+        donde: 'Perfil → Configuración → Claves API',
+        nota: 'Módulo "API de Krezka" contratado aparte. Solo lo ve el administrador.',
+    },
+    {
+        id: '2026-10-guias-shalom-lote',
+        fecha: '2026-10-21',
+        titulo: 'Genera las guías de Shalom de muchas ventas de una vez',
+        descripcion:
+            'El botón "Guías Shalom" genera en tanda las guías de los despachos que aún no tienen, muestra el avance, se puede detener y te frena antes si un DNI o celular está mal.',
+        categoria: 'Envíos',
+        tipo: 'NUEVO',
+        planes: ['CORPORATIVO'],
+        donde: 'Ventas → Panel de ventas → Guías Shalom',
+        nota: 'Requiere tu cuenta Shalom Pro conectada.',
+    },
+    {
+        id: '2026-10-cobro-link-mercadopago-ia',
+        fecha: '2026-10-21',
+        titulo: 'El vendedor IA cobra con un link de Mercado Pago',
+        descripcion:
+            'La IA manda el link por el saldo exacto del pedido y, cuando el pago se aprueba, queda validado solo, sin revisar capturas.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor → Ajustes',
+        nota: 'Requiere el módulo IA de Ventas contratado. Necesita Mercado Pago conectado. Pago mínimo S/ 5.',
+    },
+    {
+        id: '2026-10-ia-lee-foto-pdf',
+        fecha: '2026-10-21',
+        titulo: 'El vendedor IA entiende las fotos y los PDF que manda el cliente',
+        descripcion:
+            'Si el cliente manda la foto de un producto o un PDF, la IA lo lee y responde con lo que tienes. Los vouchers en PDF se abren en el embudo.',
+        categoria: 'IA de Ventas',
+        tipo: 'MEJORA',
+        donde: 'IA de Ventas → Chats',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-credito-pago-inicial',
+        fecha: '2026-10-21',
+        titulo: 'Boleta o factura a crédito con pago inicial',
+        descripcion:
+            'Registras lo que el cliente paga hoy y el resto queda a crédito, con el envío incluido en el saldo.',
+        categoria: 'Facturación',
+        tipo: 'NUEVO',
+        donde: 'Nuevo comprobante → Crédito',
+    },
+    {
+        id: '2026-10-notas-venta-varias',
+        fecha: '2026-10-20',
+        titulo: 'Trabaja con varias notas de venta a la vez',
+        descripcion:
+            'Eliges varias notas del mismo cliente y haces una sola boleta o factura, las cobras juntas, coordinas un solo envío, armas la orden de compra al proveedor o mandas el estado de cuenta por WhatsApp.',
+        categoria: 'Ventas',
+        tipo: 'NUEVO',
+        donde: 'Comprobantes → Notas de venta → seleccionar varias',
+    },
+    {
+        id: '2026-10-packs-alerta-stock',
+        fecha: '2026-10-20',
+        titulo: 'Packs más vendidos y aviso diario de stock bajo',
+        descripcion:
+            'En Kits y packs ves qué pack vende más y cuánto deja. Cada mañana te llega la lista de productos por reponer, por correo con Excel o por WhatsApp.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Kardex → Kits y packs · Perfil → Configuración → Alertas de stock bajo',
+        nota: 'El aviso por WhatsApp requiere tu número conectado.',
+    },
+    {
+        id: '2026-10-seo-tienda',
+        fecha: '2026-10-20',
+        titulo: 'Tu tienda aparece mejor en Google y al compartirla por WhatsApp',
+        descripcion:
+            'Cada tienda y producto sale con su título, foto y descripción, con sitemap y un bloque "Google" con texto sugerido por la IA. Además, la tienda carga más rápido.',
+        categoria: 'Tienda virtual',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Tienda → Configuración → Google (SEO)',
+    },
+    {
+        id: '2026-10-ia-pedidos-precisos',
+        fecha: '2026-10-20',
+        titulo: 'El vendedor IA registra pedidos y pagos con menos errores',
+        descripcion:
+            'La cotización llega tal como la arma el sistema, pide los datos de entrega en un solo mensaje, el envío entra como línea de la nota, un número de operación ya no paga dos pedidos y retoma la conversación si el cliente deja de responder.',
+        categoria: 'IA de Ventas',
+        tipo: 'MEJORA',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-descuento-en-monto',
+        fecha: '2026-10-19',
+        titulo: 'Descuento por línea en soles, no solo en porcentaje',
+        descripcion:
+            'Al editar un producto del carrito eliges si el descuento va en % o en monto (S/ o US$).',
+        categoria: 'Ventas',
+        tipo: 'MEJORA',
+        donde: 'Nuevo comprobante → carrito → editar línea',
+    },
+    {
+        id: '2026-10-detalle-item',
+        fecha: '2026-10-19',
+        titulo: 'Detalle de varias líneas por ítem en cotizaciones y notas',
+        descripcion:
+            'Cada ítem puede llevar un detalle largo (alcance de un servicio, medidas) que sale en la cotización o nota impresa, no en la boleta ni la factura.',
+        categoria: 'Ventas',
+        tipo: 'MEJORA',
+        donde: 'Nuevo comprobante / Cotización → ítem → Detalle adicional',
+    },
+    {
+        id: '2026-10-costo-por-sede',
+        fecha: '2026-10-19',
+        titulo: 'Cada sede lleva su propio costo promedio',
+        descripcion:
+            'Una compra cara en una sede ya no encarece las demás. Los traslados se valorizan al costo de la sede que envía, y el kardex, la rentabilidad y el inventario valorizado usan el costo de cada sede.',
+        categoria: 'Productos',
+        tipo: 'MEJORA',
+        donde: 'Kardex → Productos',
+    },
+    {
+        id: '2026-10-reporte-contable-sire',
+        fecha: '2026-10-18',
+        titulo: 'El Reporte contable cuadra con el SIRE',
+        descripcion:
+            'Los rechazados ya no suman pero se listan aparte, también en el Excel; lo exonerado y la exportación van en su columna y lo facturado en dólares se pasa a soles.',
+        categoria: 'Contabilidad',
+        tipo: 'CORRECCION',
+        donde: 'Contabilidad → Reporte → Comprobantes SUNAT',
+    },
+    {
+        id: '2026-10-kardex-filtro-stock',
+        fecha: '2026-10-18',
+        titulo: 'Filtra productos por stock bajo, sin stock o un rango',
+        descripcion:
+            'El filtro de stock busca en todo el catálogo, no solo en la página, y el "stock bajo" del dashboard coincide con el del kardex.',
+        categoria: 'Productos',
+        tipo: 'MEJORA',
+        donde: 'Kardex → Productos → filtro Stock',
+    },
+    {
+        id: '2026-10-correcciones-ventas',
+        fecha: '2026-10-18',
+        titulo: 'Correcciones en ventas y comprobantes',
+        descripcion:
+            'Al reimprimir un pago mixto vuelve a salir cuánto se pagó en cada medio, editar una nota y pasarla a Boleta o Factura ahora sí emite, editar un comprobante ya no cambia el precio solo y la compra leída por foto ya no queda sin IGV.',
+        categoria: 'Ventas',
+        tipo: 'CORRECCION',
+    },
+    {
+        id: '2026-10-ia-ventas-vendedor',
+        fecha: '2026-10-16',
+        titulo: 'Tu vendedor IA registra el pedido y revisa el voucher',
+        descripcion:
+            'La IA aplica tus descuentos por pack y zonas de envío, registra el pedido como nota de venta y lee la foto del comprobante de pago para que una persona lo valide. Si no puede responder, te avisa.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Chats',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-ia-ventas-bandeja',
+        fecha: '2026-10-16',
+        titulo: 'Bandeja de chats: responde tú o deja que responda la IA',
+        descripcion:
+            'Tres columnas (chats, conversación y ficha del cliente): escribes a mano, "Tomar chat" pausa la IA en esa conversación y "Devolver a la IA" la reactiva.',
+        categoria: 'IA de Ventas',
+        tipo: 'MEJORA',
+        donde: 'IA de Ventas → Chats',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-listas-precio-pos',
+        fecha: '2026-10-16',
+        titulo: 'Listas de precios: para llevar, en mesa o mayorista',
+        descripcion:
+            'El cajero elige la lista en el POS y el carrito se reprecia solo, respetando unidad o pack; cambia de lista al elegir un cliente con precio pactado. Asignas listas a clientes, sedes o usuarios, con descuento por lista y precio mínimo y máximo.',
+        categoria: 'Ventas',
+        tipo: 'NUEVO',
+        donde: 'Kardex → Listas de precio · selector en Nuevo comprobante',
+        nota: 'El selector aparece si tienes más de una lista.',
+    },
+    {
+        id: '2026-10-mi-plan',
+        fecha: '2026-10-15',
+        titulo: 'Mi plan: hasta cuándo tienes el sistema y qué ya pagaste',
+        descripcion:
+            'Ves tu plan, el vencimiento, la mensualidad pendiente y el historial de pagos. Si estás por vencer te avisa con un botón para coordinar el pago por WhatsApp.',
+        categoria: 'Cuenta',
+        tipo: 'NUEVO',
+        donde: 'Menú lateral → Mi plan',
+        nota: 'Solo el administrador de la empresa.',
+    },
+    {
+        id: '2026-10-ot-a-nota-venta',
+        fecha: '2026-10-14',
+        titulo: 'Convierte una orden de trabajo en nota de venta',
+        descripcion:
+            'Una OT cobrada pasa a nota de venta con un clic, también con saldo pendiente.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Comprobantes informales → menú de la OT',
+    },
+    {
+        id: '2026-10-orden-compra-cajas',
+        fecha: '2026-10-14',
+        titulo: 'Pide al proveedor por cajas en la orden de compra',
+        descripcion:
+            'Pides por caja o paquete, escaneando o desde la lista; al recibir el total cuadra y el PDF sale en cajas.',
+        categoria: 'Compras',
+        tipo: 'MEJORA',
+        donde: 'Compras → Órdenes de compra',
+    },
+    {
+        id: '2026-10-ia-embudo-avisos',
+        fecha: '2026-10-13',
+        titulo: 'Embudo de ventas, analítica, ficha del cliente y avisos que recuperan ventas',
+        descripcion:
+            'Las conversaciones avanzan por un embudo que puedes arrastrar, Analítica muestra cuánto vende la IA y la ficha junta historial, pedidos y pagos. Los avisos automáticos (carrito abandonado, pago pendiente, volvió el stock) salen con plantillas aprobadas por Meta.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Embudo / Analítica / Avisos',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-correlativos-sunat',
+        fecha: '2026-10-13',
+        titulo: 'Aviso de correlativos faltantes y numeración sin huecos',
+        descripcion:
+            'La lista avisa si falta un número en una serie, el número de un rechazo se reutiliza y no deja emitir con fecha anterior a la del comprobante previo.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Comprobantes',
+    },
+    {
+        id: '2026-10-caja-arqueo',
+        fecha: '2026-10-13',
+        titulo: 'Imprime el arqueo del turno y cierra turnos olvidados',
+        descripcion:
+            'Cierras un turno de otro día con su propio esperado; el arqueo imprimible trae el cuadre y separa compras de gastos.',
+        categoria: 'Caja',
+        tipo: 'MEJORA',
+        donde: 'Ventas → Caja',
+    },
+    {
+        id: '2026-10-stock-negativo',
+        fecha: '2026-10-13',
+        titulo: 'Vende aunque el sistema marque stock cero',
+        descripcion:
+            'Una opción permite seguir vendiendo cuando el stock del sistema está en cero, para negocios que cargan su inventario después.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Perfil → Configuración → Ventas y caja → Permitir stock negativo',
+    },
+    {
+        id: '2026-10-usuario-sin-alta-productos',
+        fecha: '2026-10-13',
+        titulo: 'Que la cajera venda pero no cree ni borre productos',
+        descripcion:
+            'Nuevo permiso por usuario. Además, al crear un usuario te avisa en el acto si el correo ya está ocupado.',
+        categoria: 'Usuarios',
+        tipo: 'NUEVO',
+        donde: 'Usuarios → Editar usuario',
+    },
+    {
+        id: '2026-10-presentacion-carrito',
+        fecha: '2026-10-12',
+        titulo: 'Cambia la presentación desde la línea del carrito',
+        descripcion:
+            'Pasas de unidad a pack o caja sin borrar la línea, y el pack se cobra a su precio de pack.',
+        categoria: 'Ventas',
+        tipo: 'MEJORA',
+        donde: 'Nuevo comprobante → carrito',
+    },
+    {
+        id: '2026-10-ia-disponibilidad-producto',
+        fecha: '2026-10-10',
+        titulo: 'Dile a la IA qué productos priorizar y cuáles van bajo pedido',
+        descripcion:
+            'En cada producto marcas si la IA debe ofrecerlo primero, venderlo bajo pedido o no ofrecerlo.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'Productos → Editar → Para la IA de Ventas',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-tienda-variantes-video',
+        fecha: '2026-10-09',
+        titulo: 'Tienda virtual: variantes en la ficha, pedidos sin stock y video del producto',
+        descripcion:
+            'El comprador elige talla, color y presentación y paga ese precio; un interruptor permite pedir productos agotados, y un video de TikTok, YouTube o Instagram se ve en la ficha.',
+        categoria: 'Tienda virtual',
+        tipo: 'MEJORA',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Tienda → Configuración · Productos → Editar → Video del producto',
+    },
+    {
+        id: '2026-10-clientes-alias',
+        fecha: '2026-10-09',
+        titulo: 'Busca clientes por su apodo',
+        descripcion:
+            'Le pones un alias al cliente y lo encuentras así al crear un comprobante.',
+        categoria: 'Clientes',
+        tipo: 'NUEVO',
+        donde: 'Clientes → Editar → Alias',
+    },
+    {
+        id: '2026-10-aviso-sunat-caida',
+        fecha: '2026-10-09',
+        titulo: 'Aviso cuando SUNAT no está respondiendo',
+        descripcion:
+            'La lista avisa que SUNAT está caída y que el sistema reenvía solo, así nadie reemite ni anula por error.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Comprobantes',
+    },
+    {
+        id: '2026-10-envios-reporte-foto',
+        fecha: '2026-10-08',
+        titulo: 'Reporte de envíos por courier y foto de la entrega',
+        descripcion:
+            'Estadísticas y Excel por rango de fechas: destinos, envíos por courier, cuánto cobraste y cuánto pagaste. Además subes la foto de la entrega como prueba.',
+        categoria: 'Envíos',
+        tipo: 'NUEVO',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Ventas → Panel de ventas → Exportar → Reporte de envíos',
+    },
+    {
+        id: '2026-10-panel-ventas-producto',
+        fecha: '2026-10-07',
+        titulo: 'Panel de ventas: Excel por producto y eliges qué rótulos imprimir',
+        descripcion:
+            'Exportas el detalle por producto, ves la fecha de envío y el supervisor ya filtra por vendedor.',
+        categoria: 'Ventas',
+        tipo: 'MEJORA',
+        planes: ['NEGOCIO', 'CORPORATIVO'],
+        donde: 'Ventas → Panel de ventas → Exportar / Rótulos',
+    },
+    {
+        id: '2026-10-tallas-en-camino',
+        fecha: '2026-10-02',
+        titulo: 'Stock por talla y color, lo que viene en camino y pedidos por curva de tallas',
+        descripcion:
+            'Desglose por talla y color en el inventario y en el catálogo PDF, "+N en camino" y "Puedo prometer", y orden de compra por curva de tallas.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Productos → lista · Compras → Órdenes de compra → Curva de tallas',
+    },
+    {
+        id: '2026-10-mermas',
+        fecha: '2026-10-02',
+        titulo: 'Mermas: cuánto perdiste, en qué y por qué',
+        descripcion:
+            'Al ajustar el stock se pide el motivo, y la pantalla de Mermas te muestra cuánto se perdió por cada causa.',
+        categoria: 'Productos',
+        tipo: 'NUEVO',
+        donde: 'Kardex → Mermas',
+    },
+    {
+        id: '2026-10-servicio-todos-rubros',
+        fecha: '2026-10-02',
+        titulo: 'Crea servicios en cualquier rubro',
+        descripcion:
+            'Delivery, instalación o mano de obra como ítem de tipo Servicio, sin pedir stock.',
+        categoria: 'Productos',
+        tipo: 'MEJORA',
+        donde: 'Productos → Nuevo → Tipo de ítem',
+    },
+    {
+        id: '2026-10-nv-fecha-atras',
+        fecha: '2026-10-01',
+        titulo: 'Fecha las notas de venta hasta 5 días atrás',
+        descripcion:
+            'Para registrar ventas que hiciste y no anotaste a tiempo. La factura y la boleta siguen con los plazos de SUNAT.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Nuevo comprobante → Fecha de emisión',
+    },
+    {
+        id: '2026-09-retencion-por-cliente',
+        fecha: '2026-09-30',
+        titulo: 'Retención del 3% marcada en el cliente agente de retención',
+        descripcion:
+            'Solo aplica a facturas mayores a S/ 700 y el PDF muestra lo retenido.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Clientes → ficha → Agente de retención del IGV',
+    },
+    {
+        id: '2026-09-producto-desactivado-pos',
+        fecha: '2026-09-30',
+        titulo: 'Desactivar un producto ahora sí lo saca del punto de venta',
+        descripcion:
+            'Y la casilla "Permite vender" por sede vuelve a funcionar.',
+        categoria: 'Productos',
+        tipo: 'CORRECCION',
+    },
+    {
+        id: '2026-09-cliente-recurrente',
+        fecha: '2026-09-29',
+        titulo: 'Panel de ventas: cuántas veces te compró cada cliente',
+        descripcion:
+            'Una columna nueva marca a los clientes recurrentes para que sepas a quién cuidar.',
+        categoria: 'Ventas',
+        tipo: 'NUEVO',
+        donde: 'Ventas → Panel de ventas',
+    },
+    {
+        id: '2026-09-sire-contador-sunat',
+        fecha: '2026-09-29',
+        titulo: 'SIRE: el contador aprueba compras y traes tus compras desde SUNAT',
+        descripcion:
+            'Apruebas o deniegas cada compra con motivo (las denegadas no entran al registro de compras), cruzas con la propuesta de SUNAT y "Traer mis compras de SUNAT" recupera las facturas que nunca registraste.',
+        categoria: 'Contabilidad',
+        tipo: 'NUEVO',
+        donde: 'SIRE → Libro de compras',
+        nota: 'Aparece si tu plan incluye SIRE. Requiere la credencial de API de SUNAT (Menú SOL).',
+    },
+    {
+        id: '2026-09-correcciones-conversion',
+        fecha: '2026-09-29',
+        titulo: 'Correcciones al convertir notas de venta',
+        descripcion:
+            'Convertir una nota ya cobrada no duplica el cobro, una nota a crédito ya pagada se convierte al contado y el PDF muestra la unidad de medida real.',
+        categoria: 'Facturación',
+        tipo: 'CORRECCION',
+    },
+    {
+        id: '2026-09-comision-fin-de-semana',
+        fecha: '2026-09-28',
+        titulo: 'Comisión distinta para sábado y domingo',
+        descripcion:
+            'La comisión la cobra quien vende ese día; si dejas el campo vacío se paga igual todos los días.',
+        categoria: 'Ventas',
+        tipo: 'NUEVO',
+        donde: 'Productos → ficha → Comisión de sábado y domingo',
+    },
+    {
+        id: '2026-09-nota-pedido-a-comprobante',
+        fecha: '2026-09-25',
+        titulo: 'La nota de pedido también se convierte en boleta o factura',
+        descripcion:
+            'Igual que la nota de venta, con un clic desde su menú.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+    },
+    {
+        id: '2026-09-ley-amazonia',
+        fecha: '2026-09-24',
+        titulo: 'Ley de Amazonía en tus comprobantes',
+        descripcion:
+            'Lo activas una vez y tus comprobantes llevan la leyenda que exige SUNAT; los productos nuevos y el ítem libre nacen exonerados.',
+        categoria: 'Facturación',
+        tipo: 'NUEVO',
+        donde: 'Perfil → Configuración → Impuestos',
+    },
+    {
+        id: '2026-09-guia-documentos-relacionados',
+        fecha: '2026-09-24',
+        titulo: 'Guía de remisión con documentos relacionados y datos de transporte completos',
+        descripcion:
+            'Documentos relacionados, vehículos y conductores secundarios y fecha de entrega; las guías a personas con DNI ya no las rechaza SUNAT.',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Comprobantes → Guías de remisión',
+    },
+    {
+        id: '2026-09-cotizar-sin-stock',
+        fecha: '2026-09-22',
+        titulo: 'Cotiza aunque no tengas stock',
+        descripcion:
+            'La cotización ya no te frena por stock y suma la forma de pago "Crédito 7 días".',
+        categoria: 'Facturación',
+        tipo: 'MEJORA',
+        donde: 'Cotizaciones → Nueva cotización',
+    },
+    {
+        id: '2026-09-consumo-propio-igv',
+        fecha: '2026-09-21',
+        titulo: 'Compras de consumo propio y tu IGV del mes',
+        descripcion:
+            'Gasolina, útiles o servicios no entran al inventario y restan en tu ganancia sin IGV. El bloque "IGV del mes" muestra lo cobrado, el crédito fiscal y lo que toca pagar.',
+        categoria: 'Finanzas',
+        tipo: 'NUEVO',
+        donde: 'Compras → Nueva compra · Finanzas → Análisis financiero → Rentabilidad',
+    },
+    {
+        id: '2026-09-pos-a-tu-medida',
+        fecha: '2026-09-21',
+        titulo: 'El POS se adapta a tu forma de vender',
+        descripcion:
+            'Eliges con qué comprobante arranca cada venta, puedes exigir boleta o factura cuando pagan con Yape, Plin, transferencia o tarjeta, y decides si la búsqueda se mantiene al agregar un producto.',
+        categoria: 'Ventas',
+        tipo: 'NUEVO',
+        donde: 'Perfil → Configuración → Comprobantes e impresión / Ventas y caja',
+    },
+    {
+        id: '2026-09-shalom-claves-tamano-rotulo',
+        fecha: '2026-09-21',
+        titulo: 'Shalom: tus propias claves de retiro, tamaño del paquete y rótulo 80×50',
+        descripcion:
+            'Defines tus claves de retiro, eliges el tamaño del paquete con su tarifa e imprimes el rótulo en formato 80×50 mm.',
+        categoria: 'Envíos',
+        tipo: 'MEJORA',
+        planes: ['CORPORATIVO'],
+        donde: 'Perfil → Configuración → Shalom Pro · Panel de ventas → Rótulo',
+    },
+    {
+        id: '2026-09-notas-venta-coordinar-envio',
+        fecha: '2026-09-21',
+        titulo: 'Coordina el envío desde la lista de notas de venta',
+        descripcion:
+            'Además, Registrar pago e Historial de pagos tienen nuevo diseño y los recibos ya no se pisan entre sí.',
+        categoria: 'Envíos',
+        tipo: 'MEJORA',
+        donde: 'Comprobantes → Notas de venta → menú',
+    },
+
     // ── 18 de septiembre: lanzamiento ────────────────────────────────────────
     {
         id: '2026-09-mercado-pago',
