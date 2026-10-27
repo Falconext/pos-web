@@ -10,6 +10,7 @@ import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useSoporteStore } from '@/zustand/soporte';
+import { Adjunto, BotonesAdjunto, imagenPegada, textoSinMarca } from './soporte/AdjuntosSoporte';
 import {
     PREGUNTAS_SOPORTE,
     TEMAS_SOPORTE,
@@ -167,7 +168,7 @@ export default function SoporteWidget() {
     const [abierto, setAbierto] = useState(false);
     const [noLeidos, setNoLeidos] = useState(0);
     const [texto, setTexto] = useState('');
-    const { mensajes, loading, enviando, error, cargarMensajes, enviarMensaje, consultarNoLeidos } = useSoporteStore();
+    const { mensajes, loading, enviando, error, cargarMensajes, enviarMensaje, enviarAdjunto, consultarNoLeidos } = useSoporteStore();
     const bottomRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     // Primero la ayuda: la mayoría de las dudas ya tienen respuesta y no hace
@@ -235,6 +236,13 @@ export default function SoporteWidget() {
         if (!t || enviando) return;
         setTexto('');
         await enviarMensaje(t);
+    };
+
+    // La foto se lleva lo que haya escrito como pie: así la captura y su
+    // explicación llegan juntas.
+    const enviarImagen = async (archivo: File) => {
+        if (enviando) return;
+        if (await enviarAdjunto('imagen', archivo, texto)) setTexto('');
     };
 
     return (
@@ -337,7 +345,12 @@ export default function SoporteWidget() {
                                                         {m.autorNombre || 'Soporte Krezka'}
                                                     </p>
                                                 )}
-                                                <p className="whitespace-pre-wrap break-words leading-relaxed">{m.contenido}</p>
+                                                <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} />
+                                                {(m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido) && (
+                                                    <p className="whitespace-pre-wrap break-words leading-relaxed">
+                                                        {m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido}
+                                                    </p>
+                                                )}
                                                 <span className={`mt-1 block text-right text-[9px] ${esEmpresa ? 'text-violet-100/80' : 'text-gray-400'}`}>
                                                     {format(date, 'HH:mm')}
                                                 </span>
@@ -380,8 +393,20 @@ export default function SoporteWidget() {
                         </div>
                     )}
 
-                    <div className="flex items-end gap-2 px-2.5 pb-2.5 pt-1">
+                    <div className="flex items-end gap-1 px-2.5 pb-2.5 pt-1">
+                        <BotonesAdjunto
+                            deshabilitado={enviando}
+                            onImagen={enviarImagen}
+                            onAudio={(archivo) => enviarAdjunto('audio', archivo)}
+                        />
                         <textarea
+                            onPaste={(e) => {
+                                const imagen = imagenPegada(e);
+                                if (imagen) {
+                                    e.preventDefault();
+                                    enviarImagen(imagen);
+                                }
+                            }}
                             value={texto}
                             onChange={(e) => setTexto(e.target.value)}
                             onKeyDown={(e) => {
