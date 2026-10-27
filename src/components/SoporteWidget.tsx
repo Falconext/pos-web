@@ -106,7 +106,7 @@ function Ayuda({
                         value={busqueda}
                         onChange={(e) => setBusqueda(e.target.value)}
                         placeholder="Busca tu duda: anular boleta, caja…"
-                        className="w-full bg-transparent text-[13px] outline-none dark:text-white"
+                        className="w-full border-0 bg-transparent p-0 text-[13px] shadow-none outline-none focus:outline-none focus:ring-0 dark:text-white"
                     />
                 </div>
                 {!busqueda.trim() && (
