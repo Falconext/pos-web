@@ -1,6 +1,12 @@
 import { create } from 'zustand';
 import { get as apiGet, post as apiPost, patch as apiPatch } from '../utils/fetch';
-import { subirAdjuntoSoporte, type SoporteMensaje } from './soporte';
+import {
+    conservarTemporales,
+    mensajeTemporal,
+    subirAdjuntoSoporte,
+    textoDeAdjunto,
+    type SoporteMensaje,
+} from './soporte';
 
 export interface SoporteConversacionResumen {
     id: number;
@@ -26,9 +32,10 @@ interface SoporteSistemaState {
     error: string | null;
 
     cargarConversaciones: (estado?: 'ABIERTA' | 'CERRADA') => Promise<void>;
-    abrirConversacion: (id: number) => Promise<void>;
+    abrirConversacion: (id: number, quitarTemporal?: number) => Promise<void>;
     enviarMensaje: (contenido: string) => Promise<void>;
     enviarAdjunto: (tipo: 'imagen' | 'audio', archivo: File, texto?: string) => Promise<boolean>;
+    resolverTemporal: (id: number, ok: boolean, error: string) => void;
     cerrarConversacionActiva: () => Promise<void>;
     /** Llamado por el store de notificaciones cuando llega 'nuevo-mensaje-soporte'. */
     recibirMensajeEnVivo: (payload: {
@@ -64,18 +71,24 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
         }
     },
 
-    abrirConversacion: async (id: number) => {
+    abrirConversacion: async (id: number, quitarTemporal?: number) => {
         set({ loadingChat: true, conversacionActivaId: id });
         const res = await apiGet<{ empresaNombre: string; estado: 'ABIERTA' | 'CERRADA'; mensajes: SoporteMensaje[] }>(
             `/soporte/sistema/conversaciones/${id}`,
         );
         if (res.success && res.data) {
-            set({
-                mensajes: res.data.mensajes,
-                empresaNombreActiva: res.data.empresaNombre,
-                estadoActiva: res.data.estado,
+            set((state) => ({
+                // El temporal confirmado se va en el MISMO cambio que trae el real:
+                // si se quitara antes, el mensaje desaparecería un instante.
+                mensajes: conservarTemporales(
+                    res.data!.mensajes,
+                    state.mensajes.filter((m) => m.id !== quitarTemporal),
+                    id,
+                ),
+                empresaNombreActiva: res.data!.empresaNombre,
+                estadoActiva: res.data!.estado,
                 loadingChat: false,
-            });
+            }));
             // La conversación abierta queda con 0 no leídos; refleja eso en la lista sin refetch.
             set((state) => ({
                 conversaciones: state.conversaciones.map((c) =>
@@ -91,36 +104,51 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
         const { conversacionActivaId } = get();
         const texto = contenido.trim();
         if (!texto || !conversacionActivaId) return;
-        set({ enviando: true });
+        const temporal = { ...mensajeTemporal('SISTEMA', conversacionActivaId, texto), autorNombre: 'Tú' };
+        set((state) => ({ mensajes: [...state.mensajes, temporal], error: null }));
         const res = await apiPost(`/soporte/sistema/conversaciones/${conversacionActivaId}/mensajes`, {
             contenido: texto,
         });
-        set({ enviando: false });
-        if (res.success) {
-            await get().abrirConversacion(conversacionActivaId);
-            await get().cargarConversaciones();
-        } else {
-            set({ error: res.error || 'No se pudo enviar la respuesta' });
+        if (!res.success) get().resolverTemporal(temporal.id, false, res.error || 'No se pudo enviar la respuesta');
+        else if (get().conversacionActivaId === conversacionActivaId) {
+            await get().abrirConversacion(conversacionActivaId, temporal.id);
         }
+        if (res.success) await get().cargarConversaciones();
     },
 
     enviarAdjunto: async (tipo, archivo, texto) => {
         const { conversacionActivaId } = get();
         if (!conversacionActivaId) return false;
-        set({ enviando: true, error: null });
+        const temporal = {
+            ...mensajeTemporal('SISTEMA', conversacionActivaId, textoDeAdjunto(tipo, texto), { tipo, archivo }),
+            autorNombre: 'Tú',
+        };
+        set((state) => ({ mensajes: [...state.mensajes, temporal], error: null }));
         const res = await subirAdjuntoSoporte(
             `/soporte/sistema/conversaciones/${conversacionActivaId}/${tipo}`,
             archivo,
             texto,
         );
-        set({ enviando: false });
-        if (!res.success) {
-            set({ error: res.error || 'No se pudo enviar el archivo' });
-            return false;
+        if (!res.success) get().resolverTemporal(temporal.id, false, res.error || 'No se pudo enviar el archivo');
+        else if (get().conversacionActivaId === conversacionActivaId) {
+            await get().abrirConversacion(conversacionActivaId, temporal.id);
         }
-        await get().abrirConversacion(conversacionActivaId);
-        await get().cargarConversaciones();
-        return true;
+        if (res.success) await get().cargarConversaciones();
+        return res.success;
+    },
+
+    resolverTemporal: (id, ok, error) => {
+        set((state) => {
+            const t = state.mensajes.find((m) => m.id === id);
+            if (ok) {
+                [t?.imagenUrl, t?.audioUrl].forEach((u) => u?.startsWith('blob:') && URL.revokeObjectURL(u));
+                return { mensajes: state.mensajes.filter((m) => m.id !== id) };
+            }
+            return {
+                mensajes: state.mensajes.map((m) => (m.id === id ? { ...m, pendiente: false, fallido: true } : m)),
+                error,
+            };
+        });
     },
 
     cerrarConversacionActiva: async () => {
