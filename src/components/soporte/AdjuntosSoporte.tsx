@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Icon } from '@iconify/react';
 import useAlertStore from '@/zustand/alert';
 import { formatoDuracion, MAX_SEGUNDOS_NOTA, useGrabadoraNota } from '@/features/admin/leads/notaDeVoz';
@@ -103,3 +103,34 @@ export const imagenPegada = (e: React.ClipboardEvent): File | null => {
     }
     return null;
 };
+
+/** Imagen soltada sobre el chat (arrastrar y soltar, como en WhatsApp Web). */
+export const imagenSoltada = (e: React.DragEvent): File | null =>
+    Array.from(e.dataTransfer?.files ?? []).find((f) => f.type.startsWith('image/')) ?? null;
+
+/**
+ * La foto elegida o pegada, antes de enviarla: como en WhatsApp, primero se ve
+ * y se puede escribir el mensaje que la acompaña; se manda con el botón enviar.
+ */
+export function VistaPreviaImagen({ archivo, onQuitar }: { archivo: File; onQuitar: () => void }) {
+    const url = useMemo(() => URL.createObjectURL(archivo), [archivo]);
+    useEffect(() => () => URL.revokeObjectURL(url), [url]);
+    return (
+        <div className="flex items-center gap-2.5 border-t border-gray-100 px-3 pt-2 dark:border-slate-800">
+            <div className="relative">
+                <img src={url} alt="Imagen a enviar" className="h-16 w-16 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-slate-700" />
+                <button
+                    type="button"
+                    onClick={onQuitar}
+                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 text-white shadow hover:bg-black"
+                    title="Quitar imagen"
+                >
+                    <Icon icon="solar:close-circle-bold" width={14} />
+                </button>
+            </div>
+            <p className="text-[11px] leading-snug text-gray-500 dark:text-gray-400">
+                Escribe un mensaje si quieres y pulsa enviar.
+            </p>
+        </div>
+    );
+}
