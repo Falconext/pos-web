@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import useAlertStore from '@/zustand/alert';
 import { formatoDuracion, MAX_SEGUNDOS_NOTA, useGrabadoraNota } from '@/features/admin/leads/notaDeVoz';
@@ -12,13 +13,65 @@ import { formatoDuracion, MAX_SEGUNDOS_NOTA, useGrabadoraNota } from '@/features
 export const textoSinMarca = (contenido: string) =>
     contenido.replace(/^\[(Imagen|Nota de voz)\]\s*/, '');
 
+/**
+ * La foto en grande, encima de todo y en la misma pantalla (como WhatsApp):
+ * se cierra con la X, con Esc o tocando afuera.
+ */
+function VisorImagen({ url, onCerrar }: { url: string; onCerrar: () => void }) {
+    useEffect(() => {
+        const alTeclear = (e: KeyboardEvent) => e.key === 'Escape' && onCerrar();
+        window.addEventListener('keydown', alTeclear);
+        return () => window.removeEventListener('keydown', alTeclear);
+    }, [onCerrar]);
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+            onClick={onCerrar}
+            role="dialog"
+            aria-label="Imagen en grande"
+        >
+            <div className="absolute right-4 top-4 flex gap-2" onClick={(e) => e.stopPropagation()}>
+                <a
+                    href={url}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                    title="Descargar"
+                >
+                    <Icon icon="solar:download-minimalistic-linear" width={20} />
+                </a>
+                <button
+                    type="button"
+                    onClick={onCerrar}
+                    className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                    title="Cerrar (Esc)"
+                >
+                    <Icon icon="solar:close-circle-linear" width={22} />
+                </button>
+            </div>
+            <img
+                src={url}
+                alt="Imagen en grande"
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[90vh] max-w-[92vw] rounded-lg object-contain shadow-2xl"
+            />
+        </div>,
+        document.body,
+    );
+}
+
 /** Foto o reproductor dentro del globo del mensaje. */
 export function Adjunto({ imagenUrl, audioUrl }: { imagenUrl?: string | null; audioUrl?: string | null }) {
+    const [enGrande, setEnGrande] = useState(false);
     if (imagenUrl) {
         return (
-            <a href={imagenUrl} target="_blank" rel="noopener noreferrer" className="mb-1 block">
-                <img src={imagenUrl} alt="Imagen enviada" className="max-h-56 w-full rounded-xl object-cover" loading="lazy" />
-            </a>
+            <>
+                <button type="button" onClick={() => setEnGrande(true)} className="mb-1 block w-full cursor-zoom-in" title="Ver en grande">
+                    <img src={imagenUrl} alt="Imagen enviada" className="max-h-56 w-full rounded-xl object-cover" loading="lazy" />
+                </button>
+                {enGrande && <VisorImagen url={imagenUrl} onCerrar={() => setEnGrande(false)} />}
+            </>
         );
     }
     if (audioUrl) return <audio controls preload="metadata" src={audioUrl} className="mb-1 h-9 w-56 max-w-full" />;
