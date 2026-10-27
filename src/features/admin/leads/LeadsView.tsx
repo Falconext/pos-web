@@ -14,6 +14,7 @@ import { DemosPanel } from './DemosPanel'
 import { VisitasPanel } from './VisitasPanel'
 import { Ficha360 } from './Ficha360'
 import { formatoDuracion, MAX_SEGUNDOS_NOTA, textoDeNotaDeVoz, useGrabadoraNota } from './notaDeVoz'
+import { comentarioDeInstagram } from './comentarioInstagram'
 import { TextoWhatsapp } from './textoWhatsapp'
 import { BandejaChats } from './BandejaChats'
 import { MiVendedorPanel } from './MiVendedorPanel'
@@ -477,6 +478,20 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
                       />
                     )}
                     {(() => {
+                      // Un comentario llega envuelto en instrucciones para la IA:
+                      // acá solo se muestra lo que la persona escribió.
+                      const comentario = comentarioDeInstagram(m.contenido)
+                      if (comentario !== null) {
+                        return (
+                          <>
+                            <span className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-pink-600 dark:text-pink-400">
+                              <Icon icon="mdi:comment-text-outline" width={13} />
+                              Comentó en tu publicación
+                            </span>
+                            <p className="whitespace-pre-wrap break-words leading-relaxed"><TextoWhatsapp texto={comentario} /></p>
+                          </>
+                        )
+                      }
                       // Las marcas "📷 [Imagen]" y "[Nota de voz]" son para la
                       // IA; acá ya se ve la foto o el reproductor.
                       const texto = m.imagenUrl
