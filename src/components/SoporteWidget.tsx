@@ -8,12 +8,153 @@ import {
 import { Icon } from '@iconify/react';
 import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
 import { useSoporteStore } from '@/zustand/soporte';
+import {
+    PREGUNTAS_SOPORTE,
+    TEMAS_SOPORTE,
+    buscarPreguntas,
+    type PreguntaSoporte,
+    type TemaSoporte,
+} from '@/data/preguntasSoporte';
 
 function etiquetaDia(d: Date): string {
     if (isToday(d)) return 'Hoy';
     if (isYesterday(d)) return 'Ayer';
     return format(d, "d 'de' MMMM", { locale: es });
+}
+
+/**
+ * Pestaña Ayuda: el banco de preguntas frecuentes. Resuelve lo de siempre sin
+ * esperar al equipo; si no alcanza, "Escribir al equipo" pasa al chat con la
+ * pregunta ya escrita.
+ */
+function Ayuda({
+    abierta,
+    onAbrir,
+    onEscribir,
+    onIr,
+}: {
+    abierta: PreguntaSoporte | null;
+    onAbrir: (p: PreguntaSoporte | null) => void;
+    onEscribir: (texto: string) => void;
+    onIr: (ruta: string) => void;
+}) {
+    const [busqueda, setBusqueda] = useState('');
+    const [tema, setTema] = useState<TemaSoporte | null>(null);
+
+    if (abierta) {
+        return (
+            <div className="flex-1 overflow-y-auto bg-[#f6f7fb] px-3.5 py-3 dark:bg-[#0b0f17]">
+                <button
+                    type="button"
+                    onClick={() => onAbrir(null)}
+                    className="mb-2 inline-flex items-center gap-1 text-[11px] font-semibold text-violet-600 hover:text-violet-700 dark:text-violet-300"
+                >
+                    <Icon icon="solar:alt-arrow-left-linear" width={14} /> Volver
+                </button>
+                <div className="rounded-2xl bg-white p-3.5 shadow-sm dark:bg-slate-800">
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-violet-500">{abierta.tema}</p>
+                    <h4 className="mt-0.5 text-[14px] font-bold text-gray-900 dark:text-white">{abierta.pregunta}</h4>
+                    <p className="mt-2 text-[13px] leading-relaxed text-gray-700 dark:text-gray-200">{abierta.respuesta}</p>
+                    {abierta.pasos && (
+                        <ol className="mt-2.5 space-y-1.5">
+                            {abierta.pasos.map((paso, i) => (
+                                <li key={i} className="flex gap-2 text-[12.5px] leading-snug text-gray-700 dark:text-gray-200">
+                                    <span className="flex h-[18px] w-[18px] flex-none items-center justify-center rounded-full bg-violet-100 text-[10px] font-bold text-violet-700 dark:bg-violet-900/40 dark:text-violet-200">
+                                        {i + 1}
+                                    </span>
+                                    {paso}
+                                </li>
+                            ))}
+                        </ol>
+                    )}
+                    {abierta.ruta && (
+                        <button
+                            type="button"
+                            onClick={() => onIr(abierta.ruta!)}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-2 text-[12px] font-bold text-white hover:bg-violet-700"
+                        >
+                            <Icon icon="solar:square-top-down-linear" width={14} /> Ir ahí
+                        </button>
+                    )}
+                </div>
+                <div className="mt-3 rounded-2xl border border-dashed border-gray-200 p-3 text-center dark:border-slate-700">
+                    <p className="text-[12px] text-gray-500 dark:text-gray-400">¿No se resolvió?</p>
+                    <button
+                        type="button"
+                        onClick={() => onEscribir(abierta.pregunta)}
+                        className="mt-1 text-[12px] font-bold text-violet-600 hover:text-violet-700 dark:text-violet-300"
+                    >
+                        Escribir al equipo de Krezka
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const resultados = busqueda.trim()
+        ? buscarPreguntas(busqueda, 8)
+        : PREGUNTAS_SOPORTE.filter((p) => !tema || p.tema === tema);
+
+    return (
+        <div className="flex flex-1 flex-col overflow-hidden bg-[#f6f7fb] dark:bg-[#0b0f17]">
+            <div className="px-3.5 pt-3">
+                <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-800">
+                    <Icon icon="solar:magnifer-linear" width={15} className="text-gray-400" />
+                    <input
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                        placeholder="Busca tu duda: anular boleta, caja…"
+                        className="w-full bg-transparent text-[13px] outline-none dark:text-white"
+                    />
+                </div>
+                {!busqueda.trim() && (
+                    <div className="mt-2 flex gap-1.5 overflow-x-auto pb-1">
+                        {TEMAS_SOPORTE.map((t) => (
+                            <button
+                                key={t}
+                                type="button"
+                                onClick={() => setTema((actual) => (actual === t ? null : t))}
+                                className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                    tema === t
+                                        ? 'bg-violet-600 text-white'
+                                        : 'bg-white text-gray-600 hover:bg-violet-50 dark:bg-slate-800 dark:text-gray-300'
+                                }`}
+                            >
+                                {t}
+                            </button>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <div className="flex-1 space-y-1.5 overflow-y-auto px-3.5 py-2">
+                {resultados.map((p) => (
+                    <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => onAbrir(p)}
+                        className="flex w-full items-center gap-2 rounded-xl bg-white px-3 py-2.5 text-left text-[12.5px] font-medium text-gray-800 shadow-sm hover:bg-violet-50 dark:bg-slate-800 dark:text-gray-100 dark:hover:bg-slate-700"
+                    >
+                        <span className="flex-1">{p.pregunta}</span>
+                        <Icon icon="solar:alt-arrow-right-linear" width={14} className="flex-none text-gray-400" />
+                    </button>
+                ))}
+                {busqueda.trim() && resultados.length === 0 && (
+                    <div className="px-2 py-6 text-center">
+                        <p className="text-[12px] text-gray-500 dark:text-gray-400">No encontramos esa duda en las preguntas frecuentes.</p>
+                        <button
+                            type="button"
+                            onClick={() => onEscribir(busqueda.trim())}
+                            className="mt-1.5 text-[12px] font-bold text-violet-600 hover:text-violet-700 dark:text-violet-300"
+                        >
+                            Escribir al equipo de Krezka
+                        </button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 }
 
 /**
@@ -28,6 +169,13 @@ export default function SoporteWidget() {
     const [texto, setTexto] = useState('');
     const { mensajes, loading, enviando, error, cargarMensajes, enviarMensaje, consultarNoLeidos } = useSoporteStore();
     const bottomRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
+    // Primero la ayuda: la mayoría de las dudas ya tienen respuesta y no hace
+    // falta esperar a una persona. Con mensajes sin leer se abre el chat.
+    const [vista, setVista] = useState<'ayuda' | 'chat'>('ayuda');
+    const [preguntaAbierta, setPreguntaAbierta] = useState<PreguntaSoporte | null>(null);
+    // Mientras escribe en el chat, la respuesta que ya existe, por si le sirve.
+    const sugeridas = vista === 'chat' && texto.trim().split(/\s+/).length >= 2 ? buscarPreguntas(texto, 2) : [];
 
     // Se revisa cada minuto: si dejan el chat abierto y dan las 6, el aviso
     // tiene que cambiar solo, no quedarse diciendo "estamos atendiendo".
@@ -61,8 +209,25 @@ export default function SoporteWidget() {
 
     const abrir = () => {
         setAbierto(true);
+        setVista(noLeidos > 0 ? 'chat' : 'ayuda');
         setNoLeidos(0);
         cargarMensajes();
+    };
+
+    const escribirAlEquipo = (inicial: string) => {
+        setPreguntaAbierta(null);
+        setVista('chat');
+        setTexto(inicial);
+    };
+
+    const verPregunta = (p: PreguntaSoporte) => {
+        setPreguntaAbierta(p);
+        setVista('ayuda');
+    };
+
+    const irA = (ruta: string) => {
+        setAbierto(false);
+        navigate(ruta);
     };
 
     const enviar = async () => {
@@ -97,6 +262,33 @@ export default function SoporteWidget() {
                             <Icon icon="solar:close-circle-bold" width={20} />
                         </button>
                     </div>
+
+                    <div className="flex border-b border-gray-100 bg-white text-[12px] font-bold dark:border-slate-800 dark:bg-slate-900">
+                        {(['ayuda', 'chat'] as const).map((v) => (
+                            <button
+                                key={v}
+                                type="button"
+                                onClick={() => setVista(v)}
+                                className={`flex-1 py-2 ${
+                                    vista === v
+                                        ? 'border-b-2 border-violet-600 text-violet-700 dark:text-violet-300'
+                                        : 'text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                                }`}
+                            >
+                                {v === 'ayuda' ? 'Preguntas frecuentes' : 'Chat con el equipo'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {vista === 'ayuda' ? (
+                        <Ayuda
+                            abierta={preguntaAbierta}
+                            onAbrir={setPreguntaAbierta}
+                            onEscribir={escribirAlEquipo}
+                            onIr={irA}
+                        />
+                    ) : (
+                    <>
 
                     <div className="flex-1 overflow-y-auto bg-[#f6f7fb] px-3.5 py-3 dark:bg-[#0b0f17]">
                         {loading && mensajes.length === 0 && (
@@ -171,6 +363,23 @@ export default function SoporteWidget() {
                         {TEXTO_DESPLIEGUE}
                     </div>
 
+                    {sugeridas.length > 0 && (
+                        <div className="border-t border-gray-100 px-3 pt-2 dark:border-slate-800">
+                            <p className="text-[10px] font-semibold text-gray-400">Quizás ya tiene respuesta:</p>
+                            {sugeridas.map((p) => (
+                                <button
+                                    key={p.id}
+                                    type="button"
+                                    onClick={() => verPregunta(p)}
+                                    className="mt-1 flex w-full items-center gap-1.5 rounded-lg bg-violet-50 px-2.5 py-1.5 text-left text-[12px] font-medium text-violet-800 hover:bg-violet-100 dark:bg-violet-900/30 dark:text-violet-200"
+                                >
+                                    <Icon icon="solar:lightbulb-linear" width={13} className="flex-none" />
+                                    {p.pregunta}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="flex items-end gap-2 px-2.5 pb-2.5 pt-1">
                         <textarea
                             value={texto}
@@ -194,6 +403,8 @@ export default function SoporteWidget() {
                             <Icon icon={enviando ? 'solar:refresh-bold' : 'solar:plain-bold'} className={enviando ? 'animate-spin' : ''} width={16} />
                         </button>
                     </div>
+                    </>
+                    )}
                 </div>
             )}
 

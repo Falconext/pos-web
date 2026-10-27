@@ -3,6 +3,26 @@ import { Icon } from '@iconify/react';
 import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSoporteSistemaStore } from '@/zustand/soporteSistema';
+import { PREGUNTAS_SOPORTE } from '@/data/preguntasSoporte';
+
+/**
+ * Respuestas guardadas del equipo: se eligen escribiendo "/" en la respuesta.
+ * Las de las preguntas frecuentes salen del mismo banco que ve el empresario,
+ * así lo que se contesta acá no se aparta de lo que dice la ayuda.
+ */
+const RESPUESTAS_GUARDADAS: { titulo: string; texto: string }[] = [
+    { titulo: 'Saludo', texto: '¡Hola! Soy del equipo de Krezka, gracias por escribirnos. Ya reviso tu consulta.' },
+    { titulo: 'Lo revisamos', texto: 'Lo estamos revisando y te escribimos por aquí apenas lo tengamos.' },
+    { titulo: 'Pedir captura', texto: '¿Nos puedes mandar una captura de la pantalla donde te sale el problema? Así lo vemos más rápido.' },
+    { titulo: 'Se sube hoy', texto: 'Listo, ya quedó. El cambio se sube al cierre del día; mañana ya lo ves en tu sistema.' },
+    { titulo: 'Cierre', texto: '¿Te podemos ayudar en algo más? Cualquier cosa, nos escribes por aquí.' },
+    ...PREGUNTAS_SOPORTE.map((p) => ({
+        titulo: p.pregunta,
+        texto: [p.respuesta, ...(p.pasos ?? []).map((paso, i) => `${i + 1}. ${paso}`)].join('\n'),
+    })),
+];
+
+const normalizar = (t: string) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 export default function SistemaSoporte() {
     const {
@@ -22,6 +42,12 @@ export default function SistemaSoporte() {
     const [filtro, setFiltro] = useState<'ABIERTA' | 'CERRADA' | undefined>('ABIERTA');
     const [texto, setTexto] = useState('');
     const bottomRef = useRef<HTMLDivElement>(null);
+    // "/anular" filtra las respuestas guardadas; elegir una reemplaza el texto.
+    const atajo = texto.startsWith('/') ? normalizar(texto.slice(1).trim()) : null;
+    const guardadas =
+        atajo === null
+            ? []
+            : RESPUESTAS_GUARDADAS.filter((r) => !atajo || normalizar(`${r.titulo} ${r.texto}`).includes(atajo)).slice(0, 8);
 
     useEffect(() => {
         cargarConversaciones(filtro);
@@ -164,6 +190,21 @@ export default function SistemaSoporte() {
                             <div ref={bottomRef} />
                         </div>
 
+                        {guardadas.length > 0 && (
+                            <div className="max-h-56 overflow-y-auto border-t border-gray-100 bg-gray-50 p-2 dark:border-slate-800 dark:bg-slate-800/40">
+                                {guardadas.map((r) => (
+                                    <button
+                                        key={r.titulo}
+                                        type="button"
+                                        onClick={() => setTexto(r.texto)}
+                                        className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white dark:hover:bg-slate-800"
+                                    >
+                                        <p className="text-xs font-bold text-gray-800 dark:text-gray-100">{r.titulo}</p>
+                                        <p className="truncate text-[11px] text-gray-500">{r.texto}</p>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                         <div className="flex items-end gap-2 border-t border-gray-100 p-3 dark:border-slate-800">
                             <textarea
                                 value={texto}
@@ -171,10 +212,12 @@ export default function SistemaSoporte() {
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
                                         e.preventDefault();
-                                        enviar();
+                                        // Con la lista de guardadas abierta, Enter elige la primera.
+                                        if (guardadas.length) setTexto(guardadas[0].texto);
+                                        else enviar();
                                     }
                                 }}
-                                placeholder="Responder…"
+                                placeholder="Responder…  (escribe / para usar una respuesta guardada)"
                                 rows={1}
                                 className="max-h-32 flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                             />
