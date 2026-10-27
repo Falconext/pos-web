@@ -193,7 +193,8 @@ export const Calendar = ({ mode, events, text, onChange, name, right, left, disa
             initial={portal ? { opacity: 0, y: -4 } : left ? { y: 10, x: -10 } : top ? { x: 0, y: -390 } : right ? { y: 20 } : { y: 40 }}
             style={{
                 ...(portal ? { position: 'fixed', top: portalPosition.top, left: portalPosition.left, zIndex: 2147483000 } : {}),
-                ...(isDarkMode ? { background: '#1e2435', border: '1px solid #2d3748', boxShadow: '0 24px 60px rgba(0,0,0,0.5)' } : {}),
+                // Superficie del fondo oscuro elegido (cálido o azul noche): sale de las variables del tema.
+                ...(isDarkMode ? { background: 'rgb(var(--slate-900))', border: '1px solid rgb(255 255 255 / 0.08)', boxShadow: '0 24px 60px -14px rgb(0 0 0 / 0.75)' } : {}),
             }}
         >
             <div

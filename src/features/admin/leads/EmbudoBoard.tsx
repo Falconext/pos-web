@@ -23,6 +23,8 @@ import {
   type PedidoEnEmbudo,
   type Tablero,
 } from '@/services/crm.service'
+import { iniciales, tonoAvatar } from '@/components/Datatable/columnas'
+import './embudo.css'
 
 interface Props {
   /** Abre la ficha 360° del cliente. */
@@ -112,23 +114,41 @@ export function EmbudoBoard({ onVerCliente }: Props) {
 
   if (cargando) {
     return (
-      <div className="flex flex-col items-center gap-3 py-16 text-gray-400">
-        <Icon icon="eos-icons:loading" className="animate-spin text-3xl text-indigo-500" />
+      <div className="flex flex-col items-center gap-3 py-16 text-[#978f86]">
+        <Icon icon="eos-icons:loading" className="animate-spin text-3xl" />
         <p className="text-sm">Cargando el embudo…</p>
       </div>
     )
   }
   if (!tablero) return null
 
+  // La etapa final va aparte, a la derecha, como el panel "Funded" de Hearth.
+  const columnas = tablero.columnas.filter((c) => c.etapa !== ETAPA_FINAL)
+  const final = tablero.columnas.find((c) => c.etapa === ETAPA_FINAL)
+  const totalEmbudo = columnas.reduce((acc, c) => acc + c.total, 0)
+  const mayor = Math.max(1, ...columnas.map((c) => c.total))
+  const calientes = columnas.reduce(
+    (acc, c) => acc + c.pedidos.filter((p) => temperatura(p.estado) === 'is-hot').length,
+    0,
+  )
+
   return (
-    <div>
+    <div className="krk-emb">
+      <div className="krk-emb__stats">
+        <Indicador icon="solar:users-group-rounded-linear" valor={totalEmbudo} label="Clientes en el embudo" />
+        <Indicador icon="solar:fire-linear" valor={calientes} label="Calientes ahora" />
+        <Indicador
+          icon="solar:wallet-money-linear"
+          valor={tablero.pagosPorValidar}
+          label="Pagos esperando revisión"
+          tag={tablero.pagosPorValidar > 0 ? 'Bloquea despacho' : undefined}
+        />
+      </div>
+
       {/* Lo único que bloquea plata */}
       {tablero.pagosPorValidar > 0 && (
-        <div
-          data-testid="aviso-pagos"
-          className="mb-4 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/40 dark:bg-amber-900/20 dark:text-amber-300"
-        >
-          <Icon icon="solar:wallet-money-bold-duotone" className="mt-0.5 text-lg" />
+        <div data-testid="aviso-pagos" className="krk-emb__warn">
+          <Icon icon="solar:wallet-money-linear" className="mt-px flex-none text-base" />
           <span>
             <b>
               {tablero.pagosPorValidar} pago
@@ -139,19 +159,24 @@ export function EmbudoBoard({ onVerCliente }: Props) {
         </div>
       )}
 
-      <div className="flex gap-3 overflow-x-auto pb-4">
-        {tablero.columnas.map((col) => (
-          <Columna
-            key={col.etapa}
-            col={col}
-            moviendo={moviendo}
-            onMover={mover}
-            onVerVoucher={(pago, pedido) => setVoucher({ pago, pedido })}
-            onVerCliente={onVerCliente}
-            arrastrando={arrastrando}
-            onArrastrar={setArrastrando}
-          />
-        ))}
+      <div className="krk-emb__board">
+        <div className="krk-emb__cols">
+          {columnas.map((col) => (
+            <Columna
+              key={col.etapa}
+              col={col}
+              total={totalEmbudo}
+              mayor={mayor}
+              moviendo={moviendo}
+              onMover={mover}
+              onVerVoucher={(pago, pedido) => setVoucher({ pago, pedido })}
+              onVerCliente={onVerCliente}
+              arrastrando={arrastrando}
+              onArrastrar={setArrastrando}
+            />
+          ))}
+        </div>
+        {final && <PanelFinal col={final} onVerCliente={onVerCliente} />}
       </div>
 
       {voucher && (
@@ -167,8 +192,76 @@ export function EmbudoBoard({ onVerCliente }: Props) {
   )
 }
 
+/** Etapa que cierra el embudo: la pone la logística, no se suelta a mano. */
+const ETAPA_FINAL: EtapaCrm = 'ENTREGADO'
+
+/** Tono de cada columna (punto, barra y resaltado al soltar). */
+const TONO: Record<EtapaCrm, string> = {
+  NUEVO: '',
+  DIAGNOSTICADO: 'krk-t-iris',
+  COTIZADO: 'krk-t-iris',
+  DATOS_COMPLETOS: 'krk-t-saffron',
+  PENDIENTE_VALIDACION_PAGO: 'krk-t-saffron',
+  POR_DESPACHAR: 'krk-t-ember',
+  EN_RUTA: 'krk-t-ember',
+  ENTREGADO: 'krk-t-spruce',
+  REPROGRAMADO: 'krk-t-saffron',
+  FRIO: '',
+  NO_CONTESTA: '',
+  CONSULTADO_NO_HABIDO: 'krk-t-ember',
+}
+
+/** CALIENTE / TIBIO / FRÍO del prospecto → clase del punto de color. */
+function temperatura(estado: string): string {
+  const e = String(estado || '').toUpperCase()
+  if (e.includes('CALIENTE')) return 'is-hot'
+  if (e.includes('TIBIO')) return 'is-warm'
+  if (e.includes('FRIO') || e.includes('FRÍO')) return 'is-cold'
+  return ''
+}
+
+/** "ahora" / "hace 3 h" / "hace 5 d": cabe en la píldora de la tarjeta. */
+function haceCorto(valor: string | Date | null | undefined): string {
+  if (!valor) return ''
+  const min = Math.max(0, Math.round((Date.now() - new Date(valor).getTime()) / 60_000))
+  if (min < 60) return min < 1 ? 'ahora' : `hace ${min} min`
+  const h = Math.round(min / 60)
+  if (h < 24) return `hace ${h} h`
+  return `hace ${Math.round(h / 24)} d`
+}
+
+// Nunca el id interno ig:/fb: de Instagram o Messenger: ver nombreVisible.
+const nombreDe = (p: PedidoEnEmbudo) => nombreVisible(p.nombreProspecto, p.telefonoProspecto).toLowerCase()
+
+function Avatar({ texto }: { texto: string }) {
+  return (
+    <span className={`krk-emb__av av${tonoAvatar(texto)}`} aria-hidden="true">
+      {iniciales(texto)}
+    </span>
+  )
+}
+
+function Indicador({ icon, valor, label, tag }: { icon: string; valor: number; label: string; tag?: string }) {
+  return (
+    <div className="krk-emb__stat">
+      <span className="krk-emb__stat-ico">
+        <Icon icon={icon} width={18} />
+      </span>
+      <div>
+        <b>
+          {valor}
+          {tag && <span className="krk-emb__tag">{tag}</span>}
+        </b>
+        <small>{label}</small>
+      </div>
+    </div>
+  )
+}
+
 function Columna({
   col,
+  total,
+  mayor,
   moviendo,
   onMover,
   onVerVoucher,
@@ -177,6 +270,8 @@ function Columna({
   onArrastrar,
 }: {
   col: ColumnaEmbudo
+  total: number
+  mayor: number
   moviendo: number | null
   onMover: (p: PedidoEnEmbudo, e: EtapaCrm) => void
   onVerVoucher: (pago: ComprobantePagoLead, pedido: PedidoEnEmbudo) => void
@@ -192,10 +287,9 @@ function Columna({
     !!arrastrando &&
     ETAPAS_MANUALES.includes(col.etapa) &&
     !col.pedidos.some((p) => p.id === arrastrando.id)
+  const porcentaje = total > 0 ? Math.round((col.total / total) * 100) : 0
 
   return (
-    // Mismo armado que el tablero de Conversaciones: la columna lleva el fondo
-    // y las tarjetas van blancas encima.
     <section
       onDragOver={(e) => {
         if (!aceptaDrop) return
@@ -211,27 +305,26 @@ function Columna({
         onMover(arrastrando, col.etapa)
         onArrastrar(null)
       }}
-      className={`flex min-h-[9rem] w-[248px] flex-shrink-0 flex-col rounded-2xl transition-colors duration-150 ${
-        encima && aceptaDrop
-          ? 'bg-violet-100 ring-2 ring-violet-400 dark:bg-violet-900/30 dark:ring-violet-600'
-          : 'bg-gray-100/80 dark:bg-slate-900/60'
-      } ${arrastrando && !aceptaDrop ? 'opacity-50' : ''}`}
+      className={`krk-emb__col ${TONO[col.etapa]} ${encima && aceptaDrop ? 'is-over' : ''} ${arrastrando && !aceptaDrop ? 'is-off' : ''}`}
     >
-      <header className="flex items-center gap-2 px-3 py-2.5">
-        <span className={`h-2 w-2 flex-none rounded-full ${meta.acento}`} />
-        <h3 className="truncate text-sm font-semibold text-gray-700 dark:text-gray-200">
-          {meta.label}
-        </h3>
-        <span className="ml-auto flex-none text-xs font-semibold text-gray-400 dark:text-gray-500">
-          {col.total}
+      <header className="krk-emb__head">
+        <span className="krk-emb__dot" />
+        <h3 className="krk-emb__name">{meta.label}</h3>
+        <span className="krk-emb__count">{col.total}</span>
+        <span className="krk-emb__vol">
+          {porcentaje}%<small>del embudo</small>
         </span>
       </header>
+      <span className="krk-emb__bar" aria-hidden="true">
+        <i style={{ width: `${Math.round((col.total / mayor) * 100)}%` }} />
+      </span>
 
-      <div className="flex flex-col gap-2 px-2 pb-2">
+      <div className="krk-emb__body">
         {col.pedidos.length === 0 && (
-          <p className="flex flex-1 items-center justify-center pb-4 text-xs text-gray-400 dark:text-gray-600">
-            Vacío
-          </p>
+          <div className="krk-emb__empty">
+            <span>Vacío</span>
+            <small>Arrastra un pedido aquí</small>
+          </div>
         )}
         {col.pedidos.map((p) => (
           <Tarjeta
@@ -239,6 +332,7 @@ function Columna({
             pedido={p}
             etapa={col.etapa}
             ocupado={moviendo === p.id}
+            arrastrandoEsta={arrastrando?.id === p.id}
             onMover={onMover}
             onVerVoucher={onVerVoucher}
             onVerCliente={onVerCliente}
@@ -246,9 +340,49 @@ function Columna({
           />
         ))}
         {col.total > col.pedidos.length && (
-          <p className="px-1 text-[11px] text-gray-400">
-            y {col.total - col.pedidos.length} más…
-          </p>
+          <p className="krk-emb__more">y {col.total - col.pedidos.length} más…</p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/** La etapa final: panel verde punteado con la lista de quienes ya recibieron. */
+function PanelFinal({ col, onVerCliente }: { col: ColumnaEmbudo; onVerCliente?: (telefono: string) => void }) {
+  const meta = ETAPA_META[col.etapa]
+  const visibles = col.pedidos.slice(0, 8)
+  return (
+    // Es un <section> como las demás columnas: recibe el drag pero no acepta
+    // el drop (la entrega la marca la logística).
+    <section className="krk-emb__fund">
+      <div className="krk-emb__fund-core">
+        <span className="krk-emb__fund-ico">
+          <Icon icon="solar:cup-star-linear" width={22} />
+        </span>
+        <h3 className="krk-emb__fund-name">{meta.label}</h3>
+        <div className="krk-emb__fund-sum">
+          <b>{col.total}</b>
+          <small>pedidos entregados</small>
+        </div>
+      </div>
+      <div className="krk-emb__fund-list">
+        {col.pedidos.length === 0 && <p className="krk-emb__fund-empty">Vacío</p>}
+        {visibles.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="krk-emb__fund-row"
+            onClick={() => onVerCliente?.(p.telefonoProspecto)}
+          >
+            <Avatar texto={nombreDe(p)} />
+            <span>
+              <b>{nombreDe(p)}</b>
+              <small>{haceCorto(p.etapaEn)}</small>
+            </span>
+          </button>
+        ))}
+        {col.total > visibles.length && (
+          <p className="krk-emb__more">+{col.total - visibles.length} más</p>
         )}
       </div>
     </section>
@@ -259,6 +393,7 @@ function Tarjeta({
   pedido,
   etapa,
   ocupado,
+  arrastrandoEsta,
   onMover,
   onVerVoucher,
   onVerCliente,
@@ -267,6 +402,7 @@ function Tarjeta({
   pedido: PedidoEnEmbudo
   etapa: EtapaCrm
   ocupado: boolean
+  arrastrandoEsta: boolean
   onMover: (p: PedidoEnEmbudo, e: EtapaCrm) => void
   onVerVoucher: (pago: ComprobantePagoLead, pedido: PedidoEnEmbudo) => void
   onVerCliente?: (telefono: string) => void
@@ -274,6 +410,11 @@ function Tarjeta({
 }) {
   const [abierto, setAbierto] = useState(false)
   const pendiente = pedido.comprobantesPago?.[0]
+  const nombre = nombreDe(pedido)
+  const puntaje = Math.max(0, Math.min(100, Number(pedido.puntaje) || 0))
+  // Más de 2 días quieto en la misma etapa: se marca como el "cierra hoy" de Hearth.
+  const atrasado = pedido.etapaEn ? Date.now() - new Date(pedido.etapaEn).getTime() > 2 * 86_400_000 : false
+  const temp = temperatura(pedido.estado)
 
   return (
     <div
@@ -291,35 +432,41 @@ function Tarjeta({
         onArrastrar(pedido)
       }}
       onDragEnd={() => onArrastrar(null)}
-      className={`rounded-xl border border-gray-200 bg-white p-2.5 transition-colors duration-150 hover:border-violet-300 dark:border-slate-800 dark:bg-[#111827] dark:hover:border-violet-700 ${
-        ocupado ? 'opacity-50' : 'cursor-grab active:cursor-grabbing'
-      }`}
+      // Clic en la tarjeta (fuera de sus botones) abre la ficha del cliente.
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button, a')) return
+        onVerCliente?.(pedido.telefonoProspecto)
+      }}
+      className={`krk-emb__card ${ocupado ? 'is-busy' : ''} ${arrastrandoEsta ? 'is-dragging' : ''}`}
     >
-      <button
-        type="button"
-        onClick={() => onVerCliente?.(pedido.telefonoProspecto)}
-        className="block w-full text-left"
-      >
-        <p className="truncate text-sm font-bold text-gray-900 dark:text-white">
-          {nombreVisible(pedido.nombreProspecto, pedido.telefonoProspecto)}
-        </p>
-        <p className="font-mono text-[11px] text-gray-400">{contactoVisible(pedido.telefonoProspecto)}</p>
-      </button>
-
-      {pendiente && (
+      <div className="krk-emb__top">
+        <Avatar texto={nombre} />
         <button
           type="button"
-          onClick={() => onVerVoucher(pendiente, pedido)}
-          className="mt-2 flex w-full items-center gap-1.5 rounded-lg bg-amber-50 px-2 py-1.5 text-[11px] font-bold text-amber-800 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300"
+          onClick={() => onVerCliente?.(pedido.telefonoProspecto)}
+          className="krk-emb__who"
         >
-          <Icon icon="solar:eye-bold-duotone" className="text-sm" />
-          Revisar el comprobante
+          <b>{nombre}</b>
+          <small>{contactoVisible(pedido.telefonoProspecto)}</small>
         </button>
-      )}
+      </div>
 
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-[10px] text-gray-400">
-          {fechaRelativa(pedido.etapaEn)}
+      <div className="krk-emb__score">
+        <span className="krk-emb__meter" aria-hidden="true">
+          <i style={{ width: `${puntaje}%` }} />
+        </span>
+        <small>Interés {puntaje}</small>
+        {temp && (
+          <span className={`krk-emb__temp ${temp}`}>
+            {temp === 'is-hot' ? 'Caliente' : temp === 'is-warm' ? 'Tibio' : 'Frío'}
+          </span>
+        )}
+      </div>
+
+      <div className="krk-emb__foot">
+        <span className={`krk-emb__chip ${atrasado ? 'is-late' : ''}`}>
+          <Icon icon="solar:clock-circle-linear" width={13} />
+          {haceCorto(pedido.etapaEn)}
         </span>
         <span className="ml-auto mr-1">
           <Link
@@ -335,14 +482,25 @@ function Tarjeta({
           type="button"
           disabled={ocupado}
           onClick={() => setAbierto((v) => !v)}
-          className="rounded-md px-1.5 py-0.5 text-[11px] font-bold text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 dark:text-indigo-400 dark:hover:bg-indigo-900/20"
+          className="krk-emb__mover"
         >
           {ocupado ? '…' : 'Mover'}
         </button>
       </div>
 
+      {pendiente && (
+        <button
+          type="button"
+          onClick={() => onVerVoucher(pendiente, pedido)}
+          className="krk-emb__voucher justify-self-start"
+        >
+          <Icon icon="solar:eye-linear" width={13} />
+          Revisar el comprobante
+        </button>
+      )}
+
       {abierto && (
-        <div className="mt-2 space-y-0.5 border-t border-gray-100 pt-2 dark:border-gray-800">
+        <div className="krk-emb__menu">
           {ETAPAS_MANUALES.filter((e) => e !== etapa).map((e) => (
             <button
               key={e}
@@ -351,7 +509,6 @@ function Tarjeta({
                 setAbierto(false)
                 onMover(pedido, e)
               }}
-              className="block w-full rounded-md px-1.5 py-1 text-left text-[11px] text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-800"
             >
               {ETAPA_META[e].label}
             </button>
@@ -381,12 +538,12 @@ function ModalVoucher({
 }) {
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60" onClick={onCerrar} />
-      <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 dark:bg-[#111827]">
-        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
+      <div className="absolute inset-0 bg-[rgba(29,25,21,0.28)] backdrop-blur-[6px]" onClick={onCerrar} />
+      <div className="relative w-full max-w-sm rounded-[24px] bg-[#fffdfa] p-6 shadow-[0_24px_60px_-18px_rgba(40,30,20,0.32)] dark:bg-slate-900">
+        <p className="text-[12.5px] font-bold text-[#6b645c] dark:text-slate-400">
           Comprobante de pago
         </p>
-        <h3 className="text-lg font-black text-gray-900 dark:text-white">
+        <h3 className="text-[22px] font-bold capitalize text-[#1d1915] dark:text-slate-100">
           {nombreVisible(pedido.nombreProspecto, pedido.telefonoProspecto)}
         </h3>
         <p className="mb-3 text-xs text-gray-500">
@@ -422,14 +579,14 @@ function ModalVoucher({
           <button
             type="button"
             onClick={onValidar}
-            className="h-10 flex-1 rounded-xl bg-emerald-500 text-sm font-black text-white hover:bg-emerald-600"
+            className="h-11 flex-1 rounded-xl bg-[#0a8f74] text-sm font-bold text-white hover:bg-[#0a7a63]"
           >
             El pago está bien
           </button>
           <button
             type="button"
             onClick={onRechazar}
-            className="h-10 rounded-xl border border-rose-200 px-3 text-sm font-bold text-rose-600 hover:bg-rose-50 dark:border-rose-900/40 dark:hover:bg-rose-900/20"
+            className="h-11 rounded-xl bg-[#fbe6dd] px-4 text-sm font-bold text-[#b53f19] hover:bg-[#f7d6c8] dark:bg-orange-500/15 dark:text-orange-300"
           >
             Rechazar
           </button>

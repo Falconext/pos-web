@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
+import DrawerHearth, { DRAWER_BTN, DRAWER_H3, DRAWER_INPUT, DRAWER_ROW, DrawerDato } from '@/components/DrawerHearth';
 import moment from 'moment';
 import { useReactToPrint } from 'react-to-print';
-import Modal from '@/components/Modal';
 import Button from '@/components/Button';
 import ModalConfirm from '@/components/ModalConfirm';
 import { get, post, put, patch } from '@/utils/fetch';
@@ -343,311 +343,211 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
             </div>
         )}
 
-        <Modal
-            isOpenModal={isOpen}
-            closeModal={onClose}
-            title="Detalle del comprobante"
-            icon="solar:document-text-bold-duotone"
-            iconClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600"
-            width="800px"
-        >
+        <DrawerHearth isOpen={isOpen} onClose={onClose} label="Detalle del comprobante" contentKey={comprobante?.id ?? null}>
             {loading ? (
-                <div className="py-16 flex flex-col items-center justify-center gap-3 text-gray-400">
-                    <Icon icon="line-md:loading-twotone-loop" className="text-4xl text-blue-500 animate-spin" />
+                <div className="py-24 flex flex-col items-center justify-center gap-3 text-[#978f86]">
+                    <Icon icon="line-md:loading-twotone-loop" className="text-4xl" />
                     <span className="text-sm">Cargando comprobante...</span>
                 </div>
             ) : comprobante ? (
-                <div className="divide-y divide-gray-100 dark:divide-slate-800">
+                <div data-drawer-stagger className="flex flex-col gap-6">
 
                     {/* ── Cabecera ── */}
-                    <div className="p-5 grid grid-cols-2 gap-y-4 gap-x-6">
-                        <div>
-                            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Comprobante</p>
-                            <p className="font-bold text-gray-900 dark:text-white text-lg leading-tight">
-                                {comprobanteLabel}
-                            </p>
-                            <p className="text-sm text-gray-500 font-mono">
-                                {comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}
-                            </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                                {moment(comprobante.fechaEmision).format('DD/MM/YYYY HH:mm')}
+                    <header className="flex items-start gap-4 pr-12">
+                        <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#e8e6fb] text-[#4a41c4] dark:bg-[#7a72e6]/20 dark:text-[#aaa4f5]">
+                            <Icon icon="solar:document-text-linear" width={26} />
+                        </span>
+                        <div className="min-w-0">
+                            <h2 className="text-[26px] font-bold leading-tight text-[#1d1915] dark:text-slate-100">
+                                {comprobanteLabel.charAt(0) + comprobanteLabel.slice(1).toLowerCase()} {comprobante.serie}-{String(comprobante.correlativo).padStart(8, '0')}
+                            </h2>
+                            <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-[14px] font-semibold text-[#6b645c] dark:text-slate-400">
+                                {moment(comprobante.fechaEmision).format('DD/MM/YYYY · HH:mm')}
+                                <span aria-hidden>·</span>
+                                <SunatEstado estado={comprobante.estadoEnvioSunat} />
                             </p>
                         </div>
-                        <div className="text-right">
-                            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Total</p>
-                            <p className="text-3xl font-black text-gray-900 dark:text-white">
+                    </header>
+
+                    <p className="-mt-1 text-[15px] text-[#4a443d] dark:text-slate-300">
+                        Emitido a <b className="font-bold text-[#1d1915] dark:text-slate-100">{comprobante.cliente?.nombre || 'cliente sin nombre'}</b>
+                        {comprobante.cliente?.nroDoc ? ` (${comprobante.cliente.nroDoc})` : ''}.
+                    </p>
+
+                    {/* ── Total ── */}
+                    <div className="flex items-center justify-between gap-4 rounded-2xl bg-[#f3eee6] px-5 py-4 dark:bg-slate-800/70">
+                        <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-[#6b645c] dark:text-slate-400">Total</p>
+                            <p className="text-[24px] font-bold leading-tight text-[#1d1915] tabular-nums dark:text-slate-100" style={{ fontFamily: "'Bricolage Grotesque', 'Manrope', sans-serif" }}>
                                 {monedaSimbolo} {total.toFixed(2)}
                             </p>
-                            <p className="text-xs text-gray-400 mt-1">
-                                {esVentaCredito
-                                    ? `Crédito${comprobante.medioPago ? ` · ${comprobante.medioPago}` : ''}`
-                                    : comprobante.medioPago || 'Sin medio de pago'}
-                            </p>
-                            {String(comprobante.medioPago || '').toUpperCase() === 'MIXTO' && lineasPagoMixto(comprobante).map((l) => (
-                                <p key={l.method} className="text-xs text-gray-500 dark:text-gray-400">
-                                    {etiquetaMedioPago(l.method)} {monedaSimbolo} {l.amount.toFixed(2)}
-                                </p>
-                            ))}
                         </div>
-                        <div>
-                            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Cliente</p>
-                            <p className="font-semibold text-gray-800 dark:text-gray-200">{comprobante.cliente?.nombre || '-'}</p>
-                            <p className="text-xs text-gray-500">{comprobante.cliente?.nroDoc || ''}</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] uppercase tracking-widest text-gray-400 mb-1">Estado SUNAT</p>
-                            <SunatBadge estado={comprobante.estadoEnvioSunat} />
-                        </div>
+                        <button type="button" onClick={handleImprimir} className={BTN}>
+                            <Icon icon="solar:printer-minimalistic-linear" width={17} />
+                            Imprimir
+                        </button>
                     </div>
+
+                    {/* ── Datos ── */}
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+                        <Dato label="Cliente" value={comprobante.cliente?.nombre || '-'} />
+                        <Dato label="Documento" value={comprobante.cliente?.nroDoc || '-'} />
+                        <Dato
+                            label="Forma de pago"
+                            value={esVentaCredito
+                                ? `Crédito${comprobante.medioPago ? ` · ${comprobante.medioPago}` : ''}`
+                                : comprobante.medioPago || 'Sin medio de pago'}
+                            extra={String(comprobante.medioPago || '').toUpperCase() === 'MIXTO'
+                                ? lineasPagoMixto(comprobante).map((l) => `${etiquetaMedioPago(l.method)} ${monedaSimbolo} ${l.amount.toFixed(2)}`)
+                                : undefined}
+                        />
+                        <Dato label="IGV (18%)" value={`${monedaSimbolo} ${Number(comprobante.mtoIGV ?? 0).toFixed(2)}`} />
+                    </dl>
 
                     {/* ── Cobranza en campo: reasignar vendedor de campo ── */}
                     {cobranzaCampo && (
-                        <div className="px-5 pb-4">
-                            <div className="rounded-xl border border-violet-100 bg-violet-50/50 p-3 dark:border-violet-900/30 dark:bg-violet-900/10">
-                                <p className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-violet-600 dark:text-violet-300">
-                                    <Icon icon="solar:user-hand-up-bold-duotone" width={13} />
-                                    Vendedor de campo
-                                </p>
-                                <Select
-                                    error=""
-                                    label=""
-                                    name="vendedorCampoDetalle"
-                                    value={comprobante.vendedorCampoNombre || comprobante.usuario?.nombre || ''}
-                                    options={(usuarios || []).map((u: any) => ({ id: u.id, value: u.nombre || u.email || `Usuario ${u.id}` }))}
-                                    onChange={(id: any) => guardarVendedorCampo(Number(id) || null)}
-                                    disabled={!!comprobante.comisionLiquidada || guardandoVendedorCampo}
-                                />
-                                <p className="mt-1 text-[10px] text-gray-400 dark:text-slate-500">
-                                    {comprobante.comisionLiquidada
-                                        ? '🔒 La comisión de esta venta ya fue liquidada (pagada al vendedor). No se puede cambiar el vendedor.'
-                                        : guardandoVendedorCampo
-                                            ? 'Guardando…'
-                                            : 'Se muestra como vendedor en el panel, la nota de venta y el comprobante. Al cambiarlo, la comisión se recalcula para el nuevo vendedor.'}
-                                </p>
-                            </div>
-                        </div>
+                        <section>
+                            <h3 className={H3}>Vendedor de campo</h3>
+                            <Select
+                                error=""
+                                label=""
+                                name="vendedorCampoDetalle"
+                                value={comprobante.vendedorCampoNombre || comprobante.usuario?.nombre || ''}
+                                options={(usuarios || []).map((u: any) => ({ id: u.id, value: u.nombre || u.email || `Usuario ${u.id}` }))}
+                                onChange={(id: any) => guardarVendedorCampo(Number(id) || null)}
+                                disabled={!!comprobante.comisionLiquidada || guardandoVendedorCampo}
+                            />
+                            <p className="mt-1.5 text-[13px] text-[#6b645c] dark:text-slate-400">
+                                {comprobante.comisionLiquidada
+                                    ? 'La comisión de esta venta ya fue liquidada (pagada al vendedor). No se puede cambiar el vendedor.'
+                                    : guardandoVendedorCampo
+                                        ? 'Guardando…'
+                                        : 'Se muestra como vendedor en el panel, la nota de venta y el comprobante. Al cambiarlo, la comisión se recalcula para el nuevo vendedor.'}
+                            </p>
+                        </section>
                     )}
 
                     {/* ── Productos ── */}
-                    <div className="p-5">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
-                            Productos / Servicios ({comprobante.detalles?.length ?? 0})
-                        </p>
-                        <div className="rounded-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+                    <section>
+                        <h3 className={H3}>Productos y servicios ({comprobante.detalles?.length ?? 0})</h3>
+                        <ul>
                             {(comprobante.detalles ?? []).map((det: any, i: number) => (
-                                <div
-                                    key={i}
-                                    className="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-50 dark:border-slate-800/50 last:border-0 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors"
-                                >
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate flex items-center gap-1.5">
-                                            {getDetalleDescripcion(det)}
+                                <li key={i} className={ROW}>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="flex items-center gap-1.5 text-[15px] font-bold text-[#1d1915] dark:text-slate-100">
+                                            <span className="truncate">{getDetalleDescripcion(det)}</span>
                                             {esDetalleGratuito(det) && (
-                                                <span className="shrink-0 text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full">GRATIS</span>
+                                                <span className="shrink-0 rounded-full bg-[#dcf2ec] px-2 py-0.5 text-[11px] font-bold text-[#0a7a63] dark:bg-emerald-500/15 dark:text-emerald-300">Gratis</span>
                                             )}
                                         </p>
-                                        <p className="text-xs text-gray-400 mt-0.5">
-                                            {det.unidad || 'NIU'} &middot; {Number(det.cantidad ?? 0)} und &times; {monedaSimbolo} {getDetallePrecio(det).toFixed(2)}
-                                            {esDetalleGratuito(det) && ' (valor referencial)'}
+                                        <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">
+                                            {Number(det.cantidad ?? 0)} {det.unidad || 'NIU'} × {monedaSimbolo} {getDetallePrecio(det).toFixed(2)}
+                                            {esDetalleGratuito(det) && ' · valor referencial'}
                                         </p>
                                     </div>
-                                    {esDetalleGratuito(det) ? (
-                                        <p className="text-sm font-bold text-gray-400 line-through shrink-0">
-                                            {monedaSimbolo} {getDetalleSubtotal(det).toFixed(2)}
-                                        </p>
-                                    ) : (
-                                        <p className="text-sm font-bold text-gray-800 dark:text-white shrink-0">
-                                            {monedaSimbolo} {getDetalleSubtotal(det).toFixed(2)}
-                                        </p>
-                                    )}
-                                </div>
+                                    <p className={`shrink-0 text-[15px] font-bold tabular-nums ${esDetalleGratuito(det) ? 'text-[#978f86] line-through' : 'text-[#1d1915] dark:text-slate-100'}`}>
+                                        {monedaSimbolo} {getDetalleSubtotal(det).toFixed(2)}
+                                    </p>
+                                </li>
                             ))}
-                        </div>
-                        <div className="mt-3 space-y-1 text-sm">
-                            <div className="flex justify-between text-gray-500">
-                                <span>IGV (18%)</span>
-                                <span>{monedaSimbolo} {Number(comprobante.mtoIGV ?? 0).toFixed(2)}</span>
-                            </div>
-                            <div className="flex justify-between font-bold text-gray-900 dark:text-white pt-1 border-t border-gray-100 dark:border-slate-800">
-                                <span>Total</span>
-                                <span>{monedaSimbolo} {total.toFixed(2)}</span>
-                            </div>
-                        </div>
-                    </div>
+                        </ul>
+                    </section>
 
-                    {/* ── Imprimir / Compartir ── */}
-                    <div className="p-5 space-y-4">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Imprimir / Compartir
-                        </p>
-
-                        {/* Selector de tamaño */}
-                        <div className="flex gap-2">
+                    {/* ── Imprimir y compartir ── */}
+                    <section>
+                        <h3 className={H3}>Imprimir y compartir</h3>
+                        <div className="inline-flex rounded-xl bg-[rgba(40,30,20,0.055)] p-[3px] dark:bg-white/5">
                             {PRINT_SIZES.map(s => (
                                 <button
                                     key={s.id}
                                     type="button"
+                                    aria-pressed={printSize === s.id}
                                     onClick={() => setPrintSize(s.id)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
-                                        printSize === s.id
-                                            ? 'border-violet-500 text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 ring-1 ring-violet-400'
-                                            : 'border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 bg-white dark:bg-slate-800 hover:border-gray-300 dark:hover:border-slate-600'
-                                    }`}
+                                    className={`rounded-[10px] px-3.5 py-[7px] text-[12.5px] font-bold transition-all ${printSize === s.id
+                                        ? 'bg-[#fffdfa] text-[#1d1915] shadow-[0_1px_2px_rgba(0,0,0,0.06),0_4px_10px_-4px_rgba(0,0,0,0.14)] dark:bg-slate-700 dark:text-slate-100'
+                                        : 'text-[#6b645c] dark:text-slate-400'}`}
                                 >
-                                    <Icon icon={s.icon} width={13} />
                                     {s.label}
                                 </button>
                             ))}
                         </div>
-
-                        {/* Botones de acción */}
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={handleImprimir}
-                                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all"
-                            >
-                                <Icon icon="solar:printer-minimalistic-bold-duotone" width={16} />
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            <button type="button" onClick={handleImprimir} className={BTN}>
+                                <Icon icon="solar:printer-minimalistic-linear" width={17} />
                                 Imprimir
                             </button>
-                            <button
-                                type="button"
-                                onClick={handleCompartirPdf}
-                                disabled={generandoPdf}
-                                className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-800 transition-all disabled:opacity-60"
-                            >
-                                {generandoPdf ? (
-                                    <Icon icon="line-md:loading-twotone-loop" className="text-base" />
-                                ) : (
-                                    <Icon icon="solar:share-bold-duotone" width={16} />
-                                )}
+                            <button type="button" onClick={handleCompartirPdf} disabled={generandoPdf} className={BTN}>
+                                <Icon icon={generandoPdf ? 'line-md:loading-twotone-loop' : 'solar:share-linear'} width={17} />
                                 Compartir PDF
                             </button>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={handlePdfServidor}
-                            disabled={generandoPdf}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-violet-200 dark:border-violet-800/50 text-violet-600 dark:text-violet-400 text-sm font-semibold hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all disabled:opacity-60"
-                        >
-                            {generandoPdf ? (
-                                <Icon icon="line-md:loading-twotone-loop" className="text-base" />
-                            ) : (
-                                <Icon icon="solar:cloud-download-bold-duotone" width={16} />
-                            )}
-                            PDF servidor
-                        </button>
-                    </div>
-
-                    {/* ── Enviar por WhatsApp ── */}
-                    <div className="p-5 space-y-3">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Enviar por WhatsApp
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                                <Icon icon="mdi:whatsapp" className="text-green-600 dark:text-green-400 text-xl" />
-                            </div>
-                            <input
-                                type="text"
-                                value={waNumber}
-                                onChange={e => setWaNumber(e.target.value)}
-                                placeholder="Número (ej: 51999...)"
-                                className="flex-1 h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleEnviarWhatsApp}
-                                className="h-10 px-4 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-bold transition-colors shrink-0"
-                            >
-                                Enviar
+                            <button type="button" onClick={handlePdfServidor} disabled={generandoPdf} className={BTN}>
+                                <Icon icon={generandoPdf ? 'line-md:loading-twotone-loop' : 'solar:cloud-download-linear'} width={17} />
+                                PDF servidor
                             </button>
                         </div>
-                        {!pdfUrl && !comprobante?.s3PdfUrl && (
-                            <p className="text-[11px] text-amber-500 dark:text-amber-400 flex items-center gap-1">
-                                <Icon icon="solar:danger-bold" width={12} />
-                                Genera el PDF primero para incluir el enlace en el mensaje
-                            </p>
-                        )}
-                    </div>
+                    </section>
 
-                    {/* ── Enviar por Correo ── */}
-                    <div className="p-5 space-y-3">
-                        <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                            Enviar por Correo
-                        </p>
-                        <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center shrink-0">
-                                <Icon icon="solar:letter-bold-duotone" className="text-violet-600 dark:text-violet-400 text-xl" />
+                    {/* ── Enviar ── */}
+                    <section>
+                        <h3 className={H3}>Enviar al cliente</h3>
+                        <div className={ROW}>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">WhatsApp</p>
+                                <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">Va con el enlace al PDF vigente.</p>
+                                <div className="mt-2 flex gap-2">
+                                    <input type="text" value={waNumber} onChange={e => setWaNumber(e.target.value)} placeholder="Número (ej: 51999...)" className={INPUT} />
+                                    <button type="button" onClick={handleEnviarWhatsApp} className={`${BTN} shrink-0`}>
+                                        <Icon icon="mdi:whatsapp" width={17} className="text-[#0a8f74]" />
+                                        Enviar
+                                    </button>
+                                </div>
                             </div>
-                            <input
-                                type="email"
-                                value={emailDest}
-                                onChange={e => setEmailDest(e.target.value)}
-                                placeholder="Correo electrónico"
-                                className="flex-1 h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-800 dark:text-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
-                            />
-                            <button
-                                type="button"
-                                onClick={handleEnviarEmail}
-                                disabled={enviandoEmail}
-                                className="h-10 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold transition-colors shrink-0 disabled:opacity-60 flex items-center gap-1.5"
-                            >
-                                {enviandoEmail && <Icon icon="line-md:loading-twotone-loop" className="text-base" />}
-                                Enviar
-                            </button>
                         </div>
-                    </div>
+                        <div className={ROW}>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">Correo</p>
+                                <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">Adjunta el comprobante en PDF.</p>
+                                <div className="mt-2 flex gap-2">
+                                    <input type="email" value={emailDest} onChange={e => setEmailDest(e.target.value)} placeholder="Correo electrónico" className={INPUT} />
+                                    <button type="button" onClick={handleEnviarEmail} disabled={enviandoEmail} className={`${BTN} shrink-0`}>
+                                        <Icon icon={enviandoEmail ? 'line-md:loading-twotone-loop' : 'solar:letter-linear'} width={17} />
+                                        Enviar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
                     {/* ── Seguimiento de despacho (solo lectura) ── */}
                     {showDespacho && (
-                        <div className="p-5">
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-2">
-                                    <Icon icon="solar:delivery-bold-duotone" className="text-blue-500 text-xl" />
-                                    <p className="text-sm font-bold text-gray-800 dark:text-white">Seguimiento de despacho</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => { onClose(); navigate(`/administrador/ventas?fecha=${moment(comprobante.fechaEmision).format('YYYY-MM-DD')}&comprobanteId=${comprobante.id}`); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors border border-blue-200 dark:border-blue-800/50"
-                                >
-                                    <Icon icon="solar:arrow-right-up-bold" width={13} />
-                                    Ir al Panel de Despacho
-                                </button>
-                            </div>
-
-                            <div className="space-y-3">
-                                {(() => {
-                                    const estadoInfo = getEstado(envio.estado);
-                                    return (
-                                        <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${estadoInfo.bg}`}>
-                                            <Icon icon={estadoInfo.icon} width={14} />
-                                            {estadoInfo.value}
-                                        </div>
-                                    );
-                                })()}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <InfoCard icon="solar:bus-bold-duotone" label="Transportista" value={envio.transportista || '-'} />
-                                    <InfoCard icon="solar:tag-bold-duotone" label="Código guía / SKU" value={envio.codigoGuia || '-'} />
-                                    <InfoCard icon="solar:map-point-bold-duotone" label="Dirección destino" value={envio.direccionDestino || '-'} />
-                                    <InfoCard
-                                        icon="solar:calendar-bold-duotone"
-                                        label="Fecha estimada"
-                                        value={envio.fechaEstimada ? moment(envio.fechaEstimada).format('DD/MM/YYYY') : '-'}
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                        <section>
+                            <h3 className={H3}>Seguimiento de despacho</h3>
+                            <p className="mb-3 text-[14px] font-semibold text-[#6b645c] dark:text-slate-400">
+                                Estado: <b className="text-[#1d1915] dark:text-slate-100">{getEstado(envio.estado).value}</b>
+                            </p>
+                            <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+                                <Dato label="Transportista" value={envio.transportista || '-'} />
+                                <Dato label="Código guía / SKU" value={envio.codigoGuia || '-'} />
+                                <Dato label="Dirección destino" value={envio.direccionDestino || '-'} />
+                                <Dato label="Fecha estimada" value={envio.fechaEstimada ? moment(envio.fechaEstimada).format('DD/MM/YYYY') : '-'} />
+                            </dl>
+                            <button
+                                type="button"
+                                onClick={() => { onClose(); navigate(`/administrador/ventas?fecha=${moment(comprobante.fechaEmision).format('YYYY-MM-DD')}&comprobanteId=${comprobante.id}`); }}
+                                className={`${BTN} mt-4`}
+                            >
+                                <Icon icon="solar:arrow-right-up-linear" width={17} />
+                                Ir al Panel de Despacho
+                            </button>
+                        </section>
                     )}
                 </div>
             ) : (
-                <div className="py-12 text-center text-gray-400 text-sm">
+                <div className="py-16 text-center text-sm text-[#978f86]">
                     No se pudo cargar el comprobante
                 </div>
             )}
-        </Modal>
+        </DrawerHearth>
 
 </>
     );
@@ -655,30 +555,30 @@ export default function ModalDetalleComprobante({ comprobanteId, isOpen, onClose
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function SunatBadge({ estado }: { estado: string }) {
-    const map: Record<string, { label: string; cls: string }> = {
-        ACEPTADO:  { label: 'Aceptado',  cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
-        PENDIENTE: { label: 'Pendiente', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-        RECHAZADO: { label: 'Rechazado', cls: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-        ANULADO:   { label: 'Anulado',   cls: 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400' },
-        NO_APLICA: { label: 'N/A',       cls: 'bg-gray-100 text-gray-400' },
+const BTN = DRAWER_BTN;
+const H3 = DRAWER_H3;
+const ROW = DRAWER_ROW;
+const INPUT = DRAWER_INPUT;
+
+function SunatEstado({ estado }: { estado: string }) {
+    const map: Record<string, { label: string; dot: string; text: string }> = {
+        ACEPTADO:  { label: 'Aceptado',  dot: 'bg-[#0a8f74]', text: 'text-[#0a7a63] dark:text-emerald-300' },
+        EMITIDO:   { label: 'Emitido',   dot: 'bg-[#0a8f74]', text: 'text-[#0a7a63] dark:text-emerald-300' },
+        ENVIANDO:  { label: 'Enviando a SUNAT', dot: 'bg-[#c98a12]', text: 'text-[#8f600a] dark:text-amber-300' },
+        PENDIENTE_CONCILIACION: { label: 'Conciliación SUNAT', dot: 'bg-[#5b52d6]', text: 'text-[#4a41c4] dark:text-indigo-300' },
+        FALLIDO_ENVIO: { label: 'Fallido envío', dot: 'bg-[#e4572e]', text: 'text-[#b53f19] dark:text-orange-300' },
+        PENDIENTE: { label: 'Pendiente', dot: 'bg-[#c98a12]', text: 'text-[#8f600a] dark:text-amber-300' },
+        RECHAZADO: { label: 'Rechazado', dot: 'bg-[#e4572e]', text: 'text-[#b53f19] dark:text-orange-300' },
+        ANULADO:   { label: 'Anulado',   dot: 'bg-[#978f86]', text: 'text-[#6b645c] dark:text-slate-400' },
+        NO_APLICA: { label: 'Sin envío a SUNAT', dot: 'bg-[#978f86]', text: 'text-[#6b645c] dark:text-slate-400' },
     };
-    const info = map[estado] ?? { label: estado, cls: 'bg-gray-100 text-gray-500' };
+    const info = map[estado] ?? { label: estado || '—', dot: 'bg-[#978f86]', text: 'text-[#6b645c]' };
     return (
-        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${info.cls}`}>
+        <span className={`inline-flex items-center gap-1.5 ${info.text}`}>
+            <span className={`h-2 w-2 rounded-full ${info.dot}`} />
             {info.label}
         </span>
     );
 }
 
-function InfoCard({ icon, label, value }: { icon: string; label: string; value: string }) {
-    return (
-        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-50 dark:bg-slate-800/50 border border-gray-100 dark:border-slate-800">
-            <Icon icon={icon} className="text-gray-400 mt-0.5 shrink-0 text-lg" />
-            <div className="min-w-0">
-                <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-0.5">{label}</p>
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 truncate">{value}</p>
-            </div>
-        </div>
-    );
-}
+const Dato = DrawerDato;

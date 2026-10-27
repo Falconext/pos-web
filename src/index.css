@@ -115,31 +115,240 @@ body {
   background-color: #F0F2FA;
 }
 
-/* ── Fuente del SISTEMA (panel de administración): Plus Jakarta Sans ──────────
+/* ── Fondo del modo oscuro: dos versiones ─────────────────────────────────────
+   slate/gray de Tailwind leen estas variables (tailwind.config.ts). Por defecto
+   son los valores de Tailwind (modo oscuro "Azul noche", el de siempre). Con
+   `html.dark.dark-warm` pasan a los neutros cálidos del demo Hearth; también se
+   remapean los hex fijos más usados en el panel (#111827, #0A0D14, …). El modo
+   claro no se toca: solo cambia bajo `.dark`. */
+:root {
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+  --slate-950: 2 6 23;
+  --gray-50: 249 250 251;
+  --gray-100: 243 244 246;
+  --gray-200: 229 231 235;
+  --gray-300: 209 213 219;
+  --gray-400: 156 163 175;
+  --gray-500: 107 114 128;
+  --gray-600: 75 85 99;
+  --gray-700: 55 65 81;
+  --gray-800: 31 41 55;
+  --gray-900: 17 24 39;
+  --gray-950: 3 7 18;
+}
+
+html.dark.dark-warm {
+  --slate-50: 248 245 240;
+  --slate-100: 242 237 230;
+  --slate-200: 230 223 214;
+  --slate-300: 207 199 189;
+  --slate-400: 169 161 152;
+  --slate-500: 129 121 111;
+  --slate-600: 85 78 71;
+  --slate-700: 58 52 47;
+  --slate-800: 42 38 34;
+  --slate-900: 30 27 25;
+  --slate-950: 20 18 16;
+  --gray-50: 248 245 240;
+  --gray-100: 242 237 230;
+  --gray-200: 230 223 214;
+  --gray-300: 207 199 189;
+  --gray-400: 169 161 152;
+  --gray-500: 129 121 111;
+  --gray-600: 85 78 71;
+  --gray-700: 58 52 47;
+  --gray-800: 42 38 34;
+  --gray-900: 30 27 25;
+  --gray-950: 20 18 16;
+  --background: 30 11% 7%;
+  --foreground: 36 29% 93%;
+  --card: 24 9% 11%;
+  --card-foreground: 36 29% 93%;
+  --popover: 24 9% 11%;
+  --popover-foreground: 36 29% 93%;
+  --muted: 27 9% 15%;
+  --muted-foreground: 32 7% 63%;
+  --border: 30 8% 17%;
+  --input: 30 8% 17%;
+  color-scheme: dark;
+}
+
+/* Hex fijos del modo oscuro → superficies cálidas (fondo, tarjeta, elevada) */
+html.dark.dark-warm .dark\:bg-\[\#0A0D14\],
+html.dark.dark-warm .dark\:bg-\[\#0F172A\],
+html.dark.dark-warm .dark\:bg-\[\#0b0f17\] { background-color: #141210; }
+html.dark.dark-warm .dark\:bg-\[\#0A0D14\]\/90 { background-color: rgb(20 18 16 / 0.9); }
+html.dark.dark-warm .dark\:bg-\[\#111827\] { background-color: #1e1b19; }
+html.dark.dark-warm .dark\:bg-\[\#111827\]\/90 { background-color: rgb(30 27 25 / 0.9); }
+html.dark.dark-warm .dark\:bg-\[\#111827\]\/80 { background-color: rgb(30 27 25 / 0.8); }
+html.dark.dark-warm .dark\:ring-\[\#111827\] { --tw-ring-color: #1e1b19; }
+html.dark.dark-warm .dark\:via-\[\#111827\] { --tw-gradient-via: #1e1b19 var(--tw-gradient-via-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via), var(--tw-gradient-to); }
+html.dark.dark-warm .dark\:to-\[\#111827\] { --tw-gradient-to: #1e1b19 var(--tw-gradient-to-position); }
+html.dark.dark-warm .dark\:bg-\[\#131620\],
+html.dark.dark-warm .dark\:bg-\[\#0F1219\],
+html.dark.dark-warm .dark\:bg-\[\#0F1623\],
+html.dark.dark-warm .dark\:bg-\[\#0F1117\],
+html.dark.dark-warm .dark\:bg-\[\#0F1320\],
+html.dark.dark-warm .dark\:bg-\[\#0E1119\] { background-color: #191614; }
+html.dark.dark-warm .dark\:bg-\[\#1E2435\],
+html.dark.dark-warm .dark\:bg-\[\#1E293B\],
+html.dark.dark-warm .dark\:bg-\[\#1b2434\],
+html.dark.dark-warm .dark\:bg-\[\#1a1f2e\] { background-color: #26221f; }
+html.dark.dark-warm .dark\:border-\[\#0F1623\] { border-color: #26221f; }
+/* Azules marinos sueltos (carrito del POS, tarjetas con transparencia) */
+html.dark.dark-warm .dark\:bg-\[\#111c44\]\/60 { background-color: rgb(var(--slate-800) / 0.6); }
+html.dark.dark-warm .dark\:bg-\[\#0f1535\],
+html.dark.dark-warm .dark\:bg-\[\#0b1030\] { background-color: #191614; }
+html.dark.dark-warm .dark\:from-\[\#1a1f35\] { --tw-gradient-from: #26221f var(--tw-gradient-from-position); --tw-gradient-to: rgb(38 34 31 / 0) var(--tw-gradient-to-position); --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to); }
+
+/* Fondo del panel en <html> y no en el contenedor de AdminLayout: así los
+   brillos (.krk-glow, z-index -1) se ven sin que el contenedor tenga que crear
+   un contexto de apilamiento. Con `isolate` los modales del panel quedaban
+   debajo de lo que se monta en <body> (p. ej. la barra "Desplazamiento rápido"). */
+html.is-admin { background-color: #F9FAFC !important; }
+html.is-admin.dark { background-color: #0A0D14 !important; }
+html.is-admin.dark.dark-warm { background-color: #141210 !important; }
+html.is-admin body { background-color: transparent !important; }
+
+/* ── Contenedores de los módulos (estilo Hearth) ─────────────────────────────
+   Como en el demo Hearth, el contenido va directo sobre el fondo del panel (con
+   sus brillos). Todo vale solo dentro de <main> y nunca dentro de un modal
+   (.fixed / [role=dialog]).
+   1. Envoltorios de página con fondo propio → transparentes.
+   2. Tarjetas blancas → tarjeta Hearth (crema #fffdfa, borde tibio, r=20).
+   3. La caja que junta filtros + tabla → transparente; la tabla lleva su
+      propia tarjeta (DataTable: [data-krk-table]; tablas propias: su envoltorio
+      con scroll).
+   4. Tablas propias con la tipografía de DataTable.
+   5. Barra de filtros: [data-krk-filtros] en la fila de campos. */
+html.is-admin main [class*='min-h-screen'][class*='bg-']:not(.fixed *, [role='dialog'] *) {
+  background: transparent !important;
+}
+
+/* 2. Tarjetas */
+html.is-admin:not(.dark) main :is(div, section, article):is(.bg-white, [class*='bg-[#FFFFFF]'], [class*='bg-[#ffffff]']):is(.rounded-xl, .rounded-2xl, .rounded-3xl, [class*='rounded-[2']):not(.fixed *, [role='dialog'] *, [data-krk-table] *, :has([data-krk-table]), :has([data-krk-filtros]), :has(table):has(input, select)) {
+  background-color: #fffdfa !important;
+  border-color: rgba(40, 30, 20, 0.09) !important;
+  box-shadow: 0 1px 2px rgba(40, 30, 20, 0.04), 0 18px 40px -28px rgba(60, 40, 20, 0.28) !important;
+}
+html.is-admin main :is(div, section, article):is(.rounded-2xl, .rounded-3xl):is(.bg-white, [class*='dark:bg-[#111827]'], [class*='dark:bg-[#131620]']):not(.fixed *, [role='dialog'] *) {
+  border-radius: 20px;
+}
+
+/* 3. Caja de filtros + tabla */
+html.is-admin main :is(.bg-white, [class*='bg-[#F8F9FB]'], [class*='bg-gray-50']):is(:has([data-krk-table]), :has([data-krk-filtros]), :has(table):has(input, select)):not(.fixed, .fixed *, [role='dialog'] *) {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+html.is-admin main :is([data-krk-table], :is(.overflow-x-auto, .overflow-auto):has(> table):not([data-krk-table] *)):not(.fixed *, [role='dialog'] *) {
+  padding: 6px 8px 8px;
+  border: 1px solid rgba(40, 30, 20, 0.09);
+  border-radius: 20px;
+  background: #fffdfa;
+  box-shadow: 0 1px 2px rgba(40, 30, 20, 0.04), 0 18px 40px -28px rgba(60, 40, 20, 0.28);
+}
+html.is-admin.dark main :is([data-krk-table], :is(.overflow-x-auto, .overflow-auto):has(> table):not([data-krk-table] *)):not(.fixed *, [role='dialog'] *) {
+  border-color: rgb(255 255 255 / 0.08);
+  background: rgb(var(--slate-900));
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 18px 40px -28px rgb(0 0 0 / 0.8);
+}
+
+/* 4. Tablas propias (no DataTable) */
+html.is-admin main table:not([data-krk-table] table, [data-print-root] table) thead th {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+html.is-admin:not(.dark) main table:not([data-krk-table] table, [data-print-root] table) thead th { color: #6b645c !important; }
+html.is-admin:not(.dark) main table:not([data-krk-table] table, [data-print-root] table) thead,
+html.is-admin:not(.dark) main table:not([data-krk-table] table, [data-print-root] table) thead tr { background: transparent !important; }
+html.is-admin:not(.dark) main table:not([data-krk-table] table, [data-print-root] table) :is(th, td) { border-color: rgba(40, 30, 20, 0.09) !important; }
+html.is-admin:not(.dark) main table:not([data-krk-table] table, [data-print-root] table) tbody tr:hover { background-color: #f7f3ed !important; }
+
+/* 5. Barra de filtros: una sola franja, sin el título "Filtros" (en el
+   celular se mantiene el título con su botón Ver/Ocultar). */
+@media (min-width: 768px) {
+  html.is-admin [data-krk-filtros-head] { display: none !important; }
+  html.is-admin [data-krk-filtros] {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 10px;
+  }
+  html.is-admin [data-krk-filtros] > * {
+    flex: 1 1 130px;
+    min-width: 130px;
+    max-width: 220px;
+    grid-column: auto !important;
+  }
+  html.is-admin [data-krk-filtros] > :first-child { flex: 1.6 1 200px; max-width: 320px; }
+  /* Botones y casillas sueltos (Herramientas, Excel, Limpiar…): a su ancho */
+  html.is-admin [data-krk-filtros] > :not(:first-child):not(:has(input:not([type='checkbox']), select, textarea)) {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: none;
+    margin-top: 0 !important;
+  }
+  /* Desplazamientos del diseño anterior (top-3, md:top-3) que desalineaban */
+  html.is-admin [data-krk-filtros] > *,
+  html.is-admin [data-krk-filtros] > * > .relative { top: 0 !important; }
+}
+html.is-admin [data-krk-filtros-seccion] { border-bottom-color: transparent !important; }
+
+/* Etiquetas en mayúsculas que arma cada pantalla → como las de InputPro */
+html.is-admin main label:is(.uppercase, [class*='tracking-']):not(.fixed *, [role='dialog'] *) {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+html.is-admin:not(.dark) main label:is(.uppercase, [class*='tracking-']):not(.fixed *, [role='dialog'] *) { color: #6b645c !important; }
+
+/* ── Fuente del SISTEMA (panel de administración): Manrope ────────────────────
    Se aplica solo bajo `html.is-admin` (clase que AdminLayout pone en <html>),
    por lo que NO afecta a las tiendas virtuales (se renderizan fuera de is-admin).
    Se excluyen los comprobantes (#print-root), que además fuerzan su propia
-   fuente al imprimir (ver src/utils/printStyles.ts). */
+   fuente al imprimir (ver src/utils/printStyles.ts). Peso base 500 y cifras
+   tabulares: los montos de las tablas quedan alineados. */
 html.is-admin,
 html.is-admin body,
 html.is-admin .font-sans,
 html.is-admin .font-inter,
 html.is-admin .font-poppins {
-  font-family: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif !important;
 }
 
-/* Títulos del panel: Inter Tight, la de la landing de krezka.com. El :not()
+html.is-admin body {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Títulos del panel: Bricolage Grotesque, apretada como display. El :not()
    saca a los comprobantes (siguen con la fuente de impresión) y además sube la
    especificidad para ganarle a .font-sans/.font-poppins de arriba. */
 html.is-admin :is(h1, h2, h3, h4):not([data-print-root] *) {
-  font-family: 'Inter Tight', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+  font-family: 'Bricolage Grotesque', 'Manrope', ui-sans-serif, system-ui, sans-serif !important;
+  letter-spacing: -0.02em;
 }
 
-/* Módulo IA de Ventas (/administrador/leads): todo el texto en Inter Tight,
-   incluidos sus modales (se montan en <body>, fuera de #root). Los teléfonos
-   en .font-mono y los comprobantes conservan su fuente. */
+/* Módulo IA de Ventas (/administrador/leads): mismo par que el resto del
+   panel, incluidos sus modales (se montan en <body>, fuera de #root). Los
+   teléfonos en .font-mono y los comprobantes conservan su fuente. */
 html.is-admin.modulo-leads :is([data-modulo-leads], [data-modulo-leads] *, body > :not(#root) *):not(.font-mono, [data-print-root], [data-print-root] *) {
-  font-family: 'Inter Tight', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif !important;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif !important;
 }
 
 /* Comprobantes: en pantalla usan LA MISMA fuente que al imprimir (ver

@@ -412,7 +412,7 @@ const EmpresasIndex = () => {
 
       {/* Filtros */}
       <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-5 mb-5">
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div data-krk-filtros className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1"><InputPro name="search" onChange={vm.handleSearch} label="Buscar por RUC o razón social" isLabel value={vm.searchTerm} /></div>
           <div className="w-full lg:w-44"><Select name="grupoFiltro" label="Grupo" error={() => { }} options={GRUPO_OPTIONS} onChange={(id: any) => vm.setGrupoFiltro(id)} withLabel value={vm.grupoFiltro} /></div>
           <div className="w-full lg:w-44"><Select name="tipoFiltro" label="Tipo" error={() => { }} options={[{ id: '', value: 'Todas' }, { id: 'FORMAL', value: 'Formales' }, { id: 'INFORMAL', value: 'Informales' }]} onChange={(id: any) => { vm.setTipoFiltro(id); vm.setCurrentPageState(1); }} withLabel /></div>

@@ -266,6 +266,12 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
       useSoporteSistemaStore.getState().recibirMensajeEnVivo(payload);
     });
 
+    // Un lado del chat de soporte leyó: el otro pasa sus mensajes a doble check azul.
+    socket.on('soporte-leido', (lectura: any) => {
+      useSoporteStore.getState().recibirLectura(lectura);
+      useSoporteSistemaStore.getState().recibirLectura(lectura);
+    });
+
     socket.on('disconnect', () => {
       console.log('❌ WebSocket desconectado');
     });

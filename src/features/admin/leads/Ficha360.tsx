@@ -15,6 +15,16 @@ import { Link } from 'react-router-dom'
 import { rutaAlChat } from './LeadsModel'
 import moment from 'moment'
 import { crmService, ETAPA_META, type Ficha360 as Ficha } from '@/services/crm.service'
+import DrawerHearth, {
+  DRAWER_H3,
+  DRAWER_MONTO_STYLE,
+  DRAWER_ROW,
+  DRAWER_WELL,
+  DrawerCargando,
+  DrawerDato,
+  DrawerEstado,
+  DrawerHeader,
+} from '@/components/DrawerHearth'
 
 const soles = (n: number) => `S/ ${Number(n ?? 0).toFixed(2)}`
 
@@ -48,269 +58,249 @@ export function Ficha360({
     }
   }, [telefono])
 
+  const nombre = ficha?.cliente.nombreProspecto || telefono
+
   return (
-        // Por encima del cajón de conversación (z-999999 del Modal compartido):
+    // Por encima del cajón de conversación (z-999999 del Modal compartido):
     // la ficha se abre DESDE el chat, así que si queda debajo el usuario
     // pulsa "Ver su historial" y no pasa nada visible.
-    <div className="fixed inset-0 z-[1000001] flex justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onCerrar} />
-      <div className="relative flex h-full w-full max-w-md flex-col bg-white dark:bg-[#0A0D14]">
-        <div className="flex items-start justify-between border-b border-gray-100 p-5 dark:border-gray-800">
-          <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">
-              Historial del cliente
-            </p>
-            <h2 className="truncate text-lg font-black text-gray-900 dark:text-white">
-              {ficha?.cliente.nombreProspecto || telefono}
-            </h2>
-            <p className="font-mono text-xs text-gray-400">{telefono}</p>
-            <Link
-              to={rutaAlChat({ telefono, conversacionId: ficha?.cliente.conversacionId })}
-              onClick={onCerrar}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300"
-            >
-              <Icon icon="solar:chat-round-dots-bold-duotone" className="text-sm" />
-              Abrir chat
-            </Link>
-          </div>
-          <button
-            type="button"
-            onClick={onCerrar}
-            className="rounded-xl bg-gray-100 p-1.5 text-gray-500 hover:bg-gray-200 dark:bg-gray-800"
-          >
-            <Icon icon="solar:close-circle-bold" className="text-lg" />
-          </button>
-        </div>
+    <DrawerHearth
+      isOpen
+      onClose={onCerrar}
+      label="Historial del cliente"
+      contentKey={ficha ? telefono : cargando ? 'cargando' : 'vacio'}
+      zIndex={1000001}
+    >
+      {cargando && <DrawerCargando texto="Cargando…" />}
 
-        <div className="flex-1 space-y-5 overflow-y-auto p-5">
-          {cargando && (
-            <div className="flex flex-col items-center gap-3 py-12 text-gray-400">
-              <Icon icon="eos-icons:loading" className="animate-spin text-3xl text-indigo-500" />
-              <p className="text-sm">Cargando…</p>
+      {!cargando && !ficha && (
+        <div data-drawer-stagger className="flex flex-col gap-6">
+          <DrawerHeader icon="solar:user-rounded-linear" title={telefono} subtitle="Historial del cliente" />
+          <p className="py-12 text-center text-sm text-[#978f86]">
+            Este número todavía no tiene historial.
+          </p>
+        </div>
+      )}
+
+      {ficha && (
+        <div data-drawer-stagger className="flex flex-col gap-6">
+          <DrawerHeader
+            icon="solar:user-rounded-linear"
+            title={<span className="capitalize">{String(nombre).toLowerCase()}</span>}
+            subtitle={
+              <>
+                <span className="tabular-nums">{telefono}</span>
+                <span aria-hidden>·</span>
+                <DrawerEstado label={ETAPA_META[ficha.cliente.etapa].label} tone={TONO_ETAPA[ficha.cliente.etapa] ?? 'plain'} />
+              </>
+            }
+          />
+
+          <Link
+            to={rutaAlChat({ telefono, conversacionId: ficha.cliente.conversacionId })}
+            onClick={onCerrar}
+            className="-mt-2 inline-flex w-fit items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300"
+          >
+            <Icon icon="solar:chat-round-dots-bold-duotone" className="text-sm" />
+            Abrir chat
+          </Link>
+
+          {(ficha.cliente.dni || ficha.cliente.edad != null) && (
+            <p className="-mt-1 text-[15px] text-[#4a443d] dark:text-slate-300">
+              {ficha.cliente.dni && <>DNI <b className="font-bold text-[#1d1915] dark:text-slate-100">{ficha.cliente.dni}</b></>}
+              {ficha.cliente.dni && ficha.cliente.edad != null && ' · '}
+              {ficha.cliente.edad != null && <>{ficha.cliente.edad} años</>}
+            </p>
+          )}
+
+          {ficha.cliente.unidoPorDni && (
+            <div
+              data-testid="aviso-union"
+              className="flex items-start gap-2 rounded-xl bg-[#e8e6fb] px-3 py-2.5 text-[13px] font-semibold text-[#4a41c4] dark:bg-[#7a72e6]/20 dark:text-[#aaa4f5]"
+            >
+              <Icon icon="solar:link-linear" className="mt-0.5 flex-none" />
+              <span>
+                Escribe desde {ficha.cliente.telefonos.length} números con el mismo DNI:{' '}
+                {ficha.cliente.telefonos.join(', ')}. El historial está unido.
+              </span>
             </div>
           )}
 
-          {!cargando && !ficha && (
-            <p className="py-12 text-center text-sm text-gray-400">
-              Este número todavía no tiene historial.
-            </p>
+          {/* Lo comprado, como el bloque "Last sync" de Hearth */}
+          <div className={DRAWER_WELL}>
+            <div className="min-w-0">
+              <p className="text-[13px] font-semibold text-[#6b645c] dark:text-slate-400">Gastado</p>
+              <p className="text-[24px] font-bold leading-tight tabular-nums text-[#1d1915] dark:text-slate-100" style={DRAWER_MONTO_STYLE}>
+                {soles(ficha.resumenCompras.gastado)}
+              </p>
+            </div>
+            <dl className="grid grid-cols-2 gap-x-5 text-right">
+              <DrawerDato label="Pedidos" value={String(ficha.resumenCompras.cantidad)} />
+              <DrawerDato label="Promedio" value={soles(ficha.resumenCompras.ticketPromedio)} />
+            </dl>
+          </div>
+
+          <Seccion titulo="Compras">
+            {ficha.pedidos.length === 0 ? (
+              <p className={VACIO}>Todavía no compró.</p>
+            ) : (
+              ficha.pedidos.map((p) => (
+                <div key={`${p.comprobanteId}`} className={DRAWER_ROW}>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">{p.comprobante ?? '—'}</p>
+                    {p.destino && <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">{p.destino}</p>}
+                  </div>
+                  <span className="shrink-0 text-[15px] font-bold tabular-nums text-[#1d1915] dark:text-slate-100">
+                    {soles(p.monto)}
+                  </span>
+                </div>
+              ))
+            )}
+          </Seccion>
+
+          <Seccion titulo="Con qué llegó">
+            {/* Lo que contó de su malestar, en sus palabras. Es el dato
+                con el que se arma la guía de consumo, así que va primero
+                y entero, no como etiqueta recortada. */}
+            {ficha.cliente.sintomas && (
+              <p className="mb-2 rounded-xl bg-[#f8ecd2] px-3 py-2.5 text-[13.5px] leading-relaxed text-[#8f600a] dark:bg-amber-500/15 dark:text-amber-200">
+                {ficha.cliente.sintomas}
+              </p>
+            )}
+            {ficha.consultasDeSalud.length === 0 ? (
+              !ficha.cliente.sintomas && <p className={VACIO}>Sin consultas de salud registradas.</p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {ficha.consultasDeSalud.map((c, i) => (
+                  <span key={i} title={moment(c.creadoEn).format('DD/MM/YYYY')} className={`${CHIP} bg-[#e8e6fb] text-[#4a41c4] dark:bg-[#7a72e6]/20 dark:text-[#aaa4f5]`}>
+                    {c.texto}
+                  </span>
+                ))}
+              </div>
+            )}
+          </Seccion>
+
+          <Seccion titulo="Pidió y no teníamos">
+            {ficha.noHabidos.length === 0 ? (
+              <p className={VACIO}>Nada: siempre encontró lo que buscaba.</p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-1.5">
+                  {ficha.noHabidos.map((c, i) => (
+                    <span key={i} title={moment(c.creadoEn).format('DD/MM/YYYY')} className={`${CHIP} bg-[#fbe6dd] text-[#b53f19] dark:bg-orange-500/15 dark:text-orange-300`}>
+                      {c.texto}
+                    </span>
+                  ))}
+                </div>
+                {/* Es la razón de ser de esta lista: cuando llegue, hay a
+                    quién avisarle. */}
+                <p className="mt-2 text-[13px] text-[#6b645c] dark:text-slate-400">
+                  Cuando entre stock de algo de esta lista, este cliente lo
+                  estaba buscando.
+                </p>
+              </>
+            )}
+          </Seccion>
+
+          {ficha.comprobantesPago.length > 0 && (
+            <Seccion titulo="Comprobantes de pago">
+              {ficha.comprobantesPago.map((p) => (
+                <div key={p.id} className={DRAWER_ROW}>
+                  <div className="min-w-0">
+                    {p.url ? (
+                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="text-[15px] font-bold text-[#1d1915] underline-offset-2 hover:underline dark:text-slate-100">
+                        Ver imagen
+                      </a>
+                    ) : (
+                      <span className="text-[15px] font-bold text-[#978f86]">Sin imagen</span>
+                    )}
+                    <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">{moment(p.recibidoEn).format('DD/MM HH:mm')}</p>
+                  </div>
+                  <span className="shrink-0 text-[13px] font-bold">
+                    {p.validadoEn ? (
+                      <DrawerEstado label={`Validado por ${p.validadoPor}`} tone="spruce" />
+                    ) : p.rechazadoEn ? (
+                      <DrawerEstado label={`Rechazado: ${p.rechazadoMotivo}`} tone="ember" />
+                    ) : (
+                      <DrawerEstado label="Por revisar" tone="saffron" />
+                    )}
+                  </span>
+                </div>
+              ))}
+            </Seccion>
           )}
 
-          {ficha && (
-            <>
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`rounded-lg px-2 py-0.5 text-[11px] font-black ${ETAPA_META[ficha.cliente.etapa].chip}`}
-                >
-                  {ETAPA_META[ficha.cliente.etapa].label}
-                </span>
-                {ficha.cliente.dni && (
-                  <span className="font-mono text-[11px] text-gray-500">
-                    DNI {ficha.cliente.dni}
-                  </span>
-                )}
-                {ficha.cliente.edad != null && (
-                  <span className="text-[11px] text-gray-500">{ficha.cliente.edad} años</span>
-                )}
-              </div>
-
-              {ficha.cliente.unidoPorDni && (
-                <div
-                  data-testid="aviso-union"
-                  className="flex items-start gap-2 rounded-xl bg-indigo-50 px-3 py-2 text-[11px] text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-300"
-                >
-                  <Icon icon="solar:link-bold-duotone" className="mt-0.5" />
-                  <span>
-                    Escribe desde {ficha.cliente.telefonos.length} números con el mismo DNI:{' '}
-                    {ficha.cliente.telefonos.join(', ')}. El historial está unido.
-                  </span>
-                </div>
-              )}
-
-              <Seccion titulo="Compras" icono="solar:bag-check-bold-duotone">
-                <div className="mb-2 grid grid-cols-3 gap-2">
-                  <Mini etiqueta="Pedidos" valor={String(ficha.resumenCompras.cantidad)} />
-                  <Mini etiqueta="Gastado" valor={soles(ficha.resumenCompras.gastado)} />
-                  <Mini etiqueta="Promedio" valor={soles(ficha.resumenCompras.ticketPromedio)} />
-                </div>
-                {ficha.pedidos.length === 0 ? (
-                  <p className="text-xs text-gray-400">Todavía no compró.</p>
-                ) : (
-                  ficha.pedidos.map((p) => (
-                    <div
-                      key={`${p.comprobanteId}`}
-                      className="flex items-center justify-between border-t border-gray-100 py-1.5 text-xs dark:border-gray-800"
-                    >
-                      <span className="font-mono text-gray-500">{p.comprobante ?? '—'}</span>
-                      <span className="text-gray-400">{p.destino ?? ''}</span>
-                      <span className="font-bold text-gray-900 dark:text-white">
-                        {soles(p.monto)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </Seccion>
-
-              <Seccion titulo="Con qué llegó" icono="solar:stethoscope-bold-duotone">
-                {/* Lo que contó de su malestar, en sus palabras. Es el dato
-                    con el que se arma la guía de consumo, así que va primero
-                    y entero, no como etiqueta recortada. */}
-                {ficha.cliente.sintomas && (
-                  <p className="mb-2 rounded-lg bg-amber-50 px-2.5 py-2 text-xs leading-relaxed text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
-                    {ficha.cliente.sintomas}
-                  </p>
-                )}
-                {ficha.consultasDeSalud.length === 0 ? (
-                  !ficha.cliente.sintomas && (
-                    <p className="text-xs text-gray-400">Sin consultas de salud registradas.</p>
-                  )
-                ) : (
-                  <div className="flex flex-wrap gap-1.5">
-                    {ficha.consultasDeSalud.map((c, i) => (
-                      <span
-                        key={i}
-                        title={moment(c.creadoEn).format('DD/MM/YYYY')}
-                        className="rounded-lg bg-sky-50 px-2 py-0.5 text-[11px] text-sky-800 dark:bg-sky-900/20 dark:text-sky-300"
-                      >
-                        {c.texto}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </Seccion>
-
-              <Seccion titulo="Pidió y no teníamos" icono="solar:bag-cross-bold-duotone">
-                {ficha.noHabidos.length === 0 ? (
-                  <p className="text-xs text-gray-400">Nada: siempre encontró lo que buscaba.</p>
-                ) : (
-                  <>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ficha.noHabidos.map((c, i) => (
-                        <span
-                          key={i}
-                          title={moment(c.creadoEn).format('DD/MM/YYYY')}
-                          className="rounded-lg bg-rose-50 px-2 py-0.5 text-[11px] text-rose-800 dark:bg-rose-900/20 dark:text-rose-300"
-                        >
-                          {c.texto}
-                        </span>
-                      ))}
-                    </div>
-                    {/* Es la razón de ser de esta lista: cuando llegue, hay a
-                        quién avisarle. */}
-                    <p className="mt-2 text-[11px] text-gray-400">
-                      Cuando entre stock de algo de esta lista, este cliente lo
-                      estaba buscando.
+          <Seccion titulo="Por dónde pasó">
+            {ficha.historialEtapas.length === 0 ? (
+              <p className={VACIO}>Sin movimientos todavía.</p>
+            ) : (
+              [...ficha.historialEtapas].reverse().map((m, i) => (
+                <div key={i} className={DRAWER_ROW}>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">
+                      {ETAPA_META[m.hacia]?.label ?? m.hacia}
                     </p>
-                  </>
-                )}
-              </Seccion>
+                    <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">
+                      {m.actor === 'bot' ? 'automático' : m.actor}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-[#6b645c] dark:text-slate-400">
+                    {moment(m.creadoEn).format('DD/MM HH:mm')}
+                  </span>
+                </div>
+              ))
+            )}
+          </Seccion>
 
-              {ficha.comprobantesPago.length > 0 && (
-                <Seccion titulo="Comprobantes de pago" icono="solar:wallet-money-bold-duotone">
-                  {ficha.comprobantesPago.map((p) => (
-                    <div key={p.id} className="flex items-center gap-2 py-1 text-[11px]">
-                      {p.url ? (
-                        <a
-                          href={p.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-bold text-indigo-600 hover:underline"
-                        >
-                          Ver imagen
-                        </a>
-                      ) : (
-                        <span className="text-gray-400">Sin imagen</span>
-                      )}
-                      <span className="text-gray-400">
-                        {moment(p.recibidoEn).format('DD/MM HH:mm')}
-                      </span>
-                      <span className="ml-auto font-bold">
-                        {p.validadoEn ? (
-                          <span className="text-emerald-600">Validado por {p.validadoPor}</span>
-                        ) : p.rechazadoEn ? (
-                          <span className="text-rose-600">Rechazado: {p.rechazadoMotivo}</span>
-                        ) : (
-                          <span className="text-amber-600">Por revisar</span>
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </Seccion>
-              )}
-
-              <Seccion titulo="Por dónde pasó" icono="solar:route-bold-duotone">
-                {ficha.historialEtapas.length === 0 ? (
-                  <p className="text-xs text-gray-400">Sin movimientos todavía.</p>
-                ) : (
-                  [...ficha.historialEtapas].reverse().map((m, i) => (
-                    <div key={i} className="flex items-start gap-2 py-1 text-[11px]">
-                      <span className="font-bold text-gray-700 dark:text-gray-300">
-                        {ETAPA_META[m.hacia]?.label ?? m.hacia}
-                      </span>
-                      <span className="text-gray-400">
-                        {m.actor === 'bot' ? 'automático' : m.actor}
-                      </span>
-                      <span className="ml-auto flex-shrink-0 text-gray-400">
-                        {moment(m.creadoEn).format('DD/MM HH:mm')}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </Seccion>
-
-              {duplicados.length > 0 && (
-                <Seccion titulo="¿Es el mismo cliente?" icono="solar:users-group-two-rounded-bold-duotone">
-                  {/* Por nombre parecido se SUGIERE, nunca se une solo: "Rosa
-                      Quispe" hay muchas, y mezclar dos clientes les mostraría
-                      el historial de salud del otro. */}
-                  <p className="mb-2 text-[11px] text-gray-400">
-                    Estos números tienen un nombre parecido. Revísalos antes de
-                    tratarlos como la misma persona: solo el DNI une solo.
-                  </p>
-                  {duplicados.map((d) => (
-                    <div key={d.telefono} className="flex items-center gap-2 py-1 text-[11px]">
-                      <span className="font-mono text-gray-500">{d.telefono}</span>
-                      <span className="text-gray-700 dark:text-gray-300">{d.nombre}</span>
-                      <span className="ml-auto text-gray-400">
-                        {Math.round(Number(d.parecido) * 100)}% parecido
-                      </span>
-                    </div>
-                  ))}
-                </Seccion>
-              )}
-            </>
+          {duplicados.length > 0 && (
+            <Seccion titulo="¿Es el mismo cliente?">
+              {/* Por nombre parecido se SUGIERE, nunca se une solo: "Rosa
+                  Quispe" hay muchas, y mezclar dos clientes les mostraría
+                  el historial de salud del otro. */}
+              <p className="mb-1 text-[13px] text-[#6b645c] dark:text-slate-400">
+                Estos números tienen un nombre parecido. Revísalos antes de
+                tratarlos como la misma persona: solo el DNI une solo.
+              </p>
+              {duplicados.map((d) => (
+                <div key={d.telefono} className={DRAWER_ROW}>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">{d.nombre}</p>
+                    <p className="mt-0.5 text-[13px] tabular-nums text-[#6b645c] dark:text-slate-400">{d.telefono}</p>
+                  </div>
+                  <span className="shrink-0 text-[13px] font-semibold text-[#6b645c] dark:text-slate-400">
+                    {Math.round(Number(d.parecido) * 100)}% parecido
+                  </span>
+                </div>
+              ))}
+            </Seccion>
           )}
         </div>
-      </div>
-    </div>
+      )}
+    </DrawerHearth>
   )
 }
 
-function Seccion({
-  titulo,
-  icono,
-  children,
-}: {
-  titulo: string
-  icono: string
-  children: React.ReactNode
-}) {
+const VACIO = 'text-[13.5px] text-[#978f86]'
+const CHIP = 'rounded-full px-2.5 py-1 text-[12px] font-bold'
+
+/** Tono del punto de estado según la etapa del embudo. */
+const TONO_ETAPA: Partial<Record<string, 'spruce' | 'iris' | 'saffron' | 'ember' | 'plain'>> = {
+  DIAGNOSTICADO: 'iris',
+  COTIZADO: 'iris',
+  DATOS_COMPLETOS: 'saffron',
+  PENDIENTE_VALIDACION_PAGO: 'saffron',
+  POR_DESPACHAR: 'ember',
+  EN_RUTA: 'ember',
+  ENTREGADO: 'spruce',
+  REPROGRAMADO: 'saffron',
+  CONSULTADO_NO_HABIDO: 'ember',
+}
+
+function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-gray-400">
-        <Icon icon={icono} className="text-sm text-indigo-400" />
-        {titulo}
-      </p>
+    <section>
+      <h3 className={DRAWER_H3}>{titulo}</h3>
       {children}
-    </div>
-  )
-}
-
-function Mini({ etiqueta, valor }: { etiqueta: string; valor: string }) {
-  return (
-    <div className="rounded-xl bg-gray-50 px-2 py-1.5 dark:bg-gray-800/50">
-      <p className="text-[9px] font-black uppercase tracking-wider text-gray-400">{etiqueta}</p>
-      <p className="text-sm font-black text-gray-900 dark:text-white">{valor}</p>
-    </div>
+    </section>
   )
 }

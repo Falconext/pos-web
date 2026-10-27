@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { useAuthStore } from '@/zustand/auth';
+import { hasPermission } from '@/utils/permissions';
 import { BRAND } from '@/lib/branding';
 import {
     LANZAMIENTO,
@@ -50,59 +51,52 @@ const SECCIONES_LISTA: Array<{ id: string; tipo: TipoNovedad; titulo: string; ic
 ];
 
 /**
- * Imagen del bloque. Si no existe (todavía) se dibuja un marcador con el icono
- * sobre un degradado, para que la portada se pueda publicar sin todas las fotos.
+ * Qué imágenes de la portada existen, averiguado ANTES de abrirla.
+ *
+ * Sin esto el modal dibujaba el espacio de cada imagen y, una fracción de
+ * segundo después, el navegador avisaba que no existía y todo el diseño saltaba
+ * a la versión con icono: el parpadeo que se veía al abrirla con imágenes
+ * todavía sin subir. La precarga empieza al importar el módulo y el modal
+ * espera a que termine (con un tope) para mostrarse ya en su forma final.
  */
-function Imagen({ src, alt, icono, acento, clase = '' }: { src?: string; alt: string; icono: string; acento: DestacadoLanzamiento['acento']; clase?: string }) {
-    const [fallo, setFallo] = useState(false);
-    const [cargada, setCargada] = useState(false);
-    const reducido = useReducedMotion();
-    const a = ACENTO[acento];
-    if (src && !fallo) {
-        return (
-            <div className={`relative ${clase}`}>
-                {/* Halo del color del bloque detrás de la imagen, para que no quede
-                    "pegada" como un rectángulo sobre el fondo plano. */}
-                <div className={`pointer-events-none absolute -inset-6 sm:-inset-10 rounded-[40px] blur-3xl ${a.halo}`} />
-                <motion.div
-                    className={`relative h-full overflow-hidden rounded-2xl ring-1 ${a.borde} bg-[#0B0F1A] shadow-[0_30px_80px_-20px_rgba(0,0,0,.8)]`}
-                    whileHover={reducido ? undefined : { scale: 1.02, rotate: -0.4 }}
-                    transition={{ type: 'spring', stiffness: 220, damping: 22 }}
-                >
-                    <motion.img
-                        src={src}
-                        alt={alt}
-                        onLoad={() => setCargada(true)}
-                        onError={() => setFallo(true)}
-                        initial={false}
-                        animate={{ opacity: cargada ? 1 : 0, scale: cargada || reducido ? 1 : 1.06 }}
-                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-                        className="w-full h-full object-cover"
-                    />
-                    {/* Viñeta suave + reflejo superior: integra la foto con el fondo oscuro. */}
-                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_40%,transparent_55%,rgba(7,9,15,.55)_100%)]" />
-                    <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
-                    <div className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-white/10 rounded-2xl" />
-                </motion.div>
-            </div>
+const ESTADO_IMAGEN = new Map<string, 'ok' | 'fallo'>();
+
+const precargar = (src: string) =>
+    new Promise<void>((listo) => {
+        const img = new Image();
+        img.onload = () => {
+            ESTADO_IMAGEN.set(src, 'ok');
+            listo();
+        };
+        img.onerror = () => {
+            ESTADO_IMAGEN.set(src, 'fallo');
+            listo();
+        };
+        img.src = src;
+    });
+
+const IMAGENES_PORTADA = [
+    ...LANZAMIENTO.destacados.map((d) => d.imagen),
+    LANZAMIENTO.proximamente?.imagen,
+].filter((s): s is string => Boolean(s));
+
+const PRECARGA = typeof window === 'undefined' ? Promise.resolve() : Promise.all(IMAGENES_PORTADA.map(precargar)).then(() => undefined);
+
+const existeImagen = (src?: string) => Boolean(src) && ESTADO_IMAGEN.get(src!) !== 'fallo';
+
+function ChipPlan({ planes, planEmpresa, modulo }: { planes?: PlanNovedad[]; planEmpresa: PlanNovedad | null; modulo?: DestacadoLanzamiento['modulo'] }) {
+    const { auth } = useAuthStore();
+    if (modulo) {
+        return hasPermission(auth as any, modulo.codigo) ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/20">
+                <Icon icon="solar:check-circle-bold" width={13} /> Ya tienes {modulo.nombre}
+            </span>
+        ) : (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-400/10 text-amber-300 ring-1 ring-amber-400/20">
+                <Icon icon="solar:lock-keyhole-bold" width={13} /> Plan {modulo.nombre}
+            </span>
         );
     }
-    return (
-        <div
-            className={`relative overflow-hidden rounded-2xl ring-1 ${a.borde} bg-gradient-to-br ${a.glow} to-[#0B0F1A] ${clase}`}
-            aria-label={alt}
-            role="img"
-        >
-            <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,.4)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.4)_1px,transparent_1px)] [background-size:32px_32px]" />
-            <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/10 blur-3xl" />
-            <div className="absolute inset-0 flex items-center justify-center">
-                <Icon icon={icono} className="w-24 h-24 sm:w-32 sm:h-32 text-white/80 drop-shadow-[0_10px_30px_rgba(0,0,0,.5)]" />
-            </div>
-        </div>
-    );
-}
-
-function ChipPlan({ planes, planEmpresa }: { planes?: PlanNovedad[]; planEmpresa: PlanNovedad | null }) {
     const paraTodos = !planes || planes.length === 0;
     const incluida = novedadIncluidaEnPlan({ planes } as Novedad, planEmpresa);
     if (paraTodos) {
@@ -123,57 +117,86 @@ function ChipPlan({ planes, planEmpresa }: { planes?: PlanNovedad[]; planEmpresa
     );
 }
 
-function Destacado({ d, invertido, planEmpresa, root }: { d: DestacadoLanzamiento; invertido: boolean; planEmpresa: PlanNovedad | null; root: RefObject<HTMLDivElement | null> }) {
+/**
+ * Bloque destacado como banner, igual que la portada: la imagen ocupa todo el
+ * ancho sin recortarse y el texto entra sobre su franja de abajo con un
+ * degradado oscuro, para que la escena se vea entera y el texto se lea.
+ */
+function Destacado({ d, planEmpresa, root }: { d: DestacadoLanzamiento; planEmpresa: PlanNovedad | null; root: RefObject<HTMLDivElement | null> }) {
     const a = ACENTO[d.acento];
     const reducido = Boolean(useReducedMotion());
     const item = aparecer(reducido);
+    const [fallo, setFallo] = useState(false);
+    const [cargada, setCargada] = useState(() => Boolean(d.imagen) && ESTADO_IMAGEN.get(d.imagen!) === 'ok');
+    const conImagen = existeImagen(d.imagen) && !fallo;
     return (
-        <section
-            id={`lz-${d.id}`}
-            data-seccion={d.id}
-            className="relative scroll-mt-6 px-6 sm:px-10 py-12 sm:py-16 border-t border-white/[0.06] overflow-hidden"
-        >
-            {/* Mancha de color del bloque, del lado de la imagen, para que cada sección tenga su propia atmósfera. */}
+        <section id={`lz-${d.id}`} data-seccion={d.id} className="relative snap-start scroll-mt-12 lg:scroll-mt-0 border-t border-white/[0.06] overflow-hidden">
+            {/* El alto queda reservado por la proporción: nada salta si la imagen llega tarde. */}
+            <div className={`relative w-full ${d.formato === 'panoramica' ? 'aspect-[21/9]' : 'aspect-video'}`}>
+                {conImagen ? (
+                    <motion.img
+                        src={d.imagen}
+                        alt={d.titulo}
+                        onLoad={() => setCargada(true)}
+                        onError={() => setFallo(true)}
+                        initial={false}
+                        animate={{ opacity: cargada ? 1 : 0, scale: cargada || reducido ? 1 : 1.04 }}
+                        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute inset-0 w-full h-full object-cover"
+                    />
+                ) : (
+                    <div className={`absolute inset-0 bg-gradient-to-br ${a.glow} to-[#07090F]`}>
+                        <div className="absolute inset-0 opacity-[0.1] [background-image:linear-gradient(rgba(255,255,255,.4)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.4)_1px,transparent_1px)] [background-size:40px_40px]" />
+                        <Icon icon={d.icono} className="absolute left-1/2 top-[38%] -translate-x-1/2 -translate-y-1/2 w-28 h-28 sm:w-36 sm:h-36 text-white/70" />
+                    </div>
+                )}
+                {/* Fundido con la sección de arriba y oscurecido del tercio inferior, donde entra el texto. */}
+                <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#07090F]/80 to-transparent" />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#07090F] via-[#07090F]/60 to-transparent" />
+            </div>
+
+            {/* Mancha de color del bloque detrás del texto, para que cada sección tenga su atmósfera. */}
             <div
-                className={`pointer-events-none absolute top-1/2 -translate-y-1/2 w-[70%] h-[140%] blur-[100px] ${invertido ? 'right-[-20%]' : 'left-[-20%]'}`}
-                style={{ background: `radial-gradient(closest-side, ${a.fondo}, transparent)` }}
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-2/3 blur-[90px] opacity-80"
+                style={{ background: `radial-gradient(60% 60% at 30% 70%, ${a.fondo}, transparent)` }}
             />
+
             <motion.div
-                className={`relative grid gap-10 lg:gap-16 items-center lg:grid-cols-2 ${invertido ? 'lg:[&>*:first-child]:order-2' : ''}`}
+                className="relative -mt-6 sm:-mt-20 lg:-mt-32 px-6 sm:px-10 pb-12 sm:pb-16"
                 variants={contenedorEscalonado}
                 initial="oculto"
                 whileInView="visible"
-                viewport={{ root, once: true, amount: 0.25 }}
+                viewport={{ root, once: true, amount: 0.2 }}
             >
-                <motion.div
-                    variants={{
-                        oculto: { opacity: 0, x: reducido ? 0 : invertido ? 40 : -40, scale: reducido ? 1 : 0.96 },
-                        visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
-                    }}
-                >
-                    <Imagen src={d.imagen} alt={d.titulo} icono={d.icono} acento={d.acento} clase="aspect-video w-full" />
-                </motion.div>
-                <div>
-                    <motion.p variants={item} className={`text-[11px] font-black uppercase tracking-[0.25em] ${a.texto}`}>{d.etiqueta}</motion.p>
-                    <motion.h2 variants={item} className="mt-2 text-2xl sm:text-4xl font-black uppercase leading-[1.02] tracking-tight text-white">{d.titulo}</motion.h2>
-                    <motion.p variants={item} className="mt-4 text-[15px] leading-7 text-white/70">{d.descripcion}</motion.p>
-                    <ul className="mt-5 space-y-2.5">
+                <motion.p variants={item} className={`text-[11px] font-black uppercase tracking-[0.25em] ${a.texto} drop-shadow-[0_2px_10px_rgba(0,0,0,.8)]`}>{d.etiqueta}</motion.p>
+                <motion.h2 variants={item} className="mt-2 max-w-4xl text-3xl sm:text-5xl font-black uppercase leading-[0.98] tracking-tight text-white drop-shadow-[0_6px_30px_rgba(0,0,0,.7)]">
+                    {d.titulo}
+                </motion.h2>
+                <div className="mt-6 grid gap-6 lg:gap-12 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+                    <div>
+                        <motion.p variants={item} className="text-[15px] leading-7 text-white/75">{d.descripcion}</motion.p>
+                        <motion.div variants={item} className="mt-5 flex flex-wrap items-center gap-2">
+                            <ChipPlan planes={d.planes} planEmpresa={planEmpresa} modulo={d.modulo} />
+                            {d.donde && (
+                                <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
+                                    <Icon icon="solar:map-point-bold-duotone" width={14} className="text-white/40" />
+                                    {d.donde}
+                                </span>
+                            )}
+                        </motion.div>
+                    </div>
+                    <ul className="grid gap-2.5 sm:grid-cols-2">
                         {d.puntos.map((p) => (
-                            <motion.li key={p} variants={item} className="flex items-start gap-3 text-sm text-white/85">
-                                <span className={`mt-[7px] w-1.5 h-1.5 rounded-full shrink-0 ${a.punto}`} />
+                            <motion.li
+                                key={p}
+                                variants={item}
+                                className="flex items-start gap-3 rounded-xl bg-white/[0.04] ring-1 ring-white/[0.07] px-4 py-3 text-[13.5px] leading-6 text-white/85"
+                            >
+                                <span className={`mt-[9px] w-1.5 h-1.5 rounded-full shrink-0 ${a.punto}`} />
                                 <span>{p}</span>
                             </motion.li>
                         ))}
                     </ul>
-                    <motion.div variants={item} className="mt-6 flex flex-wrap items-center gap-2">
-                        <ChipPlan planes={d.planes} planEmpresa={planEmpresa} />
-                        {d.donde && (
-                            <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
-                                <Icon icon="solar:map-point-bold-duotone" width={14} className="text-white/40" />
-                                {d.donde}
-                            </span>
-                        )}
-                    </motion.div>
                 </div>
             </motion.div>
         </section>
@@ -189,17 +212,18 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
     const reducido = Boolean(useReducedMotion());
     const item = aparecer(reducido);
     const [fallo, setFallo] = useState(false);
-    const [cargada, setCargada] = useState(false);
-    const conImagen = Boolean(p.imagen) && !fallo;
+    const [cargada, setCargada] = useState(() => Boolean(p.imagen) && ESTADO_IMAGEN.get(p.imagen!) === 'ok');
+    const conImagen = existeImagen(p.imagen) && !fallo;
     return (
         <section
             id={`lz-${p.id}`}
             data-seccion={p.id}
-            className={`relative scroll-mt-6 overflow-hidden flex flex-col justify-end min-h-[520px] sm:min-h-[600px] ${conImagen ? 'lg:block lg:min-h-0' : ''} bg-[#07090F]`}
+            className={`relative snap-start scroll-mt-12 lg:scroll-mt-0 overflow-hidden flex flex-col justify-end min-h-[520px] sm:min-h-[600px] ${conImagen ? 'lg:block lg:min-h-0' : ''} bg-[#07090F]`}
         >
             {/* En escritorio la imagen va completa arriba (ancho total, sin recorte) y el
-                texto se monta sobre su tercio inferior y sigue hacia abajo sobre el fondo
-                oscuro; en móvil se recorta de fondo con el texto encima. */}
+                texto solo pisa la franja oscura de abajo, para que se vea la escena
+                entera; en móvil se recorta de fondo con el texto encima. El alto queda
+                reservado (21:9) para que nada salte cuando la imagen termina de llegar. */}
             {conImagen ? (
                 <motion.img
                     src={p.imagen}
@@ -209,7 +233,7 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
                     initial={false}
                     animate={{ opacity: cargada ? 1 : 0, scale: cargada || reducido ? 1 : 1.06 }}
                     transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute inset-0 w-full h-full object-cover object-top lg:relative lg:inset-auto lg:block lg:w-full lg:h-auto origin-top"
+                    className="absolute inset-0 w-full h-full object-cover object-top lg:relative lg:inset-auto lg:block lg:w-full lg:h-auto lg:aspect-[21/9] origin-top"
                 />
             ) : (
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,36,252,.5),transparent_60%),linear-gradient(180deg,#1a0f3a_0%,#07090F_100%)]">
@@ -218,11 +242,11 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
                 </div>
             )}
             {/* Fundido superior (viene de la sección anterior) y tercio inferior oscuro para el texto. */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#07090F] to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#07090F] to-transparent" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07090F] via-[#07090F]/75 to-transparent lg:hidden" />
 
             <motion.div
-                className={`relative w-full px-6 sm:px-10 pt-40 pb-12 sm:pb-16 text-center ${conImagen ? 'lg:-mt-[38%] lg:pt-[22%] lg:bg-gradient-to-t lg:from-[#07090F] lg:via-[#07090F] lg:via-[62%] lg:to-transparent' : ''}`}
+                className={`relative w-full px-6 sm:px-10 pt-40 pb-12 sm:pb-16 text-center ${conImagen ? 'lg:-mt-[13%] lg:pt-[5%] lg:bg-gradient-to-t lg:from-[#07090F] lg:via-[#07090F] lg:via-[62%] lg:to-transparent' : ''}`}
                 variants={contenedorEscalonado}
                 initial="oculto"
                 whileInView="visible"
@@ -300,9 +324,21 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
     const { auth } = useAuthStore();
     const planEmpresa = normalizarPlan((auth as any)?.empresa?.plan?.nombre);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const [activa, setActiva] = useState<string>('resumen');
-    const [heroFallo, setHeroFallo] = useState(false);
-    const heroVisible = Boolean(LANZAMIENTO.heroImagen) && !heroFallo;
+    const [activa, setActiva] = useState<string>(LANZAMIENTO.destacados[0]?.id ?? '');
+    // Se muestra recién cuando se sabe qué imágenes hay (ver ESTADO_IMAGEN). El
+    // tope evita que una imagen lenta deje el modal sin abrir.
+    const [imagenesListas, setImagenesListas] = useState(() => IMAGENES_PORTADA.every((s) => ESTADO_IMAGEN.has(s)));
+    useEffect(() => {
+        if (!abierto || imagenesListas) return;
+        let vivo = true;
+        Promise.race([PRECARGA, new Promise((r) => setTimeout(r, 1500))]).then(() => {
+            if (vivo) setImagenesListas(true);
+        });
+        return () => {
+            vivo = false;
+        };
+    }, [abierto, imagenesListas]);
+
     const reducido = Boolean(useReducedMotion());
 
     const listas = useMemo(() => novedadesDelLanzamiento(), []);
@@ -310,7 +346,6 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
 
     const indice = useMemo(
         () => [
-            { id: 'resumen', titulo: 'Resumen', icono: 'solar:home-2-bold-duotone' },
             ...LANZAMIENTO.destacados.map((d) => ({ id: d.id, titulo: d.titulo, icono: d.icono })),
             ...(LANZAMIENTO.proximamente ? [{ id: LANZAMIENTO.proximamente.id, titulo: LANZAMIENTO.proximamente.etiqueta, icono: LANZAMIENTO.proximamente.icono }] : []),
             ...SECCIONES_LISTA.filter((s) => listas[s.tipo].length > 0).map((s) => ({ id: s.id, titulo: s.titulo, icono: s.icono })),
@@ -358,6 +393,9 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
         return () => obs.disconnect();
     }, [abierto]);
 
+    // Sección que sigue a la que se está viendo: alimenta el botón flotante "Siguiente".
+    const siguiente = indice[indice.findIndex((s) => s.id === activa) + 1] ?? null;
+
     const irA = (id: string) => {
         const el = scrollRef.current?.querySelector<HTMLElement>(`#lz-${id}`);
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -365,7 +403,7 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
 
     return createPortal(
         <AnimatePresence>
-            {abierto && (
+            {abierto && imagenesListas && (
                 <motion.div
                     key="lanzamiento-modal"
                     className="print:hidden fixed inset-0 z-[9998] flex items-center justify-center p-2 sm:p-5"
@@ -430,8 +468,37 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                             </div>
                         </aside>
 
+                        {/* Botón flotante hacia la sección siguiente: invita a seguir bajando y
+                            lleva con un desplazamiento suave. Desaparece en la última. */}
+                        <div className="pointer-events-none absolute bottom-4 sm:bottom-6 left-0 right-0 lg:left-64 z-20 flex justify-center px-4">
+                        <AnimatePresence mode="wait">
+                            {siguiente && (
+                                <motion.button
+                                    key={siguiente.id}
+                                    type="button"
+                                    onClick={() => irA(siguiente.id)}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10, transition: { duration: 0.15 } }}
+                                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                                    className="pointer-events-auto inline-flex max-w-full items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-full bg-white/90 text-black shadow-[0_12px_40px_rgba(0,0,0,.55)] ring-1 ring-white/20 backdrop-blur hover:bg-white transition-colors"
+                                >
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/45">Siguiente</span>
+                                    <span className="truncate text-[13px] font-bold">{siguiente.titulo}</span>
+                                    <motion.span
+                                        className="grid place-items-center w-6 h-6 rounded-full bg-violet-600 text-white shrink-0"
+                                        animate={reducido ? undefined : { y: [0, 3, 0] }}
+                                        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                                    >
+                                        <Icon icon="solar:alt-arrow-down-bold" width={14} />
+                                    </motion.span>
+                                </motion.button>
+                            )}
+                        </AnimatePresence>
+                        </div>
+
                         {/* ── Contenido ───────────────────────────────────────────── */}
-                        <div ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto overscroll-contain [scrollbar-color:rgba(255,255,255,.15)_transparent]">
+                        <div ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto overscroll-contain snap-y snap-proximity [scrollbar-color:rgba(255,255,255,.15)_transparent]">
                             <button
                                 type="button"
                                 onClick={onClose}
@@ -441,78 +508,6 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                 <Icon icon="solar:close-circle-bold" width={22} />
                             </button>
 
-                            {/* Hero */}
-                            {/* En escritorio la imagen va en flujo (ancho completo, sin recorte) y el
-                                texto se superpone sobre su mitad izquierda; en móvil se recorta anclada
-                                a la derecha para que los personajes queden visibles. */}
-                            <section
-                                id="lz-resumen"
-                                data-seccion="resumen"
-                                className={`relative overflow-hidden flex flex-col justify-end min-h-[440px] ${heroVisible ? 'lg:grid lg:min-h-0' : 'sm:min-h-[500px]'}`}
-                            >
-                                {heroVisible ? (
-                                    <motion.img
-                                        src={LANZAMIENTO.heroImagen}
-                                        alt=""
-                                        onError={() => setHeroFallo(true)}
-                                        initial={{ scale: reducido ? 1 : 1.08, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-                                        className="absolute inset-0 w-full h-full object-cover object-right lg:relative lg:inset-auto lg:col-start-1 lg:row-start-1 origin-right"
-                                    />
-                                ) : (
-                                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,36,252,.55),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(14,165,233,.35),transparent_55%),linear-gradient(180deg,#141a2e_0%,#07090F_100%)]">
-                                        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.5)_1px,transparent_1px)] [background-size:40px_40px]" />
-                                    </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#07090F] via-[#07090F]/70 to-transparent" />
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#07090F]/90 via-[#07090F]/40 to-transparent" />
-
-                                <div className="relative lg:col-start-1 lg:row-start-1 lg:self-end px-6 sm:px-10 pt-20 pb-8 xl:pb-10 max-w-2xl lg:max-w-[52%]">
-                                    <motion.p
-                                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                                        className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-violet-300"
-                                    >
-                                        <span className="w-6 h-px bg-violet-400" />
-                                        {LANZAMIENTO.eyebrow}
-                                    </motion.p>
-                                    <motion.h1
-                                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-                                        className="mt-3 text-4xl xl:text-5xl 2xl:text-6xl font-black uppercase leading-[0.95] tracking-tight drop-shadow-[0_6px_30px_rgba(0,0,0,.6)]"
-                                    >
-                                        {LANZAMIENTO.titulo}
-                                    </motion.h1>
-                                    <motion.p
-                                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                                        className="mt-3 text-[15px] xl:text-lg leading-relaxed text-white/75 max-w-2xl"
-                                    >
-                                        {LANZAMIENTO.subtitulo}
-                                    </motion.p>
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
-                                        className="mt-5 xl:mt-7 flex flex-wrap items-center gap-3"
-                                    >
-                                        <button
-                                            type="button"
-                                            onClick={() => irA(LANZAMIENTO.destacados[0]?.id ?? 'lo-nuevo')}
-                                            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-black text-sm font-black uppercase tracking-wide hover:bg-violet-200 transition-colors"
-                                        >
-                                            Ver lo nuevo
-                                            <Icon icon="solar:alt-arrow-down-bold" width={16} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={onClose}
-                                            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 ring-1 ring-white/15 text-sm font-bold transition-colors"
-                                        >
-                                            Ir al panel
-                                        </button>
-                                        <span className="ml-1 text-xs text-white/40">
-                                            {listas.NUEVO.length} nuevas · {listas.MEJORA.length} mejoras · {listas.CORRECCION.length} correcciones
-                                        </span>
-                                    </motion.div>
-                                </div>
-                            </section>
 
                             {/* Índice en móvil/tablet: chips horizontales pegados arriba */}
                             <div className="lg:hidden sticky top-0 z-10 flex gap-2 overflow-x-auto px-4 py-2.5 bg-[#07090F]/90 backdrop-blur border-b border-white/[0.06] [scrollbar-width:none]">
@@ -530,8 +525,8 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                 ))}
                             </div>
 
-                            {LANZAMIENTO.destacados.map((d, i) => (
-                                <Destacado key={d.id} d={d} invertido={i % 2 === 1} planEmpresa={planEmpresa} root={scrollRef} />
+                            {LANZAMIENTO.destacados.map((d) => (
+                                <Destacado key={d.id} d={d} planEmpresa={planEmpresa} root={scrollRef} />
                             ))}
 
                             {LANZAMIENTO.proximamente && <Proximamente p={LANZAMIENTO.proximamente} root={scrollRef} />}
@@ -540,7 +535,7 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                 const items = listas[s.tipo];
                                 if (!items.length) return null;
                                 return (
-                                    <section key={s.id} id={`lz-${s.id}`} data-seccion={s.id} className="scroll-mt-6 px-6 sm:px-10 py-10 sm:py-12 border-t border-white/[0.06]">
+                                    <section key={s.id} id={`lz-${s.id}`} data-seccion={s.id} className="snap-start scroll-mt-12 lg:scroll-mt-0 px-6 sm:px-10 py-10 sm:py-12 border-t border-white/[0.06]">
                                         <div className="flex items-end gap-4 mb-6">
                                             <div>
                                                 <p className={`inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] ${s.color}`}>

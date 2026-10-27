@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
 import { useComprasStore } from '@/zustand/compras';
-import Modal from '@/components/Modal';
+import DrawerHearth, { DRAWER_H3, DRAWER_MONTO_STYLE, DRAWER_ROW, DRAWER_WELL, DrawerCargando, DrawerDato, DrawerEstado, DrawerHeader } from '@/components/DrawerHearth';
 import ModalConfirm from '@/components/ModalConfirm';
 
 interface ModalHistorialPagosCompraProps {
@@ -75,167 +75,111 @@ const ModalHistorialPagosCompra = ({ isOpen, compra, onClose, onChange }: ModalH
     const totalCompra = Number(localCompra?.total || 0);
     const saldoPendiente = Number(localCompra?.saldo || 0);
 
+    const pagada = saldoPendiente <= 0.01;
+
     return (
-        <Modal
-            isOpenModal={isOpen}
-            closeModal={onClose}
-            title={localCompra ? `Historial de Pagos: ${localCompra.serie}-${localCompra.numero}` : 'Historial de Pagos'}
-            width="700px"
-            icon="solar:history-bold-duotone"
-            iconClass="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-        >
-            <div className="flex flex-col max-h-[85vh]">
-                {/* Info de la Compra */}
-                <div className="p-4 border-b border-gray-100 dark:border-slate-800">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wider">Proveedor</p>
-                            <p className="font-bold text-gray-900 dark:text-white truncate">{localCompra?.proveedor?.nombre || 'Sin nombre'}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wider">Emisión</p>
-                            <p className="font-medium text-gray-900 dark:text-white">{localCompra?.fechaEmision ? moment(localCompra.fechaEmision).format('DD/MM/YYYY') : '-'}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wider">Total</p>
-                            <p className="font-bold text-gray-900 dark:text-white">{simbolo} {totalCompra.toFixed(2)}</p>
-                        </div>
-                        <div>
-                            <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wider">Saldo</p>
-                            <p className={`font-extrabold ${saldoPendiente > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                {simbolo} {saldoPendiente.toFixed(2)}
-                            </p>
-                        </div>
+        <>
+        <DrawerHearth isOpen={isOpen} onClose={onClose} label="Historial de pagos" contentKey={loading ? 'cargando' : `${localCompra?.id}-${recarga}`}>
+            <div data-drawer-stagger className="flex flex-col gap-6">
+                <DrawerHeader
+                    icon="solar:history-linear"
+                    tone="spruce"
+                    title={localCompra ? `Pagos ${localCompra.serie}-${localCompra.numero}` : 'Historial de pagos'}
+                    subtitle={
+                        <>
+                            {localCompra?.proveedor?.nombre || 'Sin nombre'}
+                            <span aria-hidden>·</span>
+                            <DrawerEstado label={pagada ? 'Pagada' : 'Con saldo'} tone={pagada ? 'spruce' : 'saffron'} />
+                        </>
+                    }
+                />
+
+                {/* Pagado vs. saldo, como el bloque "Last sync" de Hearth */}
+                <div className={DRAWER_WELL}>
+                    <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-[#6b645c] dark:text-slate-400">Total pagado</p>
+                        <p className="text-[24px] font-bold leading-tight tabular-nums text-[#0a7a63] dark:text-emerald-300" style={DRAWER_MONTO_STYLE}>
+                            {simbolo} {totalPagado.toFixed(2)}
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[13px] font-semibold text-[#6b645c] dark:text-slate-400">Saldo</p>
+                        <p className={`text-[17px] font-bold tabular-nums ${saldoPendiente > 0 ? 'text-[#b53f19] dark:text-orange-300' : 'text-[#0a7a63] dark:text-emerald-300'}`}>
+                            {simbolo} {saldoPendiente.toFixed(2)}
+                        </p>
                     </div>
                 </div>
 
-                {/* Resumen de Pagos */}
-                <div className="p-4 border-b border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/30">
-                    <div className="grid grid-cols-3 gap-4">
-                        <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm">
-                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Total Compra</p>
-                            <p className="text-lg font-extrabold text-gray-900 dark:text-white">{simbolo} {totalCompra.toFixed(2)}</p>
-                        </div>
-                        <div className="bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm">
-                            <p className="text-[10px] text-emerald-600 uppercase font-bold mb-1">Total Pagado</p>
-                            <p className="text-lg font-extrabold text-emerald-600 dark:text-emerald-400">{simbolo} {totalPagado.toFixed(2)}</p>
-                        </div>
-                        <div className={`bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-800 rounded-xl p-3 text-center shadow-sm`}>
-                            <p className="text-[10px] text-gray-500 uppercase font-bold mb-1">Saldo Final</p>
-                            <p className={`text-lg font-extrabold ${saldoPendiente > 0 ? 'text-rose-500' : 'text-emerald-600'}`}>
-                                {simbolo} {saldoPendiente.toFixed(2)}
-                            </p>
-                        </div>
-                    </div>
-                </div>
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+                    <DrawerDato label="Total compra" value={`${simbolo} ${totalCompra.toFixed(2)}`} />
+                    <DrawerDato label="Emisión" value={localCompra?.fechaEmision ? moment(localCompra.fechaEmision).format('DD/MM/YYYY') : '-'} />
+                    {esUSD && resumenUsd && (
+                        <>
+                            <DrawerDato label="Pagado en soles" value={`S/ ${resumenUsd.totalPagadoSoles.toFixed(2)}`} extra={[`Compra al TC ${tcCompra.toFixed(3)}`]} />
+                            <DrawerDato
+                                label="Diferencia de cambio"
+                                value={resumenUsd.diferenciaCambioTotal > 0.004 ? `Pérdida S/ ${resumenUsd.diferenciaCambioTotal.toFixed(2)}` : resumenUsd.diferenciaCambioTotal < -0.004 ? `Ganancia S/ ${Math.abs(resumenUsd.diferenciaCambioTotal).toFixed(2)}` : 'S/ 0.00'}
+                            />
+                        </>
+                    )}
+                </dl>
 
-                {esUSD && resumenUsd && (
-                    <div className="px-4 py-2 border-b border-gray-100 dark:border-slate-800 text-xs text-gray-600 dark:text-gray-300 flex flex-wrap gap-x-6 gap-y-1">
-                        <span>Compra registrada al TC <strong>{tcCompra.toFixed(3)}</strong></span>
-                        <span>Pagado en soles: <strong>S/ {resumenUsd.totalPagadoSoles.toFixed(2)}</strong></span>
-                        <span>
-                            Diferencia de cambio acumulada:{' '}
-                            <strong className={resumenUsd.diferenciaCambioTotal > 0.004 ? 'text-rose-600' : resumenUsd.diferenciaCambioTotal < -0.004 ? 'text-emerald-600' : ''}>
-                                {resumenUsd.diferenciaCambioTotal > 0.004 ? `pérdida S/ ${resumenUsd.diferenciaCambioTotal.toFixed(2)}` : resumenUsd.diferenciaCambioTotal < -0.004 ? `ganancia S/ ${Math.abs(resumenUsd.diferenciaCambioTotal).toFixed(2)}` : 'S/ 0.00'}
-                            </strong>
-                        </span>
-                    </div>
-                )}
-
-                {/* Lista de Pagos */}
-                <div className="flex-1 overflow-auto p-4 min-h-[300px]">
+                <section>
+                    <h3 className={DRAWER_H3}>Abonos ({pagos.length})</h3>
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center py-12 gap-3">
-                            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-violet-600"></div>
-                            <p className="text-sm text-gray-500 font-medium">Cargando historial...</p>
-                        </div>
+                        <DrawerCargando texto="Cargando historial..." />
                     ) : pagos.length === 0 ? (
-                        <div className="text-center py-12">
-                            <div className="w-16 h-16 bg-gray-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-100 dark:border-slate-700">
-                                <Icon icon="solar:wallet-money-linear" className="text-4xl text-gray-300" />
-                            </div>
-                            <p className="text-gray-900 dark:text-white font-bold">Sin pagos registrados</p>
-                            <p className="text-sm text-gray-400 mt-1 max-w-[200px] mx-auto">Esta compra aún no cuenta con abonos realizados.</p>
+                        <div className="rounded-2xl border-[1.5px] border-dashed border-[rgba(40,30,20,0.16)] px-4 py-8 text-center dark:border-white/15">
+                            <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">Sin pagos registrados</p>
+                            <p className="mt-1 text-[13px] text-[#6b645c] dark:text-slate-400">Esta compra aún no cuenta con abonos realizados.</p>
                         </div>
                     ) : (
-                        <div className="space-y-3">
+                        <ul>
                             {pagos.map((pago: any, index: number) => (
-                                <div
-                                    key={pago.id || index}
-                                    className="bg-white dark:bg-slate-800/50 border border-gray-200 dark:border-slate-800 rounded-xl p-4 hover:border-violet-200 dark:hover:border-violet-500/30 transition-all group shadow-sm hover:shadow-md"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                                                <Icon icon="solar:check-circle-bold" className="text-emerald-600 dark:text-emerald-400 text-xl" />
-                                            </div>
-                                            <div>
-                                                <p className="font-bold text-gray-900 dark:text-white">Abono #{pagos.length - index}</p>
-                                                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                                    <Icon icon="solar:calendar-linear" />
-                                                    {moment(pago.fecha).format('DD/MM/YYYY HH:mm')}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-lg font-black text-gray-900 dark:text-white">{simbolo} {Number(pago.monto).toFixed(2)}</p>
+                                <li key={pago.id || index} className={DRAWER_ROW}>
+                                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                                        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#dcf2ec] text-[#0a7a63] dark:bg-emerald-500/15 dark:text-emerald-300">
+                                            <Icon icon="solar:check-circle-linear" width={18} />
+                                        </span>
+                                        <div className="min-w-0">
+                                            <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">Abono #{pagos.length - index}</p>
+                                            <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">
+                                                {moment(pago.fecha).format('DD/MM/YYYY HH:mm')} · {pago.metodoPago || pago.medioPago}
+                                            </p>
+                                            {pago.referencia && <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">Ref. {pago.referencia}</p>}
+                                            {pago.observacion && <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">{pago.observacion}</p>}
                                             {esUSD && (
-                                                <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                                                <p className="mt-0.5 text-[12px] text-[#6b645c] dark:text-slate-400">
                                                     TC {Number(pago.tipoCambio || tcCompra).toFixed(3)} · S/ {Number(pago.montoSoles ?? Number(pago.monto) * (Number(pago.tipoCambio) || tcCompra)).toFixed(2)}
                                                     {Math.abs(Number(pago.diferenciaCambio || 0)) > 0.004 && (
-                                                        <span className={Number(pago.diferenciaCambio) > 0 ? ' text-rose-500' : ' text-emerald-600'}>
+                                                        <span className={Number(pago.diferenciaCambio) > 0 ? ' text-[#b53f19]' : ' text-[#0a7a63]'}>
                                                             {' '}· dif. cambio {Number(pago.diferenciaCambio) > 0 ? 'pérdida' : 'ganancia'} S/ {Math.abs(Number(pago.diferenciaCambio)).toFixed(2)}
                                                         </span>
                                                     )}
                                                 </p>
                                             )}
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-500/20 uppercase tracking-tighter">
-                                                {(pago.metodoPago || pago.medioPago)}
-                                            </span>
-                                            {!compraAnulada && (
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setPagoAAnular(pago)}
-                                                    className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-rose-500 hover:text-rose-700 transition-colors"
-                                                    title="Anular este abono: devuelve el monto al saldo de la compra"
-                                                >
-                                                    <Icon icon="solar:trash-bin-trash-bold" width={12} /> Anular
-                                                </button>
-                                            )}
                                         </div>
                                     </div>
-                                    {(pago.referencia || pago.observacion) && (
-                                        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-800/50 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            {pago.referencia && (
-                                                <div className="bg-gray-50 dark:bg-slate-900/50 p-2 rounded-lg border border-gray-100 dark:border-slate-800">
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Referencia</p>
-                                                    <p className="text-xs text-gray-700 dark:text-gray-300 font-medium truncate">{pago.referencia}</p>
-                                                </div>
-                                            )}
-                                            {pago.observacion && (
-                                                <div className="bg-gray-50 dark:bg-slate-900/50 p-2 rounded-lg border border-gray-100 dark:border-slate-800">
-                                                    <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Observación</p>
-                                                    <p className="text-xs text-gray-700 dark:text-gray-300 font-medium">{pago.observacion}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
+                                    <div className="shrink-0 text-right">
+                                        <p className="text-[15px] font-bold tabular-nums text-[#1d1915] dark:text-slate-100">{simbolo} {Number(pago.monto).toFixed(2)}</p>
+                                        {!compraAnulada && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setPagoAAnular(pago)}
+                                                className="mt-1 inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[12px] font-bold text-[#b53f19] hover:bg-[#fbe6dd] dark:text-orange-300 dark:hover:bg-orange-500/15"
+                                                title="Anular este abono: devuelve el monto al saldo de la compra"
+                                            >
+                                                <Icon icon="solar:trash-bin-trash-linear" width={13} /> Anular
+                                            </button>
+                                        )}
+                                    </div>
+                                </li>
                             ))}
-                        </div>
+                        </ul>
                     )}
-                </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t border-gray-100 dark:border-slate-800 flex justify-end">
-                    <button
-                        onClick={onClose}
-                        className="px-6 py-2.5 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-all font-bold text-sm shadow-sm"
-                    >
-                        Cerrar Historial
-                    </button>
-                </div>
+                </section>
             </div>
+        </DrawerHearth>
             <ModalConfirm
                 isOpenModal={!!pagoAAnular}
                 setIsOpenModal={(v: boolean) => { if (!v) setPagoAAnular(null); }}
@@ -244,7 +188,7 @@ const ModalHistorialPagosCompra = ({ isOpen, compra, onClose, onChange }: ModalH
                 confirmText="Anular abono"
                 confirmSubmit={confirmarAnularPago}
             />
-        </Modal>
+        </>
     );
 };
 

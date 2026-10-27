@@ -37,6 +37,10 @@ export interface IDataTableProps {
     colorRow?: string;
     isCompact?: boolean;
     pageSize?: number;
+    /** Clic en la fila (fuera de botones, casillas y enlaces): p. ej. abrir el detalle. */
+    onRowClick?: (row: any) => void;
+    /** Acciones detrás de un solo botón "⋯" (menú) en vez de una fila de íconos. */
+    actionsMenu?: boolean;
     actions?: IAction[];
     /** Ordenamiento controlado por el padre (opt-in). Si se omite, se usa el interno. */
     onSort?: (column: string) => void;

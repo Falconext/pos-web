@@ -73,7 +73,7 @@ export default function LibroControlView() {
             </div>
 
             {/* Filtros */}
-            <div className="flex flex-wrap gap-3 print:hidden items-center">
+            <div data-krk-filtros className="flex flex-wrap gap-3 print:hidden items-center">
                 <div className="w-40 z-10">
                     <Calendar
                         text="Desde"

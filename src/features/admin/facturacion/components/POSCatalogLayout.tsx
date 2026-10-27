@@ -241,7 +241,7 @@ export const POSCatalogLayout = ({ vm, layout = 'CATALOGO' }: { vm: any; layout?
 
                         <button
                             onClick={() => vm.setShowFreeQuoteItemForm((open: boolean) => !open)}
-                            className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-semibold shadow-md transition-all"
+                            className="flex items-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 text-white dark:text-slate-900 rounded-xl font-semibold shadow-md transition-all"
                             title="Añadir ítem sin registrar en inventario (libre)"
                         >
                             <Icon icon="solar:document-add-bold-duotone" className="text-xl" />

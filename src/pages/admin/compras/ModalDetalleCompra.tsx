@@ -1,7 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Icon } from '@iconify/react';
-import Modal from "@/components/Modal";
-import InputPro from "@/components/InputPro";
+import DrawerHearth, { DRAWER_BTN, DRAWER_H3, DRAWER_MONTO_STYLE, DRAWER_ROW, DRAWER_WELL, DrawerCargando, DrawerDato, DrawerEstado, DrawerHeader } from "@/components/DrawerHearth";
 import { useComprasStore } from "@/zustand/compras";
 import moment from "moment";
 
@@ -52,202 +51,134 @@ const ModalDetalleCompra = ({ isOpen, onClose, compraId }: Props) => {
     const simbolo = esUSD ? '$' : 'S/';
     const tipoCambio = Number((localCompra as any)?.tipoCambio) || 0;
 
-    const SkeletonBlock = ({ className = "" }) => (
-        <div className={`animate-pulse bg-gray-200 dark:bg-slate-800 rounded-lg ${className}`}></div>
-    );
+    const estadoCompra = String(localCompra?.estado || '').toUpperCase();
+    const estadoTone = ['ANULADO', 'ANULADA', 'RECHAZADA', 'RECHAZADO'].includes(estadoCompra)
+        ? 'ember'
+        : estadoCompra === 'PENDIENTE_APROBACION' ? 'saffron' : 'spruce';
+    const pagada = localCompra?.estadoPago === 'PAGADO' || localCompra?.estadoPago === 'COMPLETADO';
 
     return (
-        <Modal
-            isOpenModal={isOpen}
-            closeModal={onClose}
-            title={localCompra ? `Detalle de Compra: ${localCompra.serie}-${localCompra.numero}` : "Detalle de Compra"}
-            width="900px"
-            icon="solar:bill-list-bold-duotone"
-            iconClass="bg-violet-50 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400"
-        >
-            <div className="p-4 space-y-6 bg-white dark:bg-[#111827] min-h-[500px]">
-                {/* Header Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-900/20">
-                    {isLoading ? (
-                        <>
-                            {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                <div key={i} className="space-y-2">
-                                    <SkeletonBlock className="h-3 w-16" />
-                                    <SkeletonBlock className="h-10 w-full" />
-                                </div>
-                            ))}
-                        </>
-                    ) : (
-                        <>
-                            <div className="flex flex-col">
-                                <label className="text-[10px] text-gray-400 font-bold uppercase mb-1.5 ml-1">Proveedor</label>
-                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 border border-gray-200/60 dark:border-slate-700 shadow-sm truncate">
-                                    {localCompra?.proveedor?.nombre || localCompra?.proveedor?.nroDoc || '-'}
-                                </div>
-                            </div>
-                            <div className="flex flex-col">
-                                <label className="text-[10px] text-gray-400 font-bold uppercase mb-1.5 ml-1">Almacén / Sede destino</label>
-                                <div className="p-3 bg-white dark:bg-slate-800 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-200 border border-gray-200/60 dark:border-slate-700 shadow-sm truncate flex items-center gap-1.5">
-                                    <Icon icon="solar:box-bold-duotone" className="text-blue-500 shrink-0" width={16} />
-                                    <span className="truncate">{localCompra?.sede?.nombre || '-'}</span>
-                                    {localCompra?.sede?.tipo === 'ALMACEN' && (
-                                        <span className="ml-auto shrink-0 text-[9px] font-black uppercase tracking-wider text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded">Almacén</span>
-                                    )}
-                                </div>
-                            </div>
-                            <InputPro label="Serie" name="serie" value={localCompra?.serie} disabled isLabel />
-                            <InputPro label="Número" name="numero" value={localCompra?.numero} disabled isLabel />
-                            <InputPro label="Fecha Emisión" name="fechaEmision" value={moment(localCompra?.fechaEmision).format('DD/MM/YYYY')} disabled isLabel />
-                            <InputPro label="Moneda" name="moneda" value={esUSD ? `US$ Dólares · TC ${tipoCambio ? tipoCambio.toFixed(3) : '-'}` : 'S/ Soles'} disabled isLabel />
-                            <InputPro
-                                label="Fecha Vencimiento"
-                                name="fechaVencimiento"
-                                value={localCompra?.fechaVencimiento ? moment(localCompra?.fechaVencimiento).format('DD/MM/YYYY') : '-'}
-                                disabled
-                                isLabel
-                            />
-                            <div className="col-span-1 md:col-span-2 lg:col-span-1 flex flex-col">
-                                <label className="text-[10px] text-gray-400 font-bold uppercase mb-1.5 ml-1">Estados</label>
-                                <div className="flex gap-2">
-                                    <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${localCompra?.estado === 'ACTIVO' ? 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-500/20' : 'bg-rose-100 dark:bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-200/50 dark:border-rose-500/20'}`}>
-                                        {localCompra?.estado}
-                                    </span>
-                                    <span className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${localCompra?.estadoPago === 'PAGADO' || localCompra?.estadoPago === 'COMPLETADO' ? 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-200/50 dark:border-blue-500/20' : 'bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200/50 dark:border-amber-500/20'}`}>
-                                        {localCompra?.estadoPago === 'COMPLETADO' ? 'PAGADO' : localCompra?.estadoPago}
-                                    </span>
-                                </div>
-                            </div>
-                        </>
+        <DrawerHearth isOpen={isOpen} onClose={onClose} label="Detalle de compra" contentKey={isLoading ? 'cargando' : localCompra?.id}>
+            {isLoading ? (
+                <DrawerCargando texto="Cargando compra..." />
+            ) : (
+                <div data-drawer-stagger className="flex flex-col gap-6">
+                    <DrawerHeader
+                        icon="solar:bill-list-linear"
+                        title={`Compra ${localCompra?.serie}-${localCompra?.numero}`}
+                        subtitle={
+                            <>
+                                {moment(localCompra?.fechaEmision).format('DD/MM/YYYY')}
+                                <span aria-hidden>·</span>
+                                <DrawerEstado
+                                    label={pagada ? 'Pagada' : localCompra?.estadoPago === 'PAGO_PARCIAL' ? 'Pago parcial' : 'Por pagar'}
+                                    tone={pagada ? 'spruce' : 'saffron'}
+                                />
+                            </>
+                        }
+                    />
+
+                    <p className="-mt-1 text-[15px] text-[#4a443d] dark:text-slate-300">
+                        Comprada a <b className="font-bold text-[#1d1915] dark:text-slate-100">{localCompra?.proveedor?.nombre || localCompra?.proveedor?.nroDoc || 'proveedor sin nombre'}</b>
+                        {localCompra?.sede?.nombre ? <> para <b className="font-bold text-[#1d1915] dark:text-slate-100">{localCompra.sede.nombre}</b>{localCompra?.sede?.tipo === 'ALMACEN' ? ' (almacén)' : ''}</> : null}.
+                    </p>
+
+                    {/* Total, como el bloque "Last sync" de Hearth */}
+                    <div className={DRAWER_WELL}>
+                        <div className="min-w-0">
+                            <p className="text-[13px] font-semibold text-[#6b645c] dark:text-slate-400">Total</p>
+                            <p className="text-[24px] font-bold leading-tight tabular-nums text-[#1d1915] dark:text-slate-100" style={DRAWER_MONTO_STYLE}>
+                                {simbolo} {total.toFixed(2)}
+                            </p>
+                            {esUSD && tipoCambio > 0 && (
+                                <p className="text-[13px] text-[#6b645c] dark:text-slate-400">Equivale a S/ {(total * tipoCambio).toFixed(2)} (TC {tipoCambio.toFixed(3)})</p>
+                            )}
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[13px] font-semibold text-[#6b645c] dark:text-slate-400">Saldo</p>
+                            <p className={`text-[17px] font-bold tabular-nums ${Number(localCompra?.saldo || 0) > 0.01 ? 'text-[#b53f19] dark:text-orange-300' : 'text-[#0a7a63] dark:text-emerald-300'}`}>
+                                {simbolo} {Number(localCompra?.saldo || 0).toFixed(2)}
+                            </p>
+                        </div>
+                    </div>
+
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+                        <DrawerDato label="Proveedor" value={localCompra?.proveedor?.nombre || localCompra?.proveedor?.nroDoc || '-'} />
+                        <DrawerDato label="Sede destino" value={localCompra?.sede?.nombre || '-'} />
+                        <DrawerDato label="Comprobante" value={`${localCompra?.serie || '-'}-${localCompra?.numero || ''}`} />
+                        <DrawerDato label="Moneda" value={esUSD ? `US$ Dólares · TC ${tipoCambio ? tipoCambio.toFixed(3) : '-'}` : 'S/ Soles'} />
+                        <DrawerDato label="Emisión" value={moment(localCompra?.fechaEmision).format('DD/MM/YYYY')} />
+                        <DrawerDato label="Vencimiento" value={localCompra?.fechaVencimiento ? moment(localCompra?.fechaVencimiento).format('DD/MM/YYYY') : '-'} />
+                        <DrawerDato label="Estado" value={<DrawerEstado label={String(localCompra?.estado || '-').replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c: string) => c.toUpperCase())} tone={estadoTone as any} />} />
+                    </dl>
+
+                    <section>
+                        <h3 className={DRAWER_H3}>Productos comprados ({detalles.length})</h3>
+                        {detalles.length === 0 ? (
+                            <p className="text-[13.5px] text-[#978f86]">No hay productos registrados en esta compra</p>
+                        ) : (
+                            <ul>
+                                {detalles.map((item: any, idx: number) => (
+                                    <li key={idx} className={DRAWER_ROW}>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-[15px] font-bold text-[#1d1915] dark:text-slate-100">{item.descripcion || item.producto?.descripcion}</p>
+                                            <p className="mt-0.5 text-[13px] text-[#6b645c] dark:text-slate-400">
+                                                {item.cantidad} × {simbolo} {Number(item.precioUnitario).toFixed(2)}
+                                                {/* Distribución por sede: la línea entró a una sede distinta a la de la cabecera */}
+                                                {item.sede?.nombre && item.sede.id !== localCompra?.sedeId && <> · entró a {item.sede.nombre}</>}
+                                                {item.lote && <> · Lote {item.lote}</>}
+                                                {item.fechaVencimiento && <> · Vence {moment(item.fechaVencimiento).format('DD/MM/YYYY')}</>}
+                                            </p>
+                                        </div>
+                                        <p className="shrink-0 text-[15px] font-bold tabular-nums text-[#1d1915] dark:text-slate-100">
+                                            {simbolo} {Number(item.total || (item.cantidad * item.precioUnitario)).toFixed(2)}
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        <div className="mt-2 space-y-1.5 border-t border-[rgba(40,30,20,0.09)] pt-3 text-[14px] dark:border-white/10">
+                            <Linea label="Op. gravada" valor={`${simbolo} ${subtotal.toFixed(2)}`} />
+                            {opNoGravada > 0 && <Linea label="Op. exonerada / inafecta" valor={`${simbolo} ${opNoGravada.toFixed(2)}`} />}
+                            <Linea label="IGV (18%)" valor={`${simbolo} ${igv.toFixed(2)}`} />
+                        </div>
+                    </section>
+
+                    {/* Foto de la factura/boleta (evidencia leída por IA) */}
+                    {localCompra?.fotoUrl && (
+                        <section>
+                            <h3 className={DRAWER_H3}>Foto del comprobante</h3>
+                            <a
+                                href={localCompra.fotoUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group block w-fit overflow-hidden rounded-2xl border border-[rgba(40,30,20,0.09)] dark:border-white/10"
+                            >
+                                <img
+                                    src={localCompra.fotoUrl}
+                                    alt="Foto de la factura o boleta de la compra"
+                                    className="max-h-80 w-auto bg-[#f7f3ed] object-contain dark:bg-slate-800"
+                                />
+                            </a>
+                            <a href={localCompra.fotoUrl} target="_blank" rel="noopener noreferrer" className={`${DRAWER_BTN} mt-3`}>
+                                <Icon icon="solar:maximize-square-linear" width={17} />
+                                Ver en tamaño completo
+                            </a>
+                        </section>
                     )}
                 </div>
-
-                {/* Items Table */}
-                <div className="space-y-3">
-                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 ml-1">
-                        <Icon icon="solar:box-bold-duotone" className="text-violet-500" />
-                        Productos Comprados
-                    </h3>
-                    <div className="overflow-x-auto border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm">
-                        <table className="w-full min-w-[640px] text-sm text-left">
-                            <thead className="bg-gray-50/50 dark:bg-slate-900/50 text-gray-500 dark:text-gray-400 font-bold border-b border-gray-100 dark:border-slate-800">
-                                <tr>
-                                    <th className="px-4 py-3 uppercase text-[10px] tracking-wider">Descripción</th>
-                                    <th className="px-4 py-3 text-center uppercase text-[10px] tracking-wider">Cant.</th>
-                                    <th className="px-4 py-3 text-right uppercase text-[10px] tracking-wider">Costo Unit.</th>
-                                    <th className="px-4 py-3 text-right uppercase text-[10px] tracking-wider">Subtotal</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50 dark:divide-slate-800/50">
-                                {isLoading ? (
-                                    [1, 2, 3].map(i => (
-                                        <tr key={i}>
-                                            <td className="px-4 py-4"><SkeletonBlock className="h-4 w-48" /></td>
-                                            <td className="px-4 py-4"><SkeletonBlock className="h-4 w-12 mx-auto" /></td>
-                                            <td className="px-4 py-4"><SkeletonBlock className="h-4 w-20 ml-auto" /></td>
-                                            <td className="px-4 py-4"><SkeletonBlock className="h-4 w-24 ml-auto" /></td>
-                                        </tr>
-                                    ))
-                                ) : (!localCompra?.detalles || localCompra.detalles.length === 0) ? (
-                                    <tr>
-                                        <td colSpan={4} className="px-4 py-12 text-center text-gray-400 italic">
-                                            No hay productos registrados en esta compra
-                                        </td>
-                                    </tr>
-                                ) : localCompra.detalles.map((item: any, idx: number) => (
-                                    <tr key={idx} className="hover:bg-gray-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                                        <td className="px-4 py-4">
-                                            <div className="font-bold text-gray-800 dark:text-gray-200">{item.descripcion || item.producto?.descripcion}</div>
-                                            {/* Distribución por sede: la línea entró a una sede distinta a la de la cabecera */}
-                                            {item.sede?.nombre && item.sede.id !== localCompra?.sedeId && (
-                                                <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 dark:text-blue-300 dark:bg-blue-900/20 dark:border-blue-800/40 px-1.5 py-0.5 rounded">
-                                                    <Icon icon="solar:shop-bold-duotone" width={10} /> {item.sede.nombre}
-                                                </span>
-                                            )}
-                                            {(item.lote || item.fechaVencimiento) && (
-                                                <div className="flex gap-3 mt-1">
-                                                    {item.lote && <span className="text-[10px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium text-gray-500">Lote: {item.lote}</span>}
-                                                    {item.fechaVencimiento && <span className="text-[10px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded font-medium text-gray-500">Vence: {moment(item.fechaVencimiento).format('DD/MM/YYYY')}</span>}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="px-4 py-4 text-center font-medium text-gray-600 dark:text-gray-400">{item.cantidad}</td>
-                                        <td className="px-4 py-4 text-right font-medium text-gray-600 dark:text-gray-400">{simbolo} {Number(item.precioUnitario).toFixed(2)}</td>
-                                        <td className="px-4 py-4 text-right font-black text-gray-900 dark:text-white">{simbolo} {Number(item.total || (item.cantidad * item.precioUnitario)).toFixed(2)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Foto de la factura/boleta (evidencia leída por IA) */}
-                {!isLoading && localCompra?.fotoUrl && (
-                    <div className="space-y-3">
-                        <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2 ml-1">
-                            <Icon icon="solar:camera-bold-duotone" className="text-violet-500" />
-                            Foto del Comprobante
-                        </h3>
-                        <a
-                            href={localCompra.fotoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group block w-fit rounded-2xl border border-gray-100 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
-                        >
-                            <img
-                                src={localCompra.fotoUrl}
-                                alt="Foto de la factura o boleta de la compra"
-                                className="max-h-80 w-auto object-contain bg-gray-50 dark:bg-slate-900"
-                            />
-                            <div className="flex items-center gap-1.5 px-3 py-2 text-[11px] font-bold text-violet-600 dark:text-violet-400 bg-white dark:bg-slate-900/50 border-t border-gray-100 dark:border-slate-800">
-                                <Icon icon="solar:maximize-square-bold-duotone" width={14} />
-                                Ver en tamaño completo
-                            </div>
-                        </a>
-                    </div>
-                )}
-
-                {/* Footer Totals */}
-                <div className="flex justify-end pt-2">
-                    <div className="w-full md:w-72 space-y-3 p-5 rounded-2xl border border-gray-100 dark:border-slate-800 bg-gray-50/30 dark:bg-slate-900/20 shadow-sm">
-                        {isLoading ? (
-                            <>
-                                <SkeletonBlock className="h-4 w-full" />
-                                <SkeletonBlock className="h-4 w-full" />
-                                <SkeletonBlock className="h-8 w-full mt-4" />
-                            </>
-                        ) : (
-                            <>
-                                <div className="flex justify-between text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <span>Op. Gravada</span>
-                                    <span className="text-gray-700 dark:text-gray-200">{simbolo} {subtotal.toFixed(2)}</span>
-                                </div>
-                                {opNoGravada > 0 && (
-                                    <div className="flex justify-between text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                        <span>Op. Exonerada / Inafecta</span>
-                                        <span className="text-gray-700 dark:text-gray-200">{simbolo} {opNoGravada.toFixed(2)}</span>
-                                    </div>
-                                )}
-                                <div className="flex justify-between text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                                    <span>IGV (18%)</span>
-                                    <span className="text-gray-700 dark:text-gray-200">{simbolo} {igv.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-xl font-black text-gray-900 dark:text-white border-t border-gray-200 dark:border-slate-700 pt-3 mt-3">
-                                    <span className="text-sm uppercase tracking-tighter self-center">Total Final</span>
-                                    <span className="text-violet-600 dark:text-violet-400">{simbolo} {total.toFixed(2)}</span>
-                                </div>
-                                {esUSD && tipoCambio > 0 && (
-                                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                                        <span>Equivale a (TC {tipoCambio.toFixed(3)})</span>
-                                        <span>S/ {(total * tipoCambio).toFixed(2)}</span>
-                                    </div>
-                                )}
-                            </>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </Modal>
+            )}
+        </DrawerHearth>
     );
 };
+
+function Linea({ label, valor }: { label: string; valor: string }) {
+    return (
+        <div className="flex justify-between text-[#6b645c] dark:text-slate-400">
+            <span>{label}</span>
+            <span className="font-semibold tabular-nums text-[#1d1915] dark:text-slate-100">{valor}</span>
+        </div>
+    );
+}
 
 export default ModalDetalleCompra;

@@ -618,10 +618,10 @@ const ComprobantesInformales = () => {
         setSelectedSedeId(Number(idValue));
     }
 
-    const handleSelectUsuario = (event: ChangeEvent<HTMLSelectElement>) => {
-        const value = event.target.value;
+    // Select (UI) entrega el `id` de la opción; 0 = "Todos los vendedores".
+    const handleSelectUsuario = (idValue: any) => {
         setcurrentPage(1);
-        setSelectedUsuarioId(value ? Number(value) : null);
+        setSelectedUsuarioId(idValue && Number(idValue) > 0 ? Number(idValue) : null);
     }
 
     // El `id` es el valor real que espera el backend (estadoPago); el `value` es la
@@ -637,7 +637,11 @@ const ComprobantesInformales = () => {
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))
     ]
-    const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
+    const vendedoresOptions = [
+        { id: 0, value: 'Todos los vendedores' },
+        ...usuarios.filter((u) => u.estado === 'ACTIVO').map((u) => ({ id: u.id, value: u.nombre })),
+    ]
+    const vendedorSeleccionado = vendedoresOptions.find((o) => o.id === selectedUsuarioId)?.value ?? 'Todos los vendedores'
 
     const confirmCancelInvoice = () => {
         cancelInvoice(formValues?.id)
@@ -837,8 +841,8 @@ const ComprobantesInformales = () => {
             {/* Main Content Card */}
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
-                <div className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3">
+                <div data-krk-filtros-seccion className="border-b border-gray-100 p-4 dark:border-slate-800 sm:p-5">
+                    <div data-krk-filtros-head className="mb-4 flex items-center justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-2">
                             <Icon icon="solar:filter-bold-duotone" className="text-xl text-blue-600" />
                             <div className="min-w-0">
@@ -857,7 +861,7 @@ const ComprobantesInformales = () => {
                             <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
                         </button>
                     </div>
-                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6`}>
+                    <div data-krk-filtros className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6`}>
                         <div className="">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
@@ -889,17 +893,15 @@ const ComprobantesInformales = () => {
                         )}
                         {canFilterByUsuario && (
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Vendedor</label>
-                                <select
-                                    value={selectedUsuarioId ?? ''}
+                                <Select
                                     onChange={handleSelectUsuario}
-                                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                                >
-                                    <option value="">Todos los vendedores</option>
-                                    {vendedoresOptions.map((usuario) => (
-                                        <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
-                                    ))}
-                                </select>
+                                    label="Vendedor"
+                                    name="vendedor"
+                                    options={vendedoresOptions}
+                                    defaultValue={vendedorSeleccionado}
+                                    value={vendedorSeleccionado}
+                                    error=""
+                                />
                             </div>
                         )}
                         <div className="">
@@ -973,6 +975,7 @@ const ComprobantesInformales = () => {
                             </div>
                             <div className="hidden overflow-x-auto md:block">
                                 <DataTable bodyData={productsTable}
+                                    onRowClick={(row: any) => row?.id && setDetalleComprobanteId(row.id)}
                                     headerColumns={[
                                         { label: casillaTodas, key: 'seleccion' },
                                         'Fecha',
@@ -980,7 +983,6 @@ const ComprobantesInformales = () => {
                                         'Serie',
                                         'Nro.',
                                         { label: 'Comprobante', key: 'comprobanteVista' },
-                                        'Doc. Afiliado',
                                         'Num doc',
                                         'Cliente',
                                         'Vendedor',
