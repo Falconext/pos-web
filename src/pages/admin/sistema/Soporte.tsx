@@ -84,8 +84,14 @@ export default function SistemaSoporte() {
     const [alto, setAlto] = useState<number>();
     useLayoutEffect(() => {
         const medir = () => {
-            const top = marcoRef.current?.getBoundingClientRect().top ?? 0;
-            setAlto(Math.max(420, window.innerHeight - top - 16));
+            const el = marcoRef.current;
+            if (!el) return;
+            // Con el zoom del panel (p. ej. 90 %) el rectángulo viene en píxeles de
+            // pantalla y el alto se aplica sin zoom: se convierte con la escala real.
+            const caja = el.getBoundingClientRect();
+            const escala = el.offsetWidth ? caja.width / el.offsetWidth : 1;
+            // 20 = el margen inferior del contenedor de la página (p-5).
+            setAlto(Math.max(420, (window.innerHeight - caja.top) / escala - 20));
         };
         medir();
         window.addEventListener('resize', medir);
