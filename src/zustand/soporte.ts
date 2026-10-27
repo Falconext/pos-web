@@ -10,6 +10,9 @@ export interface SoporteMensaje {
     /** Foto o nota de voz del mensaje (S3). */
     imagenUrl?: string | null;
     audioUrl?: string | null;
+    /** Documento (PDF, Excel, XML…) y su nombre original. */
+    archivoUrl?: string | null;
+    archivoNombre?: string | null;
     creadoEn: string;
     /** Mensaje propio que se muestra al instante mientras sube (como WhatsApp). */
     pendiente?: boolean;
@@ -26,7 +29,7 @@ export function mensajeTemporal(
     rol: 'EMPRESA' | 'SISTEMA',
     conversacionId: number,
     contenido: string,
-    adjunto: { tipo?: 'imagen' | 'audio'; archivo?: File } = {},
+    adjunto: { tipo?: TipoAdjunto; archivo?: File } = {},
 ): SoporteMensaje {
     const local = adjunto.archivo ? URL.createObjectURL(adjunto.archivo) : null;
     return {
@@ -37,6 +40,8 @@ export function mensajeTemporal(
         contenido,
         imagenUrl: adjunto.tipo === 'imagen' ? local : null,
         audioUrl: adjunto.tipo === 'audio' ? local : null,
+        archivoUrl: adjunto.tipo === 'archivo' ? local : null,
+        archivoNombre: adjunto.tipo === 'archivo' ? adjunto.archivo?.name ?? null : null,
         creadoEn: new Date().toISOString(),
         pendiente: true,
     };
@@ -50,8 +55,28 @@ export const conservarTemporales = (servidor: SoporteMensaje[], actuales: Soport
     ),
 ];
 
-export const textoDeAdjunto = (tipo: 'imagen' | 'audio', texto?: string) =>
-    tipo === 'audio' ? '[Nota de voz]' : texto?.trim() ? `[Imagen] ${texto.trim()}` : '[Imagen]';
+export type TipoAdjunto = 'imagen' | 'audio' | 'archivo';
+
+/** Foto → imagen; cualquier otro archivo (PDF, Excel…) → archivo. */
+export const tipoDeArchivo = (archivo: File): TipoAdjunto => (archivo.type.startsWith('image/') ? 'imagen' : 'archivo');
+
+export const textoDeAdjunto = (tipo: TipoAdjunto, texto?: string, nombre?: string) => {
+    const pie = texto?.trim();
+    if (tipo === 'audio') return '[Nota de voz]';
+    if (tipo === 'archivo') return pie ? `[Archivo] ${nombre ?? ''} · ${pie}` : `[Archivo] ${nombre ?? ''}`;
+    return pie ? `[Imagen] ${pie}` : '[Imagen]';
+};
+
+/** ¿El otro lado ya vio este mensaje? (doble check azul) */
+export const fueVisto = (creadoEn: string, leidoEn?: string | null) =>
+    Boolean(leidoEn) && new Date(creadoEn).getTime() <= new Date(leidoEn!).getTime();
+
+/** Evento en vivo 'soporte-leido': un lado avisa hasta cuándo leyó. */
+export interface LecturaSoporte {
+    conversacionId: number;
+    lado: 'EMPRESA' | 'SISTEMA';
+    en: string;
+}
 
 /** Sube una foto (con pie opcional) o una nota de voz al endpoint dado. */
 export async function subirAdjuntoSoporte(endpoint: string, archivo: File, texto?: string) {
@@ -63,6 +88,8 @@ export async function subirAdjuntoSoporte(endpoint: string, archivo: File, texto
 
 interface SoporteState {
     mensajes: SoporteMensaje[];
+    /** Hasta cuándo leyó Krezka: lo propio anterior va con doble check azul. */
+    leidoPorSistemaEn: string | null;
     estado: 'ABIERTA' | 'CERRADA';
     loading: boolean;
     enviando: boolean;
@@ -71,7 +98,10 @@ interface SoporteState {
     cargarMensajes: (quitarTemporal?: number) => Promise<void>;
     enviarMensaje: (contenido: string) => Promise<void>;
     /** Foto (con `texto` como pie) o nota de voz. */
-    enviarAdjunto: (tipo: 'imagen' | 'audio', archivo: File, texto?: string) => Promise<boolean>;
+    enviarAdjunto: (tipo: TipoAdjunto, archivo: File, texto?: string) => Promise<boolean>;
+    /** El chat está a la vista: lo de Krezka queda leído (y Krezka ve el check azul). */
+    marcarLeido: () => Promise<void>;
+    recibirLectura: (lectura: LecturaSoporte) => void;
     /** Quita el mensaje temporal al confirmarse, o lo marca como no enviado. */
     resolverTemporal: (id: number, ok: boolean, error: string) => void;
     /** Contador de no leídos sin marcar nada como visto (para el badge del widget cerrado). */
@@ -84,11 +114,14 @@ interface SoporteState {
         contenido: string;
         imagenUrl?: string;
         audioUrl?: string;
+        archivoUrl?: string;
+        archivoNombre?: string;
     }) => void;
 }
 
 export const useSoporteStore = create<SoporteState>((set, get) => ({
     mensajes: [],
+    leidoPorSistemaEn: null,
     estado: 'ABIERTA',
     loading: false,
     enviando: false,
@@ -96,7 +129,9 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
 
     cargarMensajes: async (quitarTemporal?: number) => {
         set({ loading: true, error: null });
-        const res = await apiGet<{ estado: 'ABIERTA' | 'CERRADA'; mensajes: SoporteMensaje[] }>('/soporte/mensajes');
+        const res = await apiGet<{ estado: 'ABIERTA' | 'CERRADA'; mensajes: SoporteMensaje[]; leidoPorSistemaEn?: string | null }>(
+            '/soporte/mensajes',
+        );
         if (res.success && res.data) {
             set((state) => ({
                 // El temporal confirmado se va en el MISMO cambio que trae el real.
@@ -105,6 +140,7 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
                     state.mensajes.filter((m) => m.id !== quitarTemporal),
                 ),
                 estado: res.data!.estado,
+                leidoPorSistemaEn: res.data!.leidoPorSistemaEn ?? state.leidoPorSistemaEn,
                 loading: false,
             }));
         } else {
@@ -123,7 +159,7 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
     },
 
     enviarAdjunto: async (tipo, archivo, texto) => {
-        const temporal = mensajeTemporal('EMPRESA', 0, textoDeAdjunto(tipo, texto), { tipo, archivo });
+        const temporal = mensajeTemporal('EMPRESA', 0, textoDeAdjunto(tipo, texto, archivo.name), { tipo, archivo });
         set((state) => ({ mensajes: [...state.mensajes, temporal], error: null }));
         const res = await subirAdjuntoSoporte(`/soporte/mensajes/${tipo}`, archivo, texto);
         if (res.success) await get().cargarMensajes(temporal.id);
@@ -131,9 +167,18 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
             get().resolverTemporal(
                 temporal.id,
                 false,
-                res.error || (tipo === 'imagen' ? 'No se pudo enviar la imagen' : 'No se pudo enviar la nota de voz'),
+                res.error ||
+                    (tipo === 'imagen' ? 'No se pudo enviar la imagen' : tipo === 'audio' ? 'No se pudo enviar la nota de voz' : 'No se pudo enviar el archivo'),
             );
         return res.success;
+    },
+
+    marcarLeido: async () => {
+        await apiPost('/soporte/leido', {});
+    },
+
+    recibirLectura: (lectura) => {
+        if (lectura.lado === 'SISTEMA') set({ leidoPorSistemaEn: lectura.en });
     },
 
     resolverTemporal: (id, ok, error) => {
@@ -178,6 +223,8 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
                         contenido: payload.contenido,
                         imagenUrl: payload.imagenUrl ?? null,
                         audioUrl: payload.audioUrl ?? null,
+                        archivoUrl: payload.archivoUrl ?? null,
+                        archivoNombre: payload.archivoNombre ?? null,
                         creadoEn: new Date().toISOString(),
                     },
                 ],

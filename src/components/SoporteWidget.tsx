@@ -9,7 +9,7 @@ import { Icon } from '@iconify/react';
 import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import { useSoporteStore } from '@/zustand/soporte';
+import { fueVisto, tipoDeArchivo, useSoporteStore } from '@/zustand/soporte';
 import { Adjunto, BotonesAdjunto, VistaPreviaImagen, usePegadoAlFinal, imagenPegada, imagenSoltada, textoSinMarca } from './soporte/AdjuntosSoporte';
 import {
     PREGUNTAS_SOPORTE,
@@ -168,7 +168,8 @@ export default function SoporteWidget() {
     const [abierto, setAbierto] = useState(false);
     const [noLeidos, setNoLeidos] = useState(0);
     const [texto, setTexto] = useState('');
-    const { mensajes, loading, enviando, error, cargarMensajes, enviarMensaje, enviarAdjunto, consultarNoLeidos } = useSoporteStore();
+    const { mensajes, loading, enviando, error, cargarMensajes, enviarMensaje, enviarAdjunto, consultarNoLeidos, marcarLeido, leidoPorSistemaEn } =
+        useSoporteStore();
     const bottomRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
     // Primero la ayuda: la mayoría de las dudas ya tienen respuesta y no hace
@@ -196,11 +197,13 @@ export default function SoporteWidget() {
         consultarNoLeidos().then((n) => setNoLeidos(n));
     }, [consultarNoLeidos]);
 
-    // Mientras está cerrado, cualquier mensaje SISTEMA en vivo suma al badge.
+    // Mensaje de Krezka en vivo: cerrado suma al badge; abierto en el chat ya
+    // se está viendo, así que se marca leído (y Krezka ve el check azul).
     useEffect(() => {
-        if (abierto) return;
         const ultimo = mensajes[mensajes.length - 1];
-        if (ultimo?.rol === 'SISTEMA') setNoLeidos((n) => n + 1);
+        if (ultimo?.rol !== 'SISTEMA' || ultimo.id < 0) return;
+        if (!abierto) setNoLeidos((n) => n + 1);
+        else if (vista === 'chat') marcarLeido();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mensajes.length]);
 
@@ -239,7 +242,7 @@ export default function SoporteWidget() {
         const t = texto.trim();
         if (imagen) {
             // La foto se lleva lo escrito como pie: captura y explicación llegan juntas.
-            enviarAdjunto('imagen', imagen, t);
+            enviarAdjunto(tipoDeArchivo(imagen), imagen, t);
             setImagen(null);
             setTexto('');
             irAlFinal();
@@ -351,15 +354,23 @@ export default function SoporteWidget() {
                                                         {m.autorNombre || 'Soporte Krezka'}
                                                     </p>
                                                 )}
-                                                <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} />
-                                                {(m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido) && (
+                                                <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} archivoUrl={m.archivoUrl} archivoNombre={m.archivoNombre} />
+                                                {(m.imagenUrl || m.audioUrl || m.archivoUrl ? textoSinMarca(m.contenido) : m.contenido) && (
                                                     <p className="whitespace-pre-wrap break-words leading-relaxed">
-                                                        {m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido}
+                                                        {m.imagenUrl || m.audioUrl || m.archivoUrl ? textoSinMarca(m.contenido) : m.contenido}
                                                     </p>
                                                 )}
                                                 <span className={`mt-1 block text-right text-[9px] ${esEmpresa ? 'text-violet-100/80' : 'text-gray-400'}`}>
                                                     {format(date, 'HH:mm')}
                                                     {m.pendiente && <Icon icon="solar:clock-circle-linear" width={11} className="ml-1 inline align-[-1px]" />}
+                                                    {/* Como WhatsApp: ✓ enviado, ✓✓ azul cuando Krezka ya lo vio. */}
+                                                    {esEmpresa && !m.pendiente && !m.fallido && (
+                                                        <Icon
+                                                            icon={fueVisto(m.creadoEn, leidoPorSistemaEn) ? 'mdi:check-all' : 'mdi:check'}
+                                                            width={13}
+                                                            className={`ml-1 inline align-[-2px] ${fueVisto(m.creadoEn, leidoPorSistemaEn) ? 'text-sky-200' : 'text-violet-100/80'}`}
+                                                        />
+                                                    )}
                                                     {m.fallido && <span className="ml-1 font-bold text-rose-200">· No se envió</span>}
                                                 </span>
                                             </div>

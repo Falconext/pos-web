@@ -11,7 +11,42 @@ import { formatoDuracion, MAX_SEGUNDOS_NOTA, useGrabadoraNota } from '@/features
 
 /** "[Imagen] pie" → "pie"; "[Nota de voz]" → "". La marca es para la lista y el asistente. */
 export const textoSinMarca = (contenido: string) =>
-    contenido.replace(/^\[(Imagen|Nota de voz)\]\s*/, '');
+    contenido.startsWith('[Archivo]')
+        ? (contenido.split(' · ').slice(1).join(' · ') || '')
+        : contenido.replace(/^\[(Imagen|Nota de voz)\]\s*/, '');
+
+/** Archivos que se pueden mandar además de fotos (mismo filtro que el servidor). */
+export const ACEPTA_ADJUNTOS = 'image/*,.pdf,.xls,.xlsx,.xml,.csv,.doc,.docx,.txt,.zip';
+
+const ICONO_ARCHIVO: [RegExp, string, string][] = [
+    [/\.pdf$/i, 'vscode-icons:file-type-pdf2', 'PDF'],
+    [/\.(xlsx?|csv)$/i, 'vscode-icons:file-type-excel', 'Excel'],
+    [/\.xml$/i, 'vscode-icons:file-type-xml', 'XML'],
+    [/\.docx?$/i, 'vscode-icons:file-type-word', 'Word'],
+    [/\.zip$/i, 'vscode-icons:file-type-zip', 'ZIP'],
+];
+const iconoDe = (nombre: string) => ICONO_ARCHIVO.find(([r]) => r.test(nombre)) ?? [null, 'solar:document-text-linear', 'Archivo'];
+
+/** Tarjeta del documento, como el adjunto de WhatsApp: icono, nombre y descargar. */
+function TarjetaArchivo({ url, nombre }: { url: string; nombre: string }) {
+    const [, icono, tipo] = iconoDe(nombre);
+    return (
+        <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={nombre}
+            className="mb-1 flex w-64 max-w-full items-center gap-2.5 rounded-lg bg-black/[0.04] p-2.5 hover:bg-black/[0.07] dark:bg-white/[0.06]"
+        >
+            <Icon icon={icono} width={30} className="flex-none" />
+            <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-medium">{nombre}</span>
+                <span className="block text-[11px] opacity-60">{tipo}</span>
+            </span>
+            <Icon icon="solar:download-minimalistic-linear" width={18} className="flex-none opacity-60" />
+        </a>
+    );
+}
 
 /**
  * La foto en grande, encima de todo y en la misma pantalla (como WhatsApp):
@@ -62,8 +97,19 @@ function VisorImagen({ url, onCerrar }: { url: string; onCerrar: () => void }) {
 }
 
 /** Foto o reproductor dentro del globo del mensaje. */
-export function Adjunto({ imagenUrl, audioUrl }: { imagenUrl?: string | null; audioUrl?: string | null }) {
+export function Adjunto({
+    imagenUrl,
+    audioUrl,
+    archivoUrl,
+    archivoNombre,
+}: {
+    imagenUrl?: string | null;
+    audioUrl?: string | null;
+    archivoUrl?: string | null;
+    archivoNombre?: string | null;
+}) {
     const [enGrande, setEnGrande] = useState(false);
+    if (archivoUrl) return <TarjetaArchivo url={archivoUrl} nombre={archivoNombre || 'archivo'} />;
     if (imagenUrl) {
         return (
             <>
@@ -119,7 +165,7 @@ export function BotonesAdjunto({
             <input
                 ref={input}
                 type="file"
-                accept="image/*"
+                accept={ACEPTA_ADJUNTOS}
                 className="hidden"
                 onChange={(e) => {
                     const archivo = e.target.files?.[0];
@@ -132,7 +178,7 @@ export function BotonesAdjunto({
                 disabled={deshabilitado}
                 onClick={() => input.current?.click()}
                 className="flex h-9 w-9 flex-none items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-slate-800"
-                title="Enviar una foto o captura"
+                title="Adjuntar foto o archivo (PDF, Excel, XML…)"
             >
                 <Icon icon="solar:gallery-add-linear" width={18} />
             </button>
@@ -157,26 +203,36 @@ export const imagenPegada = (e: React.ClipboardEvent): File | null => {
     return null;
 };
 
-/** Imagen soltada sobre el chat (arrastrar y soltar, como en WhatsApp Web). */
-export const imagenSoltada = (e: React.DragEvent): File | null =>
-    Array.from(e.dataTransfer?.files ?? []).find((f) => f.type.startsWith('image/')) ?? null;
+/** Foto o documento soltado sobre el chat (arrastrar y soltar, como en WhatsApp Web). */
+export const imagenSoltada = (e: React.DragEvent): File | null => Array.from(e.dataTransfer?.files ?? [])[0] ?? null;
 
 /**
  * La foto elegida o pegada, antes de enviarla: como en WhatsApp, primero se ve
  * y se puede escribir el mensaje que la acompaña; se manda con el botón enviar.
  */
 export function VistaPreviaImagen({ archivo, onQuitar }: { archivo: File; onQuitar: () => void }) {
-    const url = useMemo(() => URL.createObjectURL(archivo), [archivo]);
-    useEffect(() => () => URL.revokeObjectURL(url), [url]);
+    const esImagen = archivo.type.startsWith('image/');
+    const url = useMemo(() => (esImagen ? URL.createObjectURL(archivo) : ''), [archivo, esImagen]);
+    useEffect(() => () => {
+        if (url) URL.revokeObjectURL(url);
+    }, [url]);
+    const [, icono] = iconoDe(archivo.name);
     return (
         <div className="flex items-center gap-2.5 border-t border-gray-100 px-3 pt-2 dark:border-slate-800">
             <div className="relative">
-                <img src={url} alt="Imagen a enviar" className="h-16 w-16 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-slate-700" />
+                {esImagen ? (
+                    <img src={url} alt="Imagen a enviar" className="h-16 w-16 rounded-lg object-cover ring-1 ring-gray-200 dark:ring-slate-700" />
+                ) : (
+                    <span className="flex h-16 w-16 flex-col items-center justify-center gap-1 rounded-lg bg-white ring-1 ring-gray-200 dark:bg-slate-800 dark:ring-slate-700">
+                        <Icon icon={icono} width={28} />
+                        <span className="w-14 truncate px-1 text-center text-[9px] text-gray-500">{archivo.name}</span>
+                    </span>
+                )}
                 <button
                     type="button"
                     onClick={onQuitar}
                     className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-800 text-white shadow hover:bg-black"
-                    title="Quitar imagen"
+                    title="Quitar"
                 >
                     <Icon icon="solar:close-circle-bold" width={14} />
                 </button>

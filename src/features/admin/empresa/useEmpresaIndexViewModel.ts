@@ -96,7 +96,10 @@ export const useEmpresaIndexViewModel = (): any => {
     const { empresas, totalEmpresas, currentPage, totalPages, loading, error, listarEmpresas, cambiarEstadoEmpresa, eliminarEmpresa } = useEmpresasStore();
     const { success } = useAlertStore();
 
-    const [searchTerm, setSearchTerm] = useState('');
+    // "Ver en Empresas" del chat de soporte llega con ?buscar=RUC: la lista abre ya filtrada.
+    const [searchTerm, setSearchTerm] = useState(
+        () => new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '').get('buscar') ?? '',
+    );
     const [tipoFiltro, setTipoFiltro] = useState<'FORMAL' | 'INFORMAL' | ''>('');
     const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'INACTIVO' | 'TODOS'>('TODOS');
     const [grupoFiltro, setGrupoFiltro] = useState<GrupoCliente | ''>('');
