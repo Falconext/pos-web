@@ -70,9 +70,11 @@ interface Props {
 }
 
 export default function ConectarWhatsAppButton({ numeroConectado, onConectado }: Props) {
-    const [loading, setLoading] = useState(false);
+    // Qué botón está conectando: el de siempre o el de coexistencia.
+    const [loading, setLoading] = useState<false | 'normal' | 'coexistencia'>(false);
     // Datos capturados del evento WA_EMBEDDED_SIGNUP (phone_number_id, waba_id).
-    const wabaInfo = useRef<{ phoneNumberId?: string; wabaId?: string }>({});
+    // `coexistencia` lo confirma Meta con su propio evento de fin.
+    const wabaInfo = useRef<{ phoneNumberId?: string; wabaId?: string; coexistencia?: boolean }>({});
     // Conexión manual (fallback mientras Meta aprueba el Embedded Signup).
     const [showManual, setShowManual] = useState(false);
     const [manual, setManual] = useState({ phoneNumberId: '', wabaId: '', accessToken: '' });
@@ -90,18 +92,27 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                         wabaId: data.data?.waba_id,
                     };
                 }
+                // Coexistencia: Meta solo devuelve la WABA; el número lo busca el backend.
+                if (data?.type === 'WA_EMBEDDED_SIGNUP' && data?.event === 'FINISH_WHATSAPP_BUSINESS_APP_ONBOARDING') {
+                    wabaInfo.current = { wabaId: data.data?.waba_id, coexistencia: true };
+                }
             } catch { /* mensaje no-JSON de facebook, ignorar */ }
         };
         window.addEventListener('message', handler);
         return () => window.removeEventListener('message', handler);
     }, []);
 
-    const conectar = async () => {
+    /**
+     * `coexistencia`: el número sigue funcionando en la app WhatsApp Business
+     * del celular y la IA responde por la API al mismo tiempo. Sin eso, el
+     * número pasa entero a la API y la app del celular deja de usarlo.
+     */
+    const conectar = async (coexistencia = false) => {
         if (!FB_APP_ID || !FB_CONFIG_ID) {
             useAlertStore.getState().alert('La conexión de WhatsApp no está configurada (falta la Meta App).', 'error');
             return;
         }
-        setLoading(true);
+        setLoading(coexistencia ? 'coexistencia' : 'normal');
         wabaInfo.current = {};
         try {
             await cargarFbSdk(FB_APP_ID);
@@ -113,7 +124,11 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                         config_id: FB_CONFIG_ID,
                         response_type: 'code',
                         override_default_response_type: true,
-                        extras: { setup: {}, featureType: '', sessionInfoVersion: '3' },
+                        extras: {
+                            setup: {},
+                            featureType: coexistencia ? 'whatsapp_business_app_onboarding' : '',
+                            sessionInfoVersion: '3',
+                        },
                     },
                 );
             });
@@ -127,6 +142,7 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                 code,
                 phoneNumberId: wabaInfo.current.phoneNumberId,
                 wabaId: wabaInfo.current.wabaId,
+                coexistencia: wabaInfo.current.coexistencia ?? coexistencia,
             });
             const res = data?.data ?? data;
             const aviso = avisoConexion(res);
@@ -182,15 +198,31 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
             )}
             <button
                 type="button"
-                onClick={conectar}
-                disabled={loading}
+                onClick={() => conectar(false)}
+                disabled={!!loading}
                 className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-[#25D366]/20 transition hover:brightness-95 disabled:opacity-60"
             >
-                <Icon icon={loading ? 'svg-spinners:180-ring' : 'mdi:whatsapp'} width={18} />
-                {loading ? 'Conectando…' : numeroConectado ? 'Reconectar mi WhatsApp' : 'Conectar mi WhatsApp'}
+                <Icon icon={loading === 'normal' ? 'svg-spinners:180-ring' : 'mdi:whatsapp'} width={18} />
+                {loading === 'normal' ? 'Conectando…' : numeroConectado ? 'Reconectar mi WhatsApp' : 'Conectar mi WhatsApp'}
             </button>
             <span className="text-[11px] text-gray-400">
                 Conecta tu número de WhatsApp Business en unos clics. Los avisos a tus clientes saldrán desde tu propio número.
+            </span>
+
+            {/* Coexistencia: el número sigue en la app del celular */}
+            <button
+                type="button"
+                onClick={() => conectar(true)}
+                disabled={!!loading}
+                className="mt-1 inline-flex w-fit items-center justify-center gap-2 rounded-xl border-2 border-[#25D366] px-4 py-2 text-sm font-black text-[#128C7E] transition hover:bg-[#25D366]/10 disabled:opacity-60 dark:text-[#25D366]"
+            >
+                <Icon icon={loading === 'coexistencia' ? 'svg-spinners:180-ring' : 'solar:smartphone-bold'} width={18} />
+                {loading === 'coexistencia' ? 'Conectando…' : 'Usar el WhatsApp Business de mi celular'}
+            </button>
+            <span className="text-[11px] text-gray-400">
+                Sigues contestando desde tu celular y la IA responde por ti. Cuando tú escribes en un chat, la IA se
+                calla ahí por 2 horas. Ten la app WhatsApp Business actualizada y abierta mientras conectas. En la app
+                se desactivan las listas de difusión, y WhatsApp para Windows deja de funcionar.
             </span>
 
             {/* Conexión manual (fallback) */}
