@@ -5,8 +5,23 @@ import {
     mensajeTemporal,
     subirAdjuntoSoporte,
     textoDeAdjunto,
+    type LecturaSoporte,
     type SoporteMensaje,
+    type TipoAdjunto,
 } from './soporte';
+
+/** Lo que el equipo necesita para ayudar sin buscarlo en otra pantalla. */
+export interface FichaEmpresaSoporte {
+    ruc: string;
+    razonSocial: string;
+    nombreComercial: string | null;
+    estado: string;
+    plan: string | null;
+    rubro: string | null;
+    vence: string | null;
+    administradores: { nombre: string; email: string; celular: string }[];
+    escribieron: string[];
+}
 
 export interface SoporteConversacionResumen {
     id: number;
@@ -26,6 +41,9 @@ interface SoporteSistemaState {
     mensajes: SoporteMensaje[];
     empresaNombreActiva: string | null;
     estadoActiva: 'ABIERTA' | 'CERRADA' | null;
+    /** Hasta cuándo leyó el empresario: lo nuestro anterior va con doble check azul. */
+    leidoPorEmpresaEn: string | null;
+    ficha: FichaEmpresaSoporte | null;
     loadingLista: boolean;
     loadingChat: boolean;
     enviando: boolean;
@@ -34,7 +52,8 @@ interface SoporteSistemaState {
     cargarConversaciones: (estado?: 'ABIERTA' | 'CERRADA') => Promise<void>;
     abrirConversacion: (id: number, quitarTemporal?: number) => Promise<void>;
     enviarMensaje: (contenido: string) => Promise<void>;
-    enviarAdjunto: (tipo: 'imagen' | 'audio', archivo: File, texto?: string) => Promise<boolean>;
+    enviarAdjunto: (tipo: TipoAdjunto, archivo: File, texto?: string) => Promise<boolean>;
+    recibirLectura: (lectura: LecturaSoporte) => void;
     resolverTemporal: (id: number, ok: boolean, error: string) => void;
     cerrarConversacionActiva: () => Promise<void>;
     /** Llamado por el store de notificaciones cuando llega 'nuevo-mensaje-soporte'. */
@@ -46,6 +65,8 @@ interface SoporteSistemaState {
         empresaNombre?: string;
         imagenUrl?: string;
         audioUrl?: string;
+        archivoUrl?: string;
+        archivoNombre?: string;
     }) => void;
 }
 
@@ -55,6 +76,8 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
     mensajes: [],
     empresaNombreActiva: null,
     estadoActiva: null,
+    leidoPorEmpresaEn: null,
+    ficha: null,
     loadingLista: false,
     loadingChat: false,
     enviando: false,
@@ -76,7 +99,13 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
         // hilo se reemplazaba por un spinner y el chat parpadeaba y perdía el final.
         const otra = get().conversacionActivaId !== id;
         set({ loadingChat: otra, conversacionActivaId: id });
-        const res = await apiGet<{ empresaNombre: string; estado: 'ABIERTA' | 'CERRADA'; mensajes: SoporteMensaje[] }>(
+        const res = await apiGet<{
+            empresaNombre: string;
+            estado: 'ABIERTA' | 'CERRADA';
+            mensajes: SoporteMensaje[];
+            leidoPorEmpresaEn?: string | null;
+            ficha?: FichaEmpresaSoporte | null;
+        }>(
             `/soporte/sistema/conversaciones/${id}`,
         );
         if (res.success && res.data) {
@@ -90,6 +119,8 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
                 ),
                 empresaNombreActiva: res.data!.empresaNombre,
                 estadoActiva: res.data!.estado,
+                leidoPorEmpresaEn: res.data!.leidoPorEmpresaEn ?? null,
+                ficha: res.data!.ficha ?? null,
                 loadingChat: false,
             }));
             // La conversación abierta queda con 0 no leídos; refleja eso en la lista sin refetch.
@@ -123,7 +154,7 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
         const { conversacionActivaId } = get();
         if (!conversacionActivaId) return false;
         const temporal = {
-            ...mensajeTemporal('SISTEMA', conversacionActivaId, textoDeAdjunto(tipo, texto), { tipo, archivo }),
+            ...mensajeTemporal('SISTEMA', conversacionActivaId, textoDeAdjunto(tipo, texto, archivo.name), { tipo, archivo }),
             autorNombre: 'Tú',
         };
         set((state) => ({ mensajes: [...state.mensajes, temporal], error: null }));
@@ -185,6 +216,8 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
                                 contenido: payload.contenido,
                                 imagenUrl: payload.imagenUrl ?? null,
                                 audioUrl: payload.audioUrl ?? null,
+                                archivoUrl: payload.archivoUrl ?? null,
+                                archivoNombre: payload.archivoNombre ?? null,
                                 creadoEn: new Date().toISOString(),
                             },
                         ],
@@ -193,6 +226,17 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
             }
         }
         // En cualquier caso, refresca la lista para subir el hilo y actualizar el badge.
+        // Con la consulta abierta en pantalla, lo que llega ya se está viendo:
+        // el empresario recibe su doble check azul al instante.
+        if (payload.rol === 'EMPRESA' && conversacionActivaId === payload.conversacionId) {
+            apiPatch(`/soporte/sistema/conversaciones/${conversacionActivaId}/leido`, {}).catch(() => undefined);
+        }
         get().cargarConversaciones();
+    },
+
+    recibirLectura: (lectura) => {
+        if (lectura.lado === 'EMPRESA' && lectura.conversacionId === get().conversacionActivaId) {
+            set({ leidoPorEmpresaEn: lectura.en });
+        }
     },
 }));

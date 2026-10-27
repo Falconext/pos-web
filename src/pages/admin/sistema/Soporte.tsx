@@ -2,7 +2,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { useSoporteSistemaStore } from '@/zustand/soporteSistema';
+import { useSoporteSistemaStore, type FichaEmpresaSoporte } from '@/zustand/soporteSistema';
+import { fueVisto, tipoDeArchivo } from '@/zustand/soporte';
+import { Link } from 'react-router-dom';
 import { PREGUNTAS_SOPORTE } from '@/data/preguntasSoporte';
 import { Adjunto, BotonesAdjunto, VistaPreviaImagen, usePegadoAlFinal, imagenPegada, imagenSoltada, textoSinMarca } from '@/components/soporte/AdjuntosSoporte';
 
@@ -40,7 +42,11 @@ export default function SistemaSoporte() {
         enviarMensaje,
         enviarAdjunto,
         cerrarConversacionActiva,
+        leidoPorEmpresaEn,
+        ficha,
     } = useSoporteSistemaStore();
+    // Panel con los datos de la empresa, como el "Info. del contacto" de WhatsApp.
+    const [verFicha, setVerFicha] = useState(true);
     const [filtro, setFiltro] = useState<'ABIERTA' | 'CERRADA' | undefined>('ABIERTA');
     const [texto, setTexto] = useState('');
     const bottomRef = useRef<HTMLDivElement>(null);
@@ -66,7 +72,7 @@ export default function SistemaSoporte() {
     const enviar = () => {
         const t = texto.trim();
         if (imagen) {
-            enviarAdjunto('imagen', imagen, t.startsWith('/') ? '' : t);
+            enviarAdjunto(tipoDeArchivo(imagen), imagen, t.startsWith('/') ? '' : t);
             setImagen(null);
             setTexto('');
             irAlFinal();
@@ -98,7 +104,8 @@ export default function SistemaSoporte() {
         return () => window.removeEventListener('resize', medir);
     }, []);
 
-    const textoDe = (m: (typeof mensajes)[number]) => (m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido);
+    const textoDe = (m: (typeof mensajes)[number]) =>
+        m.imagenUrl || m.audioUrl || m.archivoUrl ? textoSinMarca(m.contenido) : m.contenido;
 
     return (
         <div
@@ -187,6 +194,14 @@ export default function SistemaSoporte() {
                                     {estadoActiva === 'CERRADA' ? 'Consulta cerrada' : 'Consulta abierta'}
                                 </span>
                             </div>
+                            <button
+                                type="button"
+                                onClick={() => setVerFicha((v) => !v)}
+                                className={`rounded-full p-2 text-[#54656f] hover:bg-[#e9edef] dark:text-[#aebac1] dark:hover:bg-[#2a3942] ${verFicha ? 'bg-[#e9edef] dark:bg-[#2a3942]' : ''}`}
+                                title="Datos de la empresa"
+                            >
+                                <Icon icon="solar:info-circle-linear" width={20} />
+                            </button>
                             {estadoActiva !== 'CERRADA' && (
                                 <button
                                     onClick={cerrarConversacionActiva}
@@ -247,15 +262,20 @@ export default function SistemaSoporte() {
                                                             </p>
                                                         )}
                                                         <div className="px-1">
-                                                            <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} />
+                                                            <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} archivoUrl={m.archivoUrl} archivoNombre={m.archivoNombre} />
                                                         </div>
                                                         <div className="flex flex-wrap items-end justify-end gap-x-2 px-1">
                                                             {texto && <p className="mr-auto whitespace-pre-wrap break-words leading-[19px]">{texto}</p>}
                                                             <span className="ml-auto flex items-center gap-0.5 text-[11px] leading-4 text-[#667781] dark:text-[#8696a0]">
                                                                 {format(date, 'HH:mm')}
                                                                 {m.pendiente && <Icon icon="solar:clock-circle-linear" width={12} />}
+                                                                {/* ✓ enviado; ✓✓ azul cuando el empresario ya lo vio. */}
                                                                 {esSistema && !m.pendiente && !m.fallido && (
-                                                                    <Icon icon="mdi:check-all" width={15} className="text-[#53bdeb]" />
+                                                                    fueVisto(m.creadoEn, leidoPorEmpresaEn) ? (
+                                                                        <Icon icon="mdi:check-all" width={15} className="text-[#53bdeb]" />
+                                                                    ) : (
+                                                                        <Icon icon="mdi:check" width={15} className="text-[#8696a0]" />
+                                                                    )
                                                                 )}
                                                             </span>
                                                         </div>
@@ -340,7 +360,80 @@ export default function SistemaSoporte() {
                     </>
                 )}
             </div>
+
+            {conversacionActivaId && verFicha && ficha && <FichaEmpresa ficha={ficha} />}
         </div>
+    );
+}
+
+/**
+ * Datos de la empresa al costado del chat: para ayudar sin ir a buscarlos.
+ * "Ver en Empresas" abre la lista ya filtrada por su RUC.
+ */
+function FichaEmpresa({ ficha }: { ficha: FichaEmpresaSoporte }) {
+    const vence = ficha.vence ? new Date(ficha.vence) : null;
+    const dias = vence ? Math.ceil((vence.getTime() - Date.now()) / 86_400_000) : null;
+    const Fila = ({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) => (
+        <div className="py-2">
+            <p className="text-[12px] text-[#667781] dark:text-[#8696a0]">{etiqueta}</p>
+            <div className="text-[14px] text-[#111b21] dark:text-[#e9edef]">{valor}</div>
+        </div>
+    );
+    return (
+        <aside className="hidden w-[300px] flex-none flex-col overflow-y-auto border-l border-[#e9edef] bg-white xl:flex dark:border-[#222d34] dark:bg-[#111b21]">
+            <div className="flex flex-col items-center gap-2 bg-[#f0f2f5] px-4 pb-5 pt-6 text-center dark:bg-[#202c33]">
+                <Avatar nombre={ficha.nombreComercial || ficha.razonSocial} />
+                <p className="text-[16px] font-medium text-[#111b21] dark:text-[#e9edef]">{ficha.nombreComercial || ficha.razonSocial}</p>
+                <p className="text-[13px] text-[#667781]">RUC {ficha.ruc}</p>
+                <Link
+                    to={`/administrador/empresas?buscar=${encodeURIComponent(ficha.ruc)}`}
+                    className="mt-1 rounded-full border border-[#d1d7db] px-3 py-1 text-[13px] font-medium text-[#008069] hover:bg-white dark:border-[#2a3942] dark:text-[#00a884]"
+                >
+                    Ver en Empresas
+                </Link>
+            </div>
+            <div className="divide-y divide-[#e9edef] px-4 dark:divide-[#222d34]">
+                <Fila etiqueta="Razón social" valor={ficha.razonSocial} />
+                <Fila etiqueta="Plan" valor={ficha.plan ?? '—'} />
+                <Fila
+                    etiqueta="Vence"
+                    valor={
+                        vence ? (
+                            <span className={dias !== null && dias <= 7 ? 'font-medium text-[#ea0038]' : ''}>
+                                {format(vence, 'dd/MM/yyyy')}
+                                {dias !== null && <span className="text-[12px] text-[#667781]"> · {dias < 0 ? `venció hace ${-dias} d` : `en ${dias} d`}</span>}
+                            </span>
+                        ) : (
+                            '—'
+                        )
+                    }
+                />
+                <Fila etiqueta="Estado" valor={ficha.estado === 'ACTIVO' ? 'Activa' : ficha.estado} />
+                {ficha.rubro && <Fila etiqueta="Rubro" valor={ficha.rubro} />}
+                {ficha.escribieron.length > 0 && <Fila etiqueta="Escribieron" valor={ficha.escribieron.join(', ')} />}
+                {ficha.administradores.length > 0 && (
+                    <div className="py-2">
+                        <p className="text-[12px] text-[#667781] dark:text-[#8696a0]">Administradores</p>
+                        {ficha.administradores.map((a) => (
+                            <div key={a.email} className="mt-1.5">
+                                <p className="text-[14px] text-[#111b21] dark:text-[#e9edef]">{a.nombre}</p>
+                                <p className="truncate text-[12px] text-[#667781]">{a.email}</p>
+                                {a.celular && (
+                                    <a
+                                        href={`https://wa.me/${a.celular.replace(/\D/g, '').replace(/^9/, '519')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 text-[12px] font-medium text-[#008069] hover:underline dark:text-[#00a884]"
+                                    >
+                                        <Icon icon="mdi:whatsapp" width={14} /> {a.celular}
+                                    </a>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </aside>
     );
 }
 
