@@ -130,7 +130,7 @@ function Destacado({ d, planEmpresa, root }: { d: DestacadoLanzamiento; planEmpr
     const [cargada, setCargada] = useState(() => Boolean(d.imagen) && ESTADO_IMAGEN.get(d.imagen!) === 'ok');
     const conImagen = existeImagen(d.imagen) && !fallo;
     return (
-        <section id={`lz-${d.id}`} data-seccion={d.id} className="relative scroll-mt-6 border-t border-white/[0.06] overflow-hidden">
+        <section id={`lz-${d.id}`} data-seccion={d.id} className="relative snap-start scroll-mt-12 lg:scroll-mt-0 border-t border-white/[0.06] overflow-hidden">
             {/* El alto queda reservado por la proporción: nada salta si la imagen llega tarde. */}
             <div className={`relative w-full ${d.formato === 'panoramica' ? 'aspect-[21/9]' : 'aspect-video'}`}>
                 {conImagen ? (
@@ -218,7 +218,7 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
         <section
             id={`lz-${p.id}`}
             data-seccion={p.id}
-            className={`relative scroll-mt-6 overflow-hidden flex flex-col justify-end min-h-[520px] sm:min-h-[600px] ${conImagen ? 'lg:block lg:min-h-0' : ''} bg-[#07090F]`}
+            className={`relative snap-start scroll-mt-12 lg:scroll-mt-0 overflow-hidden flex flex-col justify-end min-h-[520px] sm:min-h-[600px] ${conImagen ? 'lg:block lg:min-h-0' : ''} bg-[#07090F]`}
         >
             {/* En escritorio la imagen va completa arriba (ancho total, sin recorte) y el
                 texto solo pisa la franja oscura de abajo, para que se vea la escena
@@ -339,6 +339,8 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
         };
     }, [abierto, imagenesListas]);
 
+    const reducido = Boolean(useReducedMotion());
+
     const listas = useMemo(() => novedadesDelLanzamiento(), []);
     const totalCambios = listas.NUEVO.length + listas.MEJORA.length + listas.CORRECCION.length;
 
@@ -390,6 +392,9 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
         secciones.forEach((s) => obs.observe(s));
         return () => obs.disconnect();
     }, [abierto]);
+
+    // Sección que sigue a la que se está viendo: alimenta el botón flotante "Siguiente".
+    const siguiente = indice[indice.findIndex((s) => s.id === activa) + 1] ?? null;
 
     const irA = (id: string) => {
         const el = scrollRef.current?.querySelector<HTMLElement>(`#lz-${id}`);
@@ -463,8 +468,37 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                             </div>
                         </aside>
 
+                        {/* Botón flotante hacia la sección siguiente: invita a seguir bajando y
+                            lleva con un desplazamiento suave. Desaparece en la última. */}
+                        <div className="pointer-events-none absolute bottom-4 sm:bottom-6 left-0 right-0 lg:left-64 z-20 flex justify-center px-4">
+                        <AnimatePresence mode="wait">
+                            {siguiente && (
+                                <motion.button
+                                    key={siguiente.id}
+                                    type="button"
+                                    onClick={() => irA(siguiente.id)}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10, transition: { duration: 0.15 } }}
+                                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                                    className="pointer-events-auto inline-flex max-w-full items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-full bg-white/90 text-black shadow-[0_12px_40px_rgba(0,0,0,.55)] ring-1 ring-white/20 backdrop-blur hover:bg-white transition-colors"
+                                >
+                                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-black/45">Siguiente</span>
+                                    <span className="truncate text-[13px] font-bold">{siguiente.titulo}</span>
+                                    <motion.span
+                                        className="grid place-items-center w-6 h-6 rounded-full bg-violet-600 text-white shrink-0"
+                                        animate={reducido ? undefined : { y: [0, 3, 0] }}
+                                        transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                                    >
+                                        <Icon icon="solar:alt-arrow-down-bold" width={14} />
+                                    </motion.span>
+                                </motion.button>
+                            )}
+                        </AnimatePresence>
+                        </div>
+
                         {/* ── Contenido ───────────────────────────────────────────── */}
-                        <div ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto overscroll-contain [scrollbar-color:rgba(255,255,255,.15)_transparent]">
+                        <div ref={scrollRef} className="flex-1 min-w-0 overflow-y-auto overscroll-contain snap-y snap-proximity [scrollbar-color:rgba(255,255,255,.15)_transparent]">
                             <button
                                 type="button"
                                 onClick={onClose}
@@ -501,7 +535,7 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                 const items = listas[s.tipo];
                                 if (!items.length) return null;
                                 return (
-                                    <section key={s.id} id={`lz-${s.id}`} data-seccion={s.id} className="scroll-mt-6 px-6 sm:px-10 py-10 sm:py-12 border-t border-white/[0.06]">
+                                    <section key={s.id} id={`lz-${s.id}`} data-seccion={s.id} className="snap-start scroll-mt-12 lg:scroll-mt-0 px-6 sm:px-10 py-10 sm:py-12 border-t border-white/[0.06]">
                                         <div className="flex items-end gap-4 mb-6">
                                             <div>
                                                 <p className={`inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.25em] ${s.color}`}>
