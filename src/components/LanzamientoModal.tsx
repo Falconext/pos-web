@@ -76,7 +76,6 @@ const precargar = (src: string) =>
     });
 
 const IMAGENES_PORTADA = [
-    LANZAMIENTO.heroImagen,
     ...LANZAMIENTO.destacados.map((d) => d.imagen),
     LANZAMIENTO.proximamente?.imagen,
 ].filter((s): s is string => Boolean(s));
@@ -325,9 +324,7 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
     const { auth } = useAuthStore();
     const planEmpresa = normalizarPlan((auth as any)?.empresa?.plan?.nombre);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const [activa, setActiva] = useState<string>('resumen');
-    const [heroFallo, setHeroFallo] = useState(false);
-    const heroVisible = existeImagen(LANZAMIENTO.heroImagen) && !heroFallo;
+    const [activa, setActiva] = useState<string>(LANZAMIENTO.destacados[0]?.id ?? '');
     // Se muestra recién cuando se sabe qué imágenes hay (ver ESTADO_IMAGEN). El
     // tope evita que una imagen lenta deje el modal sin abrir.
     const [imagenesListas, setImagenesListas] = useState(() => IMAGENES_PORTADA.every((s) => ESTADO_IMAGEN.has(s)));
@@ -341,7 +338,6 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
             vivo = false;
         };
     }, [abierto, imagenesListas]);
-    const reducido = Boolean(useReducedMotion());
 
     const listas = useMemo(() => novedadesDelLanzamiento(), []);
     const totalCambios = listas.NUEVO.length + listas.MEJORA.length + listas.CORRECCION.length;
@@ -478,69 +474,6 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                 <Icon icon="solar:close-circle-bold" width={22} />
                             </button>
 
-                            {/* Hero */}
-                            {/* En escritorio la imagen va en flujo (ancho completo, sin recorte) y el
-                                texto se superpone sobre su mitad izquierda; en móvil se recorta anclada
-                                a la derecha para que los personajes queden visibles. */}
-                            <section
-                                id="lz-resumen"
-                                data-seccion="resumen"
-                                className={`relative overflow-hidden flex flex-col justify-end min-h-[440px] ${heroVisible ? 'lg:grid lg:min-h-0' : 'sm:min-h-[500px]'}`}
-                            >
-                                {heroVisible ? (
-                                    <motion.img
-                                        src={LANZAMIENTO.heroImagen}
-                                        alt=""
-                                        onError={() => setHeroFallo(true)}
-                                        initial={{ scale: reducido ? 1 : 1.08, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-                                        className="absolute inset-0 w-full h-full object-cover object-right lg:relative lg:inset-auto lg:h-auto lg:aspect-[21/9] lg:col-start-1 lg:row-start-1 origin-right"
-                                    />
-                                ) : (
-                                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,36,252,.55),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(14,165,233,.35),transparent_55%),linear-gradient(180deg,#141a2e_0%,#07090F_100%)]">
-                                        <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.5)_1px,transparent_1px)] [background-size:40px_40px]" />
-                                    </div>
-                                )}
-                                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#07090F] to-transparent" />
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#07090F]/90 via-[#07090F]/30 via-45% to-transparent to-60%" />
-
-                                <div className="relative lg:col-start-1 lg:row-start-1 lg:self-end px-6 sm:px-10 pt-20 pb-8 xl:pb-10 max-w-2xl lg:max-w-[52%]">
-                                    <motion.p
-                                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                                        className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.3em] text-violet-300"
-                                    >
-                                        <span className="w-6 h-px bg-violet-400" />
-                                        {LANZAMIENTO.eyebrow}
-                                    </motion.p>
-                                    <motion.h1
-                                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-                                        className="mt-3 text-4xl xl:text-5xl 2xl:text-6xl font-black uppercase leading-[0.95] tracking-tight drop-shadow-[0_6px_30px_rgba(0,0,0,.6)]"
-                                    >
-                                        {LANZAMIENTO.titulo}
-                                    </motion.h1>
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
-                                        className="mt-5 xl:mt-7 flex flex-wrap items-center gap-3"
-                                    >
-                                        <button
-                                            type="button"
-                                            onClick={() => irA(LANZAMIENTO.destacados[0]?.id ?? 'lo-nuevo')}
-                                            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-black text-sm font-black uppercase tracking-wide hover:bg-violet-200 transition-colors"
-                                        >
-                                            Ver lo nuevo
-                                            <Icon icon="solar:alt-arrow-down-bold" width={16} />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={onClose}
-                                            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 ring-1 ring-white/15 text-sm font-bold transition-colors"
-                                        >
-                                            Ir al panel
-                                        </button>
-                                    </motion.div>
-                                </div>
-                            </section>
 
                             {/* Índice en móvil/tablet: chips horizontales pegados arriba */}
                             <div className="lg:hidden sticky top-0 z-10 flex gap-2 overflow-x-auto px-4 py-2.5 bg-[#07090F]/90 backdrop-blur border-b border-white/[0.06] [scrollbar-width:none]">
