@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Icon } from '@iconify/react'
 import { useSearchParams } from 'react-router-dom'
-import { subirFotoTienda } from '@/services/leads.service'
+import { subirFotoTienda, type TipoImagenTienda } from '@/services/leads.service'
 import useAlertStore from '@/zustand/alert'
 import type {
   CategoriaConocimiento,
@@ -82,7 +82,7 @@ function borradorDe(config: Vm['config']): Borrador {
   }
 }
 
-const TIENDA_VACIA: ConfigTienda = { direccion: '', mapsUrl: '', lat: null, lng: null, indicaciones: '', fotoUrl: '' }
+const TIENDA_VACIA: ConfigTienda = { direccion: '', mapsUrl: '', lat: null, lng: null, indicaciones: '', fotoUrl: '', croquisUrl: '' }
 
 // ─── Piezas de formulario ───────────────────────────────────────────────────
 
@@ -1150,18 +1150,106 @@ function TabEntrega({
 }
 
 interface SeccionTiendaProps {
-  /** Lo guardado en el servidor: de acá salen la foto y si hay coordenadas. */
+  /** Lo guardado en el servidor: de acá salen las imágenes y si hay coordenadas. */
   guardada: ConfigTienda
+  /** Cuál imagen se está subiendo, o null. */
+  subiendo: TipoImagenTienda | null
+  onSubirFoto: (archivo: File, tipo: TipoImagenTienda) => void
+  onQuitarFoto: (tipo: TipoImagenTienda) => void
+}
+
+/** Una imagen de la tienda (foto o croquis): vista previa, subir y quitar. */
+function ImagenTienda({
+  titulo,
+  url,
+  vacio,
+  icono,
+  ayuda,
+  subiendo,
+  ocupado,
+  testId,
+  onSubir,
+  onQuitar,
+}: {
+  titulo: string
+  url: string
+  vacio: string
+  icono: string
+  ayuda: string
   subiendo: boolean
-  onSubirFoto: (archivo: File) => void
-  onQuitarFoto: () => void
+  ocupado: boolean
+  testId: string
+  onSubir: (archivo: File) => void
+  onQuitar: () => void
+}) {
+  const input = useRef<HTMLInputElement>(null)
+  return (
+    <div>
+      <span className="mb-1.5 block text-[13px] font-semibold text-gray-800 dark:text-gray-200">{titulo}</span>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {url ? (
+          <img
+            src={url}
+            alt={titulo}
+            className="h-32 w-full rounded-xl border border-gray-200 object-cover sm:w-48 dark:border-slate-700"
+          />
+        ) : (
+          <div className="flex h-32 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gray-200 text-gray-400 sm:w-48 dark:border-slate-700">
+            <Icon icon={icono} width={26} />
+            <span className="text-[12px]">{vacio}</span>
+          </div>
+        )}
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => input.current?.click()}
+              disabled={ocupado}
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-gray-900 px-3.5 text-[13px] font-semibold text-white transition hover:bg-black disabled:opacity-50 dark:bg-white dark:text-gray-900"
+            >
+              <Icon
+                icon={subiendo ? 'eos-icons:loading' : 'solar:upload-linear'}
+                width={16}
+                className={subiendo ? 'animate-spin' : undefined}
+              />
+              {subiendo ? 'Subiendo…' : url ? 'Cambiar' : 'Subir'}
+            </button>
+            {url && (
+              <button
+                type="button"
+                onClick={onQuitar}
+                disabled={ocupado}
+                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
+              >
+                <Icon icon="solar:trash-bin-trash-linear" width={16} />
+                Quitar
+              </button>
+            )}
+          </div>
+          <span className="text-[12px] text-gray-500 dark:text-gray-400">{ayuda}</span>
+        </div>
+      </div>
+      <input
+        ref={input}
+        type="file"
+        accept="image/jpeg,image/png"
+        className="hidden"
+        data-testid={testId}
+        onChange={(e) => {
+          const archivo = e.target.files?.[0]
+          e.target.value = ''
+          if (archivo) onSubir(archivo)
+        }}
+      />
+    </div>
+  )
 }
 
 /**
  * La tienda física (26-10). Hierba Sana está dentro del Mercado La Merced y
  * los clientes que decían "mañana paso" se perdían buscándola. Al agendar la
- * visita, el asesor les manda esto: el mapa, la foto de la fachada y las
- * indicaciones, una sola vez.
+ * visita, el asesor les manda esto: el mapa, el croquis, la foto de la
+ * fachada y las indicaciones, una sola vez.
  */
 function SeccionTienda({
   b,
@@ -1173,7 +1261,6 @@ function SeccionTienda({
 }: SeccionTiendaProps & { b: Borrador; set: (fn: (b: Borrador) => Borrador) => void }) {
   const t = b.tienda
   const setT = (cambio: Partial<Borrador['tienda']>) => set((x) => ({ ...x, tienda: { ...x.tienda, ...cambio } }))
-  const inputFoto = useRef<HTMLInputElement>(null)
   // Si el link cambió, lo que diga el servidor de las coordenadas es del link
   // anterior: hasta guardar no se sabe.
   const linkSinGuardar = t.mapsUrl.trim() !== guardada.mapsUrl.trim()
@@ -1183,7 +1270,7 @@ function SeccionTienda({
     <Seccion
       icon="solar:shop-2-linear"
       titulo="Tu tienda física"
-      descripcion="A quien dice que va a ir a tu tienda se le manda la ubicación, la foto y cómo llegar, una sola vez."
+      descripcion="A quien dice que va a ir a tu tienda se le manda la ubicación, el croquis, la foto y cómo llegar, una sola vez."
     >
       <Campo label="Dirección" ayuda="Como la dirías por teléfono: calle, número, mercado o centro comercial, stand.">
         <input
@@ -1243,78 +1330,44 @@ function SeccionTienda({
 
       <Campo
         label="Cómo llegar"
-        ayuda="Lo que le dirías a alguien que nunca vino: por qué puerta entrar, qué hay al lado, dónde voltear."
-        contador={{ actual: t.indicaciones.length, max: 800 }}
+        ayuda="Lo que le dirías a alguien que nunca vino: por qué puerta entrar, qué hay al lado, dónde voltear. Si escribes el mensaje entero con la dirección, se manda tal cual."
+        contador={{ actual: t.indicaciones.length, max: 1500 }}
       >
         <textarea
           value={t.indicaciones}
           onChange={(e) => setT({ indicaciones: e.target.value })}
-          rows={4}
+          maxLength={1500}
+          rows={6}
           placeholder="Entra al mercado por la puerta 3 (la de Emancipación), sigue de frente hasta el fondo y voltea a la derecha. Estamos frente a la juguería."
           className={`${inputBase} resize-y leading-relaxed`}
         />
       </Campo>
 
-      <div>
-        <span className="mb-1.5 block text-[13px] font-semibold text-gray-800 dark:text-gray-200">Foto de la fachada</span>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          {guardada.fotoUrl ? (
-            <img
-              src={guardada.fotoUrl}
-              alt="Foto de la fachada de la tienda"
-              className="h-32 w-full rounded-xl border border-gray-200 object-cover sm:w-48 dark:border-slate-700"
-            />
-          ) : (
-            <div className="flex h-32 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-gray-200 text-gray-400 sm:w-48 dark:border-slate-700">
-              <Icon icon="solar:camera-linear" width={26} />
-              <span className="text-[12px]">Sin foto</span>
-            </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={() => inputFoto.current?.click()}
-                disabled={subiendo}
-                className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl bg-gray-900 px-3.5 text-[13px] font-semibold text-white transition hover:bg-black disabled:opacity-50 dark:bg-white dark:text-gray-900"
-              >
-                <Icon
-                  icon={subiendo ? 'eos-icons:loading' : 'solar:upload-linear'}
-                  width={16}
-                  className={subiendo ? 'animate-spin' : undefined}
-                />
-                {subiendo ? 'Subiendo…' : guardada.fotoUrl ? 'Cambiar foto' : 'Subir foto'}
-              </button>
-              {guardada.fotoUrl && (
-                <button
-                  type="button"
-                  onClick={onQuitarFoto}
-                  disabled={subiendo}
-                  className="inline-flex min-h-[40px] items-center gap-1.5 rounded-xl px-3.5 text-[13px] font-semibold text-rose-600 transition hover:bg-rose-50 disabled:opacity-50 dark:text-rose-400 dark:hover:bg-rose-900/20"
-                >
-                  <Icon icon="solar:trash-bin-trash-linear" width={16} />
-                  Quitar
-                </button>
-              )}
-            </div>
-            <span className="text-[12px] text-gray-500 dark:text-gray-400">
-              La entrada o tu stand, que se reconozca desde el pasillo. JPG o PNG de hasta 5 MB. Se guarda al subirla.
-            </span>
-          </div>
-        </div>
-        <input
-          ref={inputFoto}
-          type="file"
-          accept="image/jpeg,image/png"
-          className="hidden"
-          data-testid="input-foto-tienda"
-          onChange={(e) => {
-            const archivo = e.target.files?.[0]
-            e.target.value = ''
-            if (archivo) onSubirFoto(archivo)
-          }}
-        />
-      </div>
+      <ImagenTienda
+        titulo="Croquis para llegar"
+        url={guardada.croquisUrl ?? ''}
+        vacio="Sin croquis"
+        icono="solar:map-linear"
+        ayuda="Opcional. Un plano del mercado o la galería con tu puesto marcado. Se manda antes que la foto. JPG o PNG de hasta 5 MB."
+        subiendo={subiendo === 'croquis'}
+        ocupado={subiendo != null}
+        testId="input-croquis-tienda"
+        onSubir={(a) => onSubirFoto(a, 'croquis')}
+        onQuitar={() => onQuitarFoto('croquis')}
+      />
+
+      <ImagenTienda
+        titulo="Foto de la fachada"
+        url={guardada.fotoUrl}
+        vacio="Sin foto"
+        icono="solar:camera-linear"
+        ayuda="La entrada o tu stand, que se reconozca desde el pasillo. JPG o PNG de hasta 5 MB. Se guarda al subirla."
+        subiendo={subiendo === 'foto'}
+        ocupado={subiendo != null}
+        testId="input-foto-tienda"
+        onSubir={(a) => onSubirFoto(a, 'foto')}
+        onQuitar={() => onQuitarFoto('foto')}
+      />
     </Seccion>
   )
 }
@@ -1529,8 +1582,8 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
 
   // La foto no espera al botón "Guardar": el servidor la guarda al subirla.
   const { alert } = useAlertStore()
-  const [subiendoFoto, setSubiendoFoto] = useState(false)
-  const subirFoto = async (archivo: File) => {
+  const [subiendoFoto, setSubiendoFoto] = useState<TipoImagenTienda | null>(null)
+  const subirFoto = async (archivo: File, tipo: TipoImagenTienda) => {
     if (!['image/jpeg', 'image/png'].includes(archivo.type)) {
       alert('La foto tiene que ser JPG o PNG.', 'error')
       return
@@ -1539,20 +1592,20 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
       alert('La foto pesa más de 5 MB. Prueba con una más liviana.', 'error')
       return
     }
-    setSubiendoFoto(true)
+    setSubiendoFoto(tipo)
     try {
-      await subirFotoTienda(archivo)
+      await subirFotoTienda(archivo, tipo)
       await vm.actions.recargarConfig()
-      alert('Foto de la tienda guardada', 'success')
+      alert(tipo === 'croquis' ? 'Croquis guardado' : 'Foto de la tienda guardada', 'success')
     } catch (e: any) {
       alert(e?.message || 'No se pudo subir la foto', 'error')
     } finally {
-      setSubiendoFoto(false)
+      setSubiendoFoto(null)
     }
   }
-  const quitarFoto = () => {
+  const quitarFoto = (tipo: TipoImagenTienda) => {
     const guardada = vm.config.tienda ?? TIENDA_VACIA
-    return vm.actions.guardarConfig({ tienda: { ...guardada, fotoUrl: '' } })
+    return vm.actions.guardarConfig({ tienda: { ...guardada, [tipo === 'croquis' ? 'croquisUrl' : 'fotoUrl']: '' } })
   }
 
   return (
