@@ -502,8 +502,8 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                         <div className="absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,.5)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.5)_1px,transparent_1px)] [background-size:40px_40px]" />
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#07090F] via-[#07090F]/70 to-transparent" />
-                                <div className="absolute inset-0 bg-gradient-to-r from-[#07090F]/90 via-[#07090F]/40 to-transparent" />
+                                <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#07090F] to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-[#07090F]/90 via-[#07090F]/30 via-45% to-transparent to-60%" />
 
                                 <div className="relative lg:col-start-1 lg:row-start-1 lg:self-end px-6 sm:px-10 pt-20 pb-8 xl:pb-10 max-w-2xl lg:max-w-[52%]">
                                     <motion.p
@@ -519,12 +519,6 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                     >
                                         {LANZAMIENTO.titulo}
                                     </motion.h1>
-                                    <motion.p
-                                        initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                                        className="mt-3 text-[15px] xl:text-lg leading-relaxed text-white/75 max-w-2xl"
-                                    >
-                                        {LANZAMIENTO.subtitulo}
-                                    </motion.p>
                                     <motion.div
                                         initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }}
                                         className="mt-5 xl:mt-7 flex flex-wrap items-center gap-3"
@@ -544,9 +538,6 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                         >
                                             Ir al panel
                                         </button>
-                                        <span className="ml-1 text-xs text-white/40">
-                                            {listas.NUEVO.length} nuevas · {listas.MEJORA.length} mejoras · {listas.CORRECCION.length} correcciones
-                                        </span>
                                     </motion.div>
                                 </div>
                             </section>
