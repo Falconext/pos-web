@@ -4,7 +4,7 @@ import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSoporteSistemaStore } from '@/zustand/soporteSistema';
 import { PREGUNTAS_SOPORTE } from '@/data/preguntasSoporte';
-import { Adjunto, BotonesAdjunto, imagenPegada, textoSinMarca } from '@/components/soporte/AdjuntosSoporte';
+import { Adjunto, BotonesAdjunto, VistaPreviaImagen, imagenPegada, imagenSoltada, textoSinMarca } from '@/components/soporte/AdjuntosSoporte';
 
 /**
  * Respuestas guardadas del equipo: se eligen escribiendo "/" en la respuesta.
@@ -59,14 +59,21 @@ export default function SistemaSoporte() {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [mensajes.length]);
 
-    const enviarImagen = async (archivo: File) => {
-        if (enviando) return;
-        if (await enviarAdjunto('imagen', archivo, texto.startsWith('/') ? '' : texto)) setTexto('');
-    };
+    // Foto elegida, pegada o soltada que espera el botón enviar (como en WhatsApp).
+    const [imagen, setImagen] = useState<File | null>(null);
+    useEffect(() => setImagen(null), [conversacionActivaId]);
 
     const enviar = async () => {
         const t = texto.trim();
-        if (!t || enviando) return;
+        if (enviando) return;
+        if (imagen) {
+            if (await enviarAdjunto('imagen', imagen, t.startsWith('/') ? '' : t)) {
+                setImagen(null);
+                setTexto('');
+            }
+            return;
+        }
+        if (!t) return;
         setTexto('');
         await enviarMensaje(t);
     };
@@ -217,18 +224,29 @@ export default function SistemaSoporte() {
                                 ))}
                             </div>
                         )}
-                        <div className="flex items-end gap-1.5 border-t border-gray-100 p-3 dark:border-slate-800">
+                        {imagen && <VistaPreviaImagen archivo={imagen} onQuitar={() => setImagen(null)} />}
+                        <div
+                            className="flex items-end gap-1.5 border-t border-gray-100 p-3 dark:border-slate-800"
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={(e) => {
+                                const soltada = imagenSoltada(e);
+                                if (soltada) {
+                                    e.preventDefault();
+                                    setImagen(soltada);
+                                }
+                            }}
+                        >
                             <BotonesAdjunto
                                 deshabilitado={enviando}
-                                onImagen={enviarImagen}
+                                onImagen={setImagen}
                                 onAudio={(archivo) => enviarAdjunto('audio', archivo)}
                             />
                             <textarea
                                 onPaste={(e) => {
-                                    const imagen = imagenPegada(e);
-                                    if (imagen) {
+                                    const pegada = imagenPegada(e);
+                                    if (pegada) {
                                         e.preventDefault();
-                                        enviarImagen(imagen);
+                                        setImagen(pegada);
                                     }
                                 }}
                                 value={texto}
@@ -248,7 +266,7 @@ export default function SistemaSoporte() {
                             <button
                                 type="button"
                                 onClick={enviar}
-                                disabled={!texto.trim() || enviando}
+                                disabled={(!texto.trim() && !imagen) || enviando}
                                 className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-700 disabled:opacity-40"
                             >
                                 <Icon icon={enviando ? 'solar:refresh-bold' : 'solar:plain-bold'} className={enviando ? 'animate-spin' : ''} width={18} />

@@ -10,7 +10,7 @@ import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useSoporteStore } from '@/zustand/soporte';
-import { Adjunto, BotonesAdjunto, imagenPegada, textoSinMarca } from './soporte/AdjuntosSoporte';
+import { Adjunto, BotonesAdjunto, VistaPreviaImagen, imagenPegada, imagenSoltada, textoSinMarca } from './soporte/AdjuntosSoporte';
 import {
     PREGUNTAS_SOPORTE,
     TEMAS_SOPORTE,
@@ -231,18 +231,23 @@ export default function SoporteWidget() {
         navigate(ruta);
     };
 
+    // Foto elegida, pegada o soltada que espera el botón enviar (como en WhatsApp).
+    const [imagen, setImagen] = useState<File | null>(null);
+
     const enviar = async () => {
         const t = texto.trim();
-        if (!t || enviando) return;
+        if (enviando) return;
+        if (imagen) {
+            // La foto se lleva lo escrito como pie: captura y explicación llegan juntas.
+            if (await enviarAdjunto('imagen', imagen, t)) {
+                setImagen(null);
+                setTexto('');
+            }
+            return;
+        }
+        if (!t) return;
         setTexto('');
         await enviarMensaje(t);
-    };
-
-    // La foto se lleva lo que haya escrito como pie: así la captura y su
-    // explicación llegan juntas.
-    const enviarImagen = async (archivo: File) => {
-        if (enviando) return;
-        if (await enviarAdjunto('imagen', archivo, texto)) setTexto('');
     };
 
     return (
@@ -393,18 +398,29 @@ export default function SoporteWidget() {
                         </div>
                     )}
 
-                    <div className="flex items-end gap-1 px-2.5 pb-2.5 pt-1">
+                    {imagen && <VistaPreviaImagen archivo={imagen} onQuitar={() => setImagen(null)} />}
+                    <div
+                        className="flex items-end gap-1 px-2.5 pb-2.5 pt-1"
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                            const soltada = imagenSoltada(e);
+                            if (soltada) {
+                                e.preventDefault();
+                                setImagen(soltada);
+                            }
+                        }}
+                    >
                         <BotonesAdjunto
                             deshabilitado={enviando}
-                            onImagen={enviarImagen}
+                            onImagen={setImagen}
                             onAudio={(archivo) => enviarAdjunto('audio', archivo)}
                         />
                         <textarea
                             onPaste={(e) => {
-                                const imagen = imagenPegada(e);
-                                if (imagen) {
+                                const pegada = imagenPegada(e);
+                                if (pegada) {
                                     e.preventDefault();
-                                    enviarImagen(imagen);
+                                    setImagen(pegada);
                                 }
                             }}
                             value={texto}
@@ -422,7 +438,7 @@ export default function SoporteWidget() {
                         <button
                             type="button"
                             onClick={enviar}
-                            disabled={!texto.trim() || enviando}
+                            disabled={(!texto.trim() && !imagen) || enviando}
                             className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-700 disabled:opacity-40"
                         >
                             <Icon icon={enviando ? 'solar:refresh-bold' : 'solar:plain-bold'} className={enviando ? 'animate-spin' : ''} width={16} />
