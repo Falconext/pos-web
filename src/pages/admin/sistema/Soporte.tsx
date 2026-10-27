@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Icon } from '@iconify/react';
-import { format, formatDistanceToNow, isSameDay } from 'date-fns';
+import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSoporteSistemaStore } from '@/zustand/soporteSistema';
 import { PREGUNTAS_SOPORTE } from '@/data/preguntasSoporte';
@@ -78,21 +78,42 @@ export default function SistemaSoporte() {
         irAlFinal();
     };
 
+    // Alto hasta el borde inferior de la ventana, como WhatsApp Web: se mide
+    // dónde empieza la bandeja y se le da el resto de la pantalla.
+    const marcoRef = useRef<HTMLDivElement>(null);
+    const [alto, setAlto] = useState<number>();
+    useLayoutEffect(() => {
+        const medir = () => {
+            const top = marcoRef.current?.getBoundingClientRect().top ?? 0;
+            setAlto(Math.max(420, window.innerHeight - top - 16));
+        };
+        medir();
+        window.addEventListener('resize', medir);
+        return () => window.removeEventListener('resize', medir);
+    }, []);
+
+    const textoDe = (m: (typeof mensajes)[number]) => (m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido);
+
     return (
-        <div className="flex h-[calc(100vh-140px)] gap-4">
+        <div
+            ref={marcoRef}
+            style={{ height: alto }}
+            className="flex overflow-hidden rounded-xl border border-[#e9edef] bg-white shadow-sm dark:border-[#222d34] dark:bg-[#111b21]"
+        >
             {/* Lista de consultas */}
-            <div className="flex w-80 flex-none flex-col rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="border-b border-gray-100 p-4 dark:border-slate-800">
-                    <h2 className="font-bold text-gray-800 dark:text-white">Soporte a empresarios</h2>
-                    <div className="mt-3 flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-slate-800">
+            <div className="flex w-[340px] flex-none flex-col border-r border-[#e9edef] bg-white dark:border-[#222d34] dark:bg-[#111b21]">
+                <div className="bg-[#f0f2f5] px-4 pb-3 pt-4 dark:bg-[#202c33]">
+                    <h2 className="text-[17px] font-bold text-[#111b21] dark:text-[#e9edef]">Soporte a empresarios</h2>
+                    <div className="mt-3 flex gap-2">
                         {(['ABIERTA', 'CERRADA'] as const).map((f) => (
                             <button
                                 key={f}
                                 onClick={() => setFiltro(f)}
-                                className={`flex-1 rounded-md py-1.5 text-xs font-bold transition ${filtro === f
-                                        ? 'bg-white text-violet-600 shadow-sm dark:bg-slate-700 dark:text-violet-300'
-                                        : 'text-gray-500 dark:text-gray-400'
-                                    }`}
+                                className={`rounded-full px-3 py-1 text-[13px] font-medium transition ${
+                                    filtro === f
+                                        ? 'bg-[#d9fdd3] text-[#008069] dark:bg-[#0a332c] dark:text-[#00a884]'
+                                        : 'bg-white text-[#54656f] hover:bg-[#e9edef] dark:bg-[#111b21] dark:text-[#8696a0]'
+                                }`}
                             >
                                 {f === 'ABIERTA' ? 'Abiertas' : 'Cerradas'}
                             </button>
@@ -100,107 +121,139 @@ export default function SistemaSoporte() {
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {loadingLista && (
-                        <div className="flex items-center justify-center py-10 text-gray-400">
+                    {loadingLista && conversaciones.length === 0 && (
+                        <div className="flex items-center justify-center py-10 text-[#8696a0]">
                             <Icon icon="eos-icons:loading" className="animate-spin" width={22} />
                         </div>
                     )}
                     {!loadingLista && conversaciones.length === 0 && (
-                        <p className="px-4 py-10 text-center text-sm text-gray-400">Sin consultas {filtro === 'ABIERTA' ? 'abiertas' : 'cerradas'}</p>
+                        <p className="px-4 py-10 text-center text-sm text-[#667781]">Sin consultas {filtro === 'ABIERTA' ? 'abiertas' : 'cerradas'}</p>
                     )}
-                    {conversaciones.map((c) => (
-                        <button
-                            key={c.id}
-                            onClick={() => abrirConversacion(c.id)}
-                            className={`flex w-full flex-col gap-0.5 border-b border-gray-50 px-4 py-3 text-left transition hover:bg-gray-50 dark:border-slate-800 dark:hover:bg-slate-800/50 ${conversacionActivaId === c.id ? 'bg-violet-50 dark:bg-violet-950/30' : ''
+                    {conversaciones.map((c) => {
+                        const activa = conversacionActivaId === c.id;
+                        const sinLeer = c.noLeidosSistema > 0;
+                        return (
+                            <button
+                                key={c.id}
+                                onClick={() => abrirConversacion(c.id)}
+                                className={`flex w-full items-center gap-3 px-3 text-left transition ${
+                                    activa ? 'bg-[#f0f2f5] dark:bg-[#2a3942]' : 'hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]'
                                 }`}
-                        >
-                            <div className="flex items-center justify-between gap-2">
-                                <span className="truncate text-sm font-bold text-gray-800 dark:text-white">{c.empresaNombre}</span>
-                                {c.noLeidosSistema > 0 && (
-                                    <span className="flex h-5 min-w-5 flex-none items-center justify-center rounded-full bg-violet-600 px-1.5 text-[10px] font-bold text-white">
-                                        {c.noLeidosSistema}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="truncate text-xs text-gray-500 dark:text-gray-400">{c.ultimoMensaje || 'Sin mensajes'}</p>
-                            <span className="text-[10px] text-gray-400">
-                                {formatDistanceToNow(new Date(c.actualizadoEn), { addSuffix: true, locale: es })}
-                            </span>
-                        </button>
-                    ))}
+                            >
+                                <Avatar nombre={c.empresaNombre} />
+                                <div className="min-w-0 flex-1 border-b border-[#e9edef] py-3 dark:border-[#222d34]">
+                                    <div className="flex items-baseline justify-between gap-2">
+                                        <span className="truncate text-[15px] text-[#111b21] dark:text-[#e9edef]">{c.empresaNombre}</span>
+                                        <span className={`flex-none text-[12px] ${sinLeer ? 'font-medium text-[#1fa855]' : 'text-[#667781]'}`}>
+                                            {horaDeLista(c.actualizadoEn)}
+                                        </span>
+                                    </div>
+                                    <div className="mt-0.5 flex items-center justify-between gap-2">
+                                        <p className="truncate text-[13px] text-[#667781] dark:text-[#8696a0]">{c.ultimoMensaje || 'Sin mensajes'}</p>
+                                        {sinLeer && (
+                                            <span className="flex h-5 min-w-5 flex-none items-center justify-center rounded-full bg-[#25d366] px-1.5 text-[11px] font-bold text-white">
+                                                {c.noLeidosSistema}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
             {/* Hilo de la conversación */}
-            <div className="flex flex-1 flex-col rounded-2xl border border-gray-100 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex min-w-0 flex-1 flex-col">
                 {!conversacionActivaId ? (
-                    <div className="flex flex-1 flex-col items-center justify-center gap-2 text-gray-400">
-                        <Icon icon="solar:chat-round-line-linear" width={40} />
-                        <p className="text-sm">Elige una consulta para responder</p>
+                    <div className="flex flex-1 flex-col items-center justify-center gap-3 border-b-[6px] border-[#25d366] bg-[#f0f2f5] text-[#667781] dark:bg-[#222e35] dark:text-[#8696a0]">
+                        <Icon icon="solar:chat-round-dots-linear" width={56} className="text-[#aebac1]" />
+                        <p className="text-[22px] font-light text-[#41525d] dark:text-[#e9edef]">Soporte Krezka</p>
+                        <p className="text-sm">Elige una consulta para responder.</p>
                     </div>
                 ) : (
                     <>
-                        <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4 dark:border-slate-800">
-                            <div>
-                                <h3 className="font-bold text-gray-800 dark:text-white">{empresaNombreActiva}</h3>
-                                <span
-                                    className={`text-xs font-semibold ${estadoActiva === 'CERRADA' ? 'text-gray-400' : 'text-emerald-500'}`}
-                                >
-                                    {estadoActiva === 'CERRADA' ? 'Cerrada' : 'Abierta'}
+                        <div className="flex items-center gap-3 border-l border-[#e9edef] bg-[#f0f2f5] px-4 py-2.5 dark:border-[#222d34] dark:bg-[#202c33]">
+                            <Avatar nombre={empresaNombreActiva ?? ''} chico />
+                            <div className="min-w-0 flex-1">
+                                <h3 className="truncate text-[16px] text-[#111b21] dark:text-[#e9edef]">{empresaNombreActiva}</h3>
+                                <span className="text-[13px] text-[#667781] dark:text-[#8696a0]">
+                                    {estadoActiva === 'CERRADA' ? 'Consulta cerrada' : 'Consulta abierta'}
                                 </span>
                             </div>
                             {estadoActiva !== 'CERRADA' && (
                                 <button
                                     onClick={cerrarConversacionActiva}
-                                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-bold text-gray-500 hover:bg-gray-50 dark:border-slate-700 dark:text-gray-400 dark:hover:bg-slate-800"
+                                    className="rounded-full px-3 py-1.5 text-[13px] font-medium text-[#008069] hover:bg-[#e9edef] dark:text-[#00a884] dark:hover:bg-[#2a3942]"
                                 >
                                     Cerrar consulta
                                 </button>
                             )}
                         </div>
 
-                        <div className="flex-1 overflow-y-auto bg-[#f6f7fb] px-5 py-4 dark:bg-[#0b0f17]">
+                        {/* Fondo del chat: beige de WhatsApp con un punteado suave (sin su dibujo, que es de ellos). */}
+                        <div className="flex-1 overflow-y-auto bg-[#efeae2] bg-[radial-gradient(rgba(0,0,0,0.035)_1px,transparent_1px)] [background-size:18px_18px] px-[6%] py-4 dark:bg-[#0b141a] dark:bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)]">
                             {loadingChat ? (
-                                <div className="flex items-center justify-center py-16 text-gray-400">
+                                <div className="flex items-center justify-center py-16 text-[#8696a0]">
                                     <Icon icon="eos-icons:loading" className="animate-spin" width={24} />
                                 </div>
                             ) : (
                                 (() => {
                                     let lastDay: Date | null = null;
+                                    let rolAnterior: string | null = null;
                                     return mensajes.map((m) => {
                                         const date = new Date(m.creadoEn);
                                         const esSistema = m.rol === 'SISTEMA';
                                         const showDay = !lastDay || !isSameDay(date, lastDay);
+                                        // Como WhatsApp: la "colita" y el nombre solo en el primero de una racha.
+                                        const primero = showDay || rolAnterior !== m.rol;
                                         lastDay = date;
+                                        rolAnterior = m.rol;
+                                        const texto = textoDe(m);
                                         return (
                                             <div key={m.id}>
                                                 {showDay && (
                                                     <div className="my-3 flex justify-center">
-                                                        <span className="rounded-full bg-white px-3 py-0.5 text-[11px] font-medium text-gray-500 shadow-sm dark:bg-slate-800 dark:text-gray-400">
-                                                            {format(date, "d 'de' MMMM", { locale: es })}
+                                                        <span className="rounded-lg bg-white px-3 py-1 text-[12.5px] text-[#54656f] shadow-[0_1px_0.5px_rgba(11,20,26,.13)] dark:bg-[#182229] dark:text-[#8696a0]">
+                                                            {etiquetaDeDia(date)}
                                                         </span>
                                                     </div>
                                                 )}
-                                                <div className={`mt-1 flex ${esSistema ? 'justify-end' : 'justify-start'}`}>
+                                                <div className={`flex ${esSistema ? 'justify-end' : 'justify-start'} ${primero ? 'mt-3' : 'mt-0.5'}`}>
                                                     <div
-                                                        className={`max-w-[74%] px-3 py-2 text-sm shadow-sm ${esSistema
-                                                                ? 'rounded-2xl rounded-br-md bg-gradient-to-br from-violet-600 to-violet-500 text-white'
-                                                                : 'rounded-2xl rounded-bl-md bg-white text-gray-800 dark:bg-slate-800 dark:text-gray-100'
-                                                            }`}
+                                                        className={`relative max-w-[65%] rounded-lg px-2 pb-1.5 pt-1.5 text-[14.2px] text-[#111b21] shadow-[0_1px_0.5px_rgba(11,20,26,.13)] dark:text-[#e9edef] ${
+                                                            esSistema ? 'bg-[#d9fdd3] dark:bg-[#005c4b]' : 'bg-white dark:bg-[#202c33]'
+                                                        } ${primero ? (esSistema ? 'rounded-tr-none' : 'rounded-tl-none') : ''} ${m.fallido ? 'opacity-70' : ''}`}
                                                     >
-                                                        <p className="mb-0.5 text-[11px] font-bold opacity-80">{m.autorNombre}</p>
-                                                        <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} />
-                                                        {(m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido) && (
-                                                            <p className="whitespace-pre-wrap break-words leading-relaxed">
-                                                                {m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido}
+                                                        {primero && (
+                                                            <span
+                                                                aria-hidden
+                                                                className={`absolute top-0 h-0 w-0 border-t-[8px] ${
+                                                                    esSistema
+                                                                        ? '-right-[7px] border-r-[8px] border-r-transparent border-t-[#d9fdd3] dark:border-t-[#005c4b]'
+                                                                        : '-left-[7px] border-l-[8px] border-l-transparent border-t-white dark:border-t-[#202c33]'
+                                                                }`}
+                                                            />
+                                                        )}
+                                                        {primero && (
+                                                            <p className={`mb-0.5 px-1 text-[12.8px] font-medium ${esSistema ? 'text-[#1fa855]' : 'text-[#7f66ff]'}`}>
+                                                                {m.autorNombre}
                                                             </p>
                                                         )}
-                                                        <span className={`mt-1 block text-right text-[10px] ${esSistema ? 'text-violet-100/80' : 'text-gray-400'}`}>
-                                                            {format(date, 'HH:mm')}
-                                                    {m.pendiente && <Icon icon="solar:clock-circle-linear" width={11} className="ml-1 inline align-[-1px]" />}
-                                                    {m.fallido && <span className="ml-1 font-bold text-rose-200">· No se envió</span>}
-                                                        </span>
+                                                        <div className="px-1">
+                                                            <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} />
+                                                        </div>
+                                                        <div className="flex flex-wrap items-end justify-end gap-x-2 px-1">
+                                                            {texto && <p className="mr-auto whitespace-pre-wrap break-words leading-[19px]">{texto}</p>}
+                                                            <span className="ml-auto flex items-center gap-0.5 text-[11px] leading-4 text-[#667781] dark:text-[#8696a0]">
+                                                                {format(date, 'HH:mm')}
+                                                                {m.pendiente && <Icon icon="solar:clock-circle-linear" width={12} />}
+                                                                {esSistema && !m.pendiente && !m.fallido && (
+                                                                    <Icon icon="mdi:check-all" width={15} className="text-[#53bdeb]" />
+                                                                )}
+                                                            </span>
+                                                        </div>
+                                                        {m.fallido && <p className="px-1 text-[11px] font-medium text-[#ea0038]">No se envió</p>}
                                                     </div>
                                                 </div>
                                             </div>
@@ -212,23 +265,23 @@ export default function SistemaSoporte() {
                         </div>
 
                         {guardadas.length > 0 && (
-                            <div className="max-h-56 overflow-y-auto border-t border-gray-100 bg-gray-50 p-2 dark:border-slate-800 dark:bg-slate-800/40">
+                            <div className="max-h-56 overflow-y-auto border-t border-[#e9edef] bg-white py-1 dark:border-[#222d34] dark:bg-[#111b21]">
                                 {guardadas.map((r) => (
                                     <button
                                         key={r.titulo}
                                         type="button"
                                         onClick={() => setTexto(r.texto)}
-                                        className="block w-full rounded-lg px-3 py-2 text-left hover:bg-white dark:hover:bg-slate-800"
+                                        className="block w-full px-4 py-2 text-left hover:bg-[#f5f6f6] dark:hover:bg-[#202c33]"
                                     >
-                                        <p className="text-xs font-bold text-gray-800 dark:text-gray-100">{r.titulo}</p>
-                                        <p className="truncate text-[11px] text-gray-500">{r.texto}</p>
+                                        <p className="text-[13px] font-medium text-[#111b21] dark:text-[#e9edef]">{r.titulo}</p>
+                                        <p className="truncate text-[12px] text-[#667781]">{r.texto}</p>
                                     </button>
                                 ))}
                             </div>
                         )}
                         {imagen && <VistaPreviaImagen archivo={imagen} onQuitar={() => setImagen(null)} />}
                         <div
-                            className="flex items-end gap-1.5 border-t border-gray-100 p-3 dark:border-slate-800"
+                            className="flex items-end gap-1 bg-[#f0f2f5] px-3 py-2.5 dark:bg-[#202c33]"
                             onDragOver={(e) => e.preventDefault()}
                             onDrop={(e) => {
                                 const soltada = imagenSoltada(e);
@@ -242,9 +295,9 @@ export default function SistemaSoporte() {
                                 deshabilitado={false}
                                 onImagen={setImagen}
                                 onAudio={(archivo) => {
-                                enviarAdjunto('audio', archivo);
-                                irAlFinal();
-                            }}
+                                    enviarAdjunto('audio', archivo);
+                                    irAlFinal();
+                                }}
                             />
                             <textarea
                                 onPaste={(e) => {
@@ -264,17 +317,18 @@ export default function SistemaSoporte() {
                                         else enviar();
                                     }
                                 }}
-                                placeholder="Responder…  (escribe / para usar una respuesta guardada)"
+                                placeholder="Escribe un mensaje  ·  / para respuestas guardadas"
                                 rows={1}
-                                className="max-h-32 flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2.5 text-sm outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                className="max-h-32 flex-1 resize-none rounded-lg border-0 bg-white px-3 py-[9px] text-[15px] text-[#111b21] shadow-none outline-none placeholder:text-[#8696a0] focus:ring-0 dark:bg-[#2a3942] dark:text-[#e9edef]"
                             />
                             <button
                                 type="button"
                                 onClick={enviar}
                                 disabled={!texto.trim() && !imagen}
-                                className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-700 disabled:opacity-40"
+                                className="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-[#00a884] text-white transition hover:bg-[#008f72] disabled:bg-transparent disabled:text-[#8696a0]"
+                                title="Enviar"
                             >
-                                <Icon icon={enviando ? 'solar:refresh-bold' : 'solar:plain-bold'} className={enviando ? 'animate-spin' : ''} width={18} />
+                                <Icon icon={enviando ? 'solar:refresh-bold' : 'solar:plain-bold'} className={enviando ? 'animate-spin' : ''} width={20} />
                             </button>
                         </div>
                     </>
@@ -282,4 +336,40 @@ export default function SistemaSoporte() {
             </div>
         </div>
     );
+}
+
+/** Iniciales en un círculo gris, como el avatar por defecto de WhatsApp. */
+function Avatar({ nombre, chico }: { nombre: string; chico?: boolean }) {
+    const iniciales =
+        nombre
+            .replace(/S\.?A\.?C\.?|E\.?I\.?R\.?L\.?|S\.?R\.?L\.?/gi, '')
+            .trim()
+            .split(/\s+/)
+            .slice(0, 2)
+            .map((p) => p[0])
+            .join('')
+            .toUpperCase() || '?';
+    return (
+        <span
+            className={`flex flex-none items-center justify-center rounded-full bg-[#dfe5e7] font-semibold text-[#54656f] dark:bg-[#6a7175] dark:text-[#e9edef] ${
+                chico ? 'h-10 w-10 text-[14px]' : 'h-[49px] w-[49px] text-[16px]'
+            }`}
+        >
+            {iniciales}
+        </span>
+    );
+}
+
+/** Hora en la lista como WhatsApp: hoy "14:05", ayer "Ayer", antes la fecha. */
+function horaDeLista(iso: string) {
+    const d = new Date(iso);
+    if (isToday(d)) return format(d, 'HH:mm');
+    if (isYesterday(d)) return 'Ayer';
+    return format(d, 'dd/MM/yyyy');
+}
+
+function etiquetaDeDia(d: Date) {
+    if (isToday(d)) return 'Hoy';
+    if (isYesterday(d)) return 'Ayer';
+    return format(d, "d 'de' MMMM", { locale: es });
 }
