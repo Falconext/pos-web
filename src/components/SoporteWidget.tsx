@@ -10,7 +10,7 @@ import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useSoporteStore } from '@/zustand/soporte';
-import { Adjunto, BotonesAdjunto, VistaPreviaImagen, imagenPegada, imagenSoltada, textoSinMarca } from './soporte/AdjuntosSoporte';
+import { Adjunto, BotonesAdjunto, VistaPreviaImagen, usePegadoAlFinal, imagenPegada, imagenSoltada, textoSinMarca } from './soporte/AdjuntosSoporte';
 import {
     PREGUNTAS_SOPORTE,
     TEMAS_SOPORTE,
@@ -204,9 +204,8 @@ export default function SoporteWidget() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [mensajes.length]);
 
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [mensajes.length, abierto]);
+    // Pegado al último mensaje mientras se ve el chat (ver usePegadoAlFinal).
+    const irAlFinal = usePegadoAlFinal(bottomRef, abierto && vista === 'chat');
 
     const abrir = () => {
         setAbierto(true);
@@ -243,11 +242,13 @@ export default function SoporteWidget() {
             enviarAdjunto('imagen', imagen, t);
             setImagen(null);
             setTexto('');
+            irAlFinal();
             return;
         }
         if (!t) return;
         setTexto('');
         enviarMensaje(t);
+        irAlFinal();
     };
 
     return (
@@ -415,7 +416,10 @@ export default function SoporteWidget() {
                         <BotonesAdjunto
                             deshabilitado={false}
                             onImagen={setImagen}
-                            onAudio={(archivo) => enviarAdjunto('audio', archivo)}
+                            onAudio={(archivo) => {
+                                enviarAdjunto('audio', archivo);
+                                irAlFinal();
+                            }}
                         />
                         <textarea
                             onPaste={(e) => {

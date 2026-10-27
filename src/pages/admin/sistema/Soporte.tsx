@@ -4,7 +4,7 @@ import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSoporteSistemaStore } from '@/zustand/soporteSistema';
 import { PREGUNTAS_SOPORTE } from '@/data/preguntasSoporte';
-import { Adjunto, BotonesAdjunto, VistaPreviaImagen, imagenPegada, imagenSoltada, textoSinMarca } from '@/components/soporte/AdjuntosSoporte';
+import { Adjunto, BotonesAdjunto, VistaPreviaImagen, usePegadoAlFinal, imagenPegada, imagenSoltada, textoSinMarca } from '@/components/soporte/AdjuntosSoporte';
 
 /**
  * Respuestas guardadas del equipo: se eligen escribiendo "/" en la respuesta.
@@ -55,9 +55,8 @@ export default function SistemaSoporte() {
         cargarConversaciones(filtro);
     }, [filtro, cargarConversaciones]);
 
-    useEffect(() => {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [mensajes.length]);
+    // Pegado al último mensaje (ver usePegadoAlFinal); se rearma al cambiar de consulta.
+    const irAlFinal = usePegadoAlFinal(bottomRef, Boolean(conversacionActivaId) && !loadingChat);
 
     // Foto elegida, pegada o soltada que espera el botón enviar (como en WhatsApp).
     const [imagen, setImagen] = useState<File | null>(null);
@@ -70,11 +69,13 @@ export default function SistemaSoporte() {
             enviarAdjunto('imagen', imagen, t.startsWith('/') ? '' : t);
             setImagen(null);
             setTexto('');
+            irAlFinal();
             return;
         }
         if (!t) return;
         setTexto('');
         enviarMensaje(t);
+        irAlFinal();
     };
 
     return (
@@ -240,7 +241,10 @@ export default function SistemaSoporte() {
                             <BotonesAdjunto
                                 deshabilitado={false}
                                 onImagen={setImagen}
-                                onAudio={(archivo) => enviarAdjunto('audio', archivo)}
+                                onAudio={(archivo) => {
+                                enviarAdjunto('audio', archivo);
+                                irAlFinal();
+                            }}
                             />
                             <textarea
                                 onPaste={(e) => {

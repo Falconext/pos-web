@@ -187,3 +187,47 @@ export function VistaPreviaImagen({ archivo, onQuitar }: { archivo: File; onQuit
         </div>
     );
 }
+
+/**
+ * Mantiene el chat pegado al último mensaje, como WhatsApp.
+ *
+ * Bajar cuando cambia la cantidad de mensajes no alcanzaba: la foto y el
+ * reproductor de audio terminan de cargar DESPUÉS y empujan el contenido, y la
+ * vista quedaba a mitad de la conversación. Esto vigila el alto del chat y, si
+ * el que lee estaba abajo (o acaba de enviar), lo vuelve a llevar al final.
+ * Si subió a leer algo viejo, no lo mueve.
+ */
+export function usePegadoAlFinal(finalRef: React.RefObject<HTMLDivElement | null>, activo = true) {
+    const pegado = useRef(true);
+    useEffect(() => {
+        const caja = finalRef.current?.parentElement;
+        if (!caja || !activo) return;
+        const alFinal = () => {
+            caja.scrollTop = caja.scrollHeight;
+        };
+        const alDesplazar = () => {
+            pegado.current = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 80;
+        };
+        const siPegado = () => pegado.current && alFinal();
+        caja.addEventListener('scroll', alDesplazar, { passive: true });
+        // `load` de fotos y `loadedmetadata` de audios no burbujean: se escuchan en captura.
+        caja.addEventListener('load', siPegado, true);
+        caja.addEventListener('loadedmetadata', siPegado, true);
+        const observador = new MutationObserver(siPegado);
+        observador.observe(caja, { childList: true, subtree: true });
+        pegado.current = true;
+        alFinal();
+        return () => {
+            caja.removeEventListener('scroll', alDesplazar);
+            caja.removeEventListener('load', siPegado, true);
+            caja.removeEventListener('loadedmetadata', siPegado, true);
+            observador.disconnect();
+        };
+    }, [finalRef, activo]);
+    /** Al enviar: siempre al final, aunque estuviera leyendo arriba. */
+    return () => {
+        pegado.current = true;
+        const caja = finalRef.current?.parentElement;
+        if (caja) caja.scrollTop = caja.scrollHeight;
+    };
+}

@@ -72,7 +72,10 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
     },
 
     abrirConversacion: async (id: number, quitarTemporal?: number) => {
-        set({ loadingChat: true, conversacionActivaId: id });
+        // Recargar la misma consulta (tras enviar) no muestra el cargando: el
+        // hilo se reemplazaba por un spinner y el chat parpadeaba y perdía el final.
+        const otra = get().conversacionActivaId !== id;
+        set({ loadingChat: otra, conversacionActivaId: id });
         const res = await apiGet<{ empresaNombre: string; estado: 'ABIERTA' | 'CERRADA'; mensajes: SoporteMensaje[] }>(
             `/soporte/sistema/conversaciones/${id}`,
         );
