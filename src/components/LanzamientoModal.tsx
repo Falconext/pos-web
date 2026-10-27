@@ -53,12 +53,47 @@ const SECCIONES_LISTA: Array<{ id: string; tipo: TipoNovedad; titulo: string; ic
  * Imagen del bloque. Si no existe (todavía) se dibuja un marcador con el icono
  * sobre un degradado, para que la portada se pueda publicar sin todas las fotos.
  */
+/**
+ * Qué imágenes de la portada existen, averiguado ANTES de abrirla.
+ *
+ * Sin esto el modal dibujaba el espacio de cada imagen y, una fracción de
+ * segundo después, el navegador avisaba que no existía y todo el diseño saltaba
+ * a la versión con icono: el parpadeo que se veía al abrirla con imágenes
+ * todavía sin subir. La precarga empieza al importar el módulo y el modal
+ * espera a que termine (con un tope) para mostrarse ya en su forma final.
+ */
+const ESTADO_IMAGEN = new Map<string, 'ok' | 'fallo'>();
+
+const precargar = (src: string) =>
+    new Promise<void>((listo) => {
+        const img = new Image();
+        img.onload = () => {
+            ESTADO_IMAGEN.set(src, 'ok');
+            listo();
+        };
+        img.onerror = () => {
+            ESTADO_IMAGEN.set(src, 'fallo');
+            listo();
+        };
+        img.src = src;
+    });
+
+const IMAGENES_PORTADA = [
+    LANZAMIENTO.heroImagen,
+    ...LANZAMIENTO.destacados.map((d) => d.imagen),
+    LANZAMIENTO.proximamente?.imagen,
+].filter((s): s is string => Boolean(s));
+
+const PRECARGA = typeof window === 'undefined' ? Promise.resolve() : Promise.all(IMAGENES_PORTADA.map(precargar)).then(() => undefined);
+
+const existeImagen = (src?: string) => Boolean(src) && ESTADO_IMAGEN.get(src!) !== 'fallo';
+
 function Imagen({ src, alt, icono, acento, clase = '' }: { src?: string; alt: string; icono: string; acento: DestacadoLanzamiento['acento']; clase?: string }) {
     const [fallo, setFallo] = useState(false);
-    const [cargada, setCargada] = useState(false);
+    const [cargada, setCargada] = useState(() => Boolean(src) && ESTADO_IMAGEN.get(src!) === 'ok');
     const reducido = useReducedMotion();
     const a = ACENTO[acento];
-    if (src && !fallo) {
+    if (existeImagen(src) && !fallo) {
         return (
             <div className={`relative ${clase}`}>
                 {/* Halo del color del bloque detrás de la imagen, para que no quede
@@ -189,8 +224,8 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
     const reducido = Boolean(useReducedMotion());
     const item = aparecer(reducido);
     const [fallo, setFallo] = useState(false);
-    const [cargada, setCargada] = useState(false);
-    const conImagen = Boolean(p.imagen) && !fallo;
+    const [cargada, setCargada] = useState(() => Boolean(p.imagen) && ESTADO_IMAGEN.get(p.imagen!) === 'ok');
+    const conImagen = existeImagen(p.imagen) && !fallo;
     return (
         <section
             id={`lz-${p.id}`}
@@ -302,7 +337,20 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
     const scrollRef = useRef<HTMLDivElement>(null);
     const [activa, setActiva] = useState<string>('resumen');
     const [heroFallo, setHeroFallo] = useState(false);
-    const heroVisible = Boolean(LANZAMIENTO.heroImagen) && !heroFallo;
+    const heroVisible = existeImagen(LANZAMIENTO.heroImagen) && !heroFallo;
+    // Se muestra recién cuando se sabe qué imágenes hay (ver ESTADO_IMAGEN). El
+    // tope evita que una imagen lenta deje el modal sin abrir.
+    const [imagenesListas, setImagenesListas] = useState(() => IMAGENES_PORTADA.every((s) => ESTADO_IMAGEN.has(s)));
+    useEffect(() => {
+        if (!abierto || imagenesListas) return;
+        let vivo = true;
+        Promise.race([PRECARGA, new Promise((r) => setTimeout(r, 1500))]).then(() => {
+            if (vivo) setImagenesListas(true);
+        });
+        return () => {
+            vivo = false;
+        };
+    }, [abierto, imagenesListas]);
     const reducido = Boolean(useReducedMotion());
 
     const listas = useMemo(() => novedadesDelLanzamiento(), []);
@@ -365,7 +413,7 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
 
     return createPortal(
         <AnimatePresence>
-            {abierto && (
+            {abierto && imagenesListas && (
                 <motion.div
                     key="lanzamiento-modal"
                     className="print:hidden fixed inset-0 z-[9998] flex items-center justify-center p-2 sm:p-5"
