@@ -4,6 +4,7 @@ import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSoporteSistemaStore } from '@/zustand/soporteSistema';
 import { PREGUNTAS_SOPORTE } from '@/data/preguntasSoporte';
+import { Adjunto, BotonesAdjunto, imagenPegada, textoSinMarca } from '@/components/soporte/AdjuntosSoporte';
 
 /**
  * Respuestas guardadas del equipo: se eligen escribiendo "/" en la respuesta.
@@ -37,6 +38,7 @@ export default function SistemaSoporte() {
         cargarConversaciones,
         abrirConversacion,
         enviarMensaje,
+        enviarAdjunto,
         cerrarConversacionActiva,
     } = useSoporteSistemaStore();
     const [filtro, setFiltro] = useState<'ABIERTA' | 'CERRADA' | undefined>('ABIERTA');
@@ -56,6 +58,11 @@ export default function SistemaSoporte() {
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [mensajes.length]);
+
+    const enviarImagen = async (archivo: File) => {
+        if (enviando) return;
+        if (await enviarAdjunto('imagen', archivo, texto.startsWith('/') ? '' : texto)) setTexto('');
+    };
 
     const enviar = async () => {
         const t = texto.trim();
@@ -176,7 +183,12 @@ export default function SistemaSoporte() {
                                                             }`}
                                                     >
                                                         <p className="mb-0.5 text-[11px] font-bold opacity-80">{m.autorNombre}</p>
-                                                        <p className="whitespace-pre-wrap break-words leading-relaxed">{m.contenido}</p>
+                                                        <Adjunto imagenUrl={m.imagenUrl} audioUrl={m.audioUrl} />
+                                                        {(m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido) && (
+                                                            <p className="whitespace-pre-wrap break-words leading-relaxed">
+                                                                {m.imagenUrl || m.audioUrl ? textoSinMarca(m.contenido) : m.contenido}
+                                                            </p>
+                                                        )}
                                                         <span className={`mt-1 block text-right text-[10px] ${esSistema ? 'text-violet-100/80' : 'text-gray-400'}`}>
                                                             {format(date, 'HH:mm')}
                                                         </span>
@@ -205,8 +217,20 @@ export default function SistemaSoporte() {
                                 ))}
                             </div>
                         )}
-                        <div className="flex items-end gap-2 border-t border-gray-100 p-3 dark:border-slate-800">
+                        <div className="flex items-end gap-1.5 border-t border-gray-100 p-3 dark:border-slate-800">
+                            <BotonesAdjunto
+                                deshabilitado={enviando}
+                                onImagen={enviarImagen}
+                                onAudio={(archivo) => enviarAdjunto('audio', archivo)}
+                            />
                             <textarea
+                                onPaste={(e) => {
+                                    const imagen = imagenPegada(e);
+                                    if (imagen) {
+                                        e.preventDefault();
+                                        enviarImagen(imagen);
+                                    }
+                                }}
                                 value={texto}
                                 onChange={(e) => setTexto(e.target.value)}
                                 onKeyDown={(e) => {

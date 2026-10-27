@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { get as apiGet, post as apiPost, patch as apiPatch } from '../utils/fetch';
-import type { SoporteMensaje } from './soporte';
+import { subirAdjuntoSoporte, type SoporteMensaje } from './soporte';
 
 export interface SoporteConversacionResumen {
     id: number;
@@ -28,6 +28,7 @@ interface SoporteSistemaState {
     cargarConversaciones: (estado?: 'ABIERTA' | 'CERRADA') => Promise<void>;
     abrirConversacion: (id: number) => Promise<void>;
     enviarMensaje: (contenido: string) => Promise<void>;
+    enviarAdjunto: (tipo: 'imagen' | 'audio', archivo: File, texto?: string) => Promise<boolean>;
     cerrarConversacionActiva: () => Promise<void>;
     /** Llamado por el store de notificaciones cuando llega 'nuevo-mensaje-soporte'. */
     recibirMensajeEnVivo: (payload: {
@@ -36,6 +37,8 @@ interface SoporteSistemaState {
         autorNombre: string;
         contenido: string;
         empresaNombre?: string;
+        imagenUrl?: string;
+        audioUrl?: string;
     }) => void;
 }
 
@@ -101,6 +104,25 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
         }
     },
 
+    enviarAdjunto: async (tipo, archivo, texto) => {
+        const { conversacionActivaId } = get();
+        if (!conversacionActivaId) return false;
+        set({ enviando: true, error: null });
+        const res = await subirAdjuntoSoporte(
+            `/soporte/sistema/conversaciones/${conversacionActivaId}/${tipo}`,
+            archivo,
+            texto,
+        );
+        set({ enviando: false });
+        if (!res.success) {
+            set({ error: res.error || 'No se pudo enviar el archivo' });
+            return false;
+        }
+        await get().abrirConversacion(conversacionActivaId);
+        await get().cargarConversaciones();
+        return true;
+    },
+
     cerrarConversacionActiva: async () => {
         const { conversacionActivaId } = get();
         if (!conversacionActivaId) return;
@@ -130,6 +152,8 @@ export const useSoporteSistemaStore = create<SoporteSistemaState>((set, get) => 
                                 rol: 'EMPRESA' as const,
                                 autorNombre: payload.autorNombre,
                                 contenido: payload.contenido,
+                                imagenUrl: payload.imagenUrl ?? null,
+                                audioUrl: payload.audioUrl ?? null,
                                 creadoEn: new Date().toISOString(),
                             },
                         ],

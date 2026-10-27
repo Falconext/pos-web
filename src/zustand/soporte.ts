@@ -7,7 +7,18 @@ export interface SoporteMensaje {
     rol: 'EMPRESA' | 'SISTEMA';
     autorNombre: string | null;
     contenido: string;
+    /** Foto o nota de voz del mensaje (S3). */
+    imagenUrl?: string | null;
+    audioUrl?: string | null;
     creadoEn: string;
+}
+
+/** Sube una foto (con pie opcional) o una nota de voz al endpoint dado. */
+export async function subirAdjuntoSoporte(endpoint: string, archivo: File, texto?: string) {
+    const datos = new FormData();
+    datos.append('archivo', archivo);
+    if (texto?.trim()) datos.append('texto', texto.trim());
+    return apiPost(endpoint, datos);
 }
 
 interface SoporteState {
@@ -19,10 +30,19 @@ interface SoporteState {
 
     cargarMensajes: () => Promise<void>;
     enviarMensaje: (contenido: string) => Promise<void>;
+    /** Foto (con `texto` como pie) o nota de voz. */
+    enviarAdjunto: (tipo: 'imagen' | 'audio', archivo: File, texto?: string) => Promise<boolean>;
     /** Contador de no leídos sin marcar nada como visto (para el badge del widget cerrado). */
     consultarNoLeidos: () => Promise<number>;
     /** Llamado por el store de notificaciones cuando llega 'nuevo-mensaje-soporte'. */
-    recibirMensajeEnVivo: (payload: { rol: 'EMPRESA' | 'SISTEMA'; mensajeId?: number; autorNombre: string; contenido: string }) => void;
+    recibirMensajeEnVivo: (payload: {
+        rol: 'EMPRESA' | 'SISTEMA';
+        mensajeId?: number;
+        autorNombre: string;
+        contenido: string;
+        imagenUrl?: string;
+        audioUrl?: string;
+    }) => void;
 }
 
 export const useSoporteStore = create<SoporteState>((set, get) => ({
@@ -55,6 +75,18 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
         }
     },
 
+    enviarAdjunto: async (tipo, archivo, texto) => {
+        set({ enviando: true, error: null });
+        const res = await subirAdjuntoSoporte(`/soporte/mensajes/${tipo}`, archivo, texto);
+        set({ enviando: false });
+        if (!res.success) {
+            set({ error: res.error || (tipo === 'imagen' ? 'No se pudo enviar la imagen' : 'No se pudo enviar la nota de voz') });
+            return false;
+        }
+        await get().cargarMensajes();
+        return true;
+    },
+
     consultarNoLeidos: async () => {
         const res = await apiGet<{ noLeidos: number }>('/soporte/estado');
         return res.success && res.data ? res.data.noLeidos : 0;
@@ -80,6 +112,8 @@ export const useSoporteStore = create<SoporteState>((set, get) => ({
                         rol: 'SISTEMA' as const,
                         autorNombre: payload.autorNombre,
                         contenido: payload.contenido,
+                        imagenUrl: payload.imagenUrl ?? null,
+                        audioUrl: payload.audioUrl ?? null,
                         creadoEn: new Date().toISOString(),
                     },
                 ],
