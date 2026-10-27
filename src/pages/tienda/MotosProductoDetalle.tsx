@@ -10,12 +10,35 @@ import { motoCard, motoFade, motoPage, motoSection, motoStagger, motoTap, motoVi
 import ProductoVideo from '@/components/tienda/ProductoVideo';
 
 import { recordarVentaSinStock, sinStock } from '@/templates/shared/ventaSinStock';
+import {
+  findFashionVariant, getDefaultVariantSelection, getFashionColorGallery, getFashionColors,
+  getVariantOptionNames, isFashionVariantAvailable,
+} from '@/templates/urbano/fashionVariants';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const getImg = (p: any) => p?.imagenUrl || p?.imagen || '';
 const nameOf = (p: any) => p?.descripcion || p?.nombre || 'Producto';
 const catOf = (p: any) => (typeof p?.categoria === 'object' ? p?.categoria?.nombre : p?.categoria) || '';
 const marcaOf = (p: any) => (typeof p?.marca === 'object' ? p?.marca?.nombre : p?.marca) || '';
+const optionsOf = (p: any): { nombre: string; valores: string[] }[] => (Array.isArray(p?.opcionesAtributos) ? p.opcionesAtributos : []);
+/** Identidad de una línea del carrito: cada variante (color, cilindrada…) va en su propia línea. */
+const lineaId = (c: any) => String(c?.cartId ?? c?.productoId ?? c?.id);
+/** Texto del primer párrafo de un HTML, para el resumen de arriba. */
+const primerParrafo = (html: string) => {
+  if (!html) return '';
+  const m = /<p[^>]*>([\s\S]*?)<\/p>/i.exec(html);
+  const texto = (m ? m[1] : html).replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+  return texto.length > 240 ? `${texto.slice(0, 237).trimEnd()}…` : texto;
+};
+const PROSA_MOTO = [
+  'text-[15px] leading-7 break-words',
+  '[&_p]:mb-4',
+  '[&_ul]:mb-4 [&_ul]:list-disc [&_ul]:space-y-2.5 [&_ul]:pl-5 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:space-y-2.5 [&_ol]:pl-5',
+  '[&_li]:pl-1 [&_li::marker]:text-neutral-400',
+  '[&_strong]:font-bold [&_strong]:text-neutral-900 [&_b]:font-bold [&_b]:text-neutral-900',
+  '[&_h2]:mb-2 [&_h2]:mt-5 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-neutral-900 [&_h3]:mb-2 [&_h3]:mt-4 [&_h3]:font-bold [&_h3]:text-neutral-900',
+  '[&_a]:underline [&_table]:mb-4 [&_table]:w-full [&_table]:text-sm [&_td]:border [&_td]:px-3 [&_td]:py-2 [&_th]:border [&_th]:px-3 [&_th]:py-2 [&_th]:text-left',
+].join(' ');
 
 export function MotosProductoDetalleView({
   tienda,
@@ -57,24 +80,42 @@ export function MotosProductoDetalleView({
   const name = nameOf(producto);
   const marca = marcaOf(producto);
   const categoria = catOf(producto);
-  const stock = Number(producto?.stock ?? 6);
-  const outOfStock = sinStock(stock);
-  const desc = producto?.detalle || producto?.descripcionCorta ||
-    'Una moto pensada para el día a día: torque instantáneo, autonomía real y mantenimiento mínimo. Entrega lista para rodar, con garantía oficial y respaldo de taller propio.';
+  // ── Variantes reales (color / cilindrada / lo que haya), igual que en ropa ──
+  const options = optionsOf(producto);
+  const hasVariants = options.length > 0 && Array.isArray(producto?.variantes) && producto.variantes.length > 0;
+  const colorName = getVariantOptionNames(producto).color;
+  const colors = useMemo(() => getFashionColors(producto), [producto]);
+  const [selection, setSelection] = useState<Record<string, string>>(() => getDefaultVariantSelection(producto));
+  const [hint, setHint] = useState(false);
+  useEffect(() => { setSelection(getDefaultVariantSelection(producto)); setHint(false); }, [producto?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const selectedColor = selection[colorName] || colors[0]?.name || '';
+  const activeVariant = useMemo(() => (hasVariants ? findFashionVariant(producto, selection) : null), [producto, selection, hasVariants]);
+  const allSelected = hasVariants ? options.every((o) => !!selection[o.nombre]) : true;
+  const missing = hasVariants ? options.find((o) => !selection[o.nombre])?.nombre : '';
+
+  const stock = activeVariant ? Number(activeVariant.stock || 0) : Number(producto?.stock ?? 6);
+  const outOfStock = hasVariants ? allSelected && sinStock(stock) : sinStock(stock);
+  const canAdd = hasVariants ? allSelected && !!activeVariant && !sinStock(stock) : !sinStock(stock);
+  const price = activeVariant ? Number(activeVariant.precioUnitario || pricing.precioFinal) : pricing.precioFinal;
+  const showStrike = !activeVariant && pricing.enOferta;
+  const descripcionLarga = String(producto?.descripcionLarga || '').trim();
+  // Arriba va un resumen: el primer párrafo de la descripción larga, si no hay
+  // uno corto propio. El texto genérico de "moto eléctrica" queda solo de
+  // último recurso (se veía en cascos y repuestos).
+  const desc = producto?.detalle || producto?.descripcionCorta || primerParrafo(descripcionLarga) ||
+    'Una moto pensada para el día a día. Entrega lista para rodar, con garantía y respaldo de taller propio.';
   const ratingAvg = Number(producto?.ratingAvg || producto?.ratingPromedio || 0);
   const stars = Math.max(1, Math.min(5, Math.round(ratingAvg || 5)));
 
-  const seed = Number(producto?.id || 0);
-  const specs = [
-    { icon: 'solar:battery-charge-linear', label: 'Autonomía', value: `${60 + (seed % 9) * 10} km` },
-    { icon: 'solar:bolt-linear', label: 'Potencia', value: `${3 + (seed % 5)} kW` },
-    { icon: 'solar:speedometer-max-linear', label: 'Velocidad máx.', value: `${70 + (seed % 6) * 10} km/h` },
-    { icon: 'solar:clock-circle-linear', label: 'Carga', value: `${3 + (seed % 4)} h` },
-  ];
-
-  const extraImages = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra : [];
-  const gallery = [getImg(producto), ...extraImages].filter(Boolean);
+  const gallery: string[] = useMemo(() => {
+    const byColor = hasVariants && selectedColor ? getFashionColorGallery(producto, selectedColor) : [];
+    if (byColor.length) return byColor;
+    const extra = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra.map((x: any) => (typeof x === 'string' ? x : x?.url || x?.imagenUrl)) : [];
+    return Array.from(new Set([getImg(producto), ...extra].filter(Boolean))) as string[];
+  }, [producto, selectedColor, hasVariants]);
   const [activeImage, setActiveImage] = useState(0);
+  useEffect(() => { setActiveImage(0); }, [selectedColor]);
+  const [llena, setLlena] = useState(false);
   const [qty, setQty] = useState(1);
 
   const go = (url: string, page?: 'home' | 'catalogo' | 'producto' | 'checkout') => {
@@ -83,13 +124,49 @@ export function MotosProductoDetalleView({
     navigate(url);
   };
 
-  const add = (n = qty) => {
-    const item = { ...producto, ...pricing, precioUnitario: pricing.precioFinal, cantidad: n, id: producto.id, productoId: producto.id };
+  // Sirve para la moto de la ficha y para las de "También te puede interesar".
+  // Antes los relacionados pasaban por actualizarCantidad(id, 1), que al no
+  // encontrar el id agregaba la moto de la FICHA: dos líneas de la misma moto
+  // y ninguna de la que el cliente eligió.
+  const pushItem = (item: any) => {
+    const previo = carrito.find((c) => lineaId(c) === lineaId(item));
     if (onAddToCart) onAddToCart(item);
-    else actualizarCantidad(producto.id, (carrito.find((c) => c.id === producto.id)?.cantidad || 0) + n);
+    else if (setCarrito) {
+      setCarrito(previo
+        ? carrito.map((c) => (lineaId(c) === lineaId(item) ? { ...c, cantidad: Number(c.cantidad || 0) + item.cantidad } : c))
+        : [...carrito, item]);
+    } else actualizarCantidad(lineaId(item), Number(previo?.cantidad || 0) + item.cantidad);
     setMostrarCarrito(true);
   };
-  const buyNow = () => { add(qty); go(`/tienda/${slug}/checkout`, 'checkout'); };
+  const addToCart = (prod: any, n: number) => {
+    const pr = getProductPricing(prod);
+    pushItem({ ...prod, ...pr, precioUnitario: pr.precioFinal, cantidad: n, id: prod.id, productoId: prod.id, cartId: String(prod.id) });
+  };
+  /** La moto de la ficha, con la variante elegida (cada combinación es su propia línea). */
+  const add = (n = qty) => {
+    if (!canAdd) { setHint(true); return false; }
+    if (!hasVariants) { addToCart(producto, n); return true; }
+    const variantKey = options.map((o) => selection[o.nombre]).filter(Boolean).join(' / ');
+    pushItem({
+      ...producto,
+      ...pricing,
+      id: producto.id,
+      productoId: producto.id,
+      cartId: `${producto.id}::${variantKey}`,
+      varianteId: activeVariant?.id,
+      valoresAtributos: activeVariant?.valoresAtributos || selection,
+      precioUnitario: price,
+      precioFinal: price,
+      precioOferta: undefined,
+      enOferta: false,
+      imagenUrl: gallery[0] || activeVariant?.imagenUrl || producto?.imagenUrl,
+      cantidad: Math.max(1, n),
+      descripcion: `${producto.descripcion} — ${variantKey}`,
+      codigo: activeVariant?.codigo || producto?.codigo,
+    });
+    return true;
+  };
+  const buyNow = () => { if (add(qty)) go(`/tienda/${slug}/checkout`, 'checkout'); };
 
   const cartCount = carrito.reduce((s, i) => s + Number(i?.cantidad || 1), 0);
   const relatedFiltered = related.filter((p) => String(p.id) !== String(producto.id)).slice(0, 4);
@@ -122,7 +199,7 @@ export function MotosProductoDetalleView({
       </div>
 
       <main className="mx-auto max-w-7xl px-6 py-8 md:py-12">
-        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
           {/* Galería — imagen completa sobre fondo de estudio */}
           <motion.div variants={motoFade}>
             <div className="group relative overflow-hidden rounded-3xl border" style={{ borderColor: MOTO.line, background: `radial-gradient(120% 120% at 50% 0%, ${withAlpha(primary, '14')} 0%, ${MOTO.card} 55%)` }}>
@@ -134,9 +211,21 @@ export function MotosProductoDetalleView({
                   Oferta -{pricing.porcentajeDescuento}%
                 </span>
               )}
-              <div className="flex aspect-[4/3] w-full items-center justify-center p-8 md:p-12">
+              {/* Antes la foto iba chica, con margen y drop-shadow, y se veía un
+                  cuadro blanco flotando. Una foto cuadrada (la mayoría) ahora
+                  llena el recuadro de borde a borde; una apaisada se ve completa
+                  y multiply funde su fondo blanco con el de estudio. */}
+              <div className={`flex aspect-square w-full items-center justify-center ${llena ? '' : 'p-6 md:p-8'}`}>
                 {gallery[activeImage] ? (
-                  <img src={gallery[activeImage]} alt={name} className="max-h-full max-w-full object-contain drop-shadow-[0_24px_40px_rgba(15,18,26,0.18)] transition-transform duration-[800ms] ease-out group-hover:scale-[1.05]" />
+                  <img
+                    src={gallery[activeImage]}
+                    alt={name}
+                    onLoad={(e) => {
+                      const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+                      setLlena(h > 0 && Math.abs(w / h - 1) <= 0.15);
+                    }}
+                    className={`h-full w-full transition-transform duration-[800ms] ease-out group-hover:scale-[1.04] ${llena ? 'object-cover' : 'object-contain mix-blend-multiply'}`}
+                  />
                 ) : (
                   <MotoProductImage producto={producto} imgClassName="!object-contain" />
                 )}
@@ -152,7 +241,7 @@ export function MotosProductoDetalleView({
                     className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border-2 p-2 transition-colors"
                     style={{ background: 'linear-gradient(180deg, #FFFFFF, #F1F3F6)', borderColor: i === activeImage ? primary : MOTO.line }}
                   >
-                    <img src={src} alt="" className="max-h-full max-w-full object-contain" />
+                    <img src={src} alt="" className="max-h-full max-w-full object-contain mix-blend-multiply" />
                   </button>
                 ))}
               </div>
@@ -174,19 +263,87 @@ export function MotosProductoDetalleView({
 
               <div className="mt-6 flex items-end justify-between gap-3 rounded-2xl p-5" style={{ backgroundColor: MOTO.soft }}>
                 <div className="flex items-baseline gap-2.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MOTO.faint }}>Desde</span>
-                  <span className="text-4xl font-extrabold" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>{money(pricing.precioFinal)}</span>
+                  {!activeVariant && <span className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: MOTO.faint }}>Desde</span>}
+                  <span className="text-4xl font-extrabold" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>{money(price)}</span>
                 </div>
                 <div className="flex flex-col items-end">
-                  {pricing.enOferta && <span className="text-sm font-medium line-through" style={{ color: MOTO.faint }}>{money(pricing.precioRegular)}</span>}
+                  {showStrike && <span className="text-sm font-medium line-through" style={{ color: MOTO.faint }}>{money(pricing.precioRegular)}</span>}
                   <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold" style={{ color: outOfStock ? MOTO.faint : '#16A34A' }}>
                     <Icon icon={outOfStock ? 'solar:close-circle-bold' : 'solar:check-circle-bold'} width={14} />
-                    {outOfStock ? 'Agotado' : 'En stock'}
+                    {hasVariants && !allSelected ? 'Elige una opción' : outOfStock ? 'Agotado' : 'En stock'}
                   </span>
                 </div>
               </div>
 
               <p className="mt-5 text-sm leading-relaxed" style={{ color: MOTO.body }}>{desc}</p>
+
+              {/* Color */}
+              {hasVariants && colors.length > 0 && (
+                <div className="mt-6">
+                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: MOTO.ink }}>
+                    {colorName}: <span className="font-semibold normal-case tracking-normal" style={{ color: MOTO.muted }}>{selectedColor || 'Elige uno'}</span>
+                  </p>
+                  <div className="flex flex-wrap gap-2.5">
+                    {colors.map((c) => {
+                      const active = selectedColor === c.name;
+                      const available = isFashionVariantAvailable(producto, { [colorName]: c.name });
+                      return (
+                        <button
+                          key={c.name}
+                          type="button"
+                          title={c.name}
+                          aria-label={c.name}
+                          aria-pressed={active}
+                          onClick={() => { setHint(false); setSelection((cur) => ({ ...cur, [colorName]: c.name })); }}
+                          className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border-2 bg-white transition-colors"
+                          style={{ borderColor: active ? primary : MOTO.line, opacity: available ? 1 : 0.45 }}
+                        >
+                          {c.useImage && c.image
+                            ? <img src={c.image} alt="" className="h-9 w-9 rounded-md object-contain mix-blend-multiply" />
+                            : <span className="h-7 w-7 rounded-full" style={{ background: c.hex, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12)' }} />}
+                          {!available && <span aria-hidden className="absolute h-px w-14 rotate-45" style={{ background: MOTO.faint }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Cilindrada, versión y demás opciones */}
+              {hasVariants && options.filter((o) => o.nombre !== colorName).map((op) => (
+                <div key={op.nombre} className="mt-5">
+                  <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: MOTO.ink }}>
+                    {op.nombre}{selection[op.nombre] && <span className="font-semibold normal-case tracking-normal" style={{ color: MOTO.muted }}>: {selection[op.nombre]}</span>}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {op.valores.map((val) => {
+                      const active = selection[op.nombre] === val;
+                      const available = isFashionVariantAvailable(producto, { ...selection, [op.nombre]: val });
+                      return (
+                        <button
+                          key={val}
+                          type="button"
+                          disabled={!available}
+                          aria-pressed={active}
+                          onClick={() => { setHint(false); setSelection((cur) => ({ ...cur, [op.nombre]: val })); }}
+                          className="relative min-w-[3.25rem] rounded-lg border-2 px-4 py-2.5 text-xs font-bold uppercase tracking-[0.08em] transition-colors disabled:cursor-not-allowed"
+                          style={active
+                            ? { borderColor: primary, backgroundColor: withAlpha(primary, '12'), color: primary }
+                            : { borderColor: MOTO.line, backgroundColor: MOTO.card, color: available ? MOTO.ink : MOTO.faint }}
+                        >
+                          {val}
+                          {!available && <span aria-hidden className="absolute left-1/2 top-1/2 h-px w-3/4 -translate-x-1/2 -rotate-12" style={{ background: MOTO.faint }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+              {hasVariants && hint && !canAdd && (
+                <p className="mt-4 text-xs font-semibold" style={{ color: primary }}>
+                  {!allSelected ? `Elige ${String(missing || 'una opción').toLowerCase()} para continuar.` : 'Esta combinación no tiene stock. Prueba otra.'}
+                </p>
+              )}
 
               {/* Acciones */}
               <div className="mt-6 flex items-center gap-3">
@@ -251,29 +408,17 @@ export function MotosProductoDetalleView({
           </motion.div>
         </div>
 
-        {/* Ficha técnica */}
-        <motion.section initial="hidden" whileInView="show" viewport={motoViewport} variants={motoSection} className="mt-12 md:mt-16">
-          <div className="mb-6 flex items-center gap-2.5">
-            <span className="h-px w-6" style={{ backgroundColor: primary }} />
-            <h2 className="text-2xl font-extrabold uppercase tracking-[0.02em]" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>Ficha técnica</h2>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            {specs.map((s) => (
-              <div key={s.label} className="rounded-2xl border p-5 text-center shadow-[0_1px_2px_rgba(15,18,26,0.04)]" style={{ backgroundColor: MOTO.card, borderColor: MOTO.line }}>
-                <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg" style={{ backgroundColor: withAlpha(primary, '14'), color: primary }}>
-                  <Icon icon={s.icon} width={22} />
-                </span>
-                <p className="mt-3 text-lg font-extrabold" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>{s.value}</p>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: MOTO.faint }}>{s.label}</p>
-              </div>
-            ))}
-          </div>
-        </motion.section>
-
         {/* Descripción larga */}
         <motion.section initial="hidden" whileInView="show" viewport={motoViewport} variants={motoSection} className="mt-8 rounded-3xl border p-8 shadow-[0_1px_2px_rgba(15,18,26,0.04)] md:p-10" style={{ backgroundColor: MOTO.card, borderColor: MOTO.line }}>
-          <h2 className="text-2xl font-extrabold uppercase tracking-[0.02em]" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>Sobre esta moto</h2>
-          <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: MOTO.body }}>{producto?.descripcionLarga ? String(producto.descripcionLarga).replace(/<[^>]+>/g, ' ') : desc}</p>
+          <div className="flex items-center gap-2.5">
+            <span className="h-px w-6" style={{ backgroundColor: primary }} />
+            <h2 className="text-2xl font-extrabold uppercase tracking-[0.02em]" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>Descripción</h2>
+          </div>
+          {/* HTML del editor de producto, como en la plantilla clásica. Antes se
+              le quitaban las etiquetas y la lista quedaba en un solo párrafo. */}
+          {descripcionLarga
+            ? <div className={`mt-5 max-w-4xl ${PROSA_MOTO}`} style={{ color: MOTO.body }} dangerouslySetInnerHTML={{ __html: descripcionLarga }} />
+            : <p className="mt-4 max-w-3xl text-sm leading-7" style={{ color: MOTO.body }}>{desc}</p>}
           <div className="mt-6 grid gap-3 border-t pt-6 text-sm sm:grid-cols-2" style={{ borderColor: MOTO.line }}>
             <p><span className="font-semibold" style={{ color: MOTO.ink }}>Categoría:</span> <span style={{ color: MOTO.muted }}>{categoria || '—'}</span></p>
             <p><span className="font-semibold" style={{ color: MOTO.ink }}>Marca:</span> <span style={{ color: MOTO.muted }}>{marca || '—'}</span></p>
@@ -292,7 +437,7 @@ export function MotosProductoDetalleView({
             </div>
             <motion.div variants={motoStagger} className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-4">
               {relatedFiltered.map((p) => (
-                <MotoProductCard key={p.id} producto={p} slug={slug} cp={primary} onAddToCart={onAddToCart || ((prod) => actualizarCantidad(prod.id, 1))} onClick={() => go(`/tienda/${slug}/producto/${p.id}`, 'producto')} />
+                <MotoProductCard key={p.id} producto={p} slug={slug} cp={primary} onAddToCart={(prod) => addToCart(prod, 1)} onClick={() => go(`/tienda/${slug}/producto/${p.id}`, 'producto')} />
               ))}
             </motion.div>
           </motion.section>
@@ -319,6 +464,19 @@ export function MotosProductoDetalleView({
 }
 
 /* ─────────────── Wrapper que hace fetch (tienda real) ─────────────── */
+// Carritos guardados con el bug de los relacionados traen la misma moto en dos
+// líneas: se juntan en una sumando cantidades.
+const unirRepetidos = (items: any[]) => {
+  if (!Array.isArray(items)) return [];
+  const porId = new Map<string, any>();
+  for (const it of items) {
+    const k = lineaId(it);
+    const ya = porId.get(k);
+    porId.set(k, ya ? { ...ya, cantidad: Number(ya.cantidad || 0) + Number(it?.cantidad || 0) } : it);
+  }
+  return [...porId.values()];
+};
+
 export default function MotosProductoDetalle() {
   const { slug = '', id = '' } = useParams();
   const navigate = useNavigate();
@@ -334,7 +492,7 @@ export default function MotosProductoDetalle() {
 
   useEffect(() => {
     if (!slug) return;
-    try { const saved = localStorage.getItem(`tienda:${slug}:carrito`); if (saved) setCarrito(JSON.parse(saved)); } catch {}
+    try { const saved = localStorage.getItem(`tienda:${slug}:carrito`); if (saved) setCarrito(unirRepetidos(JSON.parse(saved))); } catch {}
     return onTiendaCartCleared(slug, () => { setCarrito([]); setMostrarCarrito(false); });
   }, [slug]);
 
@@ -372,11 +530,15 @@ export default function MotosProductoDetalle() {
     load();
   }, [slug, id, navigate, previewPlantillaId]);
 
-  const actualizarCantidad = (productoId: number | string, cantidad: number) => {
+  // El modal del carrito identifica cada línea por cartId (una por variante):
+  // comparar por producto movía o borraba todas las variantes juntas.
+  const actualizarCantidad = (lineaKey: number | string, cantidad: number) => {
+    const k = String(lineaKey);
+    const es = (item: any) => lineaId(item) === k || (!item.cartId && String(item.id) === k);
     setCarrito((current) => {
-      const exists = current.some((item) => item.id === productoId || item.productoId === productoId);
-      if (cantidad <= 0) return current.filter((item) => item.id !== productoId && item.productoId !== productoId);
-      if (exists) return current.map((item) => (item.id === productoId || item.productoId === productoId) ? { ...item, cantidad } : item);
+      const exists = current.some(es);
+      if (cantidad <= 0) return current.filter((item) => !es(item));
+      if (exists) return current.map((item) => (es(item) ? { ...item, cantidad } : item));
       if (producto) {
         const pr = getProductPricing(producto);
         return [...current, { ...producto, ...pr, precioUnitario: pr.precioFinal, cantidad, id: producto.id, productoId: producto.id }];
