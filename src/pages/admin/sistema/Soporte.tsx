@@ -63,19 +63,18 @@ export default function SistemaSoporte() {
     const [imagen, setImagen] = useState<File | null>(null);
     useEffect(() => setImagen(null), [conversacionActivaId]);
 
-    const enviar = async () => {
+    // Como en WhatsApp: el cuadro se limpia y el mensaje aparece al instante.
+    const enviar = () => {
         const t = texto.trim();
-        if (enviando) return;
         if (imagen) {
-            if (await enviarAdjunto('imagen', imagen, t.startsWith('/') ? '' : t)) {
-                setImagen(null);
-                setTexto('');
-            }
+            enviarAdjunto('imagen', imagen, t.startsWith('/') ? '' : t);
+            setImagen(null);
+            setTexto('');
             return;
         }
         if (!t) return;
         setTexto('');
-        await enviarMensaje(t);
+        enviarMensaje(t);
     };
 
     return (
@@ -198,6 +197,8 @@ export default function SistemaSoporte() {
                                                         )}
                                                         <span className={`mt-1 block text-right text-[10px] ${esSistema ? 'text-violet-100/80' : 'text-gray-400'}`}>
                                                             {format(date, 'HH:mm')}
+                                                    {m.pendiente && <Icon icon="solar:clock-circle-linear" width={11} className="ml-1 inline align-[-1px]" />}
+                                                    {m.fallido && <span className="ml-1 font-bold text-rose-200">· No se envió</span>}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -237,7 +238,7 @@ export default function SistemaSoporte() {
                             }}
                         >
                             <BotonesAdjunto
-                                deshabilitado={enviando}
+                                deshabilitado={false}
                                 onImagen={setImagen}
                                 onAudio={(archivo) => enviarAdjunto('audio', archivo)}
                             />
@@ -266,7 +267,7 @@ export default function SistemaSoporte() {
                             <button
                                 type="button"
                                 onClick={enviar}
-                                disabled={(!texto.trim() && !imagen) || enviando}
+                                disabled={!texto.trim() && !imagen}
                                 className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-violet-600 text-white transition hover:bg-violet-700 disabled:opacity-40"
                             >
                                 <Icon icon={enviando ? 'solar:refresh-bold' : 'solar:plain-bold'} className={enviando ? 'animate-spin' : ''} width={18} />
