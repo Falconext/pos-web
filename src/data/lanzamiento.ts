@@ -29,6 +29,11 @@ export interface DestacadoLanzamiento {
     donde?: string;
     /** Planes donde aplica. Vacío = todos. */
     planes?: PlanNovedad[];
+    /**
+     * Módulo que se contrata aparte (p. ej. IA de Ventas): manda sobre `planes`,
+     * porque no viene con ningún plan y decir "Todos los planes" sería falso.
+     */
+    modulo?: { codigo: string; nombre: string };
 }
 
 /**
@@ -89,6 +94,7 @@ export const LANZAMIENTO: Lanzamiento = {
             imagen: '/assets/lanzamiento/2026-10/ia-ventas.jpg',
             acento: 'violet',
             donde: 'IA de Ventas → Chats · Mi vendedor',
+            modulo: { codigo: 'leads', nombre: 'IA de Ventas' },
         },
         {
             id: 'listas-precio',

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { useAuthStore } from '@/zustand/auth';
+import { hasPermission } from '@/utils/permissions';
 import { BRAND } from '@/lib/branding';
 import {
     LANZAMIENTO,
@@ -137,7 +138,19 @@ function Imagen({ src, alt, icono, acento, clase = '' }: { src?: string; alt: st
     );
 }
 
-function ChipPlan({ planes, planEmpresa }: { planes?: PlanNovedad[]; planEmpresa: PlanNovedad | null }) {
+function ChipPlan({ planes, planEmpresa, modulo }: { planes?: PlanNovedad[]; planEmpresa: PlanNovedad | null; modulo?: DestacadoLanzamiento['modulo'] }) {
+    const { auth } = useAuthStore();
+    if (modulo) {
+        return hasPermission(auth as any, modulo.codigo) ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-400/10 text-emerald-300 ring-1 ring-emerald-400/20">
+                <Icon icon="solar:check-circle-bold" width={13} /> Ya tienes {modulo.nombre}
+            </span>
+        ) : (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-400/10 text-amber-300 ring-1 ring-amber-400/20">
+                <Icon icon="solar:lock-keyhole-bold" width={13} /> Plan {modulo.nombre}
+            </span>
+        );
+    }
     const paraTodos = !planes || planes.length === 0;
     const incluida = novedadIncluidaEnPlan({ planes } as Novedad, planEmpresa);
     if (paraTodos) {
@@ -201,7 +214,7 @@ function Destacado({ d, invertido, planEmpresa, root }: { d: DestacadoLanzamient
                         ))}
                     </ul>
                     <motion.div variants={item} className="mt-6 flex flex-wrap items-center gap-2">
-                        <ChipPlan planes={d.planes} planEmpresa={planEmpresa} />
+                        <ChipPlan planes={d.planes} planEmpresa={planEmpresa} modulo={d.modulo} />
                         {d.donde && (
                             <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
                                 <Icon icon="solar:map-point-bold-duotone" width={14} className="text-white/40" />
