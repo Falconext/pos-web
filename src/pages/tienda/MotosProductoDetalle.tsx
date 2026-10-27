@@ -75,6 +75,7 @@ export function MotosProductoDetalleView({
   const extraImages = Array.isArray(producto?.imagenesExtra) ? producto.imagenesExtra : [];
   const gallery = [getImg(producto), ...extraImages].filter(Boolean);
   const [activeImage, setActiveImage] = useState(0);
+  const [llena, setLlena] = useState(false);
   const [qty, setQty] = useState(1);
 
   const go = (url: string, page?: 'home' | 'catalogo' | 'producto' | 'checkout') => {
@@ -83,12 +84,24 @@ export function MotosProductoDetalleView({
     navigate(url);
   };
 
-  const add = (n = qty) => {
-    const item = { ...producto, ...pricing, precioUnitario: pricing.precioFinal, cantidad: n, id: producto.id, productoId: producto.id };
+  // Sirve para la moto de la ficha y para las de "También te puede interesar".
+  // Antes los relacionados pasaban por actualizarCantidad(id, 1), que al no
+  // encontrar el id agregaba la moto de la FICHA: dos líneas de la misma moto
+  // y ninguna de la que el cliente eligió.
+  const addToCart = (prod: any, n: number) => {
+    const pr = getProductPricing(prod);
+    const item = { ...prod, ...pr, precioUnitario: pr.precioFinal, cantidad: n, id: prod.id, productoId: prod.id };
+    const mismo = (c: any) => String(c.id) === String(prod.id) || String(c.productoId) === String(prod.id);
+    const previo = carrito.find(mismo);
     if (onAddToCart) onAddToCart(item);
-    else actualizarCantidad(producto.id, (carrito.find((c) => c.id === producto.id)?.cantidad || 0) + n);
+    else if (setCarrito) {
+      setCarrito(previo
+        ? carrito.map((c) => (mismo(c) ? { ...c, cantidad: Number(c.cantidad || 0) + n } : c))
+        : [...carrito, item]);
+    } else actualizarCantidad(prod.id, Number(previo?.cantidad || 0) + n);
     setMostrarCarrito(true);
   };
+  const add = (n = qty) => addToCart(producto, n);
   const buyNow = () => { add(qty); go(`/tienda/${slug}/checkout`, 'checkout'); };
 
   const cartCount = carrito.reduce((s, i) => s + Number(i?.cantidad || 1), 0);
@@ -122,7 +135,7 @@ export function MotosProductoDetalleView({
       </div>
 
       <main className="mx-auto max-w-7xl px-6 py-8 md:py-12">
-        <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
           {/* Galería — imagen completa sobre fondo de estudio */}
           <motion.div variants={motoFade}>
             <div className="group relative overflow-hidden rounded-3xl border" style={{ borderColor: MOTO.line, background: `radial-gradient(120% 120% at 50% 0%, ${withAlpha(primary, '14')} 0%, ${MOTO.card} 55%)` }}>
@@ -134,9 +147,21 @@ export function MotosProductoDetalleView({
                   Oferta -{pricing.porcentajeDescuento}%
                 </span>
               )}
-              <div className="flex aspect-[4/3] w-full items-center justify-center p-8 md:p-12">
+              {/* Antes la foto iba chica, con margen y drop-shadow, y se veía un
+                  cuadro blanco flotando. Una foto cuadrada (la mayoría) ahora
+                  llena el recuadro de borde a borde; una apaisada se ve completa
+                  y multiply funde su fondo blanco con el de estudio. */}
+              <div className={`flex aspect-square w-full items-center justify-center ${llena ? '' : 'p-6 md:p-8'}`}>
                 {gallery[activeImage] ? (
-                  <img src={gallery[activeImage]} alt={name} className="max-h-full max-w-full object-contain drop-shadow-[0_24px_40px_rgba(15,18,26,0.18)] transition-transform duration-[800ms] ease-out group-hover:scale-[1.05]" />
+                  <img
+                    src={gallery[activeImage]}
+                    alt={name}
+                    onLoad={(e) => {
+                      const { naturalWidth: w, naturalHeight: h } = e.currentTarget;
+                      setLlena(h > 0 && Math.abs(w / h - 1) <= 0.15);
+                    }}
+                    className={`h-full w-full transition-transform duration-[800ms] ease-out group-hover:scale-[1.04] ${llena ? 'object-cover' : 'object-contain mix-blend-multiply'}`}
+                  />
                 ) : (
                   <MotoProductImage producto={producto} imgClassName="!object-contain" />
                 )}
@@ -152,7 +177,7 @@ export function MotosProductoDetalleView({
                     className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-xl border-2 p-2 transition-colors"
                     style={{ background: 'linear-gradient(180deg, #FFFFFF, #F1F3F6)', borderColor: i === activeImage ? primary : MOTO.line }}
                   >
-                    <img src={src} alt="" className="max-h-full max-w-full object-contain" />
+                    <img src={src} alt="" className="max-h-full max-w-full object-contain mix-blend-multiply" />
                   </button>
                 ))}
               </div>
@@ -292,7 +317,7 @@ export function MotosProductoDetalleView({
             </div>
             <motion.div variants={motoStagger} className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-4">
               {relatedFiltered.map((p) => (
-                <MotoProductCard key={p.id} producto={p} slug={slug} cp={primary} onAddToCart={onAddToCart || ((prod) => actualizarCantidad(prod.id, 1))} onClick={() => go(`/tienda/${slug}/producto/${p.id}`, 'producto')} />
+                <MotoProductCard key={p.id} producto={p} slug={slug} cp={primary} onAddToCart={(prod) => addToCart(prod, 1)} onClick={() => go(`/tienda/${slug}/producto/${p.id}`, 'producto')} />
               ))}
             </motion.div>
           </motion.section>
@@ -319,6 +344,19 @@ export function MotosProductoDetalleView({
 }
 
 /* ─────────────── Wrapper que hace fetch (tienda real) ─────────────── */
+// Carritos guardados con el bug de los relacionados traen la misma moto en dos
+// líneas: se juntan en una sumando cantidades.
+const unirRepetidos = (items: any[]) => {
+  if (!Array.isArray(items)) return [];
+  const porId = new Map<string, any>();
+  for (const it of items) {
+    const k = String(it?.productoId ?? it?.id);
+    const ya = porId.get(k);
+    porId.set(k, ya ? { ...ya, cantidad: Number(ya.cantidad || 0) + Number(it?.cantidad || 0) } : it);
+  }
+  return [...porId.values()];
+};
+
 export default function MotosProductoDetalle() {
   const { slug = '', id = '' } = useParams();
   const navigate = useNavigate();
@@ -334,7 +372,7 @@ export default function MotosProductoDetalle() {
 
   useEffect(() => {
     if (!slug) return;
-    try { const saved = localStorage.getItem(`tienda:${slug}:carrito`); if (saved) setCarrito(JSON.parse(saved)); } catch {}
+    try { const saved = localStorage.getItem(`tienda:${slug}:carrito`); if (saved) setCarrito(unirRepetidos(JSON.parse(saved))); } catch {}
     return onTiendaCartCleared(slug, () => { setCarrito([]); setMostrarCarrito(false); });
   }, [slug]);
 

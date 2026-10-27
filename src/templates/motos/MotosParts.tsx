@@ -173,7 +173,7 @@ export function MotoProductCard({
               alt={producto?.descripcion || 'Producto'}
               loading="lazy"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
-              className="max-h-full max-w-full object-contain"
+              className="max-h-full max-w-full object-contain mix-blend-multiply"
             />
           ) : (
             <MotoProductImage producto={producto} imgClassName="!object-contain" />
