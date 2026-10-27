@@ -199,7 +199,7 @@ function Destacado({ d, invertido, planEmpresa, root }: { d: DestacadoLanzamient
                         visible: { opacity: 1, x: 0, scale: 1, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
                     }}
                 >
-                    <Imagen src={d.imagen} alt={d.titulo} icono={d.icono} acento={d.acento} clase="aspect-video w-full" />
+                    <Imagen src={d.imagen} alt={d.titulo} icono={d.icono} acento={d.acento} clase={`${d.formato === 'panoramica' ? 'aspect-[21/9]' : 'aspect-video'} w-full`} />
                 </motion.div>
                 <div>
                     <motion.p variants={item} className={`text-[11px] font-black uppercase tracking-[0.25em] ${a.texto}`}>{d.etiqueta}</motion.p>
@@ -246,8 +246,9 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
             className={`relative scroll-mt-6 overflow-hidden flex flex-col justify-end min-h-[520px] sm:min-h-[600px] ${conImagen ? 'lg:block lg:min-h-0' : ''} bg-[#07090F]`}
         >
             {/* En escritorio la imagen va completa arriba (ancho total, sin recorte) y el
-                texto se monta sobre su tercio inferior y sigue hacia abajo sobre el fondo
-                oscuro; en móvil se recorta de fondo con el texto encima. */}
+                texto solo pisa la franja oscura de abajo, para que se vea la escena
+                entera; en móvil se recorta de fondo con el texto encima. El alto queda
+                reservado (21:9) para que nada salte cuando la imagen termina de llegar. */}
             {conImagen ? (
                 <motion.img
                     src={p.imagen}
@@ -257,7 +258,7 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
                     initial={false}
                     animate={{ opacity: cargada ? 1 : 0, scale: cargada || reducido ? 1 : 1.06 }}
                     transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute inset-0 w-full h-full object-cover object-top lg:relative lg:inset-auto lg:block lg:w-full lg:h-auto origin-top"
+                    className="absolute inset-0 w-full h-full object-cover object-top lg:relative lg:inset-auto lg:block lg:w-full lg:h-auto lg:aspect-[21/9] origin-top"
                 />
             ) : (
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(124,36,252,.5),transparent_60%),linear-gradient(180deg,#1a0f3a_0%,#07090F_100%)]">
@@ -266,11 +267,11 @@ function Proximamente({ p, root }: { p: ProximamenteLanzamiento; root: RefObject
                 </div>
             )}
             {/* Fundido superior (viene de la sección anterior) y tercio inferior oscuro para el texto. */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-[#07090F] to-transparent" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-10 bg-gradient-to-b from-[#07090F] to-transparent" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07090F] via-[#07090F]/75 to-transparent lg:hidden" />
 
             <motion.div
-                className={`relative w-full px-6 sm:px-10 pt-40 pb-12 sm:pb-16 text-center ${conImagen ? 'lg:-mt-[38%] lg:pt-[22%] lg:bg-gradient-to-t lg:from-[#07090F] lg:via-[#07090F] lg:via-[62%] lg:to-transparent' : ''}`}
+                className={`relative w-full px-6 sm:px-10 pt-40 pb-12 sm:pb-16 text-center ${conImagen ? 'lg:-mt-[13%] lg:pt-[5%] lg:bg-gradient-to-t lg:from-[#07090F] lg:via-[#07090F] lg:via-[62%] lg:to-transparent' : ''}`}
                 variants={contenedorEscalonado}
                 initial="oculto"
                 whileInView="visible"
@@ -519,7 +520,7 @@ export default function LanzamientoModal({ abierto, onClose, onVerHistorial }: P
                                         initial={{ scale: reducido ? 1 : 1.08, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
                                         transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
-                                        className="absolute inset-0 w-full h-full object-cover object-right lg:relative lg:inset-auto lg:col-start-1 lg:row-start-1 origin-right"
+                                        className="absolute inset-0 w-full h-full object-cover object-right lg:relative lg:inset-auto lg:h-auto lg:aspect-[21/9] lg:col-start-1 lg:row-start-1 origin-right"
                                     />
                                 ) : (
                                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(124,36,252,.55),transparent_55%),radial-gradient(ellipse_at_bottom_left,rgba(14,165,233,.35),transparent_55%),linear-gradient(180deg,#141a2e_0%,#07090F_100%)]">

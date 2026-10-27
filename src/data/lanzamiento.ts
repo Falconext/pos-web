@@ -23,6 +23,8 @@ export interface DestacadoLanzamiento {
     icono: string;
     /** Ruta pública de la imagen (16:9 recomendado, 1600×900). */
     imagen?: string;
+    /** 'panoramica' para reusar una imagen 21:9 sin recortarla. */
+    formato?: 'panoramica';
     /** Color de acento del bloque. */
     acento: 'violet' | 'sky' | 'emerald' | 'amber' | 'rose';
     /** Dónde encontrarlo. */
@@ -147,6 +149,24 @@ export const LANZAMIENTO: Lanzamiento = {
             imagen: '/assets/lanzamiento/2026-10/caja-inventario.jpg',
             acento: 'amber',
             donde: 'Ventas → Caja y bancos · Kardex',
+        },
+        {
+            id: 'soporte',
+            etiqueta: 'Nuevo · Soporte',
+            titulo: 'El soporte de Krezka, dentro de tu panel',
+            descripcion:
+                'Escríbenos sin salir del sistema desde la burbuja de abajo a la derecha. Primero te mostramos las respuestas a las dudas más comunes y, si no basta, conversas con nuestro equipo.',
+            puntos: [
+                'Más de 30 preguntas frecuentes, con un botón que te lleva directo a la pantalla.',
+                'Chat con el equipo de Krezka: manda fotos, notas de voz y documentos (PDF, Excel, XML).',
+                'Ves cuándo leímos tu mensaje, como en WhatsApp.',
+                'Te atendemos de lunes a viernes de 9 a. m. a 6 p. m. y los sábados de 9 a. m. a 1 p. m.',
+            ],
+            icono: 'solar:chat-round-dots-bold-duotone',
+            imagen: '/assets/lanzamiento/soporte.jpg',
+            formato: 'panoramica',
+            acento: 'rose',
+            donde: 'Burbuja de ayuda, abajo a la derecha',
         },
     ],
     proximamente: {
