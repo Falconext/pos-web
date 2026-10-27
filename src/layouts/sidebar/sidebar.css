@@ -1,0 +1,370 @@
+/* ── Sidebar del panel (estilo cálido) ───────────────────────────────────────
+   El ítem activo no pinta su propio fondo: lo marca una píldora que se desliza
+   (ver SidebarPill.tsx); por eso aquí el activo solo cambia texto e ícono.
+   Se adapta a "Krezka UI Configuración":
+   - data-accent (Color del menú) en el contenedor del panel: lo heredan el
+     sidebar y los brillos del fondo.
+   - data-type (Estilo del menú) en el <aside>: oscuro, blanco o transparente. */
+
+[data-accent] {
+  --krk-accent: #e4572e;        /* barra, punto, insignias */
+  --krk-accent-2: #ff8a62;      /* ícono activo sobre fondo oscuro */
+  --krk-accent-rgb: 228, 87, 46;
+}
+[data-accent='primary'] { --krk-accent: #c026d3; --krk-accent-2: #e879f9; --krk-accent-rgb: 192, 38, 211; }
+[data-accent='dark']    { --krk-accent: #475569; --krk-accent-2: #cbd5e1; --krk-accent-rgb: 100, 116, 139; }
+[data-accent='info']    { --krk-accent: #2563eb; --krk-accent-2: #60a5fa; --krk-accent-rgb: 37, 99, 235; }
+[data-accent='success'] { --krk-accent: #059669; --krk-accent-2: #34d399; --krk-accent-rgb: 5, 150, 105; }
+[data-accent='warning'] { --krk-accent: #d97706; --krk-accent-2: #fbbf24; --krk-accent-rgb: 245, 158, 11; }
+[data-accent='error']   { --krk-accent: #dc2626; --krk-accent-2: #f87171; --krk-accent-rgb: 220, 38, 38; }
+
+/* Oscuro (por defecto) */
+.krk-side {
+  --side-bg: #1b1714;
+  --side-text: #efe9e1;
+  --side-muted: #a1978d;
+  --side-pill: #2e2824;
+  --side-pill-edge: rgba(255, 255, 255, 0.06);
+  --side-line: rgba(255, 255, 255, 0.08);
+  --side-hover: rgba(255, 255, 255, 0.06);
+  --side-float: #2a2622;
+  --side-icon-on: var(--krk-accent-2);
+  background: var(--side-bg);
+  color: var(--side-text);
+  gap: 14px;
+}
+.dark .krk-side {
+  --side-bg: #0f0d0c;
+  --side-pill: #26211d;
+}
+
+/* Blanco y transparente: misma paleta cálida en claro */
+.krk-side[data-type='white'],
+.krk-side[data-type='transparent'] {
+  --side-bg: #fffdfa;
+  --side-text: #1d1915;
+  --side-muted: #6b645c;
+  --side-pill: #f3eee6;
+  --side-pill-edge: rgba(40, 30, 20, 0.06);
+  --side-line: rgba(40, 30, 20, 0.09);
+  --side-hover: rgba(40, 30, 20, 0.05);
+  --side-float: #fffdfa;
+  --side-icon-on: var(--krk-accent);
+}
+.krk-side[data-type='white'] { border-right: 1px solid var(--side-line); }
+.krk-side[data-type='transparent'] { background: transparent; }
+/* Blanco/transparente con el panel en modo oscuro: superficie cálida oscura */
+.dark .krk-side[data-type='white'],
+.dark .krk-side[data-type='transparent'] {
+  --side-bg: #1e1b19;
+  --side-text: #f2ede6;
+  --side-muted: #a9a198;
+  --side-pill: #2a2622;
+  --side-pill-edge: rgba(255, 255, 255, 0.06);
+  --side-line: rgba(255, 255, 255, 0.09);
+  --side-hover: rgba(255, 255, 255, 0.06);
+  --side-float: #2a2622;
+  --side-icon-on: var(--krk-accent-2);
+}
+/* En móvil el transparente se abre encima del contenido: necesita fondo */
+@media (max-width: 767px) {
+  .krk-side[data-type='transparent'] { background: var(--side-bg); }
+}
+
+/* Marca */
+.krk-brand { display: inline-flex; align-items: center; gap: 11px; min-width: 0; }
+.krk-brand__mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #fffaf5;
+  box-shadow: 0 0 0 1px rgba(var(--krk-accent-rgb), 0.35), 0 8px 20px -8px rgba(var(--krk-accent-rgb), 0.8);
+  overflow: hidden;
+  animation: krk-breathe 3.2s ease-in-out infinite alternate;
+}
+.krk-brand__mark img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  transform-origin: 50% 100%;
+  animation: krk-flame 1.6s ease-in-out infinite alternate;
+}
+.krk-brand__name {
+  font: 700 19px/1 'Bricolage Grotesque', 'Manrope', sans-serif;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  color: var(--side-text);
+}
+.krk-brand__name small {
+  display: block;
+  margin-top: 3px;
+  font: 600 11px/1 'Manrope', sans-serif;
+  letter-spacing: 0.02em;
+  color: var(--side-muted);
+}
+@keyframes krk-flame {
+  to { transform: scale(0.96, 1.08); }
+}
+@keyframes krk-breathe {
+  to { box-shadow: 0 0 0 1px rgba(var(--krk-accent-rgb), 0.55), 0 10px 26px -6px rgba(var(--krk-accent-rgb), 0.95); }
+}
+
+.krk-side__collapse {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 1px solid var(--side-line);
+  color: var(--side-muted);
+  transition: color 0.15s, background-color 0.15s;
+}
+.krk-side__collapse:hover { color: var(--side-text); background: var(--side-hover); }
+
+/* Grupos */
+.krk-side__group {
+  padding: 14px 12px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--side-muted);
+}
+.krk-side__group:first-child { padding-top: 4px; }
+.krk-side.is-mini .krk-side__group {
+  height: 1px;
+  margin: 10px 12px;
+  padding: 0;
+  overflow: hidden;
+  color: transparent;
+  background: var(--side-line);
+}
+
+/* Contenedor que scrollea: sin barra visible */
+.krk-side__nav { position: relative; scrollbar-width: none; }
+.krk-side__nav::-webkit-scrollbar { display: none; }
+
+/* Ítem */
+.krk-nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: left;
+  color: var(--side-muted);
+  transition: color 0.2s;
+}
+.krk-nav > div { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.krk-nav span { overflow: hidden; text-overflow: ellipsis; }
+.krk-nav--acc { justify-content: space-between; }
+.krk-nav:hover,
+.krk-nav[aria-current='page'],
+.krk-nav.is-active { color: var(--side-text); }
+.krk-side .krk-nav svg.iconify {
+  flex: none;
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  transition: color 0.2s;
+}
+.krk-nav[aria-current='page'] svg.iconify:first-child,
+.krk-nav[aria-current='page'] > span > svg.iconify,
+.krk-nav.is-active > div > svg.iconify { color: var(--side-icon-on); }
+.krk-side .krk-nav svg.krk-nav__chev { width: 16px; height: 16px; color: var(--side-muted); }
+
+.krk-side.is-mini .krk-nav {
+  justify-content: center;
+  width: 46px;
+  height: 44px;
+  margin: 0 auto;
+  padding: 0;
+}
+
+/* Ítems del pie: sin píldora deslizante, el activo lleva su propio fondo */
+.krk-side__foot .krk-nav:hover { background: var(--side-hover); }
+.krk-side__foot .krk-nav[aria-current='page'] {
+  background: var(--side-pill);
+  box-shadow: inset 0 1px var(--side-pill-edge);
+}
+
+.krk-nav__badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 20px;
+  margin-left: auto;
+  padding: 0 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fffaf5;
+  background: var(--krk-accent);
+}
+
+/* Píldora deslizante */
+.krk-side__pill {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 12px;
+  background: var(--side-pill);
+  box-shadow: inset 0 1px var(--side-pill-edge);
+  transition: opacity 0.2s;
+}
+.krk-side__pill::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(var(--krk-accent-2), var(--krk-accent));
+  box-shadow: 0 0 12px 2px rgba(var(--krk-accent-rgb), 0.55);
+}
+
+/* Submódulos */
+.krk-subs {
+  margin: 2px 0 4px 21px;
+  padding-left: 12px;
+  border-left: 1px solid var(--side-line);
+}
+.krk-sub {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--side-muted);
+  transition: color 0.2s, background-color 0.2s;
+}
+.krk-sub:hover { color: var(--side-text); background: var(--side-hover); }
+.krk-sub.is-active { color: var(--side-text); }
+.krk-sub.is-active::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--krk-accent);
+  box-shadow: 0 0 0 3px var(--side-bg), 0 0 10px 1px rgba(var(--krk-accent-rgb), 0.6);
+}
+
+/* Menú flotante de submódulos con el sidebar contraído */
+.krk-side__float {
+  background: var(--side-float);
+  border: 1px solid var(--side-line);
+  box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.krk-side__float .krk-sub.is-active::before { display: none; }
+/* Título del menú flotante: no usa .krk-side__group porque en modo contraído
+   esa clase se vuelve una línea divisoria. */
+.krk-side__float-title {
+  padding: 6px 12px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--side-muted);
+}
+.krk-side__float .krk-sub.is-active { color: var(--side-icon-on); }
+
+/* Bloque de usuario */
+.krk-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border-radius: 14px;
+  text-align: left;
+  transition: background-color 0.15s;
+}
+.krk-me:hover { background: var(--side-hover); }
+.krk-me img {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--side-bg), 0 0 0 3.5px rgba(10, 143, 116, 0.9);
+}
+.krk-me b {
+  display: block;
+  overflow: hidden;
+  font-size: 13.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--side-text);
+}
+.krk-me small {
+  display: block;
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--side-muted);
+}
+.krk-me__out {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  color: var(--side-muted);
+  transition: color 0.15s, background-color 0.15s;
+}
+.krk-me__out:hover { color: var(--side-icon-on); background: var(--side-hover); }
+.krk-side.is-mini .krk-me { justify-content: center; padding: 6px 0; }
+
+/* Brillos de fondo del área de trabajo: dos manchas que se mueven lento */
+.krk-glow { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
+.krk-glow i { position: absolute; border-radius: 50%; will-change: transform; }
+.krk-glow__a {
+  top: -26vmax;
+  right: -20vmax;
+  width: 60vmax;
+  height: 60vmax;
+  background: radial-gradient(closest-side, rgba(var(--krk-accent-rgb), 0.16), transparent);
+  animation: krk-drift-a 16s ease-in-out infinite alternate;
+}
+.krk-glow__b {
+  bottom: -30vmax;
+  left: 10vmax;
+  width: 54vmax;
+  height: 54vmax;
+  background: radial-gradient(closest-side, rgba(91, 82, 214, 0.12), transparent);
+  animation: krk-drift-b 21s ease-in-out infinite alternate;
+}
+.dark .krk-glow__a { background: radial-gradient(closest-side, rgba(var(--krk-accent-rgb), 0.14), transparent); }
+.dark .krk-glow__b { background: radial-gradient(closest-side, rgba(122, 114, 230, 0.12), transparent); }
+@keyframes krk-drift-a { to { transform: translate(-80px, 60px) scale(1.12); } }
+@keyframes krk-drift-b { to { transform: translate(70px, -50px) scale(0.92); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .krk-brand__mark,
+  .krk-brand__mark img,
+  .krk-glow i { animation: none; }
+}

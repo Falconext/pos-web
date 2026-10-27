@@ -6,7 +6,7 @@ import { IDataTableProps } from './types';
 import styles from './table.module.css';
 import AutoScrollTable from '../Autoscrolltable';
 import { AnimatePresence, motion } from 'framer-motion';
-import { fadeUp, interactiveHover } from '@/lib/motion/presets';
+import { fadeUp } from '@/lib/motion/presets';
 
 const DataTable: FC<IDataTableProps> = ({
     formValues,
@@ -22,6 +22,8 @@ const DataTable: FC<IDataTableProps> = ({
     onSort,
     sortColumn,
     sortDirection,
+    onRowClick,
+    actionsMenu,
 }: any) => {
     const [data, setData] = useState(Array.isArray(bodyData) ? bodyData : []);
     const [currentPage, setCurrentPage] = useState(1);
@@ -138,54 +140,46 @@ const DataTable: FC<IDataTableProps> = ({
         const end = Math.min(currentPage * pageSize, totalItems);
 
         return (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-slate-800">
-                <p className="text-xs text-gray-400 dark:text-gray-500 font-medium">
-                    Mostrando <span className="text-gray-600 dark:text-gray-300 font-semibold">{start}</span> a{' '}
-                    <span className="text-gray-600 dark:text-gray-300 font-semibold">{end}</span> de{' '}
-                    <span className="text-gray-600 dark:text-gray-300 font-semibold">{totalItems}</span> registros
+            <div className={styles.pager}>
+                <p>
+                    Mostrando <b>{start}</b>–<b>{end}</b> de <b>{totalItems}</b> registros
                 </p>
-                <div className="flex items-center gap-1">
-                    <motion.button
+                <div className="flex items-center gap-1.5">
+                    <button
+                        type="button"
                         onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        whileHover={interactiveHover.whileHover}
-                        whileTap={interactiveHover.whileTap}
+                        className={styles.pageBtn}
+                        aria-label="Página anterior"
                     >
                         <Icon icon="solar:alt-arrow-left-linear" className="text-sm" />
-                    </motion.button>
+                    </button>
 
                     {getPageNumbers().map((page, idx) =>
                         page === '...' ? (
-                            <span key={`ellipsis-${idx}`} className="w-8 h-8 flex items-center justify-center text-gray-400 text-sm">
-                                ···
-                            </span>
+                            <span key={`ellipsis-${idx}`} className="px-1 text-sm">···</span>
                         ) : (
-                            <motion.button
+                            <button
+                                type="button"
                                 key={page}
                                 onClick={() => setCurrentPage(page as number)}
-                                className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all ${
-                                    page === currentPage
-                                        ? 'bg-violet-600 text-white shadow-sm shadow-violet-200'
-                                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800'
-                                }`}
-                                whileHover={interactiveHover.whileHover}
-                                whileTap={interactiveHover.whileTap}
+                                className={`${styles.pageBtn} ${page === currentPage ? styles.pageBtnOn : ''}`}
+                                aria-current={page === currentPage ? 'page' : undefined}
                             >
                                 {page}
-                            </motion.button>
+                            </button>
                         )
                     )}
 
-                    <motion.button
+                    <button
+                        type="button"
                         onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                        whileHover={interactiveHover.whileHover}
-                        whileTap={interactiveHover.whileTap}
+                        className={styles.pageBtn}
+                        aria-label="Página siguiente"
                     >
                         <Icon icon="solar:alt-arrow-right-linear" className="text-sm" />
-                    </motion.button>
+                    </button>
                 </div>
             </div>
         );
@@ -200,7 +194,7 @@ const DataTable: FC<IDataTableProps> = ({
     // sin poder volver atrás. Cambiar de página solo cambia las filas, y el
     // `layout` de framer-motion se encarga de la transición de alto.
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col" data-krk-table="">
             <AutoScrollTable>
                 <div className="px-4 w-max min-w-full">
                     {data?.length > 0 && safeResolvedColumns.length > 0 ? (
@@ -230,6 +224,8 @@ const DataTable: FC<IDataTableProps> = ({
                                     colorFont={colorFont}
                                     actions={actions}
                                     columns={safeResolvedColumns}
+                                    onRowClick={onRowClick}
+                                    actionsMenu={actionsMenu}
                                 />
                             </motion.table>
                         </AnimatePresence>

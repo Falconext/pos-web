@@ -227,7 +227,7 @@ export default function OrdenesCompraPage() {
 
             {/* Filtros */}
             <div className="mb-5 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#111827]">
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                <div data-krk-filtros className="flex flex-col gap-3 lg:flex-row lg:items-end">
                     <div className="flex-1">
                         <InputPro
                             name="search"

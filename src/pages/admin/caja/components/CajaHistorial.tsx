@@ -290,12 +290,12 @@ const CajaHistorial: React.FC = () => {
             </div>
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800">
                 {/* Filters Section */}
-                <div className="p-5 border-b border-gray-100 dark:border-slate-800">
-                    <div className="flex items-center gap-2 mb-4 px-1">
+                <div data-krk-filtros-seccion className="p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div data-krk-filtros-head className="flex items-center gap-2 mb-4 px-1">
                         <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
                         <h3 className="font-bold text-gray-800 dark:text-white uppercase tracking-wider text-xs">Filtros de búsqueda</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+                    <div data-krk-filtros className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
                         <div>
                             <Calendar
                                 name="fechaInicio"

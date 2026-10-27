@@ -51,7 +51,7 @@ export const MermasView: React.FC = () => {
             </div>
 
             {/* Filtros */}
-            <div className="bg-white dark:bg-[#111827] rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-800 mb-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div data-krk-filtros className="bg-white dark:bg-[#111827] rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-800 mb-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <Calendar
                     text="Desde" name="fechaInicio" isLabel portal
                     onChange={vm.handleDate}

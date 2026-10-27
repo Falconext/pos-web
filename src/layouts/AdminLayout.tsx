@@ -20,6 +20,39 @@ import { hayLanzamientoSinVer } from '@/data/lanzamiento'
 import NovedadesModal from '@/components/NovedadesModal'
 import LanzamientoModal from '@/components/LanzamientoModal'
 import AvisoSuscripcion from '@/components/AvisoSuscripcion'
+import SidebarPill, { revealSidebarItems } from '@/layouts/sidebar/SidebarPill'
+import '@/layouts/sidebar/sidebar.css'
+
+// El sidebar usa íconos de trazo (como el resto del menú lineal); los módulos
+// guardan su ícono duotono en BD, así que se pide la variante lineal de Solar.
+const lineIcon = (icon: string) => icon.replace(/-bold-duotone$|-bold$/, '-linear')
+
+// Varios módulos tienen en BD íconos rellenos de otra familia (mdi:*). En el
+// sidebar se fija el trazo lineal por código para que todo el menú sea parejo.
+const MODULE_LINE_ICONS: Record<string, string> = {
+  dashboard: 'solar:widget-2-linear',
+  comprobantes: 'solar:document-text-linear',
+  cotizaciones: 'solar:clipboard-list-linear',
+  'guias-remision': 'solar:delivery-linear',
+  kardex: 'solar:box-linear',
+  produccion: 'solar:settings-minimalistic-linear',
+  clientes: 'solar:users-group-rounded-linear',
+  usuarios: 'solar:users-group-two-rounded-linear',
+  compras: 'solar:cart-large-2-linear',
+  ventas: 'solar:sale-linear',
+  caja: 'solar:wallet-money-linear',
+  pagos: 'solar:card-linear',
+  tienda: 'solar:shop-linear',
+  reportes: 'solar:chart-2-linear',
+  finanzas: 'solar:chart-2-linear',
+  contabilidad: 'solar:calculator-minimalistic-linear',
+  'mi-negocio': 'solar:graph-up-linear',
+  sedes: 'solar:map-point-linear',
+  notificaciones: 'solar:bell-linear',
+  api: 'solar:code-square-linear',
+  leads: 'solar:chat-round-dots-linear',
+  logistica: 'solar:routing-2-linear',
+}
 
 const isDesktopBuild = String(import.meta.env.VITE_FALCONEXT_DESKTOP || '').toLowerCase() === 'true'
 
@@ -119,6 +152,7 @@ export default function AdminLayout() {
   const sedeMenuRef = useRef<HTMLDivElement | null>(null)
   const zoomMenuRef = useRef<HTMLDivElement | null>(null)
   const mainRef = useRef<HTMLElement | null>(null)
+  const sideNavRef = useRef<HTMLDivElement | null>(null)
   const scrollYRef = useRef(0)
   const defaultProfileLogo = 'https://icons.veryicon.com/png/o/miscellaneous/two-color-icon-library/user-286.png'
   const reduceMotion = useReducedMotionPreference()
@@ -228,6 +262,11 @@ export default function AdminLayout() {
     }
   }, [isSidebarOpen])
 
+  // Al abrir el menú en el celular, los ítems entran en cascada.
+  useEffect(() => {
+    if (isSidebarOpen && !reduceMotion && window.innerWidth < 768) revealSidebarItems(sideNavRef.current)
+  }, [isSidebarOpen, reduceMotion])
+
   const logout = () => {
     useAuthStore.getState().logout()
     navigate('/login', { replace: true })
@@ -290,104 +329,25 @@ export default function AdminLayout() {
     ? getBrandByKey(auth.sistemaNegocio)
     : BRAND
 
-  // Mapping SidebarColor to gradient backgrounds
-  const getSidebarBackground = (color: string) => {
-    switch (color) {
-      case 'primary': // Pink/Fuchsia
-        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-fuchsia-100';
-      case 'dark': // Gray/Navy
-        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-slate-200';
-      case 'info': // Blue
-        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-blue-100';
-      case 'success': // Green
-        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-emerald-100';
-      case 'warning': // Orange
-        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-[#FFE5B4]';
-      case 'error': // Red
-        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-red-100';
-      default:
-        return 'bg-gradient-to-b from-[#F4F4F4] via-[#F4F4F4] to-blue-100';
-    }
-  };
-
-  // Theme adaptado al diseño de referencia
-  const getActiveItemColor = () => {
-    switch (sidebarColor) {
-      case 'primary': return 'bg-fuchsia-600 shadow-[0_4px_12px_rgba(192,38,211,0.35)]';
-      case 'dark': return 'bg-gray-800 shadow-[0_4px_12px_rgba(31,41,55,0.35)] dark:bg-gray-700';
-      case 'info': return 'bg-blue-600 shadow-[0_4px_12px_rgba(37,99,235,0.35)]';
-      case 'success': return 'bg-emerald-600 shadow-[0_4px_12px_rgba(5,150,105,0.35)]';
-      case 'warning': return 'bg-orange-500 shadow-[0_4px_12px_rgba(249,115,22,0.35)]';
-      case 'error': return 'bg-red-500 shadow-[0_4px_12px_rgba(239,68,68,0.35)]';
-      default: return 'bg-violet-600 shadow-[0_4px_12px_rgba(124,58,237,0.35)]';
-    }
-  };
-
-  const getSubmenuActiveColor = () => {
-    switch (sidebarColor) {
-      case 'primary': return 'text-fuchsia-600 bg-fuchsia-50 dark:bg-fuchsia-900/30';
-      case 'dark': return 'text-gray-800 bg-gray-100 dark:bg-gray-800/50 dark:text-gray-200';
-      case 'info': return 'text-blue-600 bg-blue-50 dark:bg-blue-900/30';
-      case 'success': return 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30';
-      case 'warning': return 'text-orange-600 bg-orange-50 dark:bg-orange-900/30';
-      case 'error': return 'text-red-600 bg-red-50 dark:bg-red-900/30';
-      default: return 'text-violet-600 bg-violet-50 dark:bg-violet-900/30';
-    }
-  };
-
   const theme = {
     mainPadding: 'p-5',
 
-    get sidebarBg() {
-      switch (sidebarType) {
-        case 'dark': return 'bg-gray-900 border-r border-gray-800 shadow-[2px_0_20px_rgba(0,0,0,0.2)] text-white';
-        case 'transparent': return 'bg-transparent border-r border-transparent text-gray-800 dark:text-white dark:border-slate-800';
-        case 'white':
-        default: return 'bg-white border-r border-gray-100 dark:bg-[#0A0D14] dark:border-slate-800 shadow-[2px_0_20px_rgba(0,0,0,0.06)] text-gray-900 dark:text-white';
-      }
-    },
-
-    get sidebarText() {
-      return sidebarType === 'dark' ? 'text-white' : 'text-gray-900 dark:text-white';
-    },
-
-    get sidebarTextMuted() {
-      return sidebarType === 'dark' ? 'text-gray-400' : 'text-gray-400 dark:text-slate-500';
-    },
-
-    // Item activo
-    get activeLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white ${getActiveItemColor()} transition-all duration-200 group`;
-    },
-    // Item inactivo
-    get inactiveLink() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium ${sidebarType === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800'} transition-all duration-150 group`;
-    },
-    // Accordion activo e inactivo
-    get accordionActive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-semibold text-white ${getActiveItemColor()} transition-all text-left`;
-    },
-    get accordionInactive() {
-      return `flex items-center ${isSidebarCollapsed ? 'justify-center mx-auto w-11 h-11 p-0 rounded-xl' : 'justify-between w-full px-3.5 py-2.5 rounded-xl'} text-[13px] font-medium ${sidebarType === 'dark' ? 'text-gray-300 hover:text-white hover:bg-gray-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800'} transition-all text-left`;
-    },
-    // Submenu links
-    get submenuBorder() {
-      return sidebarType === 'dark' ? 'border-gray-700' : 'border-gray-200 dark:border-slate-800';
-    },
-    get submenuActiveLink() {
-      return `flex items-center px-3.5 py-2 text-[13px] font-semibold ${getSubmenuActiveColor()} rounded-lg transition-all`;
-    },
-    get submenuInactiveLink() {
-      return `flex items-center px-3.5 py-2 text-[13px] font-medium ${sidebarType === 'dark' ? 'text-gray-400 hover:text-white hover:bg-gray-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-slate-800'} rounded-lg transition-all`;
-    },
+    // Ítems del sidebar: el activo lo marcan aria-current / is-active (ver sidebar.css)
+    activeLink: 'krk-nav',
+    inactiveLink: 'krk-nav',
+    accordionActive: 'krk-nav krk-nav--acc is-active',
+    accordionInactive: 'krk-nav krk-nav--acc',
+    submenuActiveLink: 'krk-sub is-active',
+    submenuInactiveLink: 'krk-sub',
   };
 
 
   return (
     <motion.div
-      className="flex overflow-hidden bg-[#F0F2FA] dark:bg-[#0A0D14] transition-all duration-300"
+      data-accent={sidebarColor}
+      className="relative flex overflow-hidden transition-all duration-300"
       style={{
-        fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
         zoom: String(ZOOM_OPTIONS[zoomLevel]?.zoom ?? 1),
         height: ZOOM_OPTIONS[zoomLevel]?.height ?? '100vh'
       }}
@@ -395,106 +355,110 @@ export default function AdminLayout() {
       initial="initial"
       animate={reduceMotion ? { opacity: 1 } : 'animate'}
     >
+      <div className="krk-glow print:hidden" aria-hidden="true"><i className="krk-glow__a" /><i className="krk-glow__b" /></div>
 
       <motion.aside
-        className={`print:hidden fixed inset-y-0 left-0 ${theme.sidebarBg} flex flex-col pt-5 pb-4 w-[85%] max-w-[260px] transform transition-all duration-300 ease-in-out md:relative ${isSidebarCollapsed ? 'md:w-[76px] items-center px-2' : 'md:w-[260px] px-4'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70]' : '-translate-x-full z-[45] md:translate-x-0'}`}
+        data-type={sidebarType}
+        className={`krk-side ${isSidebarCollapsed ? 'is-mini' : ''} print:hidden fixed inset-y-0 left-0 flex flex-col pt-[18px] pb-3.5 w-[86%] max-w-[300px] transform transition-[transform,width] duration-500 ease-[cubic-bezier(.16,1,.3,1)] md:relative ${isSidebarCollapsed ? 'md:w-[80px] px-3' : 'md:w-[256px] px-3.5'} md:translate-x-0 ${isSidebarOpen ? 'translate-x-0 z-[70] shadow-[30px_0_60px_-20px_rgba(0,0,0,0.5)] md:shadow-none' : '-translate-x-full z-[45] md:translate-x-0'}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        {/* Logo area */}
-        <div className={`flex items-center w-full relative mb-6 ${isSidebarCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
-          <div className={`flex items-center gap-2.5 ${isSidebarCollapsed ? 'flex-col' : ''}`}>
-            <div className="flex items-center justify-center w-10 h-10 overflow-hidden rounded-full">
-              <img src={sidebarBrand.logoWhite} alt={sidebarBrand.name} className={`object-contain ${isSidebarCollapsed ? 'w-10 h-10 scale-150 object-left' : 'w-10 h-10 rounded-full'}`} />
-            </div>
+        {/* Marca + contraer */}
+        <div className={`flex items-center min-h-[44px] ${isSidebarCollapsed ? 'flex-col gap-3' : 'justify-between gap-2 pl-1.5 pr-0.5'}`}>
+          <div className="krk-brand">
+            <span className="krk-brand__mark">
+              <img src={sidebarBrand.favicon ?? sidebarBrand.logoWhite} alt="" />
+            </span>
             {!isSidebarCollapsed && (
-              <div className="min-w-0">
-                <h2 className={`text-[15px] font-bold tracking-tight leading-none truncate ${theme.sidebarText}`}>{sidebarBrand.name.toUpperCase()}</h2>
-                <p className={`text-[9px] font-semibold tracking-widest mt-0.5 uppercase truncate ${theme.sidebarTextMuted}`}>Panel Administrativo</p>
-              </div>
+              <span className="krk-brand__name min-w-0 truncate">
+                {sidebarBrand.name}
+                <small>Panel administrativo</small>
+              </span>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
+            className="krk-side__collapse hidden md:grid"
+            title={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+            aria-label={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
+          >
+            <Icon icon={isSidebarCollapsed ? 'solar:alt-arrow-right-linear' : 'solar:alt-arrow-left-linear'} width="16" />
+          </button>
         </div>
 
-        {/* Toggle Button */}
-        <button
-          onClick={() => setSidebarCollapsed(!isSidebarCollapsed)}
-          className={`hidden md:flex items-center absolute top-7 -translate-y-1/2 z-[1] justify-center w-8 h-8 bg-white dark:bg-slate-900 text-gray-500 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-700 shadow-xl shadow-gray-950/10 transition-all cursor-pointer -right-4`}
-          title={isSidebarCollapsed ? 'Expandir menú' : 'Contraer menú'}
-        >
-          <Icon icon={isSidebarCollapsed ? "solar:alt-arrow-right-linear" : "solar:alt-arrow-left-linear"} width="14" />
-        </button>
-
-      <div className={`flex-1 space-y-0.5 ${isSidebarCollapsed ? 'px-0 w-full overflow-visible mt-2' : 'pr-1 overflow-y-auto overflow-x-hidden custom-scrollbar'}`}>
+      <div ref={sideNavRef} className={`krk-side__nav flex-1 min-h-0 -mx-1 px-1 ${isSidebarCollapsed ? 'w-full overflow-visible' : 'overflow-y-auto overflow-x-hidden'}`}>
+          <SidebarPill containerRef={sideNavRef} routeKey={location.pathname + location.search} collapsed={isSidebarCollapsed} reduceMotion={reduceMotion} />
           <motion.nav
-            className="space-y-0.5 w-full"
+            className="flex flex-col gap-0.5 w-full"
             variants={navStagger}
             initial={reduceMotion ? false : 'initial'}
             animate="animate"
           >
+            <p className="krk-side__group">{auth?.rol === 'ADMIN_SISTEMA' ? 'Plataforma' : 'Menú principal'}</p>
             {auth?.rol === 'ADMIN_SISTEMA' && (
-              <motion.div variants={navItemReveal} className="space-y-0.5">
+              <motion.div variants={navItemReveal} className="flex flex-col gap-0.5">
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/empresas" className={({ isActive }) => isActive || location.pathname.startsWith('/administrador/empresas') ? theme.activeLink : theme.inactiveLink} title="Empresas">
-                  <Icon icon="solar:buildings-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  <Icon icon="solar:buildings-2-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Empresas</span>}
                 </NavLink>
 
                 {!isDesktopBuild && (
                   <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/finanzas" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Finanzas del Sistema">
-                    <Icon icon="solar:chart-square-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    <Icon icon="solar:chart-square-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                     {!isSidebarCollapsed && <span>Finanzas</span>}
                   </NavLink>
                 )}
 
                 {!isDesktopBuild && (
                   <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/cobros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Cobros de mensualidades">
-                    <Icon icon="solar:bill-list-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    <Icon icon="solar:bill-list-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                     {!isSidebarCollapsed && <span>Cobros</span>}
                   </NavLink>
                 )}
 
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/usuarios" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Usuarios del Sistema">
-                  <Icon icon="solar:shield-user-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  <Icon icon="solar:shield-user-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Usuarios Sistema</span>}
                 </NavLink>
 
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-global" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Catálogo Global">
-                  <Icon icon="solar:database-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  <Icon icon="solar:database-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Catálogo Global</span>}
                 </NavLink>
                 {!isDesktopBuild && (
                   <>
                     <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/planes" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Planes">
-                      <Icon icon="solar:card-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      <Icon icon="solar:card-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                       {!isSidebarCollapsed && <span>Planes</span>}
                     </NavLink>
                     <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/modulos" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Módulos">
-                      <Icon icon="solar:widget-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      <Icon icon="solar:widget-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                       {!isSidebarCollapsed && <span>Módulos</span>}
                     </NavLink>
                     <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/resellers" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Distribuidores">
-                      <Icon icon="solar:users-group-two-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      <Icon icon="solar:users-group-two-rounded-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                       {!isSidebarCollapsed && <span>Distribuidores</span>}
                     </NavLink>
                     <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/catalogo-web" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Catálogo Web">
-                      <Icon icon="solar:shop-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                      <Icon icon="solar:shop-2-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                       {!isSidebarCollapsed && <span>Catálogo Web</span>}
                     </NavLink>
                   </>
                 )}
                 <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/rubros" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Rubros de Negocio">
-                  <Icon icon="solar:buildings-3-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  <Icon icon="solar:buildings-3-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Rubros</span>}
                 </NavLink>
                 {!isDesktopBuild && (
                   <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/disenos-tienda" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Diseño de Tiendas">
-                    <Icon icon="solar:palette-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    <Icon icon="solar:palette-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                     {!isSidebarCollapsed && <span>Diseño Tiendas</span>}
                   </NavLink>
                 )}
                 {/* Bandeja de soporte: fuera de esta entrega, ver nota del widget. */}
                 {/* <NavLink onClick={() => setIsSidebarOpen(false)} to="/administrador/sistema/soporte" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Soporte a Empresarios">
-                  <Icon icon="solar:chat-round-dots-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                  <Icon icon="solar:chat-round-dots-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                   {!isSidebarCollapsed && <span>Soporte</span>}
                 </NavLink> */}
               </motion.div>
@@ -505,11 +469,11 @@ export default function AdminLayout() {
               <>
                 {/* Aviso visual cuando la sede es un Almacén */}
                 {isAlmacen && !isSidebarCollapsed && (
-                  <div className="mx-2 mb-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
-                    <p className="text-[10px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                      <Icon icon="solar:box-bold-duotone" width={12} /> Modo Almacén
+                  <div className="mx-1 mb-2 px-3 py-2 rounded-xl bg-amber-400/10 border border-amber-400/20">
+                    <p className="text-[10px] font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1">
+                      <Icon icon="solar:box-linear" width={12} /> Modo Almacén
                     </p>
-                    <p className="text-[9px] text-amber-600 dark:text-amber-500 mt-0.5">{almacenFactura ? 'Acceso a Kardex y Facturación' : 'Solo acceso a Kardex'}</p>
+                    <p className="text-[10px] text-amber-200/70 mt-0.5">{almacenFactura ? 'Acceso a Kardex y Facturación' : 'Solo acceso a Kardex'}</p>
                   </div>
                 )}
 
@@ -522,7 +486,8 @@ export default function AdminLayout() {
                   if (meta?.condition && !meta.condition(auth)) return null;
 
                   const label = meta?.labelOverride?.(auth) ?? modulo.nombre ?? modulo.codigo;
-                  const icon = meta?.iconOverride?.(auth) ?? modulo.icono ?? 'solar:circle-bold-duotone';
+                  const override = meta?.iconOverride?.(auth);
+                  const icon = override ?? MODULE_LINE_ICONS[modulo.codigo] ?? modulo.icono ?? 'solar:circle-bold-duotone';
                   const ruta = modulo.ruta ?? LEGACY_MODULE_ROUTES[modulo.codigo];
                   const navRoute = meta?.navRoute?.(auth) ?? ruta ?? '#';
                   const pathPrefix = meta?.pathPrefix?.(auth) ?? ruta ?? '___';
@@ -556,7 +521,7 @@ export default function AdminLayout() {
                         className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
                         title={label}
                       >
-                        <Icon icon={icon} className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                        <Icon icon={lineIcon(icon)} className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                         {!isSidebarCollapsed && <span>{label}</span>}
                       </NavLink>
                     );
@@ -572,20 +537,22 @@ export default function AdminLayout() {
                           setNameNavbar(label);
                         }}
                         className={isModuleActive ? theme.accordionActive : theme.accordionInactive}
-                        title={label}
+                        // Contraído ya sale el menú flotante con el nombre: el
+                        // globito nativo se le encimaba.
+                        title={isSidebarCollapsed ? undefined : label}
                       >
                         <div className="flex items-center justify-center">
-                          <Icon icon={icon} className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                          <Icon icon={lineIcon(icon)} className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                           {!isSidebarCollapsed && <span>{label}</span>}
                         </div>
                         {!isSidebarCollapsed && (
-                          <Icon icon="solar:alt-arrow-down-linear" className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} width="18" />
+                          <Icon icon="solar:alt-arrow-down-linear" className={`krk-nav__chev transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} width="16" />
                         )}
                       </button>
                       {/* Collapsed popover */}
                       {isSidebarCollapsed && (
-                        <div className="absolute left-full top-0 ml-1 bg-white dark:bg-slate-900 rounded-xl shadow-xl w-48 py-2 z-[9999] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                          <div className="px-4 py-2 text-xs font-bold text-gray-400 mb-1 border-b border-gray-100 dark:border-slate-700">{label}</div>
+                        <div className="krk-side__float absolute left-full top-0 ml-2 rounded-xl w-52 p-1.5 z-[9999] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                          <div className="krk-side__float-title">{label}</div>
                           {allSubItems.map(item => (
                             <NavLink key={item.codigo} onClick={() => setIsSidebarOpen(false)} to={item.ruta} end={item.end}
                               className={() => (item.ruta === rutaSubActiva ? theme.submenuActiveLink : theme.submenuInactiveLink)}
@@ -600,7 +567,7 @@ export default function AdminLayout() {
                             initial="initial"
                             animate="animate"
                             exit="exit"
-                            className={'ml-4 pl-4 border-l-2 ' + theme.submenuBorder + ' space-y-1 mt-1'}
+                            className="krk-subs flex flex-col gap-0.5"
                             style={{ overflow: 'hidden' }}
                           >
                             {allSubItems.map(item => (
@@ -618,7 +585,7 @@ export default function AdminLayout() {
                 {/* LEGACY: dashboard dashboard no existente en plan (fallback) */}
                 {!planModules.some(m => hasPermission(auth, m.modulo.codigo)) && (
                   <NavLink data-tour="dashboard" onClick={() => { setIsSidebarOpen(false); setNameNavbar('Administrador') }} to="/administrador" end className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Dashboard">
-                    <Icon icon="solar:chart-2-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    <Icon icon="solar:chart-2-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                     {!isSidebarCollapsed && <span>Dashboard</span>}
                   </NavLink>
                 )}
@@ -631,7 +598,7 @@ export default function AdminLayout() {
                     className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
                     title="Mis Comisiones"
                   >
-                    <Icon icon="solar:hand-money-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    <Icon icon="solar:hand-money-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                     {!isSidebarCollapsed && <span>Mis Comisiones</span>}
                   </NavLink>
                 )}
@@ -643,7 +610,7 @@ export default function AdminLayout() {
                     className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
                     title="Comisiones del equipo"
                   >
-                    <Icon icon="solar:users-group-rounded-bold-duotone" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    <Icon icon="solar:users-group-rounded-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
                     {!isSidebarCollapsed && <span>Comisiones del equipo</span>}
                   </NavLink>
                 )}
@@ -654,8 +621,9 @@ export default function AdminLayout() {
           </motion.nav>
         </div>
 
-        {/* Divider y configuración abajo */}
-        <div className="mt-3 pt-3 border-t border-gray-100 space-y-0.5 w-full">
+        {/* Pie: cuenta */}
+        <div className="krk-side__foot flex flex-col gap-0.5 w-full">
+          <p className="krk-side__group">Cuenta</p>
           <button
             type="button"
             onClick={() => { setIsSidebarOpen(false); abrirNovedades() }}
@@ -663,39 +631,56 @@ export default function AdminLayout() {
             title={novedadesSinVer > 0 ? `Novedades · ${novedadesSinVer} sin ver` : 'Novedades'}
           >
             <span className="relative flex items-center">
-              <Icon icon="solar:confetti-minimalistic-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
+              <Icon icon="solar:confetti-minimalistic-linear" />
               {/* Punto de "sin leer": se apaga al abrir el modal de novedades. */}
-              {novedadesSinVer > 0 && (
-                <span className={`absolute -top-0.5 ${isSidebarCollapsed ? 'right-0' : 'right-2'} h-2 w-2 rounded-full bg-violet-500 ring-2 ring-white dark:ring-[#111827]`} />
+              {novedadesSinVer > 0 && isSidebarCollapsed && (
+                <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--krk-accent)] ring-2 ring-[var(--side-bg)]" />
               )}
             </span>
-            {!isSidebarCollapsed && (
-              <span className="flex-1 flex items-center justify-between">
-                <span>Novedades</span>
-                {novedadesSinVer > 0 && (
-                  <span className="ml-2 px-1.5 py-0.5 rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-700 dark:text-violet-300 text-[10px] font-black">
-                    {novedadesSinVer}
-                  </span>
-                )}
-              </span>
-            )}
+            {!isSidebarCollapsed && <span>Novedades</span>}
+            {!isSidebarCollapsed && novedadesSinVer > 0 && <span className="krk-nav__badge">{novedadesSinVer}</span>}
           </button>
           {/* Su suscripción. Va en el pie del menú, junto a Configuración: se
               consulta de vez en cuando, no todos los días. */}
           {auth?.rol === 'ADMIN_EMPRESA' && (
-            <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Mi plan') }} to="/administrador/mi-plan" className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink} title="Mi plan">
-              <Icon icon="solar:crown-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
+            <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Mi plan') }} to="/administrador/mi-plan" className={theme.inactiveLink} title="Mi plan">
+              <Icon icon="solar:crown-linear" />
               {!isSidebarCollapsed && <span>Mi plan</span>}
             </NavLink>
           )}
-          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración') }} to="/administrador/perfil" className={() => theme.inactiveLink} title="Configuración">
-            <Icon icon="solar:settings-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px]'}`} />
+          <NavLink onClick={() => { setIsSidebarOpen(false); setNameNavbar('Configuración') }} to="/administrador/perfil" className={theme.inactiveLink} title="Configuración">
+            <Icon icon="solar:settings-linear" />
             {!isSidebarCollapsed && <span>Configuración</span>}
           </NavLink>
-          <button onClick={() => { setIsSidebarOpen(false); logout() }} className={theme.inactiveLink} title="Logout">
-            <Icon icon="solar:logout-bold-duotone" className={`${isSidebarCollapsed ? 'text-xl m-0' : 'mr-3 text-[18px] text-red-400'}`} />
-            {!isSidebarCollapsed && <span className="text-red-500">Cerrar sesión</span>}
-          </button>
+
+          <div className={`krk-me mt-2 ${isSidebarCollapsed ? '' : 'pr-1'}`}>
+            <button
+              type="button"
+              className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
+              onClick={() => { setIsSidebarOpen(false); navigate('/administrador/perfil') }}
+              title={auth?.nombre ?? 'Perfil'}
+            >
+              <img
+                src={companyLogoSrc}
+                onError={(e) => {
+                  e.currentTarget.onerror = null
+                  e.currentTarget.src = defaultProfileLogo
+                }}
+                alt=""
+              />
+              {!isSidebarCollapsed && (
+                <span className="min-w-0">
+                  <b>{auth?.nombre}</b>
+                  <small>{auth?.empresa?.nombreComercial ?? auth?.rol?.replace('ADMIN_', '')?.replace('USUARIO_', '')}</small>
+                </span>
+              )}
+            </button>
+            {!isSidebarCollapsed && (
+              <button type="button" className="krk-me__out" onClick={() => { setIsSidebarOpen(false); logout() }} title="Cerrar sesión" aria-label="Cerrar sesión">
+                <Icon icon="solar:logout-2-linear" width="17" />
+              </button>
+            )}
+          </div>
         </div>
       </motion.aside>
 
@@ -721,7 +706,7 @@ export default function AdminLayout() {
       {/* Main content */}
       <main
         ref={mainRef}
-        className="flex-1 min-h-0 flex flex-col min-w-0 overflow-y-auto print:overflow-visible bg-[#F9FAFC] dark:bg-[#0A0D14]"
+        className="flex-1 min-h-0 flex flex-col min-w-0 overflow-y-auto print:overflow-visible"
       >
         <div className={`shrink-0 z-[40] transition-all duration-300 ${navbarFixed ? 'sticky top-0' : 'relative'}`}>
           <motion.header className="print:hidden flex items-center justify-between px-6 py-3.5 bg-white/90 backdrop-blur-md border-b border-gray-100 dark:bg-[#0A0D14]/90 dark:border-slate-800 transition-all duration-300" variants={fadeUp} initial="initial" animate="animate">

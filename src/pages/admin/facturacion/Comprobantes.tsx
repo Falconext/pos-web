@@ -607,10 +607,10 @@ const Comprobantes = () => {
         setSelectedSedeId(Number(idValue));
     }
 
-    const handleSelectUsuario = (event: ChangeEvent<HTMLSelectElement>) => {
-        const value = event.target.value;
+    // Select (UI) entrega el `id` de la opción; 0 = "Todos los vendedores".
+    const handleSelectUsuario = (idValue: any) => {
         setcurrentPage(1);
-        setSelectedUsuarioId(value ? Number(value) : null);
+        setSelectedUsuarioId(idValue && Number(idValue) > 0 ? Number(idValue) : null);
     }
 
     const estadosInvoice = [{ id: 1, value: "TODOS" }, { id: 2, value: "EMITIDO" }, { id: 3, value: "PENDIENTE" }, { id: 4, value: "PENDIENTE_CONCILIACION" }, { id: 5, value: "ANULADO" }, { id: 6, value: "RECHAZADO" }, { id: 7, value: "FALLIDO_ENVIO" }]
@@ -618,7 +618,11 @@ const Comprobantes = () => {
         { id: 0, value: 'Todas las sedes' },
         ...sedes.map((s: any) => ({ id: s.id, value: s.nombre }))
     ]
-    const vendedoresOptions = usuarios.filter((u) => u.estado === 'ACTIVO');
+    const vendedoresOptions = [
+        { id: 0, value: 'Todos los vendedores' },
+        ...usuarios.filter((u) => u.estado === 'ACTIVO').map((u) => ({ id: u.id, value: u.nombre })),
+    ]
+    const vendedorSeleccionado = vendedoresOptions.find((o) => o.id === selectedUsuarioId)?.value ?? 'Todos los vendedores'
 
     const confirmCancelInvoice = () => {
         cancelInvoice(formValues?.id)
@@ -781,7 +785,7 @@ const Comprobantes = () => {
                     <button
                         type="button"
                         onClick={() => setConfigFormato('FACTURA')}
-                        className="hidden lg:inline-flex lg:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+                        className="hidden lg:inline-flex lg:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl border border-violet-200 bg-white text-sm font-semibold text-violet-600 hover:bg-violet-50 dark:border-violet-500/30 dark:bg-slate-800 dark:text-violet-300 dark:hover:bg-slate-700 transition-all active:scale-95"
                         title="Configurar el formato de impresión de las facturas"
                     >
                         <Icon icon="solar:tuning-square-bold-duotone" className="text-lg" />
@@ -790,7 +794,7 @@ const Comprobantes = () => {
                     <button
                         type="button"
                         onClick={() => setConfigFormato('BOLETA')}
-                        className="hidden lg:inline-flex lg:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-95"
+                        className="hidden lg:inline-flex lg:w-auto items-center justify-center gap-2 px-4 py-3 sm:py-2.5 rounded-xl border border-emerald-200 bg-white text-sm font-semibold text-emerald-600 hover:bg-emerald-50 dark:border-emerald-500/30 dark:bg-slate-800 dark:text-emerald-300 dark:hover:bg-slate-700 transition-all active:scale-95"
                         title="Configurar el formato de impresión de las boletas"
                     >
                         <Icon icon="solar:tuning-square-bold-duotone" className="text-lg" />
@@ -829,8 +833,8 @@ const Comprobantes = () => {
 
             <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
                 {/* Filters Section */}
-                <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-slate-800">
-                    <div className="mb-4 flex items-center justify-between gap-3 px-1">
+                <div data-krk-filtros-seccion className="p-4 sm:p-5 border-b border-gray-100 dark:border-slate-800">
+                    <div data-krk-filtros-head className="mb-4 flex items-center justify-between gap-3 px-1">
                         <div className="flex min-w-0 items-center gap-2">
                             <Icon icon="solar:filter-bold-duotone" className="text-blue-600 dark:text-blue-400 text-xl" />
                             <div className="min-w-0">
@@ -849,7 +853,7 @@ const Comprobantes = () => {
                             <Icon icon={isMobileFiltersOpen ? 'solar:alt-arrow-up-linear' : 'solar:alt-arrow-down-linear'} className="text-base" />
                         </button>
                     </div>
-                    <div className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:grid-cols-5`}>
+                    <div data-krk-filtros className={`${isMobileFiltersOpen ? 'grid' : 'hidden'} grid-cols-1 gap-3 sm:grid sm:grid-cols-2 sm:gap-4 xl:grid-cols-5`}>
                         <div className="sm:col-span-2 xl:col-span-1">
                             <InputPro name="" onChange={handleChangeSearch} isLabel label="Buscar serie, cliente, correlativo" />
                         </div>
@@ -881,17 +885,15 @@ const Comprobantes = () => {
                         )}
                         {canFilterByUsuario && (
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 mb-1 uppercase tracking-wide">Vendedor</label>
-                                <select
-                                    value={selectedUsuarioId ?? ''}
+                                <Select
                                     onChange={handleSelectUsuario}
-                                    className="w-full h-10 px-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                                >
-                                    <option value="">Todos los vendedores</option>
-                                    {vendedoresOptions.map((usuario) => (
-                                        <option key={usuario.id} value={usuario.id}>{usuario.nombre}</option>
-                                    ))}
-                                </select>
+                                    label="Vendedor"
+                                    name="vendedor"
+                                    options={vendedoresOptions}
+                                    defaultValue={vendedorSeleccionado}
+                                    value={vendedorSeleccionado}
+                                    error=""
+                                />
                             </div>
                         )}
                         <div className="sm:col-span-2 xl:col-span-1">
@@ -912,6 +914,7 @@ const Comprobantes = () => {
                         <>
                             <div className="hidden md:block overflow-x-auto">
                                 <DataTable bodyData={productsTable}
+                                    onRowClick={(row: any) => row?.id && setDetalleComprobanteId(row.id)}
                                     headerColumns={[
                                         'Fecha',
                                         'Sede',

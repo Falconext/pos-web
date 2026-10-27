@@ -75,9 +75,9 @@ const InputPro: FC<IInput> = ({
   const [localValue, setLocalValue] = useState<string | number>(value);
 
   const commonClasses =
-    "w-full h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-800 placeholder:text-slate-400 font-normal" +
+    "w-full h-10 rounded-xl border border-[rgba(40,30,20,0.12)] bg-[#fffdfa] px-3 text-sm text-[#1d1915] placeholder:text-[#978f86] font-medium" +
     " dark:bg-slate-800 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500" +
-    " outline-none focus:ring-2 focus:ring-indigo-400/30 focus:border-indigo-400" +
+    " outline-none hover:border-[rgba(40,30,20,0.2)] focus:ring-[3px] focus:ring-[rgba(40,30,20,0.07)] focus:border-[rgba(40,30,20,0.32)] dark:hover:border-slate-600 dark:focus:ring-white/10 dark:focus:border-slate-500" +
     " disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 dark:disabled:bg-slate-900 transition-all duration-150";
 
   useEffect(() => {
@@ -202,7 +202,7 @@ const InputPro: FC<IInput> = ({
     <div className="relative">
       <div className={mode === "flex" ? "flex items-center" : ""}>
         <div>
-          {isLabel && <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5">{label}</label>}
+          {isLabel && <label className="block text-[12px] font-bold text-[#6b645c] dark:text-slate-400 mb-1.5">{label}</label>}
         </div>
         {renderInput()}
       </div>
