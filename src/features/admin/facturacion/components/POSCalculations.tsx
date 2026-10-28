@@ -4,6 +4,9 @@ import ModalConfirm from '@/components/ModalConfirm';
 import { Icon } from "@iconify/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCuentasBancariasStore } from "@/zustand/cuentasBancarias";
+import useAlertStore from "@/zustand/alert";
+import { useDebounce } from "@/hooks/useDebounce";
+import { get } from "@/utils/fetch";
 import EmitidoContent from "@/pages/admin/facturacion/modalResponseInvoice/EmitidoContent";
 import { descripcionParaImpresion } from "@/utils/descripcion-vehiculo";
 import type { PaymentLine } from "../useFacturacionViewModel";
@@ -20,42 +23,85 @@ const METODOS = ['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'];
  * ni el carrito ni el cobro. Factura solo si el cliente tiene RUC.
  */
 /**
- * RUC para la factura, escrito en la misma ventana de pago. Enter busca (en la
- * empresa o en el padrón SUNAT), deja la venta en Factura con ese cliente y la
- * deja lista para emitir; no se cierra la venta ni se pierde el cobro.
+ * RUC para la factura, escrito en la misma ventana de pago. Mientras se escribe
+ * (RUC o razón social) se sugieren los clientes con RUC ya guardados; Enter o
+ * un clic en la sugerencia deja la venta en Factura con ese cliente. Un RUC
+ * nuevo de 11 dígitos se trae de SUNAT y se registra. No se pierde el cobro.
  */
 function RucParaFactura({ vm, onCancelar }: { vm: any; onCancelar?: () => void }) {
-    const [ruc, setRuc] = useState('');
-    const buscar = () => { if (!vm.rucFacturaLoading) vm.facturarConRuc(ruc); };
+    const [texto, setTexto] = useState('');
+    const [sugeridos, setSugeridos] = useState<any[]>([]);
+    const [activo, setActivo] = useState(0);
+    const q = useDebounce(texto.trim(), 250);
+
+    useEffect(() => {
+        if (q.length < 3) { setSugeridos([]); return; }
+        let vigente = true;
+        get(`clientes?search=${encodeURIComponent(q)}&limit=8`).then((resp: any) => {
+            if (!vigente) return;
+            const lista = resp?.data?.clientes ?? resp?.data?.data ?? [];
+            const conRuc = (Array.isArray(lista) ? lista : [])
+                .filter((c: any) => String(c?.nroDoc || '').replace(/\D/g, '').length === 11)
+                .slice(0, 5);
+            setSugeridos(conRuc);
+            setActivo(0);
+        });
+        return () => { vigente = false; };
+    }, [q]);
+
+    const elegir = (ruc: string) => { if (!vm.rucFacturaLoading) vm.facturarConRuc(ruc); };
+    const enviar = () => {
+        const soloDigitos = texto.replace(/\D/g, '');
+        // Un RUC completo manda sobre la sugerencia (la lista busca "contiene").
+        if (/^\d{11}$/.test(texto.trim())) return elegir(soloDigitos);
+        if (sugeridos[activo]) return elegir(sugeridos[activo].nroDoc);
+        useAlertStore.getState().alert('Escribe el RUC (11 dígitos) o elige un cliente de la lista', 'warning');
+    };
+
     return (
-        <div data-enter-nativo data-testid="pos-ruc-factura" className="mt-3 rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-slate-900 p-3">
-            <label htmlFor="pos-ruc-factura" className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">RUC del cliente</label>
-            <div className="mt-1.5 flex gap-2">
+        <div data-enter-nativo data-testid="pos-ruc-factura" className="mt-2.5">
+            <div className="flex gap-1.5">
                 <input
-                    id="pos-ruc-factura"
                     autoFocus
-                    inputMode="numeric"
-                    maxLength={11}
-                    value={ruc}
-                    onChange={(e) => setRuc(e.target.value.replace(/\D/g, ''))}
+                    aria-label="RUC o razón social del cliente"
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') { e.preventDefault(); buscar(); }
-                        if (e.key === 'Escape' && onCancelar) { e.preventDefault(); e.stopPropagation(); onCancelar(); }
+                        if (e.key === 'Enter') { e.preventDefault(); enviar(); }
+                        else if (e.key === 'ArrowDown' && sugeridos.length) { e.preventDefault(); setActivo((i) => Math.min(i + 1, sugeridos.length - 1)); }
+                        else if (e.key === 'ArrowUp' && sugeridos.length) { e.preventDefault(); setActivo((i) => Math.max(i - 1, 0)); }
+                        else if (e.key === 'Escape' && onCancelar) { e.preventDefault(); e.stopPropagation(); onCancelar(); }
                     }}
-                    placeholder="11 dígitos"
-                    className="min-w-0 flex-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold tracking-wider text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+                    placeholder="RUC o razón social del cliente"
+                    className="min-w-0 flex-1 rounded-lg border border-violet-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
                 />
                 <button
                     type="button"
-                    onClick={buscar}
-                    disabled={ruc.length !== 11 || vm.rucFacturaLoading}
-                    className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={enviar}
+                    disabled={vm.rucFacturaLoading || !texto.trim()}
+                    title="Buscar"
+                    className="grid w-8 shrink-0 place-items-center rounded-lg bg-violet-600 text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    <Icon icon={vm.rucFacturaLoading ? 'svg-spinners:180-ring' : 'solar:magnifer-bold'} width={16} />
-                    Buscar
+                    <Icon icon={vm.rucFacturaLoading ? 'svg-spinners:180-ring' : 'solar:magnifer-linear'} width={15} />
                 </button>
             </div>
-            <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">Enter para buscar. Si no está registrado, se trae de SUNAT y se guarda.</p>
+            {sugeridos.length > 0 && (
+                <ul role="listbox" className="mt-1 overflow-hidden rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
+                    {sugeridos.map((c, i) => (
+                        <li key={c.id ?? c.nroDoc} role="option" aria-selected={i === activo}>
+                            <button
+                                type="button"
+                                onMouseEnter={() => setActivo(i)}
+                                onClick={() => elegir(c.nroDoc)}
+                                className={`flex w-full items-baseline gap-2 px-2.5 py-1.5 text-left text-xs ${i === activo ? 'bg-violet-50 dark:bg-violet-900/30' : ''}`}
+                            >
+                                <span className="shrink-0 font-bold tabular-nums text-gray-900 dark:text-white">{c.nroDoc}</span>
+                                <span className="truncate text-gray-500 dark:text-gray-400">{c.nombre}</span>
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 }
@@ -66,9 +112,8 @@ function RucParaFactura({ vm, onCancelar }: { vm: any; onCancelar?: () => void }
  */
 function FacturaSinRucCard({ vm }: { vm: any }) {
     return (
-        <div data-testid="pos-factura-sin-ruc" className="mt-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 p-4">
-            <p className="text-sm font-extrabold text-gray-900 dark:text-white leading-tight">Falta el RUC para la factura</p>
-            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">Escríbelo aquí y emite sin salir del cobro.</p>
+        <div data-testid="pos-factura-sin-ruc" className="mt-3 rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 px-3 py-2.5">
+            <p className="text-xs font-extrabold text-gray-900 dark:text-white">Falta el RUC para la factura</p>
             <RucParaFactura vm={vm} />
         </div>
     );
