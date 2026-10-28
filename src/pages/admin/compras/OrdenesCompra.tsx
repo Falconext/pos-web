@@ -209,15 +209,10 @@ export default function OrdenesCompraPage() {
 
     const monedaFmt = (o: OrdenCompra) => (o.moneda === 'USD' ? 'US$' : 'S/');
 
-    // Editar, recibir y anular solo mientras la orden sigue abierta.
+    // Recibir va como botón visible (es lo más usado); el resto, al menú.
+    // Editar y anular solo mientras la orden sigue abierta.
     const abierta = (o: OrdenCompra) => o.estado === 'BORRADOR' || o.estado === 'EMITIDA';
     const accionesOrden = [
-        {
-            tooltip: 'Recibir mercadería (crear compra)',
-            icon: <Icon icon="solar:box-bold-duotone" className="text-emerald-600" />,
-            onClick: (o: OrdenCompra) => setRecibirOrden(o),
-            condition: abierta,
-        },
         {
             tooltip: 'Descargar PDF para el proveedor',
             icon: (o: OrdenCompra) => <Icon icon={descargandoId === o.id ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} />,
@@ -355,7 +350,20 @@ export default function OrdenesCompraPage() {
                                         {o.compra ? `${o.compra.serie}-${o.compra.numero}` : '—'}
                                     </td>
                                     <td className="px-4 py-3 text-right" data-testid={`oc-acciones-${o.id}`}>
-                                        <MenuAcciones row={o} actions={accionesOrden} />
+                                        <div className="flex items-center justify-end gap-1.5">
+                                            {abierta(o) && (
+                                                <button
+                                                    onClick={() => setRecibirOrden(o)}
+                                                    title="Recibir mercadería (crear compra)"
+                                                    data-testid={`oc-recibir-${o.id}`}
+                                                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300"
+                                                >
+                                                    <Icon icon="solar:box-bold-duotone" className="text-base" />
+                                                    Recibir
+                                                </button>
+                                            )}
+                                            <MenuAcciones row={o} actions={accionesOrden} />
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
