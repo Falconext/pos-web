@@ -19,10 +19,66 @@ const METODOS = ['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'];
  * lenguaje visual de las tarjetas de método: el cambio es un clic y no se pierde
  * ni el carrito ni el cobro. Factura solo si el cliente tiene RUC.
  */
+/**
+ * RUC para la factura, escrito en la misma ventana de pago. Enter busca (en la
+ * empresa o en el padrón SUNAT), deja la venta en Factura con ese cliente y la
+ * deja lista para emitir; no se cierra la venta ni se pierde el cobro.
+ */
+function RucParaFactura({ vm, onCancelar }: { vm: any; onCancelar?: () => void }) {
+    const [ruc, setRuc] = useState('');
+    const buscar = () => { if (!vm.rucFacturaLoading) vm.facturarConRuc(ruc); };
+    return (
+        <div data-enter-nativo data-testid="pos-ruc-factura" className="mt-3 rounded-xl border border-violet-200 dark:border-violet-800 bg-white dark:bg-slate-900 p-3">
+            <label htmlFor="pos-ruc-factura" className="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">RUC del cliente</label>
+            <div className="mt-1.5 flex gap-2">
+                <input
+                    id="pos-ruc-factura"
+                    autoFocus
+                    inputMode="numeric"
+                    maxLength={11}
+                    value={ruc}
+                    onChange={(e) => setRuc(e.target.value.replace(/\D/g, ''))}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') { e.preventDefault(); buscar(); }
+                        if (e.key === 'Escape' && onCancelar) { e.preventDefault(); e.stopPropagation(); onCancelar(); }
+                    }}
+                    placeholder="11 dígitos"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm font-bold tracking-wider text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-violet-400"
+                />
+                <button
+                    type="button"
+                    onClick={buscar}
+                    disabled={ruc.length !== 11 || vm.rucFacturaLoading}
+                    className="flex items-center gap-1.5 rounded-lg bg-violet-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    <Icon icon={vm.rucFacturaLoading ? 'svg-spinners:180-ring' : 'solar:magnifer-bold'} width={16} />
+                    Buscar
+                </button>
+            </div>
+            <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">Enter para buscar. Si no está registrado, se trae de SUNAT y se guarda.</p>
+        </div>
+    );
+}
+
+/**
+ * Factura elegida pero el cliente no tiene RUC (p. ej. "Cliente por definir"):
+ * en vez de emitir una factura sin cliente, se pide el RUC acá mismo.
+ */
+function FacturaSinRucCard({ vm }: { vm: any }) {
+    return (
+        <div data-testid="pos-factura-sin-ruc" className="mt-4 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 p-4">
+            <p className="text-sm font-extrabold text-gray-900 dark:text-white leading-tight">Falta el RUC para la factura</p>
+            <p className="mt-1 text-xs text-gray-600 dark:text-gray-300">Escríbelo aquí y emite sin salir del cobro.</p>
+            <RucParaFactura vm={vm} />
+        </div>
+    );
+}
+
 function CpeRequeridoCard({ vm }: { vm: any }) {
     const medios: string = vm.cpeRequeridoMedios || 'este medio';
     const actual: string = String(vm.formValues?.comprobante || 'comprobante interno').toLowerCase();
     const tieneRuc = String(vm.selectedClient?.nroDoc || '').length === 11;
+    const [pidiendoRuc, setPidiendoRuc] = useState(false);
     return (
         <div data-testid="pos-cpe-requerido" className="mt-4 rounded-2xl border border-violet-200 dark:border-violet-800/60 bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/40 dark:to-indigo-950/30 p-4">
             <div className="flex items-start gap-3">
@@ -48,8 +104,9 @@ function CpeRequeridoCard({ vm }: { vm: any }) {
                 </button>
                 <button
                     type="button"
-                    onClick={() => vm.cambiarComprobanteA('FACTURA')}
+                    onClick={() => (tieneRuc ? vm.cambiarComprobanteA('FACTURA') : setPidiendoRuc(true))}
                     disabled={vm.esRUS}
+                    data-testid="pos-cpe-factura"
                     title={vm.esRUS ? 'Régimen RUS: solo Boleta' : (!tieneRuc ? 'El cliente elegido no tiene RUC' : undefined)}
                     className={`flex flex-col items-center gap-1 rounded-xl border-2 px-3 py-3 transition-all active:scale-[0.98] ${vm.esRUS
                         ? 'border-gray-200 dark:border-slate-700 bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed'
@@ -57,9 +114,10 @@ function CpeRequeridoCard({ vm }: { vm: any }) {
                 >
                     <Icon icon="solar:document-text-bold" width={22} />
                     <span className="text-sm font-extrabold">Factura</span>
-                    <span className={`text-[10px] ${tieneRuc ? 'opacity-70' : 'text-amber-600 dark:text-amber-400 font-semibold'}`}>{tieneRuc ? 'Cliente con RUC' : 'Requiere cliente con RUC'}</span>
+                    <span className={`text-[10px] ${tieneRuc ? 'opacity-70' : 'text-amber-600 dark:text-amber-400 font-semibold'}`}>{tieneRuc ? 'Cliente con RUC' : 'Escribe el RUC'}</span>
                 </button>
             </div>
+            {pidiendoRuc && !tieneRuc && <RucParaFactura vm={vm} onCancelar={() => setPidiendoRuc(false)} />}
         </div>
     );
 }
@@ -400,6 +458,8 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
         autoImpresionHecha.current = true;
         handleOpenNewTab(getFormatoImpresionDefault(vm.auth?.empresa));
     }, [emitStep, vm.auth?.empresa?.imprimirAutomatico, handleOpenNewTab, vm.auth?.empresa]);
+    const facturaSinRuc = !vm.isQuotationRoute && String(vm.formValues?.tipoDoc || '') === '01'
+        && String(vm.selectedClient?.nroDoc || '').replace(/\D/g, '').length !== 11;
     // Mismas condiciones que deshabilitan el botón EMITIR/ACTUALIZAR.
     const emitirBloqueado = vm.cpeRequeridoPorMedioPago || (!isCreditoPreview && ((vm.isMixedPayment && !splitValid) || faltanteEfectivo > 0));
 
@@ -434,6 +494,57 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
     }, [showPago, emitStep, emitirBloqueado, vm.addInvoiceReceipt]);
+
+    const continuarPago = () => {
+        if (!hayProductos) return;
+        if (esNotaCredito) {
+            setConfirmarNota(true);
+        } else if (emiteSinPasoDePago) {
+            vm.addInvoiceReceipt();
+        } else {
+            // Incluye la EDICIÓN de una nota de venta: pasa por el paso de
+            // pago para poder registrar/actualizar el cobro (parcial/mixto).
+            setShowPago(true);
+        }
+    };
+
+    // Atajos del mostrador (pedido DEMENVER): Enter en la venta abre "Continuar
+    // pago" y Esc en "emitido" cierra para la siguiente venta (Esc en el pago
+    // vuelve al carrito). Solo el paso de pago: cotización y nota de crédito
+    // emiten directo y no deben salir de una tecla.
+    const hayOtraVentana = () => Boolean(document.querySelector('[data-krk-modal], .fixed.inset-0[class*="z-[9999"]'));
+    useEffect(() => {
+        const onKey = (e: KeyboardEvent) => {
+            if (e.defaultPrevented || e.repeat || e.isComposing) return;
+            if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+            const el = e.target as HTMLElement | null;
+            if (e.key === 'Escape') {
+                if (hayOtraVentana()) return;
+                if (emitStep === 'emitido') {
+                    e.preventDefault();
+                    closeEmitido();
+                    setTimeout(() => vm.barcodeRef?.current?.focus(), 80);
+                } else if (showPago && emitStep === 'pago') {
+                    e.preventDefault();
+                    setShowPago(false);
+                }
+                return;
+            }
+            if (e.key !== 'Enter' || showPago || isEmitPhase) return;
+            if (emiteSinPasoDePago || hayRecetasPendientes || !hayProductos) return;
+            if (hayOtraVentana()) return;
+            const tag = el?.tagName;
+            if (tag === 'TEXTAREA' || tag === 'SELECT' || el?.isContentEditable) return;
+            // En un campo con texto, Enter es de ese campo (buscar, escanear,
+            // cantidad…); vacío, ya no tiene nada que hacer y pasa a cobrar.
+            if (tag === 'INPUT' && String((el as HTMLInputElement).value || '').trim() !== '') return;
+            if (el?.closest('[role="listbox"], [role="combobox"], [role="menu"]')) return;
+            e.preventDefault();
+            continuarPago();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    });
 
     const handleModalOverlay = () => {
         if (emitStep === 'pago') setShowPago(false);
@@ -561,18 +672,8 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                     </button>
                 )}
                 <button
-                    onClick={() => {
-                        if (!hayProductos) return;
-                        if (esNotaCredito) {
-                            setConfirmarNota(true);
-                        } else if (emiteSinPasoDePago) {
-                            vm.addInvoiceReceipt();
-                        } else {
-                            // Incluye la EDICIÓN de una nota de venta: pasa por el paso de
-                            // pago para poder registrar/actualizar el cobro (parcial/mixto).
-                            setShowPago(true);
-                        }
-                    }}
+                    data-testid="pos-continuar-pago"
+                    onClick={continuarPago}
                     disabled={hayRecetasPendientes || !hayProductos}
                     className={`flex-1 py-3 md:py-3.5 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm ${hayRecetasPendientes
                         ? 'bg-gray-400 cursor-not-allowed'
@@ -859,6 +960,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                 </div>
                                 )}
                                 {vm.cpeRequeridoPorMedioPago && <CpeRequeridoCard vm={vm} />}
+                                {facturaSinRuc && <FacturaSinRucCard vm={vm} />}
                             </div>{/* /IZQUIERDA métodos de pago */}
 
                             {/* DERECHA: preview del comprobante — mismo formato que el ticket impreso */}
@@ -871,6 +973,9 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                                 )}
                                 {vm.formValues?.medioPago === 'Crédito' && vm.cpeRequeridoPorMedioPago && (
                                     <div className="mx-auto mb-3 max-w-[300px]"><CpeRequeridoCard vm={vm} /></div>
+                                )}
+                                {vm.formValues?.medioPago === 'Crédito' && facturaSinRuc && (
+                                    <div className="mx-auto mb-3 max-w-[300px]"><FacturaSinRucCard vm={vm} /></div>
                                 )}
                                 <div className="mb-3 flex items-center justify-between gap-2">
                                     <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Vista previa del comprobante</h4>
