@@ -130,7 +130,11 @@ export interface ConfigTienda {
   lng: number | null
   indicaciones: string
   fotoUrl: string
+  /** Plano para llegar adentro (mercado, galería). Va antes que la foto. */
+  croquisUrl?: string
 }
+
+export type TipoImagenTienda = 'foto' | 'croquis'
 
 /** Del 1 (muy conciso) al 5 (muy detallado). */
 export type LongitudRespuesta = 1 | 2 | 3 | 4 | 5
@@ -388,17 +392,18 @@ export async function updateConfig(
 }
 
 /**
- * Sube la foto de la fachada o del stand (JPG/PNG, máx. 5 MB). El servidor ya
- * la deja guardada en la configuración: no hace falta tocar "Guardar".
+ * Sube la foto de la fachada o del stand, o el croquis (JPG/PNG, máx. 5 MB).
+ * El servidor ya la deja guardada en la configuración: no hace falta tocar
+ * "Guardar".
  */
-export async function subirFotoTienda(archivo: File): Promise<string> {
+export async function subirFotoTienda(archivo: File, tipo: TipoImagenTienda = 'foto'): Promise<string> {
   const fd = new FormData()
   fd.append('archivo', archivo)
   try {
-    const resp = await apiClient.post('/leads/tienda-foto', fd, {
+    const resp = await apiClient.post(`/leads/tienda-foto${tipo === 'croquis' ? '?tipo=croquis' : ''}`, fd, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })
-    const url = resp.data?.data?.fotoUrl as string | undefined
+    const url = resp.data?.data?.[tipo === 'croquis' ? 'croquisUrl' : 'fotoUrl'] as string | undefined
     if (!url) throw new Error('No se pudo subir la foto')
     return url
   } catch (e: any) {
