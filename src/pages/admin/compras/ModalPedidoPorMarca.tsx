@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
 import Modal from '@/components/Modal';
+import Select from '@/components/Select';
+import InputPro from '@/components/InputPro';
+import Casilla from '@/components/Casilla';
 import { get } from '@/utils/fetch';
 import { lineasDePedidoMarca, type FilaPedidoMarca, type LineaPedidoMarca } from './pedidoPorMarca';
 
@@ -73,25 +76,31 @@ export default function ModalPedidoPorMarca({ onCancelar, onAgregar, factorCosto
     const marca = marcas.find((m) => m.id === marcaId);
 
     const inputCls = 'w-full rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-center text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-white';
-    const selCls = 'h-10 w-full rounded-xl border border-gray-200 bg-white px-3 text-sm font-semibold text-gray-800 outline-none focus:ring-2 focus:ring-blue-400 dark:border-slate-700 dark:bg-slate-900 dark:text-gray-100';
 
     return (
         <Modal isOpenModal closeModal={onCancelar} title="Pedir por marca" icon="solar:star-bold-duotone" width="820px" height="auto">
             <div className="p-4">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_160px]">
-                    <div>
-                        <label className="mb-1 block text-[11px] font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Marca</label>
-                        <select value={marcaId ?? ''} onChange={(e) => setMarcaId(e.target.value ? Number(e.target.value) : null)} className={selCls} data-testid="pm-marca">
-                            <option value="">Elige la marca o línea…</option>
-                            {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="mb-1 block text-[11px] font-black uppercase tracking-wide text-gray-500 dark:text-gray-400">Ventas de los últimos</label>
-                        <select value={dias} onChange={(e) => setDias(Number(e.target.value))} className={selCls}>
-                            {PERIODOS.map((d) => <option key={d} value={d}>{d} días</option>)}
-                        </select>
-                    </div>
+                <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[1fr_180px]" data-testid="pm-filtros">
+                    <Select
+                        name="marca"
+                        label="Marca o línea"
+                        withLabel
+                        isSearch
+                        error={() => { }}
+                        placeholder="Elige la marca…"
+                        value={marca?.nombre ?? ''}
+                        options={marcas.map((m) => ({ id: m.id, value: m.nombre }))}
+                        onChange={(id: any) => { if (id !== '' && id != null) setMarcaId(Number(id)); }}
+                    />
+                    <Select
+                        name="dias"
+                        label="Ventas de los últimos"
+                        withLabel
+                        error={() => { }}
+                        value={`${dias} días`}
+                        options={PERIODOS.map((d) => ({ id: d, value: `${d} días` }))}
+                        onChange={(id: any) => { if (id) setDias(Number(id)); }}
+                    />
                 </div>
 
                 {!marcaId ? (
@@ -107,9 +116,11 @@ export default function ModalPedidoPorMarca({ onCancelar, onAgregar, factorCosto
                 ) : (
                     <>
                         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <input value={filtro} onChange={(e) => setFiltro(e.target.value)} placeholder="Filtrar producto o tono…" className={`${selCls} sm:max-w-xs`} />
-                            <label className="flex items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
-                                <input type="checkbox" checked={soloSugeridos} onChange={(e) => setSoloSugeridos(e.target.checked)} className="accent-blue-600" />
+                            <div className="sm:w-72">
+                                <InputPro name="filtro" placeholder="Filtrar producto o tono…" value={filtro} onChange={(e) => setFiltro(e.target.value)} />
+                            </div>
+                            <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300">
+                                <Casilla checked={soloSugeridos} onChange={setSoloSugeridos} label="Solo lo que hace falta pedir" />
                                 Solo lo que hace falta pedir
                             </label>
                         </div>

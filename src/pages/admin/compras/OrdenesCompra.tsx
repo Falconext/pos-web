@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ordenEnCajas, ordenDesdeCajas, precioOrdenConFactorIgv } from '@/features/admin/compras/utils/compraPorPaquete';
 import ModalCurvaTallas from './ModalCurvaTallas';
 import ModalPedidoPorMarca from './ModalPedidoPorMarca';
-import type { LineaPedidoMarca } from './pedidoPorMarca';
+import { fusionarLineas, type LineaPedidoMarca } from './pedidoPorMarca';
 import { sePideEnCurva } from './curvaDeTallas';
 import { Icon } from '@iconify/react';
 import moment from 'moment';
@@ -581,13 +581,21 @@ export function ModalOrdenCompra({ orden, inicial = null, onClose, onSaved }: { 
     // Pedido de toda una marca (Ésika, Avon…) con cantidades sugeridas.
     const [pidiendoPorMarca, setPidiendoPorMarca] = useState(false);
     const agregarPedidoMarca = (lineas: LineaPedidoMarca[], proveedor: { id: number; nombre: string } | null, marca: string) => {
-        setDetalles((prev) => [...prev, ...lineas]);
+        setDetalles((prev) => fusionarLineas(prev, lineas));
         if (proveedor && !proveedorId) {
             setProveedorId(proveedor.id);
             setProveedorQuery(proveedor.nombre);
             setShowProvOpts(false);
         }
-        if (marca && !observaciones.trim()) setObservaciones(`Pedido ${marca}`);
+        // Varias marcas en un mismo pedido: "Pedido ÉSIKA, AVON".
+        if (marca) {
+            setObservaciones((prev) => {
+                const actual = prev.trim();
+                if (!actual) return `Pedido ${marca}`;
+                if (/^Pedido /.test(actual) && !actual.split(/,\s*|^Pedido /).includes(marca)) return `${actual}, ${marca}`;
+                return prev;
+            });
+        }
         setPidiendoPorMarca(false);
     };
 

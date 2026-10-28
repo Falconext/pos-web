@@ -1,4 +1,4 @@
-import { lineasDePedidoMarca, type FilaPedidoMarca } from '../pedidoPorMarca';
+import { fusionarLineas, lineasDePedidoMarca, type FilaPedidoMarca } from '../pedidoPorMarca';
 
 const fila = (p: Partial<FilaPedidoMarca>): FilaPedidoMarca => ({
     productoId: 1, descripcion: 'Base Colorfix', variante: null, stock: 0, stockMinimo: 0,
@@ -22,5 +22,20 @@ describe('lineasDePedidoMarca', () => {
     it('ignora vacíos, negativos y decimales los trunca', () => {
         const filas = [fila({ productoId: 1 }), fila({ productoId: 2 }), fila({ productoId: 3 })];
         expect(lineasDePedidoMarca(filas, { 1: '', 2: '-4', 3: '2.7' }).map((x) => x.cantidad)).toEqual([2]);
+    });
+});
+
+describe('fusionarLineas', () => {
+    const l = (productoId: number | undefined, cantidad: number, unidadesPorPaquete: number | null = null) =>
+        ({ productoId, descripcion: 'x', cantidad, precioUnitario: 1, unidadesPorPaquete });
+
+    it('suma la cantidad si el producto ya está pedido por unidad', () => {
+        expect(fusionarLineas([l(1, 2), l(2, 1)], [l(1, 3), l(3, 4)]).map((d) => [d.productoId, d.cantidad]))
+            .toEqual([[1, 5], [2, 1], [3, 4]]);
+    });
+
+    it('no mezcla con una línea pedida por caja ni con ítems libres', () => {
+        expect(fusionarLineas([l(1, 12, 6), l(undefined, 1)], [l(1, 2), l(undefined, 1)]).map((d) => [d.productoId, d.cantidad]))
+            .toEqual([[1, 12], [undefined, 1], [1, 2], [undefined, 1]]);
     });
 });

@@ -51,3 +51,24 @@ export function lineasDePedidoMarca(
         }];
     });
 }
+
+/**
+ * Suma las líneas nuevas a las que ya tiene la orden. Si el mismo producto ya
+ * está pedido por unidad, se suman las cantidades en esa línea: pedir dos veces
+ * la misma marca (o un tono que ya se agregó a mano) no debe duplicar filas.
+ * Las líneas pedidas por caja se dejan aparte para no mezclar presentaciones.
+ */
+export function fusionarLineas<T extends { productoId?: number; cantidad: number; unidadesPorPaquete?: number | null }>(
+    actuales: T[],
+    nuevas: T[],
+): T[] {
+    const resultado = [...actuales];
+    for (const linea of nuevas) {
+        const i = linea.productoId == null ? -1 : resultado.findIndex(
+            (d) => d.productoId === linea.productoId && !(Number(d.unidadesPorPaquete) > 1),
+        );
+        if (i >= 0) resultado[i] = { ...resultado[i], cantidad: resultado[i].cantidad + linea.cantidad };
+        else resultado.push(linea);
+    }
+    return resultado;
+}
