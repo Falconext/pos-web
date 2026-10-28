@@ -546,6 +546,44 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
         return () => window.removeEventListener('keydown', onKey);
     });
 
+    const elegirMetodo = (m: string) => {
+        vm.setPaymentMethod(m);
+        vm.setPaymentDetail((curr: PaymentLine) => ({
+            ...curr,
+            method: m,
+            cuentaBancariaId: needsBankAccount(m) ? (curr.cuentaBancariaId || defaultAccountFor(m) || null) : null,
+            cuentaBancariaLabel: needsBankAccount(m) ? accountLabel(curr.cuentaBancariaId || defaultAccountFor(m)) : '',
+            referencia: '',
+            tarjetaTipo: m === 'Tarjeta' ? (curr.tarjetaTipo || 'Débito') : '',
+            tarjetaUltimos4: '',
+        }));
+    };
+
+    // Flechas para recorrer los métodos de pago (pedido DEMENVER): la grilla es
+    // de 3 columnas, así que ←/→ avanzan de a uno y ↑/↓ de a una fila. En un
+    // campo de texto o número las flechas son del campo (cursor, monto).
+    const metodoActual = vm.paymentMethod;
+    useEffect(() => {
+        if (!showPago || emitStep !== 'pago' || vm.isMixedPayment) return;
+        if (vm.formValues?.medioPago === 'Crédito') return;
+        const PASO: Record<string, number> = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -3, ArrowDown: 3 };
+        const onKey = (e: KeyboardEvent) => {
+            const paso = PASO[e.key];
+            if (!paso || e.defaultPrevented || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+            const el = e.target as HTMLElement | null;
+            if (el?.tagName === 'INPUT' || el?.tagName === 'TEXTAREA' || el?.tagName === 'SELECT' || el?.isContentEditable) return;
+            if (!document.querySelector('[data-metodo-pago]')) return;
+            const actual = Math.max(0, METODOS.indexOf(metodoActual));
+            const destino = actual + paso;
+            if (destino < 0 || destino >= METODOS.length) return;
+            e.preventDefault();
+            elegirMetodo(METODOS[destino]);
+            (document.querySelector(`[data-metodo-pago="${METODOS[destino]}"]`) as HTMLElement | null)?.focus();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    });
+
     const handleModalOverlay = () => {
         if (emitStep === 'pago') setShowPago(false);
         else if (emitStep === 'emitido') closeEmitido();
@@ -815,18 +853,8 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                                 {METODOS.map((m) => (
                                     <button
                                         key={m}
-                                        onClick={() => {
-                                            vm.setPaymentMethod(m);
-                                            vm.setPaymentDetail((curr: PaymentLine) => ({
-                                                ...curr,
-                                                method: m,
-                                                cuentaBancariaId: needsBankAccount(m) ? (curr.cuentaBancariaId || defaultAccountFor(m) || null) : null,
-                                                cuentaBancariaLabel: needsBankAccount(m) ? accountLabel(curr.cuentaBancariaId || defaultAccountFor(m)) : '',
-                                                referencia: '',
-                                                tarjetaTipo: m === 'Tarjeta' ? (curr.tarjetaTipo || 'Débito') : '',
-                                                tarjetaUltimos4: '',
-                                            }));
-                                        }}
+                                        data-metodo-pago={m}
+                                        onClick={() => elegirMetodo(m)}
                                         className={`flex flex-col items-center justify-center gap-2 p-4 aspect-square rounded-2xl text-xs md:text-sm font-bold transition-all border ${vm.paymentMethod === m
                                             ? '!bg-emerald-500 text-white border-none shadow-md shadow-emerald-200/50'
                                             : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'
