@@ -59,6 +59,8 @@ export interface VentaPanelItem {
     courier: string;
     nroOrden: string;
     claveOrden: string;
+    /** Clave de recojo en agencia (Shalom). Solo se le da al cliente si ya pagó todo. */
+    claveEnvio?: string;
     // Cobros inline
     saldo: number;
     estadoPagoRaw: string;
