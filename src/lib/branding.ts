@@ -117,13 +117,22 @@ const hostDefaultIsWhiteLabel = Boolean(getHostDefaultBrandKey()) && envDefaultB
 const isPublicBrandingFetchDisabled =
   String(import.meta.env.VITE_DISABLE_PUBLIC_BRANDING_FETCH || '').toLowerCase() === 'true';
 
+// La API respondía favicon "/favicon.ico", que este front no publica (la ruta
+// devuelve el index.html): el ícono del sidebar salía roto en producción. Ese
+// valor se ignora y queda el ícono de la marca estática.
+const conIconoValido = (remoto: Partial<BrandConfig>): BrandConfig => {
+  const { favicon, ...resto } = remoto;
+  const usable = favicon && !/^\/?favicon\.ico$/i.test(favicon.trim());
+  return { ...envDefaultBrand, ...resto, ...(usable ? { favicon } : {}) } as BrandConfig;
+};
+
 const getRuntimeBranding = (): BrandConfig | null => {
   if (typeof window === 'undefined') return null;
   if (isPublicBrandingFetchDisabled) return null;
 
   const runtime = (window as any).__FALCONEXT_PUBLIC_BRAND__;
   if (runtime && typeof runtime === 'object' && runtime.name) {
-    return { ...envDefaultBrand, ...runtime };
+    return conIconoValido(runtime);
   }
 
   const host = window.location.host;
@@ -134,7 +143,7 @@ const getRuntimeBranding = (): BrandConfig | null => {
     const parsed = JSON.parse(cached);
     if (parsed && typeof parsed === 'object' && parsed.name) {
       if (hostDefaultIsWhiteLabel && !parsed.isWhiteLabel) return envDefaultBrand;
-      return { ...envDefaultBrand, ...parsed };
+      return conIconoValido(parsed);
     }
   } catch {
     return null;
