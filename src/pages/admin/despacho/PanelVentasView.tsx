@@ -6,6 +6,8 @@ import moment from 'moment';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
 import { useAuthStore } from '@/zustand/auth';
+import { hasPermission, type IUserPermissions } from '@/utils/permissions';
+import { enlaceWhatsApp, mensajeVentaAlCliente, nombreDelDocumento } from './mensajeVentaAlCliente';
 import ShalomTrackingModal from '@/components/ShalomTrackingModal';
 import Select from '@/components/Select';
 import { Calendar } from '@/components/Date';
@@ -362,6 +364,50 @@ export default function PanelVentasView() {
         if (!item.comprobanteId) return;
         setEditDespachoId(item.despachoEnComprobanteId ?? item.comprobanteId);
     }, []);
+
+    // "Mensaje al cliente" (Hierba Sana, 27-10): la venta se cerró por fuera
+    // del bot y el dueño le avisa al cliente desde SU WhatsApp con el
+    // comprobante, los datos de Shalom y la clave solo si ya pagó. Va con la
+    // IA de Ventas (módulo `leads`): el mensaje promete el seguimiento del
+    // asesor, y sin IA nadie lo haría.
+    const authPanel = useAuthStore((st) => st.auth);
+    const tieneIaVentas = hasPermission(authPanel as unknown as IUserPermissions, 'leads');
+    const celularDe = (item: VentaPanelItem) =>
+        [item.clienteTelefono, item.celularDest].map((c) => String(c ?? '').replace(/\D/g, '')).find((c) => c.length >= 9) ?? '';
+    const mensajeAlCliente = async (item: VentaPanelItem) => {
+        const celular = celularDe(item);
+        if (!item.comprobanteId || !celular) {
+            useAlertStore.getState().alert('La venta no tiene celular del cliente', 'warning');
+            return;
+        }
+        // La pestaña se abre ANTES de esperar el PDF: abierta después de un
+        // await, el navegador la toma por un pop-up y la bloquea.
+        const pestana = window.open('', '_blank');
+        let pdfUrl: string | null = null;
+        try {
+            const resp = await apiClient.post(`comprobante/${item.comprobanteId}/generar-pdf`, {});
+            pdfUrl = resp.data?.data?.pdfUrl ?? resp.data?.pdfUrl ?? null;
+        } catch {
+            // Sin PDF el mensaje igual sirve: va sin el link.
+        }
+        const empresa = (authPanel as any)?.empresa;
+        const texto = mensajeVentaAlCliente({
+            cliente: item.cliente,
+            referencia: item.referencia,
+            tipoDocumento: nombreDelDocumento(item.tipo),
+            pdfUrl,
+            courier: item.courier,
+            agenciaDestino: item.agenciaDestino,
+            nroOrden: item.nroOrden,
+            claveOrden: item.claveOrden,
+            claveEnvio: item.claveEnvio,
+            saldo: Number(item.saldo ?? 0),
+            negocio: empresa?.nombreComercial || empresa?.razonSocial || 'nuestra tienda',
+        });
+        const url = enlaceWhatsApp(celular, texto);
+        if (pestana) pestana.location.href = url;
+        else window.open(url, '_blank', 'noopener');
+    };
 
     const whatsappPedido = (item: VentaPanelItem) => {
         const digits = String(item.clienteTelefono || item.celularDest || "").replace(/\D/g, '');
@@ -1740,6 +1786,16 @@ export default function PanelVentasView() {
                                 >
                                     <Icon icon="mdi:whatsapp" width={15} />
                                     <span>Enviar WhatsApp / Email</span>
+                                </button>
+                            )}
+                            {canWa && tieneIaVentas && celularDe(it) && it.tipo !== 'NOTA_CREDITO' && (
+                                <button type="button"
+                                    onClick={() => { handleCloseMenu(); void mensajeAlCliente(it); }}
+                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 font-medium"
+                                    title="Abre tu WhatsApp con el comprobante, los datos del envío y la clave de recojo si ya pagó"
+                                >
+                                    <Icon icon="solar:chat-round-check-bold-duotone" width={15} />
+                                    <span>Mensaje al cliente (venta por fuera)</span>
                                 </button>
                             )}
 
