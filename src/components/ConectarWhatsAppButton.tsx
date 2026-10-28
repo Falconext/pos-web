@@ -87,9 +87,14 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
             try {
                 const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
                 if (data?.type === 'WA_EMBEDDED_SIGNUP' && data?.event === 'FINISH') {
+                    // v5 cambió `waba_id` por `messaging_account_ids` y marca con
+                    // `is_on_biz_app` cuando el número sigue en la app del celular.
+                    const cuentas = data.data?.messaging_account_ids;
+                    const wabaV5 = Array.isArray(cuentas) ? cuentas[0] : cuentas;
                     wabaInfo.current = {
                         phoneNumberId: data.data?.phone_number_id,
-                        wabaId: data.data?.waba_id,
+                        wabaId: data.data?.waba_id ?? (typeof wabaV5 === 'object' ? wabaV5?.id : wabaV5),
+                        ...(data.data?.is_on_biz_app === true ? { coexistencia: true } : {}),
                     };
                 }
                 // Coexistencia: Meta solo devuelve la WABA; el número lo busca el backend.
@@ -124,11 +129,13 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                         config_id: FB_CONFIG_ID,
                         response_type: 'code',
                         override_default_response_type: true,
-                        extras: {
-                            setup: {},
-                            featureType: coexistencia ? 'whatsapp_business_app_onboarding' : '',
-                            sessionInfoVersion: '3',
-                        },
+                        // Desde el 15-10-2026 Meta sirve como v4 lo que no pide versión, y
+                        // en v4 `featureType` ya no aplica: el botón del celular caía al
+                        // registro normal ("este número ya está registrado"). En v5 la
+                        // conexión de la app WhatsApp Business viene activada.
+                        extras: coexistencia
+                            ? { setup: {}, version: 'v5' }
+                            : { setup: {}, featureType: '', sessionInfoVersion: '3' },
                     },
                 );
             });
