@@ -208,6 +208,22 @@ const getTemplateDetails = (plantilla: any) => {
 };
 
 
+/** Las plantillas genéricas del inicio: ya no se ofrecen al elegir diseño. */
+const PLANTILLAS_RETIRADAS = new Set(['moderna', 'minimal', 'elegante', 'tecnica', 'mercado', 'salud', 'menu', 'gadgets']);
+
+function SeccionPlantillas({ titulo, detalle, icono, children }: { titulo: string; detalle: string; icono: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-6 first:mt-0">
+      <div className="mb-3 flex items-baseline gap-2">
+        <Icon icon={icono} className="self-center text-base text-indigo-500" />
+        <h4 className="text-sm font-bold text-gray-900 dark:text-white">{titulo}</h4>
+        <span className="text-xs text-gray-400">{detalle}</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">{children}</div>
+    </section>
+  );
+}
+
 export default function TemplateTienda() {
   const vm = useConfiguracionTiendaViewModel();
   const auth = useAuthStore(s => s.auth);
@@ -282,25 +298,38 @@ export default function TemplateTienda() {
   // IDs habilitados para el rubro: lo que asignó el admin manda. Si el admin aún no
   // configuró este rubro, caemos al permiso por defecto del catálogo de plantillas.
   const allowedPlantillaIds = useMemo(() => {
-    const fromAdmin = (rubroPlantillaId || '').split(',').map(s => s.trim()).filter(Boolean);
+    // Lo que el admin asignó al rubro, sin ids retirados ni que ya no existen.
+    const existe = new Set(plantillasCatalogo.map(p => p.id));
+    const fromAdmin = (rubroPlantillaId || '').split(',').map(s => s.trim())
+      .filter(id => id && existe.has(id as any) && !PLANTILLAS_RETIRADAS.has(id));
     if (fromAdmin.length > 0) return fromAdmin;
     if (rubroNombre) {
-      const porRubro = plantillasCatalogo.filter(p => isTemplateAllowedForRubro(p, rubroNombre)).map(p => p.id);
+      // Solo las pensadas para el rubro: las universales (sin rubros) van abajo.
+      const porRubro = plantillasCatalogo
+        .filter(p => !PLANTILLAS_RETIRADAS.has(p.id) && (p.rubrosPermitidos?.length ?? 0) > 0 && isTemplateAllowedForRubro(p, rubroNombre))
+        .map(p => p.id);
       if (porRubro.length > 0) return porRubro;
     }
-    return ['moderna'];
+    return [] as string[];
   }, [plantillasCatalogo, rubroPlantillaId, rubroNombre]);
 
-  const plantillasVisibles = useMemo(
-    () => plantillasCatalogo.filter(p => allowedPlantillaIds.includes(p.id)),
-    [allowedPlantillaIds, plantillasCatalogo],
+  // Todo el catálogo se puede elegir; las del rubro solo van primero como
+  // recomendadas. Las 8 plantillas genéricas del inicio ya no se ofrecen (una
+  // tienda que todavía usa una la sigue viendo, marcada como su diseño activo).
+  const visible = (p: { id: string }) => !PLANTILLAS_RETIRADAS.has(p.id) || p.id === activeTemplateId;
+  const recomendadas = useMemo(
+    () => plantillasCatalogo.filter(p => visible(p) && allowedPlantillaIds.includes(p.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allowedPlantillaIds, plantillasCatalogo, activeTemplateId],
+  );
+  const otras = useMemo(
+    () => plantillasCatalogo.filter(p => visible(p) && !allowedPlantillaIds.includes(p.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allowedPlantillaIds, plantillasCatalogo, activeTemplateId],
   );
 
-  // La plantilla activa en la tienda es la que el emprendedor eligió (override),
-  // ya validada por el backend contra la lista permitida.
-  const seleccionada = allowedPlantillaIds.includes(activePlantillaId)
-    ? activePlantillaId
-    : allowedPlantillaIds[0];
+  // La plantilla activa es la que el emprendedor eligió (override).
+  const seleccionada = activeTemplateId;
 
   const elegirPlantilla = (id: string) => {
     if (id === activePlantillaId || vm.saving) return;
@@ -338,6 +367,95 @@ export default function TemplateTienda() {
       rubroNombre: rubroNombre || 'Tienda',
     });
     return `/diseno-preview?${params.toString()}`;
+  };
+
+  const renderTarjeta = (plantilla: any) => {
+              const isOn = seleccionada === plantilla.id;
+              const isPremium = Boolean(plantilla.premium);
+              const isPurchased = plantillasPremiumCompradas.includes(plantilla.id);
+              const isLocked = isTemplatePremiumLocked(plantilla, vm.config?.diseno);
+              const details = getTemplateDetails(plantilla);
+
+              return (
+                <div
+                  key={plantilla.id}
+                  className={`relative text-left p-4 rounded-xl border-2 transition-all flex flex-col hover:border-indigo-300 dark:hover:border-indigo-700
+                    ${isOn ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm' : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
+                >
+                  {isOn && (
+                    <span className="absolute top-2 right-2">
+                      <Icon icon="solar:check-circle-bold" className="text-indigo-600 text-sm" />
+                    </span>
+                  )}
+
+                  {isPremium && (
+                    <span className={`absolute top-2 ${isOn ? 'right-8' : 'right-2'} inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider ${isPurchased ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
+                      <Icon icon={isPurchased ? 'solar:unlock-bold' : 'solar:lock-keyhole-bold'} className="text-xs" />
+                      {isPurchased ? 'Comprada' : 'Premium'}
+                    </span>
+                  )}
+
+                  <div className="w-10 h-10 rounded-xl mb-3 flex items-center justify-center flex-shrink-0" style={{ backgroundColor: plantilla.accentColor + '18' }}>
+                    <Icon icon={plantilla.icon} className="text-xl" style={{ color: plantilla.accentColor }} />
+                  </div>
+
+                  <p className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-1">{plantilla.label}</p>
+                  <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
+                    {plantilla.description}
+                  </p>
+
+                  {isPremium && (
+                    <div className="mt-3 space-y-3 rounded-xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-900/10">
+                      <div>
+                        <p className="text-lg font-black text-gray-900 dark:text-white">S/ {Number(plantilla.precioSoles || 0).toFixed(2)}</p>
+                        <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                          {plantilla.premiumNote || 'Compra única aparte del plan'}
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        {details.features.slice(0, 3).map((feature) => (
+                          <p key={feature} className="flex items-start gap-1.5 text-[10px] font-semibold leading-snug text-gray-700 dark:text-gray-300">
+                            <Icon icon="solar:check-circle-bold" className="mt-0.5 flex-shrink-0 text-emerald-500" />
+                            {feature}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPlantilla(plantilla)}
+                      className="rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-700 ring-1 ring-gray-200 transition hover:bg-gray-50 dark:bg-slate-800 dark:text-gray-200 dark:ring-slate-700"
+                    >
+                      {isPremium ? 'Ver qué incluye' : 'Vista previa'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => elegirPlantilla(plantilla.id)}
+                      disabled={vm.saving || isLocked}
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all disabled:cursor-not-allowed
+                        ${isOn
+                          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
+                          : isLocked
+                            ? 'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500'
+                            : 'bg-gray-900 text-white hover:bg-black dark:bg-white dark:text-gray-900'}`}
+                    >
+                      {isOn ? 'Diseño activo' : isLocked ? 'Bloqueada' : 'Usar diseño'}
+                    </button>
+                    {isLocked && (
+                      <button
+                        type="button"
+                        onClick={() => solicitarPlantillaPremium(plantilla)}
+                        className="rounded-full bg-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-amber-600"
+                      >
+                        Comprar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
   };
 
   const { formData, saving } = vm;
@@ -433,431 +551,27 @@ export default function TemplateTienda() {
             Plantilla de Tienda
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
-            Elige el diseño con el que se verá tu tienda. Estos son los diseños habilitados para el rubro {rubroNombre ? <strong>{rubroNombre}</strong> : 'de tu empresa'}.
+            Elige el diseño con el que se verá tu tienda. Arriba están los recomendados para tu rubro y abajo todos los demás: puedes usar cualquiera.
             {loadingRubroPlantilla ? ' Cargando diseños del rubro...' : ' El cambio se aplica al instante en tu tienda virtual.'}
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {plantillasVisibles.map(plantilla => {
-              const isOn = seleccionada === plantilla.id;
-              const isPremium = Boolean(plantilla.premium);
-              const isPurchased = plantillasPremiumCompradas.includes(plantilla.id);
-              const isLocked = isTemplatePremiumLocked(plantilla, vm.config?.diseno);
-              const details = getTemplateDetails(plantilla);
-
-              return (
-                <div
-                  key={plantilla.id}
-                  className={`relative text-left p-4 rounded-xl border-2 transition-all flex flex-col hover:border-indigo-300 dark:hover:border-indigo-700
-                    ${isOn ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/10 shadow-sm' : 'border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900'}`}
-                >
-                  {isOn && (
-                    <span className="absolute top-2 right-2">
-                      <Icon icon="solar:check-circle-bold" className="text-indigo-600 text-sm" />
-                    </span>
-                  )}
-
-                  {isPremium && (
-                    <span className={`absolute top-2 ${isOn ? 'right-8' : 'right-2'} inline-flex items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black uppercase tracking-wider ${isPurchased ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'}`}>
-                      <Icon icon={isPurchased ? 'solar:unlock-bold' : 'solar:lock-keyhole-bold'} className="text-xs" />
-                      {isPurchased ? 'Comprada' : 'Premium'}
-                    </span>
-                  )}
-
-                  <div className="w-10 h-10 rounded-xl mb-3 flex items-center justify-center flex-shrink-0" style={{ backgroundColor: plantilla.accentColor + '18' }}>
-                    <Icon icon={plantilla.icon} className="text-xl" style={{ color: plantilla.accentColor }} />
-                  </div>
-
-                  <p className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-1">{plantilla.label}</p>
-                  <p className="text-[10px] text-gray-500 dark:text-gray-400 line-clamp-2 leading-relaxed">
-                    {plantilla.description}
-                  </p>
-
-                  {isPremium && (
-                    <div className="mt-3 space-y-3 rounded-xl border border-amber-100 bg-amber-50/70 p-3 dark:border-amber-900/40 dark:bg-amber-900/10">
-                      <div>
-                        <p className="text-lg font-black text-gray-900 dark:text-white">S/ {Number(plantilla.precioSoles || 0).toFixed(2)}</p>
-                        <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-300">
-                          {plantilla.premiumNote || 'Compra única aparte del plan'}
-                        </p>
-                      </div>
-                      <div className="space-y-1.5">
-                        {details.features.slice(0, 3).map((feature) => (
-                          <p key={feature} className="flex items-start gap-1.5 text-[10px] font-semibold leading-snug text-gray-700 dark:text-gray-300">
-                            <Icon icon="solar:check-circle-bold" className="mt-0.5 flex-shrink-0 text-emerald-500" />
-                            {feature}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPreviewPlantilla(plantilla)}
-                      className="rounded-full bg-white px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-gray-700 ring-1 ring-gray-200 transition hover:bg-gray-50 dark:bg-slate-800 dark:text-gray-200 dark:ring-slate-700"
-                    >
-                      {isPremium ? 'Ver qué incluye' : 'Vista previa'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => elegirPlantilla(plantilla.id)}
-                      disabled={vm.saving || isLocked}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all disabled:cursor-not-allowed
-                        ${isOn
-                          ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300'
-                          : isLocked
-                            ? 'bg-gray-100 text-gray-400 dark:bg-slate-800 dark:text-gray-500'
-                            : 'bg-gray-900 text-white hover:bg-black dark:bg-white dark:text-gray-900'}`}
-                    >
-                      {isOn ? 'Diseño activo' : isLocked ? 'Bloqueada' : 'Usar diseño'}
-                    </button>
-                    {isLocked && (
-                      <button
-                        type="button"
-                        onClick={() => solicitarPlantillaPremium(plantilla)}
-                        className="rounded-full bg-amber-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-amber-600"
-                      >
-                        Comprar
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {!usesLiveTemplateEditor && vm.bannerSlots.length > 0 && <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Icon icon="solar:gallery-bold-duotone" className="text-xl text-[#FF9500]" />
-              Banners de Tienda Virtual
-            </h3>
-            <span className="text-xs bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 font-bold px-3 py-1 rounded-full">
-              {vm.banners.length} / {vm.bannerIsSlider ? 3 : 6}
-            </span>
-          </div>
-          <div className="flex items-center justify-between mb-5 p-4 bg-gray-50 dark:bg-slate-900/30 rounded-xl border border-gray-200 dark:border-slate-800">
-            <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-white flex items-center gap-2">
-                <Icon icon="solar:play-circle-bold-duotone" className="text-[#FF9500]" width={18} />
-                Modo carrusel
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                {vm.bannerIsSlider
-                  ? 'Las imágenes rotan automáticamente como slider (máx. 3 slides)'
-                  : 'Layout clásico con hero, tarjetas laterales y banners promo'}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => vm.toggleBannerIsSlider(!vm.bannerIsSlider)}
-              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${vm.bannerIsSlider ? 'bg-[#FF9500]' : 'bg-gray-300 dark:bg-slate-600'}`}
+          {recomendadas.length > 0 && (
+            <SeccionPlantillas
+              titulo={`Recomendados para ${rubroNombre || 'tu rubro'}`}
+              detalle="Pensados para lo que vendes."
+              icono="solar:star-bold-duotone"
             >
-              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${vm.bannerIsSlider ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
-          </div>
-          <>
-              <div className="mb-6 bg-[#FFF8F0] dark:bg-[#FF9500]/5 border border-[#FF9500]/20 rounded-2xl p-5">
-                <p className="text-sm font-bold text-[#FF9500] mb-3 flex items-center gap-2">
-                  <Icon icon="solar:info-circle-bold" width={16} />
-                  {vm.bannerIsSlider ? 'Carrusel de slides — se rotan automáticamente en la tienda' : '¿Cómo se usan los banners en la tienda?'}
-                </p>
-
-                {vm.bannerIsSlider ? (
-                  <div className="space-y-2">
-                    {vm.bannerSlots.map((slot: any) => {
-                      const uploaded = vm.banners.find((b: any) => b.orden === slot.orden);
-                      return (
-                        <div key={slot.orden} className="flex items-center gap-3 bg-white dark:bg-[#0A0D14] rounded-xl border border-gray-200 dark:border-slate-800 p-3">
-                          <span className="w-7 h-7 rounded-full bg-[#FF9500] text-white text-xs font-black flex items-center justify-center flex-shrink-0">{slot.orden + 1}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-800 dark:text-white">{slot.label}</p>
-                            <p className="text-xs text-gray-400 dark:text-gray-500">{slot.description} · {slot.recomendado}</p>
-                          </div>
-                          {uploaded ? (
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <img src={uploaded.imagenUrl} className="w-14 h-9 object-cover rounded-lg border border-gray-200 dark:border-slate-700" alt="" />
-                              <div className="flex flex-col gap-1">
-                                <button type="button" onClick={() => vm.openEditModal(uploaded)} className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-lg p-1 hover:bg-blue-100 transition-colors">
-                                  <Icon icon="solar:pen-bold" className="w-3.5 h-3.5" />
-                                </button>
-                                <button type="button" onClick={() => vm.eliminarBanner(uploaded.id)} className="bg-red-50 dark:bg-red-900/20 text-red-500 rounded-lg p-1 hover:bg-red-100 transition-colors">
-                                  <Icon icon="mdi:delete" className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">Sin imagen</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px] text-gray-600 dark:text-gray-400">
-                    {vm.bannerSlots.map((slot: any) => (
-                      <div key={slot.orden} className="bg-white dark:bg-[#0A0D14] rounded-lg border border-gray-100 dark:border-slate-800 p-2">
-                        <p className="font-black text-gray-800 dark:text-white text-[11px]">Orden {slot.orden} — {slot.label}</p>
-                        <p className="text-gray-500 dark:text-gray-400 mt-0.5">{slot.description}</p>
-                        <p className="text-[#FF9500] font-medium mt-1">📐 {slot.recomendado}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {vm.loadingBanners ? (
-                <div className="flex items-center justify-center py-12">
-                  <Icon icon="eos-icons:loading" className="w-8 h-8 text-gray-400" />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {!vm.bannerIsSlider && vm.banners.length > 0 && (
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-                      {[...vm.banners].sort((a, b) => (a.orden ?? 999) - (b.orden ?? 999)).map((banner, index) => {
-                        const slot = vm.bannerSlots.find((s: any) => s.orden === banner.orden);
-                        const label = slot?.label || `Banner ${index + 1}`;
-                        return (
-                          <div key={banner.id} className="relative group">
-                            <div className="rounded-xl overflow-hidden border-2 border-gray-200 dark:border-slate-800 aspect-video">
-                              <img src={banner.imagenUrl} alt={banner.titulo || label} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="absolute top-2 left-2 bg-[#FF9500] text-white text-[9px] font-black px-2 py-0.5 rounded-full">
-                              {label}
-                            </div>
-                            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button type="button" onClick={() => vm.openEditModal(banner)} className="bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 rounded-full p-1.5 shadow-lg hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors">
-                                <Icon icon="solar:pen-bold" className="w-3.5 h-3.5" />
-                              </button>
-                              <button type="button" onClick={() => vm.eliminarBanner(banner.id)} className="bg-white dark:bg-slate-800 text-red-500 rounded-full p-1.5 shadow-lg hover:bg-red-50 dark:hover:bg-slate-700 transition-colors">
-                                <Icon icon="mdi:delete" className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                            <p className="mt-1.5 text-xs font-semibold text-gray-700 dark:text-gray-300 truncate px-1">{banner.titulo || label}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {vm.editingBanner && (
-                    <div className="fixed inset-0 z-50 top-[-30px] flex items-center justify-center bg-black/60 p-4">
-                      <div className="bg-white dark:bg-[#111827] rounded-2xl shadow-2xl w-full max-w-lg p-6 animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh] border dark:border-slate-800">
-                        <div className="flex items-center justify-between mb-5">
-                          <h3 className="text-lg font-bold dark:text-white">Editar Banner</h3>
-                          <button type="button" onClick={() => vm.setEditingBanner(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full text-gray-400">
-                            <Icon icon="mdi:close" width={20} />
-                          </button>
-                        </div>
-
-                        <div className="mb-4 bg-[#FFF8F0] dark:bg-[#FF9500]/5 border border-[#FF9500]/20 rounded-xl p-3 text-sm text-gray-600 dark:text-gray-400">
-                          <Icon icon="solar:info-circle-bold" className="inline text-[#FF9500] mr-1" width={14} />
-                          {vm.bannerSlots.find((s: any) => s.orden === vm.editingBanner.orden)?.description || `Orden ${vm.editingBanner.orden}`}
-                          {' · '}
-                          <strong>{vm.bannerSlots.find((s: any) => s.orden === vm.editingBanner.orden)?.recomendado}</strong>
-                        </div>
-
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Imagen del Banner</label>
-                            <div className="relative aspect-video rounded-xl overflow-hidden border-2 border-dashed border-gray-300 dark:border-slate-800 hover:border-[#FF9500] transition-colors cursor-pointer bg-gray-50 dark:bg-slate-900/50 flex items-center justify-center group/edit-img">
-                              <input type="file" accept="image/*" className="absolute inset-0 opacity-0 z-10 cursor-pointer" onChange={(e) => vm.setEditBannerFile(e.target.files?.[0] || null)} />
-                              {vm.editBannerFile ? (
-                                <img src={URL.createObjectURL(vm.editBannerFile)} className="w-full h-full object-cover" alt="Preview" />
-                              ) : vm.editingBanner.imagenUrl ? (
-                                <img src={vm.editingBanner.imagenUrl} className="w-full h-full object-cover" alt="Current" />
-                              ) : (
-                                <span className="text-gray-400 dark:text-gray-600">Clic para subir imagen</span>
-                              )}
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/edit-img:opacity-100 transition-opacity pointer-events-none">
-                                <Icon icon="solar:camera-bold" className="text-white text-3xl" />
-                              </div>
-                            </div>
-                            {vm.editBannerFile && <p className="text-xs text-green-600 mt-1">✓ Nueva imagen: {vm.editBannerFile.name}</p>}
-                          </div>
-
-                          <InputPro label="Título (Opcional)" name="titulo" value={vm.editBannerTitle} onChange={(e: any) => vm.setEditBannerTitle(e.target.value)} placeholder="Ej: Gran Liquidación" />
-                          <InputPro label="Subtítulo (Opcional)" name="subtitulo" value={vm.editBannerSubtitle} onChange={(e: any) => vm.setEditBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% de descuento" />
-
-                          <div className="relative">
-                            <InputPro label="Enlace (URL o ruta)" name="link" value={vm.editBannerLink} onChange={(e: any) => vm.setEditBannerLink(e.target.value)} placeholder="/tienda/producto/xyz" />
-                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O vincula al catálogo por categoría:</label>
-                            <select
-                              value=""
-                              onChange={(e) => { const v = e.target.value; if (!v) return; vm.setEditBannerLink(vm.generarLinkCatalogoCategoria(v)); e.currentTarget.value = ''; }}
-                              className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                            >
-                              <option value="">Seleccionar categoría...</option>
-                              {vm.storeCategories.map((cat: any, idx: number) => {
-                                const name = vm.getCategoryLabel(cat);
-                                if (!name) return null;
-                                return <option key={`${name}-${idx}`} value={name}>{name}</option>;
-                              })}
-                            </select>
-                            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O busca un producto:</label>
-                            <input
-                              type="text"
-                              value={vm.editSearch}
-                              onChange={(e) => vm.setEditSearch(e.target.value)}
-                              placeholder="Buscar producto..."
-                              className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                            />
-                            {vm.editSearch.length > 2 && (
-                              <div className="absolute top-full left-0 right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 shadow-xl rounded-b-xl z-10 max-h-48 overflow-y-auto mt-1">
-                                {vm.searchingEdit ? (
-                                  <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Buscando...</div>
-                                ) : vm.editResults.length > 0 ? (
-                                  vm.editResults.map((p: any) => (
-                                    <div key={p.id} onClick={() => { vm.setEditBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`); vm.setEditSearch(''); }} className="p-3 hover:bg-[#FFF8F0] dark:hover:bg-slate-800 cursor-pointer text-sm border-b dark:border-slate-800 last:border-0 flex items-center gap-3">
-                                      {p.imagenUrl && <img src={p.imagenUrl} className="w-8 h-8 object-contain rounded" alt="" />}
-                                      <div>
-                                        <div className="font-medium truncate dark:text-white">{p.descripcion}</div>
-                                        <div className="text-xs text-gray-400 dark:text-gray-500">S/ {p.precioUnitario}</div>
-                                      </div>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div className="p-3 text-center text-xs text-gray-500">Sin resultados</div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-
-                          {!vm.bannerIsSlider && (
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orden / Posición</label>
-                              <select
-                                value={vm.editBannerOrden}
-                                onChange={(e) => vm.setEditBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
-                                className="w-full rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] text-sm dark:text-white"
-                              >
-                                <option value="">Sin orden</option>
-                                {vm.bannerSlots.map((slot: any) => (
-                                  <option key={slot.orden} value={slot.orden}>{slot.orden} — {slot.label} ({slot.recomendado})</option>
-                                ))}
-                              </select>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex justify-end gap-2 mt-6">
-                          <Button type="button" color="secondary" onClick={() => vm.setEditingBanner(null)}>Cancelar</Button>
-                          <Button type="button" onClick={vm.handleUpdateBanner} disabled={saving}>
-                            {saving ? 'Guardando...' : 'Guardar Cambios'}
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {vm.canUploadBanner && (
-                    <div className="bg-gray-50 dark:bg-slate-900/30 border border-gray-200 dark:border-slate-800 rounded-xl p-5">
-                      <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-1">
-                        {vm.bannerIsSlider ? `Agregar slide (${vm.banners.length} / 3)` : 'Subir Nuevo Banner'}
-                      </h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                        {vm.bannerIsSlider
-                          ? `Se asignará como Slide ${vm.banners.length + 1}. Recomendado: ${vm.bannerSlots[0]?.recomendado || '1400×500px'}`
-                          : 'Elige el orden según la posición que quieres en la tienda (ver guía arriba)'}
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                        <InputPro label="Título (Opcional)" name="tituloNew" value={vm.newBannerTitle} onChange={(e: any) => vm.setNewBannerTitle(e.target.value)} placeholder="Ej: Ofertas Especiales" />
-                        <InputPro label="Subtítulo (Opcional)" name="subtituloNew" value={vm.newBannerSubtitle} onChange={(e: any) => vm.setNewBannerSubtitle(e.target.value)} placeholder="Ej: Hasta 50% off" />
-
-                        {!vm.bannerIsSlider && (
-                          <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Orden / Posición</label>
-                            <select
-                              value={vm.newBannerOrden}
-                              onChange={(e: any) => vm.setNewBannerOrden(e.target.value === '' ? '' : Number(e.target.value))}
-                              className="w-full rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] text-sm dark:text-white"
-                            >
-                              <option value="">Automático</option>
-                              {vm.bannerSlots.map((slot: any) => (
-                                <option key={slot.orden} value={slot.orden}>{slot.orden} — {slot.label} ({slot.recomendado})</option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-
-                        <div className="relative">
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Enlace (Opcional)</label>
-                          <input
-                            type="text"
-                            value={vm.newBannerLink}
-                            onChange={(e: any) => vm.setNewBannerLink(e.target.value)}
-                            placeholder="/tienda/mi-tienda/producto/123"
-                            className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                          />
-                          <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mt-2 mb-1">O por categoría:</label>
-                          <select
-                            value=""
-                            onChange={(e) => { const v = e.target.value; if (!v) return; vm.setNewBannerLink(vm.generarLinkCatalogoCategoria(v)); e.currentTarget.value = ''; }}
-                            className="w-full text-sm rounded-lg border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                          >
-                            <option value="">Seleccionar categoría...</option>
-                            {vm.storeCategories.map((cat: any, idx: number) => {
-                              const name = vm.getCategoryLabel(cat);
-                              if (!name) return null;
-                              return <option key={`${name}-${idx}`} value={name}>{name}</option>;
-                            })}
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="relative mb-4">
-                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">O busca un producto para el enlace:</label>
-                        <input
-                          type="text"
-                          value={vm.productSearch}
-                          onChange={(e) => vm.setProductSearch(e.target.value)}
-                          placeholder="Buscar producto..."
-                          className="w-full text-sm border-gray-300 dark:border-slate-800 bg-white dark:bg-[#0A0D14] rounded-lg focus:ring-[#FF9500] focus:border-[#FF9500] dark:text-white"
-                        />
-                        {vm.productSearch.length > 2 && (
-                          <div className="absolute top-full left-0 right-0 bg-white dark:bg-[#111827] border border-gray-200 dark:border-slate-800 shadow-xl rounded-b-xl z-10 max-h-48 overflow-y-auto mt-1">
-                            {vm.searchingProducts ? (
-                              <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Buscando...</div>
-                            ) : vm.productResults.length > 0 ? (
-                              vm.productResults.map((p: any) => (
-                                <div key={p.id} onClick={() => { vm.setNewBannerLink(`/tienda/${formData.slugTienda}/producto/${p.slug || p.id}`); vm.setProductSearch(''); }} className="p-3 hover:bg-[#FFF8F0] dark:hover:bg-slate-800 cursor-pointer text-sm border-b dark:border-slate-800 last:border-0 flex items-center gap-3">
-                                  {p.imagenUrl && <img src={p.imagenUrl} className="w-8 h-8 object-contain rounded" alt="" />}
-                                  <div>
-                                    <div className="font-medium truncate dark:text-white">{p.descripcion}</div>
-                                    <div className="text-xs text-gray-400 dark:text-gray-500">S/ {p.precioUnitario}</div>
-                                  </div>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="p-3 text-center text-xs text-gray-500 dark:text-gray-400">Sin resultados</div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-
-                      <label className="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-gray-300 dark:border-slate-800 rounded-xl cursor-pointer bg-white dark:bg-slate-900/50 hover:bg-[#FFF8F0] dark:hover:bg-[#FF9500]/10 hover:border-[#FF9500] transition-colors">
-                        <div className="flex flex-col items-center justify-center py-4">
-                          {vm.uploadingBanner ? (
-                            <>
-                              <Icon icon="eos-icons:loading" className="w-10 h-10 text-[#FF9500] mb-2 animate-spin" />
-                              <p className="text-sm text-gray-500 font-semibold">Subiendo...</p>
-                            </>
-                          ) : (
-                            <>
-                              <Icon icon="solar:cloud-upload-bold-duotone" className="w-10 h-10 text-gray-400 dark:text-gray-600 mb-2" />
-                              <p className="text-sm text-gray-600 dark:text-gray-400"><span className="font-bold">Clic para subir</span> o arrastra la imagen</p>
-                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">PNG, JPG o WEBP · máx 2.5MB</p>
-                            </>
-                          )}
-                        </div>
-                        <input type="file" className="hidden" accept="image/png,image/jpeg,image/jpg,image/webp" onChange={vm.handleBannerFileChange} disabled={vm.uploadingBanner} />
-                      </label>
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-        </div>}
+              {recomendadas.map(renderTarjeta)}
+            </SeccionPlantillas>
+          )}
+          <SeccionPlantillas
+            titulo={recomendadas.length > 0 ? 'También te podría interesar' : 'Todos los diseños'}
+            detalle="Cualquiera sirve para tu tienda: elige el que más te guste."
+            icono="solar:widget-5-bold-duotone"
+          >
+            {otras.map(renderTarjeta)}
+          </SeccionPlantillas>
+        </div>
       </div>
       {previewPlantilla && (() => {
         const details = getTemplateDetails(previewPlantilla);
