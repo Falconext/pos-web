@@ -10,6 +10,7 @@ import useAlertStore from '@/zustand/alert'
 import { EmbudoBoard } from './EmbudoBoard'
 import { BiPanel } from './BiPanel'
 import { DisparadoresPanel } from './DisparadoresPanel'
+import { EnviosPanel } from './EnviosPanel'
 import { DemosPanel } from './DemosPanel'
 import { VisitasPanel } from './VisitasPanel'
 import { Ficha360 } from './Ficha360'
@@ -116,6 +117,7 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
       )}
       {vista === 'analitica' && <BiPanel />}
       {vista === 'avisos' && <DisparadoresPanel />}
+      {vista === 'envios' && <EnviosPanel />}
       {vista === 'demos' && <DemosPanel />}
       {vista === 'vendedor' && <MiVendedorPanel vm={vm} negocio={negocio} />}
       {vm.ficha360 && (
@@ -140,6 +142,12 @@ export default function LeadsView({ vista }: { vista: VistaLeads }) {
           prospectoActivo={
             vm.prospectos.find((p) => p.conversacionId === vm.conversacion?.id) ?? null
           }
+          etiquetas={vm.etiquetas}
+          onPonerEtiqueta={vm.actions.ponerEtiqueta}
+          onQuitarEtiqueta={vm.actions.quitarEtiqueta}
+          onCrearEtiqueta={vm.actions.crearEtiqueta}
+          onEditarEtiqueta={vm.actions.editarEtiqueta}
+          onEliminarEtiqueta={vm.actions.eliminarEtiqueta}
           chat={
             vm.conversacion || vm.loadingConversacion ? (
               <ChatPanel vm={vm} />

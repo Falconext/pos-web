@@ -12,6 +12,9 @@ import type {
   EstadoLeadProspecto,
   LeadDocumento,
   TipoLeadDocumento,
+  EtiquetaCatalogo,
+  EtiquetaLead,
+  ColorEtiqueta,
 } from '@/services/leads.service'
 
 const RESUMEN_VACIO: ResumenProspectos = {
@@ -44,6 +47,8 @@ export function useLeadsViewModel() {
    */
   const [chatsDePrueba, setChatsDePrueba] = useState<LeadConversacion[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  /** Catálogo de etiquetas de la empresa, con cuántos chats tiene cada una. */
+  const [etiquetas, setEtiquetas] = useState<EtiquetaCatalogo[]>([])
 
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 350)
@@ -223,6 +228,89 @@ export function useLeadsViewModel() {
    * únicos donde no aparecía el interruptor, justo los que usa el dueño para
    * probar su bot.
    */
+  // ─── Etiquetas ─────────────────────────────────────────────────────────────
+
+  const cargarEtiquetas = useCallback(async () => {
+    try {
+      setEtiquetas(await api.fetchEtiquetas())
+    } catch {
+      /* silencioso: sin catálogo, el chat igual muestra las que tiene */
+    }
+  }, [])
+
+  useEffect(() => {
+    cargarEtiquetas()
+  }, [cargarEtiquetas])
+
+  /** Pinta en la lista y en los chats de prueba las etiquetas con que quedó el chat. */
+  const reflejarEtiquetas = (conversacionId: number, lista: EtiquetaLead[]) => {
+    setProspectos((prev) =>
+      prev.map((p) => (p.conversacionId === conversacionId ? { ...p, etiquetas: lista } : p)),
+    )
+    setChatsDePrueba((prev) =>
+      prev.map((c) => (c.id === conversacionId ? { ...c, etiquetas: lista } : c)),
+    )
+  }
+
+  const ponerEtiqueta = async (
+    conversacionId: number,
+    datos: { etiquetaId: number } | { nombre: string; color?: ColorEtiqueta },
+  ) => {
+    try {
+      reflejarEtiquetas(conversacionId, await api.ponerEtiqueta(conversacionId, datos))
+      // Puede haber nacido una etiqueta nueva, y los conteos cambian.
+      cargarEtiquetas()
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo poner la etiqueta', 'error')
+    }
+  }
+
+  const quitarEtiqueta = async (conversacionId: number, etiquetaId: number) => {
+    try {
+      reflejarEtiquetas(conversacionId, await api.quitarEtiqueta(conversacionId, etiquetaId))
+      cargarEtiquetas()
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo quitar la etiqueta', 'error')
+    }
+  }
+
+  /** true si se guardó; el modal se queda abierto con lo escrito si falla. */
+  const crearEtiqueta = async (nombre: string, color: ColorEtiqueta): Promise<boolean> => {
+    try {
+      await api.crearEtiqueta({ nombre, color })
+      await cargarEtiquetas()
+      return true
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo crear la etiqueta', 'error')
+      return false
+    }
+  }
+
+  const editarEtiqueta = async (
+    id: number,
+    datos: { nombre?: string; color?: ColorEtiqueta },
+  ): Promise<boolean> => {
+    try {
+      await api.editarEtiqueta(id, datos)
+      // El nombre y el color se ven en cada fila: recargar todo, no solo el catálogo.
+      await Promise.all([cargarEtiquetas(), cargarProspectos(true)])
+      return true
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo editar la etiqueta', 'error')
+      return false
+    }
+  }
+
+  const eliminarEtiqueta = async (id: number) => {
+    try {
+      await api.eliminarEtiqueta(id)
+      await Promise.all([cargarEtiquetas(), cargarProspectos(true)])
+      alertStore.alert('Etiqueta borrada', 'success')
+    } catch (e: any) {
+      alertStore.alert(e.message || 'No se pudo borrar la etiqueta', 'error')
+    }
+  }
+
   const toggleBot = async (conversacionId: number, activo: boolean) => {
     try {
       await api.setBotActivo(conversacionId, activo)
@@ -525,6 +613,7 @@ export function useLeadsViewModel() {
     convirtiendo,
     enviandoMensaje,
     porEstado,
+    etiquetas,
     actions: {
       recargar: cargarProspectos,
       abrirConversacion,
@@ -542,6 +631,11 @@ export function useLeadsViewModel() {
       crearDocumento,
       eliminarDocumento,
       reindexarDocumento,
+      ponerEtiqueta,
+      quitarEtiqueta,
+      crearEtiqueta,
+      editarEtiqueta,
+      eliminarEtiqueta,
     },
   }
 }

@@ -350,6 +350,7 @@ export const MODULE_META: Record<string, ModuleMeta> = {
       { codigo: 'leads:visitas', nombre: 'Visitas', ruta: '/administrador/leads/visitas' },
       { codigo: 'leads:analitica', nombre: 'Analítica', ruta: '/administrador/leads/analitica' },
       { codigo: 'leads:avisos', nombre: 'Avisos', ruta: '/administrador/leads/avisos' },
+      { codigo: 'leads:envios', nombre: 'Envíos masivos', ruta: '/administrador/leads/envios' },
       { codigo: 'leads:vendedor', nombre: 'Mi vendedor', ruta: '/administrador/leads/vendedor' },
     ],
   },

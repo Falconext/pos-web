@@ -1,7 +1,13 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
 import { ESTADO_META, colorAvatar, colorPuntaje, nombreVisible, iniciales, canalDe, contactoVisible } from './LeadsModel'
-import type { LeadProspecto, LeadConversacion } from '@/services/leads.service'
+import type {
+  LeadProspecto,
+  LeadConversacion,
+  EtiquetaCatalogo,
+  ColorEtiqueta,
+} from '@/services/leads.service'
+import { AdministrarEtiquetas, ChipEtiqueta, EtiquetasDelChat, FiltroEtiqueta } from './Etiquetas'
 import { useThemeStore } from '@/zustand/theme'
 
 /**
@@ -35,7 +41,19 @@ export interface BandejaProps {
   onVerHistorial: (telefono: string) => void
   chat: React.ReactNode
   prospectoActivo: LeadProspecto | null
+  etiquetas: EtiquetaCatalogo[]
+  onPonerEtiqueta: (
+    conversacionId: number,
+    datos: { etiquetaId: number } | { nombre: string; color?: ColorEtiqueta },
+  ) => void
+  onQuitarEtiqueta: (conversacionId: number, etiquetaId: number) => void
+  onCrearEtiqueta: (nombre: string, color: ColorEtiqueta) => Promise<boolean>
+  onEditarEtiqueta: (id: number, datos: { nombre?: string; color?: ColorEtiqueta }) => Promise<boolean>
+  onEliminarEtiqueta: (id: number) => void
 }
+
+/** Cuántas etiquetas caben en la fila antes del "+N". */
+const ETIQUETAS_EN_FILA = 2
 
 type Filtro = 'todos' | 'pausados' | 'calientes'
 
@@ -215,7 +233,7 @@ function FilaConversacion({
             {p.puntaje}
           </span>
         </span>
-        {(meta || p.anuncio) && (
+        {(meta || p.anuncio || !!p.etiquetas?.length) && (
           <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
             {meta && (
               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
@@ -230,6 +248,17 @@ function FilaConversacion({
               >
                 <Icon icon="mdi:bullhorn" width={10} className="flex-none" />
                 Anuncio
+              </span>
+            )}
+            {p.etiquetas?.slice(0, ETIQUETAS_EN_FILA).map((e) => (
+              <ChipEtiqueta key={e.id} etiqueta={e} chico />
+            ))}
+            {(p.etiquetas?.length ?? 0) > ETIQUETAS_EN_FILA && (
+              <span
+                className="text-[10px] font-semibold text-gray-400"
+                title={p.etiquetas!.slice(ETIQUETAS_EN_FILA).map((e) => e.nombre).join(', ')}
+              >
+                +{p.etiquetas!.length - ETIQUETAS_EN_FILA}
               </span>
             )}
           </span>
@@ -299,11 +328,14 @@ function FichaLateral({
   p,
   prueba,
   onVerHistorial,
+  etiquetas,
 }: {
   p: LeadProspecto | null
   /** El chat abierto cuando no tiene lead detrás (una prueba del negocio). */
   prueba: LeadConversacion | null
   onVerHistorial: (telefono: string) => void
+  /** El editor de etiquetas del chat, ya armado por la bandeja. */
+  etiquetas: React.ReactNode
 }) {
   if (!p) {
     // Un chat de prueba no tiene BANT que mostrar, pero tampoco merece una
@@ -420,6 +452,10 @@ function FichaLateral({
         </Dato>
       </div>
 
+      <Seccion icon="solar:tag-linear" titulo="Etiquetas">
+        {etiquetas}
+      </Seccion>
+
       {p.proximaAccion && (
         <Seccion icon="solar:bell-linear" titulo="Próxima acción">
           <div className="flex gap-3">
@@ -473,8 +509,18 @@ export function BandejaChats({
   onVerHistorial,
   chat,
   prospectoActivo,
+  etiquetas,
+  onPonerEtiqueta,
+  onQuitarEtiqueta,
+  onCrearEtiqueta,
+  onEditarEtiqueta,
+  onEliminarEtiqueta,
 }: BandejaProps) {
   const [filtro, setFiltro] = useState<Filtro>('todos')
+  const [etiquetaFiltro, setEtiquetaFiltro] = useState<number | null>(null)
+  const [administrando, setAdministrando] = useState(false)
+  // Si borran la etiqueta del filtro, el filtro no puede quedar escondiendo todo.
+  const filtroVigente = etiquetas.some((e) => e.id === etiquetaFiltro) ? etiquetaFiltro : null
   const { ref, alto } = useAltoHastaElBorde()
   // Plegar la lista deja una columna de avatares y le da el ancho al chat.
   // Se recuerda por navegador: quien la pliega suele querer seguir así.
@@ -503,6 +549,7 @@ export function BandejaChats({
       .filter((p) => {
         if (filtro === 'pausados' && p.botActivo) return false
         if (filtro === 'calientes' && p.puntaje < 70) return false
+        if (filtroVigente != null && !p.etiquetas?.some((e) => e.id === filtroVigente)) return false
         if (!q) return true
         return (
           (p.nombreProspecto || '').toLowerCase().includes(q) ||
@@ -510,7 +557,7 @@ export function BandejaChats({
         )
       })
       .sort((a, b) => +new Date(b.actualizadoEn) - +new Date(a.actualizadoEn))
-  }, [prospectos, busqueda, filtro])
+  }, [prospectos, busqueda, filtro, filtroVigente])
 
   const enPausa = prospectos.filter((p) => !p.botActivo).length
 
@@ -565,7 +612,7 @@ export function BandejaChats({
               className="w-full rounded-xl border border-transparent bg-gray-100/80 py-2.5 pl-9 pr-3 text-[13px] text-gray-900 placeholder:text-gray-400 focus:border-emerald-300 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-100 dark:bg-slate-800 dark:text-white dark:focus:ring-emerald-900/40"
             />
           </div>
-          <div className="mt-3 flex gap-1.5">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {FILTROS.map((f) => (
               <button
                 key={f.id}
@@ -584,6 +631,12 @@ export function BandejaChats({
                 )}
               </button>
             ))}
+            <FiltroEtiqueta
+              catalogo={etiquetas}
+              valor={filtroVigente}
+              onCambiar={setEtiquetaFiltro}
+              onAdministrar={() => setAdministrando(true)}
+            />
           </div>
           </>
           )}
@@ -666,8 +719,29 @@ export function BandejaChats({
               : null
           }
           onVerHistorial={onVerHistorial}
+          etiquetas={
+            prospectoActivo && (
+              <EtiquetasDelChat
+                actuales={prospectoActivo.etiquetas ?? []}
+                catalogo={etiquetas}
+                onPoner={(datos) => onPonerEtiqueta(prospectoActivo.conversacionId, datos)}
+                onQuitar={(id) => onQuitarEtiqueta(prospectoActivo.conversacionId, id)}
+                onAdministrar={() => setAdministrando(true)}
+              />
+            )
+          }
         />
       </aside>
+
+      {administrando && (
+        <AdministrarEtiquetas
+          catalogo={etiquetas}
+          onCrear={onCrearEtiqueta}
+          onEditar={onEditarEtiqueta}
+          onEliminar={onEliminarEtiqueta}
+          onCerrar={() => setAdministrando(false)}
+        />
+      )}
     </div>
   )
 }

@@ -190,6 +190,7 @@ export type VistaLeads =
   | 'visitas'
   | 'analitica'
   | 'avisos'
+  | 'envios'
   | 'demos'
   | 'vendedor'
 
@@ -199,6 +200,7 @@ export const VISTA_POR_RUTA: Record<string, VistaLeads> = {
   visitas: 'visitas',
   analitica: 'analitica',
   avisos: 'avisos',
+  envios: 'envios',
   demos: 'demos',
   vendedor: 'vendedor',
 }
@@ -223,6 +225,10 @@ export const VISTA_META: Record<VistaLeads, { titulo: string; descripcion: strin
   avisos: {
     titulo: 'Avisos',
     descripcion: 'Los mensajes que salen solos a tus clientes: qué está por salir, qué salió y qué no salió y por qué.',
+  },
+  envios: {
+    titulo: 'Envíos masivos',
+    descripcion: 'Promociones y novedades a un grupo de tus contactos, respetando las bajas y el tope de mensajes.',
   },
   vendedor: {
     titulo: 'Mi vendedor',

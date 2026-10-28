@@ -1,0 +1,51 @@
+import { useSearchParams } from 'react-router-dom'
+import { Icon } from '@iconify/react'
+import { SegmentosPanel } from './SegmentosPanel'
+import { PlantillasPanel } from './PlantillasPanel'
+import { EnviosMasivosPanel } from './EnviosMasivosPanel'
+
+/**
+ * Envíos masivos: mandarle un mensaje a un grupo de contactos que ya le
+ * escribieron al negocio. Tres partes: a quién (segmentos), qué (plantillas
+ * aprobadas por Meta) y el envío con sus resultados.
+ */
+type Pestana = 'envios' | 'segmentos' | 'plantillas'
+
+const PESTANAS: { id: Pestana; label: string; icono: string }[] = [
+  { id: 'envios', label: 'Envíos', icono: 'solar:plain-2-linear' },
+  { id: 'segmentos', label: 'Segmentos', icono: 'solar:users-group-rounded-linear' },
+  { id: 'plantillas', label: 'Plantillas', icono: 'solar:document-text-linear' },
+]
+
+export function EnviosPanel() {
+  const [params, setParams] = useSearchParams()
+  const pestana = (PESTANAS.find((p) => p.id === params.get('tab'))?.id ?? PESTANAS[0].id) as Pestana
+
+  return (
+    <div>
+      <div role="tablist" className="mb-4 flex gap-1 overflow-x-auto border-b border-gray-200 dark:border-slate-800">
+        {PESTANAS.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            role="tab"
+            aria-selected={pestana === p.id}
+            // Cambiar de pestaña cierra el envío o el asistente que estuviera abierto.
+            onClick={() => setParams({ tab: p.id })}
+            className={`-mb-px inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2.5 text-[13px] font-semibold transition-colors ${
+              pestana === p.id
+                ? 'border-gray-900 text-gray-900 dark:border-white dark:text-white'
+                : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
+            }`}
+          >
+            <Icon icon={p.icono} width={16} />
+            {p.label}
+          </button>
+        ))}
+      </div>
+      {pestana === 'envios' && <EnviosMasivosPanel />}
+      {pestana === 'segmentos' && <SegmentosPanel />}
+      {pestana === 'plantillas' && <PlantillasPanel />}
+    </div>
+  )
+}

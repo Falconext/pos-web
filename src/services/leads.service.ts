@@ -40,9 +40,33 @@ export interface LeadProspecto {
   cotizacion: { id: number; codigo: string } | null
   /** Último anuncio de Facebook/Instagram por el que llegó a escribir. */
   anuncio?: AnuncioDeOrigen | null
+  /** Etiquetas que el negocio le puso al chat ("mayorista", "compró perfume"). */
+  etiquetas?: EtiquetaLead[]
   conversacionId: number
   creadoEn: string
   actualizadoEn: string
+}
+
+/** Claves de la paleta; el backend rechaza cualquier otra. */
+export type ColorEtiqueta =
+  | 'gris'
+  | 'violeta'
+  | 'azul'
+  | 'verde'
+  | 'amarillo'
+  | 'naranja'
+  | 'rojo'
+  | 'rosa'
+
+export interface EtiquetaLead {
+  id: number
+  nombre: string
+  color: ColorEtiqueta
+}
+
+/** Etiqueta del catálogo, con cuántos chats la tienen. */
+export interface EtiquetaCatalogo extends EtiquetaLead {
+  contactos: number
 }
 
 export interface AnuncioDeOrigen {
@@ -68,6 +92,7 @@ export interface LeadConversacion {
   actualizadoEn: string
   creadoEn: string
   prospecto?: { puntaje: number; estado: EstadoLeadProspecto } | null
+  etiquetas?: EtiquetaLead[]
 }
 
 export interface LeadMensaje {
@@ -220,6 +245,62 @@ export async function fetchProspectos(opts: {
 export async function fetchConversaciones(): Promise<LeadConversacion[]> {
   const r = await get<LeadConversacion[]>('/leads/conversaciones')
   if (!r.success || !r.data) throw new Error(r.error || 'Error al cargar conversaciones')
+  return r.data
+}
+
+// ─── Etiquetas de contactos ─────────────────────────────────────────────────
+
+export async function fetchEtiquetas(): Promise<EtiquetaCatalogo[]> {
+  const r = await get<EtiquetaCatalogo[]>('/leads/etiquetas')
+  if (!r.success || !r.data) throw new Error(r.error || 'Error al cargar las etiquetas')
+  return r.data
+}
+
+export async function crearEtiqueta(datos: {
+  nombre: string
+  color?: ColorEtiqueta
+}): Promise<EtiquetaLead> {
+  const r = await post<EtiquetaLead>('/leads/etiquetas', datos)
+  if (!r.success || !r.data) throw new Error(r.error || 'No se pudo crear la etiqueta')
+  return r.data
+}
+
+export async function editarEtiqueta(
+  id: number,
+  datos: { nombre?: string; color?: ColorEtiqueta },
+): Promise<EtiquetaLead> {
+  const r = await patch<EtiquetaLead>(`/leads/etiquetas/${id}`, datos)
+  if (!r.success || !r.data) throw new Error(r.error || 'No se pudo editar la etiqueta')
+  return r.data
+}
+
+export async function eliminarEtiqueta(id: number): Promise<void> {
+  const r = await del(`/leads/etiquetas/${id}`)
+  if (!r.success) throw new Error(r.error || 'No se pudo borrar la etiqueta')
+}
+
+/**
+ * Le pone una etiqueta al chat: una existente o una por nombre, que el
+ * servidor crea si no existe (sin duplicar por mayúsculas o tildes).
+ * Devuelve las etiquetas con las que quedó el chat.
+ */
+export async function ponerEtiqueta(
+  conversacionId: number,
+  datos: { etiquetaId: number } | { nombre: string; color?: ColorEtiqueta },
+): Promise<EtiquetaLead[]> {
+  const r = await post<EtiquetaLead[]>(`/leads/conversaciones/${conversacionId}/etiquetas`, datos)
+  if (!r.success || !r.data) throw new Error(r.error || 'No se pudo poner la etiqueta')
+  return r.data
+}
+
+export async function quitarEtiqueta(
+  conversacionId: number,
+  etiquetaId: number,
+): Promise<EtiquetaLead[]> {
+  const r = await del<EtiquetaLead[]>(
+    `/leads/conversaciones/${conversacionId}/etiquetas/${etiquetaId}`,
+  )
+  if (!r.success || !r.data) throw new Error(r.error || 'No se pudo quitar la etiqueta')
   return r.data
 }
 
