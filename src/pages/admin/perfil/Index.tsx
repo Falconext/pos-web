@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 import Button from '@/components/Button';
+import NumerosWhatsapp from '@/components/NumerosWhatsapp';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import ConectarInstagramButton from '@/components/ConectarInstagramButton';
 import ConectarMessengerButton from '@/components/ConectarMessengerButton';
@@ -565,19 +566,19 @@ export default function PerfilIndex() {
                                 <div>
                                     <h2 className="text-lg font-black text-gray-950 dark:text-white">Conectar mi WhatsApp</h2>
                                     <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
-                                        Conecta tu número de <strong>WhatsApp Business</strong> para que los avisos de despacho a tus clientes salgan desde <strong>tu propio número</strong>. Se configura solo, en unos clics.
+                                        Conecta tus números de <strong>WhatsApp Business</strong>: la IA de Ventas contesta en ellos y todos los chats llegan a la misma bandeja. Los avisos de despacho salen desde <strong>tu propio número</strong>.
                                     </p>
                                 </div>
                             </div>
                         </div>
                         <div className="p-5">
-                            <ConectarWhatsAppButton
-                                numeroConectado={
-                                    perfil.empresa.whatsappProvider === 'EMPRESA' && perfil.empresa.whatsappApiTokenConfigured
-                                        ? (perfil.empresa.whatsappPhoneNumberId ?? 'tu número')
-                                        : null
-                                }
-                            />
+                            {/* Con un número conectado se ve la lista de números: sumar
+                                otro no puede reemplazar al del bot por error. */}
+                            {perfil.empresa.whatsappProvider === 'EMPRESA' && perfil.empresa.whatsappApiTokenConfigured ? (
+                                <NumerosWhatsapp />
+                            ) : (
+                                <ConectarWhatsAppButton numeroConectado={null} />
+                            )}
                         </div>
                     </div>
                     )}

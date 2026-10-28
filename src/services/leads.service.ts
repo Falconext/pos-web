@@ -40,6 +40,8 @@ export interface LeadProspecto {
   cotizacion: { id: number; codigo: string } | null
   /** Último anuncio de Facebook/Instagram por el que llegó a escribir. */
   anuncio?: AnuncioDeOrigen | null
+  /** Número de la empresa por el que conversa (cuando tiene varios). */
+  numeroWhatsappId?: string | null
   /** Etiquetas que el negocio le puso al chat ("mayorista", "compró perfume"). */
   etiquetas?: EtiquetaLead[]
   conversacionId: number

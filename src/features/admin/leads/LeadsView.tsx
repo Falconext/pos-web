@@ -37,6 +37,7 @@ import type {
   TipoLeadDocumento,
 } from '@/services/leads.service'
 import { ReporteDiarioCard } from './ReporteDiarioCard'
+import { useNumerosWhatsapp } from './useNumerosWhatsapp'
 
 /**
  * Cada vista (Chats, Embudo, Visitas, Analítica, Avisos) es una página propia con su
@@ -211,6 +212,7 @@ function SwitchIa({
 }
 
 function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
+  const { nombreDe } = useNumerosWhatsapp()
   const [confirmarBorrado, setConfirmarBorrado] = useState(false)
   const [menuAbierto, setMenuAbierto] = useState(false)
   const conv = vm.conversacion
@@ -229,6 +231,7 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
     )
   }
   if (!conv) return null
+  const linea = nombreDe(conv.numeroWhatsappId)
   const prospecto = conv.prospecto
   // La pausa es de la conversación. Antes se leía del prospecto y en los chats
   // de prueba —que no tienen— el interruptor no aparecía: el empresario
@@ -272,6 +275,15 @@ function ChatPanel({ vm }: { vm: ReturnType<typeof useLeadsViewModel> }) {
               <span className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold ${meta.badge}`}>
                 <Icon icon={meta.icon} width={9} />
                 {meta.label}
+              </span>
+            )}
+            {linea && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                title="Le contestas desde este número"
+              >
+                <Icon icon="mdi:whatsapp" width={9} />
+                {linea}
               </span>
             )}
             {!prospecto && (
