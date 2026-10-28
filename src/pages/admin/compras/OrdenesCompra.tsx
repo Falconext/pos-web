@@ -12,6 +12,7 @@ import useAlertStore from '@/zustand/alert';
 import { useDebounce } from '@/hooks/useDebounce';
 import Modal from '@/components/Modal';
 import ModalConfirm from '@/components/ModalConfirm';
+import MenuAcciones from '@/components/Datatable/MenuAcciones';
 import TableSkeleton from '@/components/Skeletons/table';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
@@ -208,6 +209,34 @@ export default function OrdenesCompraPage() {
 
     const monedaFmt = (o: OrdenCompra) => (o.moneda === 'USD' ? 'US$' : 'S/');
 
+    // Editar, recibir y anular solo mientras la orden sigue abierta.
+    const abierta = (o: OrdenCompra) => o.estado === 'BORRADOR' || o.estado === 'EMITIDA';
+    const accionesOrden = [
+        {
+            tooltip: 'Recibir mercadería (crear compra)',
+            icon: <Icon icon="solar:box-bold-duotone" className="text-emerald-600" />,
+            onClick: (o: OrdenCompra) => setRecibirOrden(o),
+            condition: abierta,
+        },
+        {
+            tooltip: 'Descargar PDF para el proveedor',
+            icon: (o: OrdenCompra) => <Icon icon={descargandoId === o.id ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} />,
+            onClick: (o: OrdenCompra) => descargarPdf(o),
+        },
+        {
+            tooltip: 'Editar orden',
+            icon: <Icon icon="solar:pen-2-bold-duotone" />,
+            onClick: (o: OrdenCompra) => abrirEditar(o),
+            condition: abierta,
+        },
+        {
+            tooltip: 'Anular orden',
+            icon: <Icon icon="solar:close-circle-bold-duotone" />,
+            onClick: (o: OrdenCompra) => setAnularOrden(o),
+            condition: abierta,
+        },
+    ];
+
     return (
         <div className="min-h-screen px-2 pb-6">
             {/* Header */}
@@ -325,41 +354,8 @@ export default function OrdenesCompraPage() {
                                     <td className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
                                         {o.compra ? `${o.compra.serie}-${o.compra.numero}` : '—'}
                                     </td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center justify-end gap-1.5">
-                                            <button
-                                                onClick={() => descargarPdf(o)}
-                                                title="Descargar PDF para el proveedor"
-                                                className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-rose-50 hover:text-rose-500 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-700"
-                                            >
-                                                <Icon icon={descargandoId === o.id ? 'svg-spinners:180-ring' : 'solar:file-text-bold-duotone'} className="text-base" />
-                                            </button>
-                                            {(o.estado === 'BORRADOR' || o.estado === 'EMITIDA') && (
-                                                <>
-                                                    <button
-                                                        onClick={() => abrirEditar(o)}
-                                                        title="Editar orden"
-                                                        className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-blue-50 hover:text-blue-500 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-700"
-                                                    >
-                                                        <Icon icon="solar:pen-2-bold-duotone" className="text-base" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setRecibirOrden(o)}
-                                                        title="Recibir mercadería (crear compra)"
-                                                        className="rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-emerald-600 transition hover:bg-emerald-100 dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-300"
-                                                    >
-                                                        <Icon icon="solar:box-bold-duotone" className="text-base" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setAnularOrden(o)}
-                                                        title="Anular orden"
-                                                        className="rounded-lg border border-gray-200 p-2 text-gray-500 transition hover:bg-rose-50 hover:text-rose-500 dark:border-slate-700 dark:text-gray-300 dark:hover:bg-slate-700"
-                                                    >
-                                                        <Icon icon="solar:close-circle-bold-duotone" className="text-base" />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
+                                    <td className="px-4 py-3 text-right" data-testid={`oc-acciones-${o.id}`}>
+                                        <MenuAcciones row={o} actions={accionesOrden} />
                                     </td>
                                 </tr>
                             ))}
