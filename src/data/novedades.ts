@@ -60,6 +60,17 @@ export const TODOS_LOS_PLANES: PlanNovedad[] = ['EMPRENDEDOR', 'NEGOCIO', 'CORPO
 export const NOVEDADES: Novedad[] = [
     // ── Octubre 2026 (19-09 → 26-10) ────────────────────────────────────────
     {
+        id: '2026-10-tienda-envio-agencia',
+        fecha: '2026-10-29',
+        titulo: 'Tu tienda virtual ya ofrece recojo en agencia Shalom u Olva',
+        descripcion:
+            'Tu cliente elige en el checkout la agencia donde recoge y deja su DNI. El pedido te llega con todo eso y con un clic lo pasas a nota de venta con el envío ya armado, aunque todavía no te haya pagado.',
+        categoria: 'Tienda virtual',
+        tipo: 'NUEVO',
+        donde: 'Tienda virtual → Configuración → Envío por agencia · Tienda virtual → Pedidos → NV',
+        nota: 'Viene apagado: marca Shalom y/o Olva en la configuración de envío de tu tienda.',
+    },
+    {
         id: '2026-10-ia-puntaje-derivacion',
         fecha: '2026-10-29',
         titulo: 'Puntaje de tu vendedor IA y cuándo pasa el chat a tu equipo',
