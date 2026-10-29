@@ -12,6 +12,7 @@ import MediosDePagoConfig from '@/pages/admin/empresa/MediosDePagoConfig';
 import Button from '@/components/Button';
 import NumerosWhatsapp from '@/components/NumerosWhatsapp';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
+import WhatsappTakiyCard from '@/components/WhatsappTakiyCard';
 import ConectarInstagramButton from '@/components/ConectarInstagramButton';
 import ConectarMessengerButton from '@/components/ConectarMessengerButton';
 import ShalomProConexion from '@/components/ShalomProConexion';
@@ -1404,6 +1405,10 @@ export default function PerfilIndex() {
                             </div>
                         </SeccionConfig>
                     )}
+                    {/* WhatsApp por QR (Takiy): avisos desde el número del negocio sin Meta */}
+                    <SeccionConfig id="whatsapp-qr" icono="mdi:whatsapp" titulo="WhatsApp por QR (Takiy)" resumen="Avisos y comprobantes desde tu propio número, sin conectar Meta" abierta={seccionAbierta === 'whatsapp-qr'} onToggle={toggleSeccion} className={configTab}>
+                        <WhatsappTakiyCard />
+                    </SeccionConfig>
                     {/* Automatización de despacho: rastreo automático + plantillas WhatsApp
                         (antes vivía en /administrador/despacho/config, sin enlace desde el menú) */}
                     <SeccionConfig id="despacho" icono="solar:routing-2-bold-duotone" titulo="Automatización de despacho" resumen="Rastreo automático y avisos por WhatsApp al cliente" abierta={seccionAbierta === 'despacho'} onToggle={toggleSeccion} className={configTab}>

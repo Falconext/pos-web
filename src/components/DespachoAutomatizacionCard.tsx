@@ -8,6 +8,8 @@ import Select from '@/components/Select';
 interface DespachoConfig {
     mensajeEnCamino: string;
     mensajeEntregado: string;
+    /** Llegó a la agencia. Solo sale tal cual cuando el aviso va por Takiy. */
+    mensajeEnAgencia: string;
     notificarEnCamino: boolean;
     notificarEntregado: boolean;
     /** Días máximos de recordatorio de recojo en agencia; 0 = apagado. */
@@ -21,6 +23,7 @@ interface DespachoConfig {
 const DEFAULTS: DespachoConfig = {
     mensajeEnCamino: 'Hola {{nombre}}, tu pedido {{pedido}} ya está en camino 🚚. Repartidor: {{repartidor}}.',
     mensajeEntregado: 'Hola {{nombre}}, tu pedido {{pedido}} fue entregado exitosamente ✅. ¡Gracias por preferir {{empresa}}!',
+    mensajeEnAgencia: 'Hola {{nombre}}, tu pedido {{pedido}} ya llegó a {{agencia}} 📦. Ya puedes acercarte a recogerlo.',
     notificarEnCamino: true,
     notificarEntregado: true,
     recordatorioRecojoDias: 0,
@@ -33,14 +36,20 @@ const OPCIONES_RECOJO = [
     ...[1, 2, 3, 4, 5, 6, 7].map((n) => ({ id: String(n), value: n === 1 ? 'Solo 1 día' : `Hasta ${n} días` })),
 ];
 
-const EJEMPLO = { nombre: 'Juan Pérez', pedido: 'B001-00000123', repartidor: 'Carlos Quispe', empresa: 'Mi Empresa' };
+const EJEMPLO: Record<string, string> = {
+    nombre: 'Juan Pérez',
+    pedido: 'B001-00000123',
+    repartidor: 'Carlos Quispe',
+    empresa: 'Mi Empresa',
+    agencia: 'Shalom Cusco Centro',
+    clave: '4821',
+    saldo: 'S/ 45.00',
+};
+
+const VARIABLES_BASE = ['nombre', 'pedido', 'repartidor', 'empresa'];
 
 function interpolar(template: string) {
-    return template
-        .replace(/\{\{nombre\}\}/g, EJEMPLO.nombre)
-        .replace(/\{\{pedido\}\}/g, EJEMPLO.pedido)
-        .replace(/\{\{repartidor\}\}/g, EJEMPLO.repartidor)
-        .replace(/\{\{empresa\}\}/g, EJEMPLO.empresa);
+    return template.replace(/\{\{(\w+)\}\}/g, (m, clave: string) => EJEMPLO[clave] ?? m);
 }
 
 function Switch({ activo, onChange, color = 'emerald', disabled }: { activo: boolean; onChange: (v: boolean) => void; color?: 'emerald' | 'amber'; disabled?: boolean }) {
@@ -57,10 +66,10 @@ function Switch({ activo, onChange, color = 'emerald', disabled }: { activo: boo
     );
 }
 
-function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, placeholder, onToggle, onMensaje, bloqueado }: {
+function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, placeholder, onToggle, onMensaje, bloqueado, variables = VARIABLES_BASE }: {
     title: string; icon: string; color: string; estadoLabel: string; habilitado: boolean;
-    mensaje: string; placeholder: string; onToggle: (v: boolean) => void; onMensaje: (v: string) => void;
-    bloqueado?: boolean;
+    mensaje: string; placeholder: string; onToggle?: (v: boolean) => void; onMensaje: (v: string) => void;
+    bloqueado?: boolean; variables?: string[];
 }) {
     return (
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
@@ -74,7 +83,7 @@ function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, place
                         <p className="text-[11px] text-slate-500">Se envía al pasar a <span className="font-semibold">{estadoLabel}</span></p>
                     </div>
                 </div>
-                <Switch activo={habilitado} onChange={onToggle} disabled={bloqueado} />
+                {onToggle && <Switch activo={habilitado} onChange={onToggle} disabled={bloqueado} />}
             </div>
 
             {habilitado ? (
@@ -88,10 +97,10 @@ function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, place
                         className={`w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 ${bloqueado ? 'cursor-not-allowed opacity-60' : ''}`}
                     />
                     <p className="text-[11px] text-slate-400">
-                        Variables: <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{'{{nombre}}'}</code>{' '}
-                        <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{'{{pedido}}'}</code>{' '}
-                        <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{'{{repartidor}}'}</code>{' '}
-                        <code className="rounded bg-slate-100 px-1 dark:bg-slate-800">{'{{empresa}}'}</code>
+                        Variables:{' '}
+                        {variables.map((v) => (
+                            <code key={v} className="mr-1 rounded bg-slate-100 px-1 dark:bg-slate-800">{`{{${v}}}`}</code>
+                        ))}
                     </p>
                     <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/40 dark:bg-emerald-900/20">
                         <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
@@ -129,6 +138,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                 setConfig({
                     mensajeEnCamino: res.data.mensajeEnCamino ?? DEFAULTS.mensajeEnCamino,
                     mensajeEntregado: res.data.mensajeEntregado ?? DEFAULTS.mensajeEntregado,
+                    mensajeEnAgencia: res.data.mensajeEnAgencia ?? DEFAULTS.mensajeEnAgencia,
                     notificarEnCamino: res.data.notificarEnCamino ?? true,
                     notificarEntregado: res.data.notificarEntregado ?? true,
                     recordatorioRecojoDias: res.data.recordatorioRecojoDias ?? 0,
@@ -264,7 +274,8 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                         </div>
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Las plantillas de WhatsApp se contratan por separado.
+                                Si envías por <strong>WhatsApp por QR (Takiy)</strong>, estos textos salen tal cual desde tu número.
+                                Con la API de Meta sale la plantilla aprobada.
                             </p>
                             <a
                                 href={`${BRAND.website}/#ventas-ia`}
@@ -288,6 +299,18 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 placeholder={DEFAULTS.mensajeEnCamino}
                                 onToggle={v => set('notificarEnCamino', v)}
                                 onMensaje={v => set('mensajeEnCamino', v)}
+                                bloqueado={!habilitado}
+                            />
+                            <Plantilla
+                                title="Estado: Llegó a la agencia"
+                                icon="solar:box-bold-duotone"
+                                color="bg-amber-50 text-amber-600 dark:bg-amber-900/30"
+                                estadoLabel="EN AGENCIA (Shalom/Olva)"
+                                habilitado
+                                mensaje={config.mensajeEnAgencia}
+                                placeholder={DEFAULTS.mensajeEnAgencia}
+                                onMensaje={v => set('mensajeEnAgencia', v)}
+                                variables={['nombre', 'pedido', 'agencia', 'clave', 'saldo', 'empresa']}
                                 bloqueado={!habilitado}
                             />
                             <Plantilla
