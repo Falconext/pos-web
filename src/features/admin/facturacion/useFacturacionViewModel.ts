@@ -374,6 +374,9 @@ export const useFacturacionViewModel = () => {
     const barcodeRef = useRef<HTMLInputElement>(null);
     const processedGuiaRef = useRef<string | null>(null);
     const processedPedidoTiendaRef = useRef<string | null>(null);
+    // Pedido de la tienda que se está convirtiendo: al emitir, queda vinculado
+    // al comprobante para que no se pueda documentar dos veces.
+    const pedidoTiendaOrigenRef = useRef<number | null>(null);
     // Tracks the comprobante type that was pre-filled from a Nota de Venta conversion.
     // Prevents the auto-reset effect from overwriting the NV client while on that comprobante type.
     const fromNVComprobanteRef = useRef<string | null>(null);
@@ -1161,8 +1164,12 @@ export const useFacturacionViewModel = () => {
             if (processedPedidoTiendaRef.current !== pedidoKey) {
                 processedPedidoTiendaRef.current = pedidoKey;
 
+                pedidoTiendaOrigenRef.current = Number(pedido.id) || null;
+                // Si el comprador dejó su DNI y ya es cliente, va con su ficha.
+                const doc = String(pedido.clienteDocumento || '').replace(/\D/g, '');
+                const clienteConDni = doc ? clients?.find((item: any) => String(item.nroDoc) === doc) : null;
                 const clienteVarios = clients?.find((item: any) => item.nroDoc === '10000000');
-                const cliente = clienteVarios || {
+                const cliente = clienteConDni || clienteVarios || {
                     id: 0,
                     nombre: pedido.clienteNombre || 'CLIENTES VARIOS',
                     nroDoc: '10000000',
@@ -1183,8 +1190,28 @@ export const useFacturacionViewModel = () => {
                         prev.observaciones,
                         `Pedido tienda: ${pedido.codigoSeguimiento}`,
                         pedido.tipoEntrega === 'ENVIO' ? `Entrega: ${pedido.clienteDireccion || 'por coordinar'}` : 'Recojo en tienda',
+                        !clienteConDni && doc ? `Cliente: ${pedido.clienteNombre} · DNI ${doc}` : '',
                     ].filter(Boolean).join('\n'),
                 }));
+
+                // Recoge en una agencia de Shalom u Olva: el envío llega armado
+                // con la agencia, el destinatario y su DNI, y al emitir se crea
+                // el despacho como en cualquier venta con envío.
+                if (pedido.tipoEntrega === 'ENVIO' && (pedido.envioCourier === 'SHALOM' || pedido.envioCourier === 'OLVA')) {
+                    const esShalom = pedido.envioCourier === 'SHALOM';
+                    setEnvioActivo(true);
+                    setEnvioData(prev => ({
+                        ...prev,
+                        transportista: esShalom ? 'SHALOM_PRO' : 'OLVA',
+                        tipoEnvio: 'AGENCIA',
+                        agenciaDestino: pedido.envioAgenciaNombre || '',
+                        shalomAgenciaDestinoId: esShalom ? String(pedido.envioAgenciaId || '') : '',
+                        celularDest: String(pedido.clienteTelefono || '').replace(/\D/g, '').slice(-9),
+                        nombreDestinatario: pedido.clienteNombre || '',
+                        dniDestinatario: doc,
+                        costoEnvio: Number(pedido.costoEnvio || 0),
+                    }));
+                }
 
                 if (Array.isArray(pedido.items) && pedido.items.length > 0) {
                     resetProductInvoice();
@@ -3359,6 +3386,18 @@ export const useFacturacionViewModel = () => {
             }
             // Auto-crear despacho si se completó la coordinación de envío.
             const comprobanteId = r.id ?? dataReceipt?.id ?? null;
+            // Venía de un pedido de la tienda: queda vinculado y confirmado.
+            const pedidoOrigen = pedidoTiendaOrigenRef.current;
+            if (pedidoOrigen && comprobanteId) {
+                pedidoTiendaOrigenRef.current = null;
+                const vinculo = await patch(`tienda/pedidos/${pedidoOrigen}/comprobante`, { comprobanteId });
+                if (vinculo.success === false || vinculo.error) {
+                    useAlertStore.getState().alert(
+                        `La venta se guardó, pero no se pudo marcar el pedido de la tienda: ${vinculo.error || 'márcalo a mano'}`,
+                        'warning',
+                    );
+                }
+            }
             if (envioActivo && comprobanteId) {
                 if (isCompleteEnvioDespacho(envioData)) {
                     const despachoResult = await patch(
