@@ -74,7 +74,7 @@ export const NOVEDADES: Novedad[] = [
         fecha: '2026-10-29',
         titulo: 'Delega solo las fotos de tus productos',
         descripcion:
-            'Dale a alguien de tu equipo acceso únicamente a "Fotos de productos": sube, cambia y ordena las fotos sin poder tocar precios, stock ni datos.',
+            'Dale a alguien de tu equipo acceso solo a las fotos: ve tus productos y, al editar, únicamente sube, cambia u ordena las imágenes. Precios, stock y datos quedan bloqueados.',
         categoria: 'Usuarios',
         tipo: 'NUEVO',
         donde: 'Usuarios → Editar → Permisos avanzados → Solo gestionar fotos de productos',

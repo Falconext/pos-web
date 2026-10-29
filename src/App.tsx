@@ -70,7 +70,6 @@ const Planes = cargaPerezosa(() => import('./pages/admin/sistema/Planes'))
 const ModulosPage = cargaPerezosa(() => import('./pages/admin/sistema/Modulos'))
 const FinanceDashboard = cargaPerezosa(() => import('./pages/admin/finanzas/Dashboard'))
 const MisComisionesPage = cargaPerezosa(() => import('./pages/admin/mis-comisiones/MisComisionesPage'))
-const FotosProductos = cargaPerezosa(() => import('./pages/admin/fotos-productos/FotosProductos'))
 const Campanas = cargaPerezosa(() => import('./pages/admin/marketing/Campanas'))
 const ResumenNegocio = cargaPerezosa(() => import('./pages/admin/ecommerce/ResumenNegocio'))
 const ComprasIndex = cargaPerezosa(() => import('./pages/admin/compras/Index'))
@@ -211,7 +210,6 @@ function App() {
           <Route path="finanzas/dashboard" element={<FinanceDashboard />} />
           <Route path="mi-negocio/marketing/finanzas" element={<FinanceDashboard />} />
           <Route path="mis-comisiones" element={<MisComisionesPage />} />
-          <Route path="fotos-productos" element={<FotosProductos />} />
           <Route path="mi-negocio/marketing/campanas" element={<Campanas />} />
           <Route path="mi-negocio/resumen" element={<ResumenNegocio />} />
           <Route path="kardex" element={<KardexIndex />} />

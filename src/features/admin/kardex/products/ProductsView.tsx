@@ -241,6 +241,7 @@ export default function ProductsView() {
                             color={c}
                             categories={vm.categories}
                             onChange={vm.cambiarCategoria}
+                            disabled={vm.soloImagenes}
                         />
                     );
                 })(),
@@ -254,6 +255,7 @@ export default function ProductsView() {
                             color={getCatColor(nombre)}
                             categories={vm.brands}
                             onChange={vm.cambiarMarca}
+                            disabled={vm.soloImagenes}
                             textos={TEXTOS_MARCA}
                         />
                     );
@@ -412,7 +414,7 @@ export default function ProductsView() {
                             products={productsSource}
                             onEdit={(p) => actions.handleGetProduct({ ...p, productoId: p.id })}
                             onDelete={vm.puedeCrearOEliminar ? (p: any) => actions.handleOpenDelete({ ...p, productoId: p.id }) : undefined}
-                            onToggleState={(p) => actions.handleToggleClientState({ ...p, productoId: p.id })}
+                            onToggleState={(p) => { if (!vm.soloImagenes) actions.handleToggleClientState({ ...p, productoId: p.id }); }}
                             onUploadImage={(p) => { actions.setUploadTarget({ id: p.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); }}
                         />
                         <Pagination
@@ -435,7 +437,7 @@ export default function ProductsView() {
                             products={productsSource}
                             onEdit={(p) => actions.handleGetProduct({ ...p, productoId: p.id })}
                             onDelete={(p) => actions.handleOpenDelete({ ...p, productoId: p.id })}
-                            onToggleState={(p) => actions.handleToggleClientState({ ...p, productoId: p.id })}
+                            onToggleState={(p) => { if (!vm.soloImagenes) actions.handleToggleClientState({ ...p, productoId: p.id }); }}
                         />
                         <Pagination
                             data={productsSource}
@@ -703,7 +705,7 @@ export default function ProductsView() {
                                     onChange={actions.handleImportExcel}
                                     className="hidden"
                                 />
-                                <Button
+                                {!vm.soloImagenes && <Button
                                     color="default"
                                     onClick={() => setShowOptionsDropdown(!showOptionsDropdown)}
                                     className="text-sm flex items-center gap-1.5 !bg-dark-600 !text-white border-none shadow-sm shadow-violet-200/50"
@@ -711,7 +713,7 @@ export default function ProductsView() {
                                     <Icon icon="solar:widget-4-bold-duotone" className="!text-white" width={16} />
                                     Herramientas
                                     <Icon icon={showOptionsDropdown ? "solar:alt-arrow-up-linear" : "solar:alt-arrow-down-linear"} width={14} />
-                                </Button>
+                                </Button>}
 
                                 {showOptionsDropdown && (() => {
                                     const cerrar = () => setShowOptionsDropdown(false);
@@ -839,6 +841,7 @@ export default function ProductsView() {
                                 <button type="button" onClick={() => { actions.setUploadTarget({ id: rowBase.id, tipo: 'principal' }); vm.uploadImageRef.current?.click(); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
                                     <Icon icon="solar:upload-minimalistic-bold" width={16} height={16} /> <span>Subir imagen</span>
                                 </button>
+                                {!vm.soloImagenes && <>
                                 <button type="button" onClick={() => { actions.handleToggleClientState({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700">
                                     <Icon icon="mdi:power" width={16} height={16} /> <span>{rowBase.estado === 'INACTIVO' ? 'Activar' : 'Desactivar'}</span>
                                 </button>
@@ -857,6 +860,7 @@ export default function ProductsView() {
                                         <span>{(rowBase as any).disponibleEnSede === false ? `Asignar a ${vm.selectedSedeName ?? 'esta sede'}` : `Quitar de ${vm.selectedSedeName ?? 'esta sede'}`}</span>
                                     </button>
                                 )}
+                                </>}
                                 {vm.puedeCrearOEliminar && <button type="button" onClick={() => { actions.handleOpenDelete({ ...rowBase, productoId: rowBase.id }); actions.setOpenAccionesId(null); actions.setAnchorEl(null); }} className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/10 border-t border-gray-100 dark:border-slate-700">
                                     <Icon icon="solar:trash-bin-trash-bold" width={16} height={16} /> <span>Eliminar</span>
                                 </button>}

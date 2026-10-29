@@ -209,9 +209,9 @@ export default function AdminLayout() {
   useEffect(() => {
     if (!auth) return
     if (location.pathname === '/administrador' && !hasPermission(auth, 'dashboard')) {
-      // Delegado solo para fotos y sin otros módulos: entra directo a su pantalla.
+      // Delegado solo para fotos y sin otros módulos: entra directo a Productos.
       if ((auth as any)?.soloImagenesProductos && !(auth.permisos?.length)) {
-        navigate('/administrador/fotos-productos', { replace: true })
+        navigate('/administrador/kardex/productos', { replace: true })
         return
       }
       const path = getRedirectPath(auth, location.pathname)
@@ -594,16 +594,17 @@ export default function AdminLayout() {
                   </NavLink>
                 )}
 
-                {/* Usuario delegado solo para fotos: su única pantalla de productos. */}
-                {(auth as any)?.soloImagenesProductos && auth?.rol === 'USUARIO_EMPRESA' && (
+                {/* Delegado solo para fotos sin el módulo Kardex: igual ve la lista de
+                    productos; al editar, el modal solo le muestra las imágenes. */}
+                {(auth as any)?.soloImagenesProductos && auth?.rol === 'USUARIO_EMPRESA' && !hasPermission(auth, 'kardex') && (
                   <NavLink
-                    onClick={() => { setIsSidebarOpen(false); setNameNavbar('Fotos de productos'); }}
-                    to="/administrador/fotos-productos"
+                    onClick={() => { setIsSidebarOpen(false); setNameNavbar('Productos'); }}
+                    to="/administrador/kardex/productos"
                     className={({ isActive }) => isActive ? theme.activeLink : theme.inactiveLink}
-                    title="Fotos de productos"
+                    title="Productos"
                   >
-                    <Icon icon="solar:gallery-edit-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
-                    {!isSidebarCollapsed && <span>Fotos de productos</span>}
+                    <Icon icon="solar:box-linear" className={`${isSidebarCollapsed ? 'text-2xl m-0' : 'mr-3 text-xl'}`} />
+                    {!isSidebarCollapsed && <span>Productos</span>}
                   </NavLink>
                 )}
 

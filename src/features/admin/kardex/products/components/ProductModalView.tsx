@@ -20,6 +20,41 @@ export const ProductModalView: React.FC<IPropsProducts> = (props) => {
 
     if (!vm.isOpenModal) return null;
 
+    // Usuario delegado solo para fotos: el mismo modal, pero únicamente con las
+    // imágenes del producto. Nada de precio, stock ni datos.
+    if (vm.soloImagenes) {
+        return (
+            <Modal
+                position="right"
+                width="520px"
+                isOpenModal={vm.isOpenModal}
+                height="auto"
+                closeModal={vm.closeModal}
+                title={`Fotos · ${vm.formValues?.descripcion || vm.labels.titulo}`}
+                icon="solar:gallery-edit-bold-duotone"
+            >
+                <div className="px-4 pt-5">
+                    <ProductImageUploader vm={vm} />
+                </div>
+                <div className="sticky bottom-0 z-10 flex gap-4 px-6 justify-end py-4 md:pr-5 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-[#111827] mt-6">
+                    <Button color="danger" outline onClick={() => vm.setIsOpenModal(false)}>
+                        Cancelar
+                    </Button>
+                    <Button color="primary" className="px-6" onClick={vm.guardarSoloImagenes} disabled={vm.loading}>
+                        {vm.loading ? (
+                            <div className="flex items-center gap-2">
+                                <Icon icon="svg-spinners:180-ring-with-bg" />
+                                Guardando fotos...
+                            </div>
+                        ) : (
+                            "Guardar fotos"
+                        )}
+                    </Button>
+                </div>
+            </Modal>
+        );
+    }
+
     return (
         <>
             <Modal

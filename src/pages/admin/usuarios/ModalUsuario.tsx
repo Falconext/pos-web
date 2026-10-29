@@ -276,7 +276,7 @@ const ModalUsuario: React.FC<Props> = ({ isOpen, onClose, user, isEdit }) => {
     { key: 'convertirEnSupervisor', icon: 'solar:eye-scan-bold-duotone', label: 'Convertir en Supervisor', descripcion: 'Ve el Dashboard y Reportes de TODAS sus sedes asignadas, no solo la activa.' },
     { key: 'noPermitirVentaProductosGratuitos', icon: 'solar:forbidden-circle-bold-duotone', label: 'No permitir venta de productos gratuitos', descripcion: 'Bloquea agregar al carrito una línea con precio S/ 0.' },
     { key: 'restringirTransferenciasASuSede', icon: 'solar:transfer-horizontal-bold-duotone', label: 'Restringir transferencias solo a sus sedes', descripcion: 'Solo podrá transferir stock hacia las sedes que tiene asignadas.' },
-    { key: 'soloImagenesProductos', icon: 'solar:gallery-edit-bold-duotone', label: 'Solo gestionar fotos de productos', descripcion: 'Verá "Fotos de productos" para subir, cambiar u ordenar las fotos. No podrá tocar precio, stock ni datos, ni crear o eliminar productos.' },
+    { key: 'soloImagenesProductos', icon: 'solar:gallery-edit-bold-duotone', label: 'Solo gestionar fotos de productos', descripcion: 'Verá la lista de productos y, al editar, solo las fotos: subir, cambiar u ordenar. No podrá tocar precio, stock ni datos, ni crear o eliminar productos.' },
     { key: 'bloquearCrearEliminarProductos', icon: 'solar:box-bold-duotone', label: 'No permitir agregar ni eliminar productos', descripcion: 'No podrá dar de alta ni borrar productos del inventario. Sí podrá seguir vendiéndolos y editando los que ya existen.' },
   ];
 

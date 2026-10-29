@@ -132,7 +132,9 @@ export const useProductsViewModel = () => {
     // Restricción por usuario: sin alta ni baja de productos. El backend la
     // hace cumplir igual; acá solo se esconden los accesos para que la cajera
     // no choque contra un error después de llenar todo el formulario.
-    const puedeCrearOEliminar = !(auth as any)?.bloquearCrearEliminarProductos;
+    // Delegado solo para fotos: ve la lista y edita únicamente las imágenes.
+    const soloImagenes = auth?.rol === 'USUARIO_EMPRESA' && Boolean((auth as any)?.soloImagenesProductos);
+    const puedeCrearOEliminar = !(auth as any)?.bloquearCrearEliminarProductos && !soloImagenes;
     const COLUMNAS_COSTO = ['Costo', 'Valor Inventario'];
 
     const allColumns = useMemo(() => {
@@ -1000,6 +1002,7 @@ export const useProductsViewModel = () => {
         safeVisibleColumns,
         ocultarCosto,
         puedeCrearOEliminar,
+        soloImagenes,
         stockSort,
         // Cambio rápido de categoría desde la tabla
         categories,
