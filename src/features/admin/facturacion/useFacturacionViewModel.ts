@@ -1210,6 +1210,8 @@ export const useFacturacionViewModel = () => {
                         nombreDestinatario: pedido.clienteNombre || '',
                         dniDestinatario: doc,
                         costoEnvio: Number(pedido.costoEnvio || 0),
+                        // El modal de envío la exige: por defecto sale hoy.
+                        fechaEstimada: prev.fechaEstimada || new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Lima' }).format(new Date()),
                     }));
                 }
 

@@ -84,3 +84,25 @@ describe('faltaEnvioAgencia', () => {
     expect(faltaEnvioAgencia({ ...v, documento: '1234' }, '')).toMatch(/DNI/)
   })
 })
+
+describe('plantilla Moda (modal propio)', () => {
+  it('también pide la agencia antes de confirmar', async () => {
+    const { default: ModaConfirmOrderModal } = await import('../ModaConfirmOrderModal')
+    function Moda({ onConfirm }: { onConfirm: () => void }) {
+      const [valor, setValor] = useState<EnvioAgenciaValor>(ENVIO_AGENCIA_INICIAL)
+      return (
+        <EnvioAgenciaContext.Provider
+          value={{ couriers: ['OLVA'], tipoEntrega: 'ENVIO', valor, setValor, direccion: '', setDireccion: () => {}, cargarAgencias: async () => AGENCIAS }}
+        >
+          <ModaConfirmOrderModal isOpen onClose={() => {}} onConfirm={onConfirm} total={10} />
+        </EnvioAgenciaContext.Provider>
+      )
+    }
+    const onConfirm = jest.fn()
+    render(<Moda onConfirm={onConfirm} />)
+    expect(screen.getByText('¿Cómo te lo enviamos?')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /Agencia Olva/ }))
+    fireEvent.click(screen.getByRole('button', { name: /Sí, Confirmar/ }))
+    expect(onConfirm).not.toHaveBeenCalled()
+  })
+})
