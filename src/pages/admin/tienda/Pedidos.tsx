@@ -109,7 +109,17 @@ function SellerCell({ nombre }: { nombre: string }) {
 }
 
 const pedidoPuedeDocumentarse = (pedido: PedidoTiendaAdmin) => (
-  pedido.saldoPendiente <= 0.01 || pedido.estadoEntrega === 'ENTREGADO_COMPLETADO' || pedido.estadoEnvio === 'ENTREGADO'
+  !pedido.comprobanteId &&
+  (pedido.saldoPendiente <= 0.01 || pedido.estadoEntrega === 'ENTREGADO_COMPLETADO' || pedido.estadoEnvio === 'ENTREGADO')
+);
+
+/**
+ * La nota de venta no espera el pago: el pedido de la tienda se pasa a nota
+ * apenas llega (con su envío por agencia) y se cobra después, como cualquier
+ * nota con saldo. Una sola vez por pedido.
+ */
+const pedidoPuedeNotaVenta = (pedido: PedidoTiendaAdmin) => (
+  !pedido.comprobanteId && pedido.estado !== 'CANCELADO'
 );
 
 export default function PedidosTienda() {
@@ -134,7 +144,7 @@ export default function PedidosTienda() {
     setSelectedPedido(pedido);
   }, [codigoParam, vm.loading, vm.pedidos, vm.setBusqueda]);
 
-  const navegarComprobantePedido = (pedido: PedidoTiendaAdmin, defaultType: 'BOLETA' | 'FACTURA') => {
+  const navegarComprobantePedido = (pedido: PedidoTiendaAdmin, defaultType: 'BOLETA' | 'FACTURA' | 'NV') => {
     navigate('/administrador/facturacion/nuevo', {
       state: {
         defaultType,
@@ -237,6 +247,15 @@ export default function PedidosTienda() {
       ),
       'Acciones': (
         <div className="flex items-center gap-2">
+              {pedidoPuedeNotaVenta(pedido) && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); navegarComprobantePedido(pedido, 'NV'); }}
+                  className="inline-flex h-8 items-center justify-center gap-1 rounded-xl bg-gray-900 px-2.5 text-[11px] font-semibold text-white transition hover:bg-black"
+                  title={pedido.envioCourier ? 'Nota de venta con el envío por agencia ya armado' : 'Hacer nota de venta'}
+                >
+                  <Icon icon="solar:document-text-bold" className="h-4 w-4" /> NV
+                </button>
+              )}
           {pedidoPuedeDocumentarse(pedido) && (
             <>
               <button
@@ -499,6 +518,16 @@ export default function PedidosTienda() {
                   >
                     <Icon icon="solar:wallet-money-bold" className="h-4 w-4" />
                   </button>
+                  {pedidoPuedeNotaVenta(pedido) && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); navegarComprobantePedido(pedido, 'NV'); }}
+                      className="inline-flex h-10 items-center justify-center gap-1 rounded-xl bg-gray-900 px-3 text-xs font-semibold text-white transition hover:bg-black"
+                      title={pedido.envioCourier ? 'Nota de venta con el envío por agencia ya armado' : 'Hacer nota de venta'}
+                    >
+                      <Icon icon="solar:document-text-bold" className="h-4 w-4" /> NV
+                    </button>
+                  )}
                   {pedidoPuedeDocumentarse(pedido) && (
                     <>
                       <button
