@@ -3,7 +3,7 @@ import { Icon } from '@iconify/react';
 import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 import useAlertStore from '@/zustand/alert';
-import { post } from '@/utils/fetch';
+import { get, post } from '@/utils/fetch';
 
 interface ModalEnviarWhatsAppProps {
     isOpen: boolean;
@@ -34,6 +34,8 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
     const [generando, setGenerando] = useState(false);
     const [enviandoWhatsApp, setEnviandoWhatsApp] = useState(false);
     const [enviandoEmail, setEnviandoEmail] = useState(false);
+    // Con Takiy (WhatsApp por QR) el PDF sale solo desde el número del negocio.
+    const [takiyActivo, setTakiyActivo] = useState(false);
 
     // Reset y pre-llenar al abrir. Siempre regeneramos el PDF en segundo plano:
     // comprobante.pdfUrl puede venir de un PDF cacheado con una plantilla o
@@ -45,6 +47,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
         setNumeroDestino(comprobante.clienteCelular || '');
         setEmailDestino(comprobante.clienteEmail || '');
         void generarPdf();
+        void get<{ activo: boolean }>('/whatsapp/takiy').then((r) => setTakiyActivo(!!r.data?.activo));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, comprobante.id, defaultTab]);
 
@@ -241,10 +244,9 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                     <Button onClick={handleClose} className="flex-1 text-gray-700 dark:text-gray-200 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700">
                                         Cancelar
                                     </Button>
-                                    {/* Botón "Enviar (API)" oculto temporalmente hasta terminar el
-                                        setup de producción de Zavu (número + plantilla + key zv_live_).
-                                        Reactivar descomentando cuando Zavu esté listo. */}
-                                    {/*
+                                    {/* "Enviar (API)" solo con Takiy activo: Zavu sigue sin setup
+                                        de producción (número + plantilla + key zv_live_). */}
+                                    {takiyActivo && (
                                     <Button
                                         onClick={handleEnviarWhatsApp}
                                         disabled={enviandoWhatsApp || generando || !numeroDestino.trim()}
@@ -255,9 +257,9 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                         ) : (
                                             <Icon icon="solar:whatsapp-bold" className="text-xl" />
                                         )}
-                                        {enviandoWhatsApp ? 'Enviando...' : 'Enviar (API)'}
+                                        {enviandoWhatsApp ? 'Enviando...' : 'Enviar desde mi número'}
                                     </Button>
-                                    */}
+                                    )}
                                 </div>
                                 
                                 <button
