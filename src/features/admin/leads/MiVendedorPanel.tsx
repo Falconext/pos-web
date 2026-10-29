@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { Icon } from '@iconify/react'
-import { useSearchParams } from 'react-router-dom'
-import { subirFotoTienda, type TipoImagenTienda } from '@/services/leads.service'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  fetchPuntajeVendedor,
+  subirFotoTienda,
+  type MotivoDerivacion,
+  type PuntajeVendedor,
+  type TipoImagenTienda,
+} from '@/services/leads.service'
 import useAlertStore from '@/zustand/alert'
 import type {
   CategoriaConocimiento,
@@ -66,6 +72,8 @@ interface Borrador {
   tienda: { direccion: string; mapsUrl: string; indicaciones: string }
   /** Saludo exacto + preguntas con botones antes de la IA. */
   menu: MenuInicial
+  /** Cuándo pasa el chat a una persona. null = en todas (como antes de las casillas). */
+  derivarEn: MotivoDerivacion[] | null
 }
 
 const ENVIO_VACIO: ConfigEnvio = { zonas: [], zonaPorDefecto: '' }
@@ -80,6 +88,7 @@ function borradorDe(config: Vm['config']): Borrador {
     medios: config.mediosPagoLista ?? [],
     despedida: config.despedida ?? { activa: false, texto: '' },
     menu: config.menu ?? MENU_VACIO,
+    derivarEn: config.derivarEn ?? null,
     tienda: {
       direccion: config.tienda?.direccion ?? '',
       mapsUrl: config.tienda?.mapsUrl ?? '',
@@ -606,6 +615,10 @@ function TabPersonalidad({
               className={`${inputBase} resize-y leading-relaxed`}
             />
           </Campo>
+          <CasillasDerivacion
+            valor={b.derivarEn}
+            onChange={(derivarEn) => set((x) => ({ ...x, derivarEn }))}
+          />
         </Seccion>
 
         <EditorMenu menu={b.menu} onChange={(menu) => set((x) => ({ ...x, menu }))} negocio={negocio} />
@@ -642,6 +655,162 @@ function TabPersonalidad({
         <VistaPrevia negocio={negocio} b={b} />
       </div>
     </div>
+  )
+}
+
+// ─── Cuándo pasar a una persona ─────────────────────────────────────────────
+
+const MOTIVOS: { id: MotivoDerivacion; label: string; fijo?: boolean }[] = [
+  { id: 'pide_hablar_con_persona', label: 'Pide hablar con una persona', fijo: true },
+  { id: 'reclamo', label: 'Reclamo, producto dañado, cambio o devolución' },
+  { id: 'cancelacion', label: 'Quiere cancelar un pedido' },
+  { id: 'seguimiento_de_pedido', label: 'Pregunta cómo va un pedido ya hecho' },
+  { id: 'mayorista', label: 'Compra al por mayor o es revendedor' },
+  { id: 'descuento_especial', label: 'Pide un descuento fuera de tu regla' },
+  { id: 'producto_no_disponible', label: 'Quiere un producto que no tienes' },
+]
+
+function CasillasDerivacion({
+  valor,
+  onChange,
+}: {
+  valor: MotivoDerivacion[] | null
+  onChange: (v: MotivoDerivacion[] | null) => void
+}) {
+  const marcado = (m: MotivoDerivacion) => valor === null || valor.includes(m)
+  const alternar = (m: MotivoDerivacion) => {
+    const actual = valor ?? MOTIVOS.map((x) => x.id)
+    onChange(actual.includes(m) ? actual.filter((x) => x !== m) : MOTIVOS.map((x) => x.id).filter((x) => x === m || actual.includes(x)))
+  }
+  return (
+    <div>
+      <p className="text-[13.5px] font-semibold text-gray-800 dark:text-gray-100">Cuándo pasa el chat a una persona</p>
+      <p className="mb-2.5 mt-0.5 text-[12.5px] text-gray-500 dark:text-gray-400">
+        Desmarca lo que prefieres que tu vendedor resuelva solo. Al pasarlo, deja de responder en ese chat.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {MOTIVOS.map((m) => (
+          <label
+            key={m.id}
+            className={`flex items-start gap-2.5 rounded-xl border px-3 py-2.5 text-[13px] transition ${
+              marcado(m.id)
+                ? 'border-emerald-200 bg-emerald-50/60 text-gray-900 dark:border-emerald-800/50 dark:bg-emerald-900/20 dark:text-gray-100'
+                : 'border-gray-200 text-gray-500 dark:border-slate-700 dark:text-gray-400'
+            } ${m.fijo ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+          >
+            <input
+              type="checkbox"
+              checked={marcado(m.id)}
+              disabled={m.fijo}
+              onChange={() => alternar(m.id)}
+              className="mt-0.5 h-4 w-4 flex-none rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+            />
+            <span>
+              {m.label}
+              {m.fijo && <span className="block text-[11.5px] text-gray-400">Siempre</span>}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Puntaje del vendedor ───────────────────────────────────────────────────
+
+const NIVEL: Record<PuntajeVendedor['nivel'], { texto: string; color: string; anillo: string }> = {
+  LISTO: { texto: 'Listo para vender', color: 'text-emerald-600 dark:text-emerald-400', anillo: '#10b981' },
+  CASI: { texto: 'Casi listo', color: 'text-amber-600 dark:text-amber-400', anillo: '#f59e0b' },
+  FALTA: { texto: 'Le falta información', color: 'text-rose-600 dark:text-rose-400', anillo: '#f43f5e' },
+}
+
+function TarjetaPuntaje({ recargar, irA }: { recargar: string; irA: (p: Pestana) => void }) {
+  const navigate = useNavigate()
+  const [p, setP] = useState<PuntajeVendedor | null>(null)
+  const [abierto, setAbierto] = useState(false)
+  // Se recalcula cuando cambia lo guardado: el puntaje mira la configuración
+  // del servidor, no el borrador.
+  useEffect(() => {
+    let vivo = true
+    fetchPuntajeVendedor()
+      .then((r) => vivo && setP(r))
+      // Un servidor sin el puntaje: la tarjeta no aparece.
+      .catch(() => vivo && setP(null))
+    return () => {
+      vivo = false
+    }
+  }, [recargar])
+  if (!p) return null
+  const faltan = p.items.filter((i) => !i.ok)
+  const nivel = NIVEL[p.nivel]
+  const vuelta = 2 * Math.PI * 22
+  return (
+    <section className="rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)] dark:border-slate-800 dark:bg-[#111827]">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        aria-expanded={abierto}
+        className="flex w-full items-center gap-4 p-4 text-left sm:p-5"
+      >
+        <span className="relative flex h-14 w-14 flex-none items-center justify-center">
+          <svg viewBox="0 0 50 50" className="absolute inset-0 -rotate-90">
+            <circle cx="25" cy="25" r="22" fill="none" strokeWidth="4" className="stroke-gray-100 dark:stroke-slate-800" />
+            <circle
+              cx="25"
+              cy="25"
+              r="22"
+              fill="none"
+              strokeWidth="4"
+              strokeLinecap="round"
+              stroke={nivel.anillo}
+              strokeDasharray={vuelta}
+              strokeDashoffset={vuelta * (1 - p.puntaje / 100)}
+            />
+          </svg>
+          <span className="text-[16px] font-bold text-gray-900 dark:text-white">{p.puntaje}</span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-bold text-gray-900 dark:text-white">Puntaje de tu vendedor</span>
+          <span className={`block text-[13px] font-semibold ${nivel.color}`}>{nivel.texto}</span>
+          <span className="block text-[12.5px] text-gray-500 dark:text-gray-400">
+            {faltan.length
+              ? `${faltan.length} cosa${faltan.length === 1 ? '' : 's'} por completar para que venda mejor`
+              : 'Tiene todo lo que necesita para atender bien a tus clientes'}
+          </span>
+        </span>
+        {!!faltan.length && (
+          <Icon
+            icon="solar:alt-arrow-down-linear"
+            width={18}
+            className={`flex-none text-gray-400 transition ${abierto ? 'rotate-180' : ''}`}
+          />
+        )}
+      </button>
+      {abierto && !!faltan.length && (
+        <ul className="divide-y divide-gray-100 border-t border-gray-100 dark:divide-slate-800 dark:border-slate-800">
+          {faltan.map((i) => (
+            <li key={i.id} className="flex flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
+              <span className="flex h-7 min-w-[44px] flex-none items-center justify-center rounded-lg bg-gray-100 text-[12px] font-bold text-gray-600 dark:bg-slate-800 dark:text-gray-300">
+                +{i.puntos}
+              </span>
+              <span className="min-w-0 flex-1 basis-52">
+                <span className="block text-[13.5px] font-semibold text-gray-900 dark:text-white">{i.titulo}</span>
+                <span className="block text-[12.5px] text-gray-500 dark:text-gray-400">{i.consejo}</span>
+              </span>
+              {(i.pestana || i.ruta) && (
+                <button
+                  type="button"
+                  onClick={() => (i.pestana ? irA(i.pestana) : navigate(i.ruta!))}
+                  className="inline-flex flex-none items-center gap-1 rounded-xl border border-gray-200 px-3 py-1.5 text-[12.5px] font-semibold text-gray-700 transition hover:border-emerald-400 hover:text-emerald-700 dark:border-slate-700 dark:text-gray-200"
+                >
+                  Completar <Icon icon="solar:arrow-right-linear" width={14} />
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 
@@ -1771,6 +1940,11 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
         cambios.mediosPagoLista = b.medios.filter((m) => m.nombre.trim() && m.detalle.trim())
       }
       if (distinto(b.despedida, original.despedida)) cambios.despedida = b.despedida
+      if (distinto(b.derivarEn, original.derivarEn)) {
+        // Todas marcadas = como antes: se borra en vez de guardar la lista.
+        const todas = MOTIVOS.every((m) => b.derivarEn === null || b.derivarEn.includes(m.id))
+        cambios.derivarEn = todas ? null : b.derivarEn
+      }
       if (distinto(b.menu, original.menu)) {
         cambios.menu = {
           ...b.menu,
@@ -1890,6 +2064,8 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
           </span>
         </div>
       )}
+
+      {vm.configCargada && soportado && <TarjetaPuntaje recargar={claveOriginal} irA={irA} />}
 
       {pestana === 'personalidad' && <TabPersonalidad b={b} set={set} negocio={negocio} />}
       {pestana === 'conocimiento' && <TabConocimiento b={b} set={set} vm={vm} />}
