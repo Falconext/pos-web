@@ -146,6 +146,31 @@ export interface LeadsConfig {
    * manda la ubicación, la foto de la fachada y las indicaciones.
    */
   tienda?: ConfigTienda
+  /**
+   * Menú de bienvenida: saludo exacto + preguntas con botones antes de la IA.
+   * Solo llega de un servidor que ya lo tiene.
+   */
+  menu?: MenuInicial
+}
+
+export interface OpcionMenu {
+  titulo: string
+  descripcion?: string
+  /** Tocarla pasa el chat a una persona del equipo. */
+  derivar?: boolean
+}
+
+export interface PasoMenu {
+  pregunta: string
+  /** Texto del botón que abre la lista. Vacío = "Ver opciones". */
+  boton?: string
+  opciones: OpcionMenu[]
+}
+
+export interface MenuInicial {
+  activo: boolean
+  bienvenida: string
+  pasos: PasoMenu[]
 }
 
 export interface ConfigTienda {

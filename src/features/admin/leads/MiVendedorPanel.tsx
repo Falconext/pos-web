@@ -10,6 +10,9 @@ import type {
   ConfigTienda,
   LongitudRespuesta,
   MedioPago,
+  MenuInicial,
+  OpcionMenu,
+  PasoMenu,
   PerfilVendedor,
   TemaConocimiento,
   TipoZona,
@@ -61,6 +64,8 @@ interface Borrador {
    * subirla, y las coordenadas las saca el servidor del link de Maps.
    */
   tienda: { direccion: string; mapsUrl: string; indicaciones: string }
+  /** Saludo exacto + preguntas con botones antes de la IA. */
+  menu: MenuInicial
 }
 
 const ENVIO_VACIO: ConfigEnvio = { zonas: [], zonaPorDefecto: '' }
@@ -74,6 +79,7 @@ function borradorDe(config: Vm['config']): Borrador {
     envio: config.envio ?? ENVIO_VACIO,
     medios: config.mediosPagoLista ?? [],
     despedida: config.despedida ?? { activa: false, texto: '' },
+    menu: config.menu ?? MENU_VACIO,
     tienda: {
       direccion: config.tienda?.direccion ?? '',
       mapsUrl: config.tienda?.mapsUrl ?? '',
@@ -330,8 +336,15 @@ function VistaPrevia({ negocio, b }: { negocio: string; b: Borrador }) {
     (nombre
       ? `Hola! Soy ${nombre} de ${negocio}. En qué te puedo ayudar?`
       : `Hola! Bienvenido a ${negocio}. En qué te puedo ayudar?`)
+  // Con el menú encendido, el primer mensaje es el suyo, tal cual.
+  const paso = b.menu.activo ? b.menu.pasos[0] : undefined
+  const opciones = paso?.opciones.filter((o) => o.titulo.trim()) ?? []
   // Sin signos de apertura, la muestra se ve como escribiría el vendedor.
-  const texto = p.signosApertura === false ? saludo.replace(/[¿¡]/g, '') : saludo
+  const texto = paso
+    ? [b.menu.bienvenida.trim(), paso.pregunta.trim()].filter(Boolean).join('\n\n')
+    : p.signosApertura === false
+      ? saludo.replace(/[¿¡]/g, '')
+      : saludo
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200/70 bg-white shadow-[0_1px_2px_rgba(16,24,40,.04)] dark:border-slate-800 dark:bg-[#111827]">
       <div className="flex items-center gap-3 border-b border-gray-100 px-4 py-3 dark:border-slate-800">
@@ -352,10 +365,25 @@ function VistaPrevia({ negocio, b }: { negocio: string; b: Borrador }) {
             Hola, quiero info
           </span>
         </div>
-        <div className="flex">
-          <span className="max-w-[88%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-[13px] leading-relaxed text-gray-800 shadow-sm dark:bg-slate-800 dark:text-gray-100">
-            {typeof texto === 'string' ? <TextoWhatsapp texto={texto} /> : texto}
+        <div className="flex max-w-[88%] flex-col gap-1">
+          <span className="whitespace-pre-wrap rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-[13px] leading-relaxed text-gray-800 shadow-sm dark:bg-slate-800 dark:text-gray-100">
+            <TextoWhatsapp texto={texto} />
           </span>
+          {paso &&
+            (vanComoBotones(paso) ? (
+              opciones.map((o, k) => (
+                <span
+                  key={k}
+                  className="rounded-xl bg-white px-3 py-2 text-center text-[13px] font-medium text-sky-600 shadow-sm dark:bg-slate-800 dark:text-sky-400"
+                >
+                  {o.titulo}
+                </span>
+              ))
+            ) : (
+              <span className="flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[13px] font-medium text-sky-600 shadow-sm dark:bg-slate-800 dark:text-sky-400">
+                <Icon icon="solar:list-linear" width={15} /> {paso.boton?.trim() || 'Ver opciones'}
+              </span>
+            ))}
         </div>
       </div>
       <div className="space-y-1.5 px-4 py-3.5 text-[12px] text-gray-500 dark:text-gray-400">
@@ -371,7 +399,9 @@ function VistaPrevia({ negocio, b }: { negocio: string; b: Borrador }) {
           </p>
         )}
         <p className="pt-1 text-[11.5px] text-gray-400">
-          Es una muestra del saludo. La IA lo adapta para responder también lo que te preguntan.
+          {paso
+            ? 'Así sale el menú, tal cual. Cuando el cliente responde, sigue tu vendedor.'
+            : 'Es una muestra del saludo. La IA lo adapta para responder también lo que te preguntan.'}
         </p>
       </div>
     </div>
@@ -553,7 +583,11 @@ function TabPersonalidad({
         >
           <Campo
             label="Saludo de bienvenida"
-            ayuda="Evita promociones en el primer mensaje: Meta lo puede tomar como spam."
+            ayuda={
+              b.menu.activo
+                ? 'Con el menú de bienvenida encendido, el primer mensaje es el del menú: este no se usa.'
+                : 'Tu vendedor lo adapta a lo que pregunta el cliente. Para un saludo exacto, usa el menú de bienvenida.'
+            }
           >
             <textarea
               value={p.mensajeBienvenida ?? ''}
@@ -573,6 +607,8 @@ function TabPersonalidad({
             />
           </Campo>
         </Seccion>
+
+        <EditorMenu menu={b.menu} onChange={(menu) => set((x) => ({ ...x, menu }))} negocio={negocio} />
 
         <Seccion
           icon="solar:hand-shake-linear"
@@ -606,6 +642,180 @@ function TabPersonalidad({
         <VistaPrevia negocio={negocio} b={b} />
       </div>
     </div>
+  )
+}
+
+// ─── Menú de bienvenida ─────────────────────────────────────────────────────
+
+/** Límites de WhatsApp: hasta 3 opciones de 20 letras van como botones; si no, lista. */
+const MENU_MAX_PASOS = 5
+const MENU_MAX_OPCIONES = 10
+const MENU_MAX_TITULO = 24
+const MENU_MAX_TITULO_BOTON = 20
+
+const vanComoBotones = (p: PasoMenu) =>
+  p.opciones.length <= 3 && p.opciones.every((o) => o.titulo.length <= MENU_MAX_TITULO_BOTON && !o.descripcion)
+
+const MENU_VACIO: MenuInicial = { activo: false, bienvenida: '', pasos: [] }
+
+const pasoEjemplo = (): PasoMenu => ({
+  pregunta: '¿En qué te podemos ayudar?',
+  opciones: [
+    { titulo: 'Ver productos y precios' },
+    { titulo: 'Hacer un pedido' },
+    { titulo: 'Envíos y entregas' },
+    { titulo: 'Hablar con un asesor', derivar: true },
+  ],
+})
+
+function EditorMenu({
+  menu,
+  onChange,
+  negocio,
+}: {
+  menu: MenuInicial
+  onChange: (m: MenuInicial) => void
+  negocio: string
+}) {
+  const setPaso = (i: number, cambio: Partial<PasoMenu>) =>
+    onChange({ ...menu, pasos: menu.pasos.map((p, j) => (j === i ? { ...p, ...cambio } : p)) })
+  const setOpcion = (i: number, k: number, cambio: Partial<OpcionMenu>) =>
+    setPaso(i, { opciones: menu.pasos[i].opciones.map((o, j) => (j === k ? { ...o, ...cambio } : o)) })
+  const quitarPaso = (i: number) => onChange({ ...menu, pasos: menu.pasos.filter((_, j) => j !== i) })
+  const incompleto = menu.activo && !menu.pasos.some((p) => p.pregunta.trim() && p.opciones.filter((o) => o.titulo.trim()).length >= 2)
+
+  return (
+    <Seccion
+      icon="solar:list-check-linear"
+      titulo="Menú de bienvenida"
+      descripcion="Tu saludo sale tal cual, con preguntas para tocar. Cuando el cliente responde, sigue tu vendedor con lo que eligió."
+    >
+      <Interruptor
+        activo={menu.activo}
+        onChange={(activo) =>
+          onChange({
+            ...menu,
+            activo,
+            // Al encenderlo vacío, arranca con un ejemplo para editar.
+            pasos: activo && !menu.pasos.length ? [pasoEjemplo()] : menu.pasos,
+          })
+        }
+        label="Saludar con el menú en las conversaciones nuevas"
+        ayuda="Solo en WhatsApp salen botones; en Instagram y Messenger las opciones van numeradas."
+      />
+      {menu.activo && (
+        <>
+          <Campo
+            label="Saludo"
+            ayuda="Va arriba de la primera pregunta, exactamente como lo escribas."
+            contador={{ actual: menu.bienvenida.length, max: 800 }}
+          >
+            <textarea
+              value={menu.bienvenida}
+              maxLength={800}
+              onChange={(e) => onChange({ ...menu, bienvenida: e.target.value })}
+              rows={5}
+              placeholder={`¡Hola! 👋 Bienvenido(a) a ${negocio}. Gracias por escribirnos.`}
+              className={`${inputBase} resize-y leading-relaxed`}
+            />
+          </Campo>
+
+          {menu.pasos.map((paso, i) => (
+            <div key={i} className="rounded-xl border border-gray-200 p-4 dark:border-slate-700">
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <span className="text-[12px] font-bold uppercase tracking-wider text-gray-400">
+                  Pregunta {i + 1} · {vanComoBotones(paso) ? 'botones' : 'lista'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => quitarPaso(i)}
+                  className="rounded-lg p-1 text-gray-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-900/20"
+                  aria-label={`Quitar pregunta ${i + 1}`}
+                >
+                  <Icon icon="solar:trash-bin-minimalistic-linear" width={17} />
+                </button>
+              </div>
+              <input
+                value={paso.pregunta}
+                maxLength={200}
+                onChange={(e) => setPaso(i, { pregunta: e.target.value })}
+                placeholder="¿Dónde vendes hoy?"
+                className={inputBase}
+              />
+              <div className="mt-3 space-y-2">
+                {paso.opciones.map((o, k) => (
+                  <div key={k} className="flex flex-wrap items-center gap-2">
+                    <span className="w-5 text-center text-[12px] font-semibold text-gray-400">{k + 1}</span>
+                    <input
+                      value={o.titulo}
+                      maxLength={MENU_MAX_TITULO}
+                      onChange={(e) => setOpcion(i, k, { titulo: e.target.value })}
+                      placeholder="Opción"
+                      className={`${inputBase} min-w-0 flex-1 basis-40`}
+                    />
+                    <label className="flex items-center gap-1.5 text-[12.5px] text-gray-600 dark:text-gray-300">
+                      <input
+                        type="checkbox"
+                        checked={o.derivar === true}
+                        onChange={(e) => setOpcion(i, k, { derivar: e.target.checked || undefined })}
+                        className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                      />
+                      Pasa a una persona
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setPaso(i, { opciones: paso.opciones.filter((_, j) => j !== k) })}
+                      className="rounded-lg p-1 text-gray-400 transition hover:text-rose-600"
+                      aria-label={`Quitar opción ${k + 1}`}
+                    >
+                      <Icon icon="solar:close-circle-linear" width={17} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {paso.opciones.length < MENU_MAX_OPCIONES && (
+                <button
+                  type="button"
+                  onClick={() => setPaso(i, { opciones: [...paso.opciones, { titulo: '' }] })}
+                  className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+                >
+                  <Icon icon="solar:add-circle-linear" width={16} /> Agregar opción
+                </button>
+              )}
+              {!vanComoBotones(paso) && (
+                <input
+                  value={paso.boton ?? ''}
+                  maxLength={MENU_MAX_TITULO_BOTON}
+                  onChange={(e) => setPaso(i, { boton: e.target.value })}
+                  placeholder="Texto del botón de la lista: Ver opciones"
+                  className={`${inputBase} mt-3`}
+                />
+              )}
+            </div>
+          ))}
+
+          {menu.pasos.length < MENU_MAX_PASOS && (
+            <button
+              type="button"
+              onClick={() => onChange({ ...menu, pasos: [...menu.pasos, { pregunta: '', opciones: [{ titulo: '' }, { titulo: '' }] }] })}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-dashed border-gray-300 px-3.5 py-2 text-[13px] font-semibold text-gray-700 transition hover:border-emerald-400 hover:text-emerald-700 dark:border-slate-600 dark:text-gray-200"
+            >
+              <Icon icon="solar:add-circle-linear" width={16} /> Agregar pregunta
+            </button>
+          )}
+          <p className="text-[12.5px] text-gray-500 dark:text-gray-400">
+            Hasta 3 opciones cortas (20 letras) salen como botones; con más, como una lista de hasta 10. Si el cliente
+            escribe otra cosa en vez de tocar, tu vendedor le contesta y el menú termina ahí.
+          </p>
+          {incompleto && (
+            <p className="flex items-start gap-2 rounded-xl bg-amber-50 px-3.5 py-2.5 text-[12.5px] text-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
+              <Icon icon="solar:danger-triangle-linear" width={16} className="mt-0.5 flex-none" />
+              Cada pregunta necesita al menos 2 opciones. Sin una pregunta completa, el menú no sale.
+            </p>
+          )}
+        </>
+      )}
+    </Seccion>
   )
 }
 
@@ -1561,6 +1771,13 @@ export function MiVendedorPanel({ vm, negocio }: { vm: Vm; negocio: string }) {
         cambios.mediosPagoLista = b.medios.filter((m) => m.nombre.trim() && m.detalle.trim())
       }
       if (distinto(b.despedida, original.despedida)) cambios.despedida = b.despedida
+      if (distinto(b.menu, original.menu)) {
+        cambios.menu = {
+          ...b.menu,
+          bienvenida: b.menu.bienvenida.trim(),
+          pasos: b.menu.pasos.map((p) => ({ ...p, opciones: p.opciones.filter((o) => o.titulo.trim()) })),
+        }
+      }
       if (vm.config.tienda && distinto(b.tienda, original.tienda)) {
         const guardada = vm.config.tienda
         const mapsUrl = b.tienda.mapsUrl.trim()
