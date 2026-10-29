@@ -6,6 +6,16 @@ import useAlertStore from '@/zustand/alert';
 import { useSedesStore } from '@/zustand/sedes';
 import { useAuthStore } from '@/zustand/auth';
 import { puedeLeerVentasDeTodos } from '@/utils/alcanceLectura';
+import type { MensajeEstadoPendiente } from './ModalMensajeEstado';
+
+const ETIQUETA_ESTADO: Record<string, string> = {
+    PREPARANDO: 'Preparando',
+    EN_CAMINO: 'En camino',
+    EN_AGENCIA: 'En agencia',
+    EN_DESTINO: 'En destino',
+    ENTREGADO: 'Entregado',
+    DEVUELTO: 'Devuelto',
+};
 
 export type TipoVenta =
     | 'BOLETA' | 'FACTURA' | 'NOTA_CREDITO' | 'NOTA_DEBITO'
@@ -256,7 +266,58 @@ export function usePanelVentasViewModel() {
         return base;
     }, [items, tab, busqueda, filtroSerie, filtroDni, filtroProducto, filtroMetodoPago, filtroRepartidorId]);
 
+    // Con Takiy (WhatsApp por QR) el aviso al cliente se revisa y edita antes de
+    // salir: al cambiar el estado se abre el mensaje armado en vez de mandarlo solo.
+    const [takiyActivo, setTakiyActivo] = useState(false);
+    useEffect(() => {
+        apiClient
+            .get('/whatsapp/takiy')
+            .then((r) => setTakiyActivo(!!(r.data?.data ?? r.data)?.activo))
+            .catch(() => setTakiyActivo(false));
+    }, []);
+    const [mensajeEstado, setMensajeEstado] = useState<{
+        item: VentaPanelItem;
+        estado: string;
+        pendiente: MensajeEstadoPendiente;
+    } | null>(null);
+    const [procesandoMensaje, setProcesandoMensaje] = useState(false);
+
+    const marcarEstadoLocal = useCallback((item: VentaPanelItem, nuevoEstado: string) => {
+        setItems((prev) =>
+            prev.map((i) =>
+                i.id === item.id && i.tipo === item.tipo
+                    ? { ...i, estadoDespacho: nuevoEstado as EstadoDespacho }
+                    : i,
+            ),
+        );
+    }, []);
+
     const actualizarEstado = useCallback(async (item: VentaPanelItem, nuevoEstado: string) => {
+        if (item.comprobanteId && takiyActivo) {
+            try {
+                const r = await apiClient.get(
+                    `/envio-despacho/comprobante/${item.comprobanteId}/mensaje-estado`,
+                    { params: { estado: nuevoEstado } },
+                );
+                const data = r.data?.data ?? r.data;
+                if (data?.texto) {
+                    setMensajeEstado({
+                        item,
+                        estado: nuevoEstado,
+                        pendiente: {
+                            referencia: item.referencia,
+                            cliente: item.cliente,
+                            estadoLabel: ETIQUETA_ESTADO[nuevoEstado] ?? nuevoEstado,
+                            telefono: data.telefono ?? item.clienteTelefono ?? '',
+                            texto: data.texto,
+                        },
+                    });
+                    return;
+                }
+            } catch {
+                // Sin vista previa sigue el cambio de siempre (con su aviso automático).
+            }
+        }
         try {
             if (item.comprobanteId) {
                 await apiClient.put(`/envio-despacho/comprobante/${item.comprobanteId}`, { estado: nuevoEstado });
@@ -278,7 +339,37 @@ export function usePanelVentasViewModel() {
         } catch {
             alert('Error al actualizar estado', 'error');
         }
-    }, [alert]);
+    }, [alert, takiyActivo]);
+
+    /** Cierra el modal del mensaje: cambia el estado sin aviso automático y, si se pidió, manda el texto revisado. */
+    const confirmarMensajeEstado = useCallback(async (enviar: boolean, telefono?: string, texto?: string) => {
+        if (!mensajeEstado?.item.comprobanteId) return;
+        const { item, estado } = mensajeEstado;
+        setProcesandoMensaje(true);
+        try {
+            await apiClient.put(`/envio-despacho/comprobante/${item.comprobanteId}`, { estado, notificar: false });
+            marcarEstadoLocal(item, estado);
+        } catch {
+            setProcesandoMensaje(false);
+            alert('Error al actualizar estado', 'error');
+            return;
+        }
+        if (!enviar) {
+            setProcesandoMensaje(false);
+            setMensajeEstado(null);
+            alert('Estado actualizado (sin aviso al cliente)', 'success');
+            return;
+        }
+        try {
+            await apiClient.post(`/envio-despacho/comprobante/${item.comprobanteId}/mensaje`, { telefono, texto });
+            alert('Estado actualizado y mensaje enviado al cliente', 'success');
+        } catch (e: any) {
+            alert(`Estado actualizado, pero el mensaje no salió: ${e?.response?.data?.message || 'error'}`, 'warning');
+        } finally {
+            setProcesandoMensaje(false);
+            setMensajeEstado(null);
+        }
+    }, [mensajeEstado, marcarEstadoLocal, alert]);
 
     const itemsVisibles = useMemo(() => items.filter(esDocumentoVisible), [items]);
     const countTodo = itemsVisibles.length;
@@ -453,6 +544,7 @@ export function usePanelVentasViewModel() {
         totalPorCobrar,
         porCobrarGlobal,
         actualizarEstado,
+        mensajeEstado, setMensajeEstado, procesandoMensaje, confirmarMensajeEstado,
         cargar,
     };
 }
