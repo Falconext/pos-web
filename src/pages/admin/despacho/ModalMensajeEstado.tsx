@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 
 export interface MensajeEstadoPendiente {
@@ -33,8 +34,10 @@ export function ModalMensajeEstado({ pendiente, procesando, onEnviar, onSoloEsta
 
     const puedeEnviar = telefono.replace(/\D/g, '').length >= 9 && texto.trim().length > 0;
 
-    return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4" onClick={procesando ? undefined : onCancelar}>
+    // Portal al body: dentro del panel, un ancestro hace que `fixed` no cubra
+    // la ventana entera y quedaba una franja sin oscurecer arriba.
+    return createPortal(
+        <div className="fixed inset-0 z-[1000000] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={procesando ? undefined : onCancelar}>
             <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-[#111827]" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between bg-emerald-600 px-5 py-3 text-white">
                     <div className="flex items-center gap-2">
@@ -94,6 +97,7 @@ export function ModalMensajeEstado({ pendiente, procesando, onEnviar, onSoloEsta
                     </button>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body,
     );
 }
