@@ -13,6 +13,8 @@ import type { PaymentLine } from "../useFacturacionViewModel";
 import { getFormatoImpresionDefault } from "@/utils/formatoImpresion";
 import ComprobantePrintPage from "@/pages/admin/facturacion/comprobanteImprimir";
 import { type FormatoImpresion } from "@/utils/formatoImpresion";
+import { useAuthStore } from "@/zustand/auth";
+import { ventaBloqueadaEnSede } from "@/utils/ventaEnSede";
 
 const METODOS = ['Efectivo', 'Yape', 'Plin', 'Transferencia', 'Tarjeta'];
 
@@ -229,6 +231,13 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
         String(vm.formValues?.comprobante || '').toUpperCase(),
     );
     const emiteSinPasoDePago = vm.isQuotationRoute || esNotaCredito;
+    const { auth: authPos, sedeActiva: sedeActivaPos } = useAuthStore();
+    const esNotaPedido = String(vm.formValues?.comprobante || '').toUpperCase() === 'NOTA DE PEDIDO';
+    const sinVentaEnSede =
+        !emiteSinPasoDePago &&
+        !esNotaPedido &&
+        !(vm.isEditNotaVenta && !vm.editaHaciaFormal) &&
+        ventaBloqueadaEnSede(authPos as any, sedeActivaPos?.id);
 
     // Confirmación explícita antes de anular. Emitir la nota queda a un clic al
     // sacarle el paso de pago —que no cobraba nada, pero obligaba a detenerse—, y
@@ -541,7 +550,7 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
     }, [showPago, emitStep, emitirBloqueado, vm.addInvoiceReceipt]);
 
     const continuarPago = () => {
-        if (!hayProductos) return;
+        if (!hayProductos || sinVentaEnSede) return;
         if (esNotaCredito) {
             setConfirmarNota(true);
         } else if (emiteSinPasoDePago) {
@@ -744,6 +753,12 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                     </div>
                 </div>
             )}
+            {sinVentaEnSede && (
+                <div className="mb-2 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:border-rose-900/40 dark:bg-rose-900/20 dark:text-rose-300">
+                    <Icon icon="solar:cart-cross-bold" className="mt-0.5 flex-none text-base" />
+                    <span>No tienes venta habilitada en <b>{sedeActivaPos?.nombre ?? 'esta sede'}</b>. Puedes cotizar y consultar stock; para vender cambia de sede o pídele a tu administrador que te la habilite.</span>
+                </div>
+            )}
             <div className="flex gap-3">
                 {vm.isQuotationRoute && (
                     <button
@@ -757,8 +772,8 @@ export const POSCalculations = ({ vm, printFn, handleOpenNewTab, printFormValues
                 <button
                     data-testid="pos-continuar-pago"
                     onClick={continuarPago}
-                    disabled={hayRecetasPendientes || !hayProductos}
-                    className={`flex-1 py-3 md:py-3.5 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm ${hayRecetasPendientes
+                    disabled={hayRecetasPendientes || !hayProductos || sinVentaEnSede}
+                    className={`flex-1 py-3 md:py-3.5 text-white rounded-xl font-bold hover:opacity-90 transition-all flex items-center justify-center gap-2 text-sm ${hayRecetasPendientes || sinVentaEnSede
                         ? 'bg-gray-400 cursor-not-allowed'
                         : !hayProductos
                             ? 'bg-gray-400 cursor-not-allowed'

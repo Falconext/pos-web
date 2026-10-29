@@ -44,7 +44,7 @@ export interface IUsuario {
   empresaId: number;
   estado: 'ACTIVO' | 'INACTIVO';
   permisos?: string[];
-  sedes?: { id: number; nombre: string; codigo: string | null; esPrincipal: boolean }[];
+  sedes?: { id: number; nombre: string; codigo: string | null; esPrincipal: boolean; puedeVender?: boolean }[];
   subModulos?: { id: number; codigo: string; nombre: string; moduloId: number }[];
   comisionGlobal?: number;
   comisionGlobalFija?: number;
@@ -59,6 +59,7 @@ export interface IUsuario {
   noPermitirVentaProductosGratuitos?: boolean;
   restringirTransferenciasASuSede?: boolean;
   bloquearCrearEliminarProductos?: boolean;
+  soloImagenesProductos?: boolean;
   puedeAnularComprobantes?: boolean;
 }
 
@@ -72,6 +73,8 @@ export interface IFormUsuario {
   permisos: string[];
   sedeIds?: number[];
   sedeDefaultId?: number;
+  /** Entre sedeIds, donde entra pero no emite ventas. */
+  sedesSinVenta?: number[];
   subModuloIds?: number[];
   comisionGlobal?: number;
   comisionGlobalFija?: number;
@@ -83,6 +86,7 @@ export interface IFormUsuario {
   noPermitirVentaProductosGratuitos?: boolean;
   restringirTransferenciasASuSede?: boolean;
   bloquearCrearEliminarProductos?: boolean;
+  soloImagenesProductos?: boolean;
   puedeAnularComprobantes?: boolean;
 }
 

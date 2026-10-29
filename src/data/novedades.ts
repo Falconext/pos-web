@@ -60,6 +60,26 @@ export const TODOS_LOS_PLANES: PlanNovedad[] = ['EMPRENDEDOR', 'NEGOCIO', 'CORPO
 export const NOVEDADES: Novedad[] = [
     // ── Octubre 2026 (19-09 → 26-10) ────────────────────────────────────────
     {
+        id: '2026-10-sede-sin-venta',
+        fecha: '2026-10-29',
+        titulo: 'Elige en qué sedes vende cada vendedor',
+        descripcion:
+            'Aunque le asignes varias sedes, marca en cuáles puede vender: en las demás entra, ve stock y cotiza, pero no emite boletas, facturas ni notas de venta.',
+        categoria: 'Usuarios',
+        tipo: 'NUEVO',
+        donde: 'Usuarios → Editar → Sedes asignadas → "Puede vender"',
+    },
+    {
+        id: '2026-10-solo-fotos-productos',
+        fecha: '2026-10-29',
+        titulo: 'Delega solo las fotos de tus productos',
+        descripcion:
+            'Dale a alguien de tu equipo acceso únicamente a "Fotos de productos": sube, cambia y ordena las fotos sin poder tocar precios, stock ni datos.',
+        categoria: 'Usuarios',
+        tipo: 'NUEVO',
+        donde: 'Usuarios → Editar → Permisos avanzados → Solo gestionar fotos de productos',
+    },
+    {
         id: '2026-10-whatsapp-coexistencia',
         fecha: '2026-10-26',
         titulo: 'Sigue usando el WhatsApp Business de tu celular mientras la IA responde',

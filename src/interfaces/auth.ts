@@ -17,6 +17,8 @@ export interface ISede {
     activo: boolean
     /** Dirección propia del local (puede diferir de la fiscal del RUC). */
     direccion?: string | null
+    /** false = el usuario entra a la sede pero no emite ventas ahí. */
+    puedeVender?: boolean
 }
 
 export interface IUser {
@@ -46,6 +48,8 @@ export interface IUser {
     // Único permiso opt-in en sentido contrario: el admin lo ACTIVA para dar
     // una capacidad (anular/eliminar comprobantes), no para restringir.
     puedeAnularComprobantes?: boolean
+    /** Solo gestiona fotos de productos (página Fotos de productos). */
+    soloImagenesProductos?: boolean
 }
 
 export interface IResponse {
