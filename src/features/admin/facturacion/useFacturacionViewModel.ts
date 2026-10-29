@@ -41,29 +41,16 @@ import {
     type IDatosReceta,
 } from "./FacturacionModel";
 import { COURIERS } from "./components/EnvioModal";
-import { mensajeErrorShalom, shalomService } from "@/services/shalom.service";
+import { generarGuiaShalomAuto } from "@/utils/guiaShalomAuto";
 
-const SHALOM_COURIERS = new Set(['SHALOM_PRO', 'SHALOM_COD']);
-
-/**
- * Registra la guía en Shalom al cerrar la venta, solo si la empresa activó la
- * generación automática y tiene la cuenta conectada. Se consulta el estado en
- * este momento (y no al cargar la página) para no pedir /shalom/instancia en
- * cada venta que no usa Shalom.
- */
+/** Guía Shalom automática al cerrar la venta (ver utils/guiaShalomAuto). */
 async function generarGuiaShalomSiCorresponde(comprobanteId: number, transportista?: string) {
-    if (!transportista || !SHALOM_COURIERS.has(transportista)) return;
-    try {
-        const instancia = await shalomService.getInstancia();
-        if (!instancia?.habilitadoPorPlan || !instancia.conectada || !instancia.autoGuiaActivo) return;
-        const guia = await shalomService.crearGuia(comprobanteId);
+    const r = await generarGuiaShalomAuto(comprobanteId, transportista);
+    if (r?.estado === 'generada') {
+        useAlertStore.getState().alert(r.nroOrden ? `Guía ${r.nroOrden} generada en Shalom.` : 'Envío registrado en Shalom.', 'success');
+    } else if (r?.estado === 'error') {
         useAlertStore.getState().alert(
-            guia.nroOrden ? `Guía ${guia.nroOrden} generada en Shalom.` : 'Envío registrado en Shalom.',
-            'success',
-        );
-    } catch (error: unknown) {
-        useAlertStore.getState().alert(
-            `La venta se guardó, pero no se pudo generar la guía en Shalom: ${mensajeErrorShalom(error, 'error desconocido')}. Puedes generarla desde Editar Despacho.`,
+            `La venta se guardó, pero no se pudo generar la guía en Shalom: ${r.mensaje}. Puedes generarla desde Editar Despacho.`,
             'warning',
         );
     }

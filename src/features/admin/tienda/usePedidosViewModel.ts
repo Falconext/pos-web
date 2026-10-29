@@ -448,5 +448,6 @@ export const usePedidosViewModel = () => {
         toggleOrderExpanded,
         buildWhatsappUrl,
         buildReviewWhatsappUrl,
+        recargar: cargarPedidos,
     };
 };
