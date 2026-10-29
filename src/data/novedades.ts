@@ -71,6 +71,28 @@ export const NOVEDADES: Novedad[] = [
         nota: 'Viene apagado: marca Shalom y/o Olva en la configuración de envío de tu tienda.',
     },
     {
+        id: '2026-10-ia-puntaje-derivacion',
+        fecha: '2026-10-29',
+        titulo: 'Puntaje de tu vendedor IA y cuándo pasa el chat a tu equipo',
+        descripcion:
+            'Ves de 0 a 100 qué tan listo está tu vendedor, con lo que le falta y un botón para completarlo. Y eliges con casillas en qué casos te pasa el chat (reclamos, mayoristas, cancelaciones…) y cuáles resuelve solo.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
+        id: '2026-10-ia-menu-bienvenida',
+        fecha: '2026-10-29',
+        titulo: 'Menú de bienvenida con botones en WhatsApp',
+        descripcion:
+            'Tu saludo sale exacto, con preguntas que el cliente responde tocando un botón (qué busca, dónde compra, su rubro). Después sigue tu vendedor sabiendo lo que eligió, o pasa el chat a una persona si así lo marcaste.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor → Personalidad → Menú de bienvenida',
+        nota: 'Requiere el módulo IA de Ventas contratado. Viene apagado. En Instagram y Messenger las opciones salen numeradas.',
+    },
+    {
         id: '2026-10-whatsapp-coexistencia',
         fecha: '2026-10-26',
         titulo: 'Sigue usando el WhatsApp Business de tu celular mientras la IA responde',

@@ -146,6 +146,65 @@ export interface LeadsConfig {
    * manda la ubicación, la foto de la fachada y las indicaciones.
    */
   tienda?: ConfigTienda
+  /**
+   * Menú de bienvenida: saludo exacto + preguntas con botones antes de la IA.
+   * Solo llega de un servidor que ya lo tiene.
+   */
+  menu?: MenuInicial
+  /**
+   * En qué situaciones la IA pasa el chat a una persona. null = todas (no se
+   * tocaron las casillas). "pide_hablar_con_persona" va siempre.
+   */
+  derivarEn?: MotivoDerivacion[] | null
+}
+
+export type MotivoDerivacion =
+  | 'mayorista'
+  | 'reclamo'
+  | 'seguimiento_de_pedido'
+  | 'descuento_especial'
+  | 'producto_no_disponible'
+  | 'cancelacion'
+  | 'pide_hablar_con_persona'
+
+export type PestanaVendedor = 'personalidad' | 'conocimiento' | 'entrega' | 'pagos' | 'ajustes'
+
+export interface ItemPuntaje {
+  id: string
+  titulo: string
+  ok: boolean
+  puntos: number
+  consejo: string
+  /** Se arregla en esta pestaña de Mi vendedor… */
+  pestana?: PestanaVendedor
+  /** …o en otra pantalla del sistema. */
+  ruta?: string
+}
+
+export interface PuntajeVendedor {
+  puntaje: number
+  nivel: 'LISTO' | 'CASI' | 'FALTA'
+  items: ItemPuntaje[]
+}
+
+export interface OpcionMenu {
+  titulo: string
+  descripcion?: string
+  /** Tocarla pasa el chat a una persona del equipo. */
+  derivar?: boolean
+}
+
+export interface PasoMenu {
+  pregunta: string
+  /** Texto del botón que abre la lista. Vacío = "Ver opciones". */
+  boton?: string
+  opciones: OpcionMenu[]
+}
+
+export interface MenuInicial {
+  activo: boolean
+  bienvenida: string
+  pasos: PasoMenu[]
 }
 
 export interface ConfigTienda {
@@ -471,6 +530,13 @@ export async function updateConfig(
 ): Promise<LeadsConfig> {
   const r = await patch<LeadsConfig>('/leads/config', data)
   if (!r.success || !r.data) throw new Error(r.error || 'Error al guardar la configuración')
+  return r.data
+}
+
+/** Qué tan lista está la IA para vender y qué le falta. */
+export async function fetchPuntajeVendedor(): Promise<PuntajeVendedor> {
+  const r = await get<PuntajeVendedor>('/leads/puntaje')
+  if (!r.success || !r.data) throw new Error(r.error || 'Error al calcular el puntaje')
   return r.data
 }
 
