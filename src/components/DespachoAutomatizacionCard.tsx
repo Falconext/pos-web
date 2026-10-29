@@ -128,12 +128,14 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
     // El plan habilita editar esta configuración (solo Corporativo). Lo decide el
     // backend, que además rechaza los cambios: acá solo se refleja.
     const [habilitado, setHabilitado] = useState(true);
+    // Con Takiy los textos por estado se editan sin el plan (el resto no).
+    const [mensajesEditables, setMensajesEditables] = useState(true);
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
 
     const cargar = useCallback(async () => {
         try {
-            const res = await get<DespachoConfig & { shalomAutoTrackingActivo?: boolean; habilitadoPorPlan?: boolean }>('/envio-despacho/config');
+            const res = await get<DespachoConfig & { shalomAutoTrackingActivo?: boolean; habilitadoPorPlan?: boolean; mensajesEditables?: boolean }>('/envio-despacho/config');
             if (res.data) {
                 setConfig({
                     mensajeEnCamino: res.data.mensajeEnCamino ?? DEFAULTS.mensajeEnCamino,
@@ -147,6 +149,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                 });
                 setAutoTracking(res.data.shalomAutoTrackingActivo ?? false);
                 setHabilitado(res.data.habilitadoPorPlan ?? false);
+                setMensajesEditables(res.data.mensajesEditables ?? res.data.habilitadoPorPlan ?? false);
             }
         } catch {
             alert('Error al cargar la configuración de despacho', 'error');
@@ -210,7 +213,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                 <button
                     type="button"
                     onClick={guardar}
-                    disabled={guardando || cargando || !habilitado}
+                    disabled={guardando || cargando || !mensajesEditables}
                     className="inline-flex h-10 items-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white transition-colors hover:bg-indigo-700 disabled:opacity-60"
                 >
                     <Icon icon={guardando ? 'eos-icons:loading' : 'solar:floppy-disk-bold'} className="text-base" />
@@ -230,6 +233,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                             <p className="text-xs leading-5 text-violet-800 dark:text-violet-200">
                                 <b>Solo en el plan Corporativo.</b> Puedes ver cómo funciona, pero para activar el
                                 rastreo automático y editar las plantillas necesitas actualizar tu plan.
+                                {mensajesEditables && ' Como envías por WhatsApp por QR (Takiy), sí puedes escribir tus mensajes por estado.'}
                             </p>
                         </div>
                     )}
@@ -299,7 +303,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 placeholder={DEFAULTS.mensajeEnCamino}
                                 onToggle={v => set('notificarEnCamino', v)}
                                 onMensaje={v => set('mensajeEnCamino', v)}
-                                bloqueado={!habilitado}
+                                bloqueado={!mensajesEditables}
                             />
                             <Plantilla
                                 title="Estado: Llegó a la agencia"
@@ -311,7 +315,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 placeholder={DEFAULTS.mensajeEnAgencia}
                                 onMensaje={v => set('mensajeEnAgencia', v)}
                                 variables={['nombre', 'pedido', 'agencia', 'clave', 'saldo', 'empresa']}
-                                bloqueado={!habilitado}
+                                bloqueado={!mensajesEditables}
                             />
                             <Plantilla
                                 title="Estado: Entregado"
@@ -323,7 +327,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 placeholder={DEFAULTS.mensajeEntregado}
                                 onToggle={v => set('notificarEntregado', v)}
                                 onMensaje={v => set('mensajeEntregado', v)}
-                                bloqueado={!habilitado}
+                                bloqueado={!mensajesEditables}
                             />
                             <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                                 <div className="flex items-start gap-2.5">
