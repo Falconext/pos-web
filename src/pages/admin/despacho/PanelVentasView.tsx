@@ -27,6 +27,7 @@ import {
     EstadoDespacho,
 } from './usePanelVentasViewModel';
 import { EditarDespachoModal } from './EditarDespachoModal';
+import { ModalMensajeEstado } from './ModalMensajeEstado';
 import { ModalTrazabilidad } from './ModalTrazabilidad';
 import { ReporteEnviosModal } from './ReporteEnviosModal';
 import { GuiasShalomLoteModal } from './GuiasShalomLoteModal';
@@ -2037,6 +2038,16 @@ export default function PanelVentasView() {
                 formato={rotuloFormato}
             />
             <RotulosLotePrint items={rotulosLote} onDone={() => setRotulosLote([])} formato={rotuloFormato} />
+
+            {vm.mensajeEstado && (
+                <ModalMensajeEstado
+                    pendiente={vm.mensajeEstado.pendiente}
+                    procesando={vm.procesandoMensaje}
+                    onEnviar={(telefono, texto) => vm.confirmarMensajeEstado(true, telefono, texto)}
+                    onSoloEstado={() => vm.confirmarMensajeEstado(false)}
+                    onCancelar={() => vm.setMensajeEstado(null)}
+                />
+            )}
 
             {shalomTracking && (
                 <ShalomTrackingModal
