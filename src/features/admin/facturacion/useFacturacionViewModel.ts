@@ -1194,6 +1194,18 @@ export const useFacturacionViewModel = () => {
                     ].filter(Boolean).join('\n'),
                 }));
 
+                // La lista de clientes del POS solo se llena al buscar, así que
+                // el DNI se busca aparte: si ya es cliente, la nota sale a su nombre.
+                if (!clienteConDni && (doc.length === 8 || doc.length === 11)) {
+                    get(`clientes?search=${doc}&limit=5`)
+                        .then((resp: any) => {
+                            const lista = resp?.data?.clientes ?? resp?.data?.data ?? [];
+                            const existente = Array.isArray(lista) ? lista.find((c: any) => String(c.nroDoc) === doc) : null;
+                            if (existente) handleClienteCreado(existente);
+                        })
+                        .catch(() => undefined);
+                }
+
                 // Recoge en una agencia de Shalom u Olva: el envío llega armado
                 // con la agencia, el destinatario y su DNI, y al emitir se crea
                 // el despacho como en cualquier venta con envío.

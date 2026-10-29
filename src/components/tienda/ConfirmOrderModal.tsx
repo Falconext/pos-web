@@ -36,7 +36,7 @@ export default function ConfirmOrderModal({
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/60   transition-all animate-in fade-in duration-200">
-            <div className={`bg-white rounded-3xl shadow-2xl ${conAgencia ? 'max-w-md max-h-[92vh] overflow-y-auto' : 'max-w-sm overflow-hidden'} w-full border border-gray-100 p-6 relative`}>
+            <div className={`bg-white rounded-3xl shadow-2xl ${conAgencia ? 'max-w-md max-h-[92vh] overflow-y-auto overflow-x-hidden' : 'max-w-sm overflow-hidden'} w-full border border-gray-100 p-6 relative`}>
 
                 {/* Decorative background circle */}
                 <div className="absolute -top-10 -right-10 w-32 h-32 bg-gray-50 rounded-full z-0 opacity-50" />

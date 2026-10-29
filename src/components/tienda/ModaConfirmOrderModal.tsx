@@ -33,7 +33,7 @@ export default function ModaConfirmOrderModal({
 
     return (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm transition-all animate-in fade-in duration-200">
-            <div className={`bg-white rounded-none ${conAgencia ? 'max-w-md max-h-[92vh] overflow-y-auto' : 'max-w-sm'} w-full border border-gray-200 p-8 shadow-2xl relative`}>
+            <div className={`bg-white rounded-none ${conAgencia ? 'max-w-md max-h-[92vh] overflow-y-auto overflow-x-hidden' : 'max-w-sm'} w-full border border-gray-200 p-8 shadow-2xl relative`}>
 
                 <div className="flex flex-col items-center">
                     <div className="w-12 h-12 mb-6 border border-gray-900 flex items-center justify-center">
