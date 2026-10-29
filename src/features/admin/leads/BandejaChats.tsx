@@ -9,6 +9,7 @@ import type {
 } from '@/services/leads.service'
 import { AdministrarEtiquetas, ChipEtiqueta, EtiquetasDelChat, FiltroEtiqueta } from './Etiquetas'
 import { useThemeStore } from '@/zustand/theme'
+import { useNumerosWhatsapp } from './useNumerosWhatsapp'
 
 /**
  * Bandeja de conversaciones en tres columnas: lista, chat y ficha del cliente.
@@ -148,12 +149,15 @@ function FilaConversacion({
   activa,
   onAbrir,
   compacta = false,
+  linea = null,
 }: {
   p: LeadProspecto
   activa: boolean
   onAbrir: () => void
   /** Lista plegada: solo el avatar, con el nombre al pasar el mouse. */
   compacta?: boolean
+  /** Número de la empresa al que escribió (solo si la empresa tiene varios). */
+  linea?: string | null
 }) {
   const meta = ESTADO_META[p.estado]
   if (compacta) {
@@ -233,8 +237,17 @@ function FilaConversacion({
             {p.puntaje}
           </span>
         </span>
-        {(meta || p.anuncio || !!p.etiquetas?.length) && (
+        {(meta || p.anuncio || !!p.etiquetas?.length || !!linea) && (
           <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            {linea && (
+              <span
+                className="inline-flex min-w-0 items-center gap-1 truncate rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                title="Número de tu empresa al que escribió"
+              >
+                <Icon icon="mdi:whatsapp" width={10} className="flex-none" />
+                {linea}
+              </span>
+            )}
             {meta && (
               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.badge}`}>
                 <Icon icon={meta.icon} width={10} />
@@ -518,6 +531,9 @@ export function BandejaChats({
 }: BandejaProps) {
   const [filtro, setFiltro] = useState<Filtro>('todos')
   const [etiquetaFiltro, setEtiquetaFiltro] = useState<number | null>(null)
+  const { numeros, varios: variosNumeros, nombreDe } = useNumerosWhatsapp()
+  // Filtro por número de la empresa (solo aparece con dos o más números).
+  const [numeroFiltro, setNumeroFiltro] = useState<string | null>(null)
   const [administrando, setAdministrando] = useState(false)
   // Si borran la etiqueta del filtro, el filtro no puede quedar escondiendo todo.
   const filtroVigente = etiquetas.some((e) => e.id === etiquetaFiltro) ? etiquetaFiltro : null
@@ -550,6 +566,7 @@ export function BandejaChats({
         if (filtro === 'pausados' && p.botActivo) return false
         if (filtro === 'calientes' && p.puntaje < 70) return false
         if (filtroVigente != null && !p.etiquetas?.some((e) => e.id === filtroVigente)) return false
+        if (numeroFiltro && p.numeroWhatsappId !== numeroFiltro) return false
         if (!q) return true
         return (
           (p.nombreProspecto || '').toLowerCase().includes(q) ||
@@ -557,7 +574,7 @@ export function BandejaChats({
         )
       })
       .sort((a, b) => +new Date(b.actualizadoEn) - +new Date(a.actualizadoEn))
-  }, [prospectos, busqueda, filtro, filtroVigente])
+  }, [prospectos, busqueda, filtro, filtroVigente, numeroFiltro])
 
   const enPausa = prospectos.filter((p) => !p.botActivo).length
 
@@ -638,6 +655,26 @@ export function BandejaChats({
               onAdministrar={() => setAdministrando(true)}
             />
           </div>
+          {variosNumeros && (
+            <div className="mt-2 flex flex-wrap gap-1.5" data-testid="filtro-numeros">
+              {[{ phoneNumberId: null as string | null, nombre: 'Todos los números' }, ...numeros.map((n) => ({ phoneNumberId: n.phoneNumberId as string | null, nombre: nombreDe(n.phoneNumberId) || n.phoneNumberId }))].map((n) => (
+                <button
+                  key={n.phoneNumberId ?? 'todos'}
+                  type="button"
+                  onClick={() => setNumeroFiltro(n.phoneNumberId)}
+                  aria-pressed={numeroFiltro === n.phoneNumberId}
+                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    numeroFiltro === n.phoneNumberId
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-300'
+                  }`}
+                >
+                  {n.phoneNumberId && <Icon icon="mdi:whatsapp" width={11} />}
+                  {n.nombre}
+                </button>
+              ))}
+            </div>
+          )}
           </>
           )}
         </div>
@@ -662,6 +699,7 @@ export function BandejaChats({
                 activa={p.conversacionId === conversacionAbiertaId}
                 onAbrir={() => onAbrir(p.conversacionId)}
                 compacta={compacta}
+                linea={nombreDe(p.numeroWhatsappId)}
               />
             ))
           )}

@@ -67,9 +67,11 @@ interface Props {
     numeroConectado?: string | null;
     /** Callback tras conectar con éxito. */
     onConectado?: (data: { phoneNumberId: string; numeroVisible?: string }) => void;
+    /** Sumar otro número a la empresa sin reemplazar el principal. */
+    agregar?: boolean;
 }
 
-export default function ConectarWhatsAppButton({ numeroConectado, onConectado }: Props) {
+export default function ConectarWhatsAppButton({ numeroConectado, onConectado, agregar = false }: Props) {
     // Qué botón está conectando: el de siempre o el de coexistencia.
     const [loading, setLoading] = useState<false | 'normal' | 'coexistencia'>(false);
     // Datos capturados del evento WA_EMBEDDED_SIGNUP (phone_number_id, waba_id).
@@ -150,6 +152,7 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                 phoneNumberId: wabaInfo.current.phoneNumberId,
                 wabaId: wabaInfo.current.wabaId,
                 coexistencia: wabaInfo.current.coexistencia ?? coexistencia,
+                agregar,
             });
             const res = data?.data ?? data;
             const aviso = avisoConexion(res);
@@ -177,6 +180,7 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                 phoneNumberId: phoneNumberId.trim(),
                 wabaId: wabaId.trim(),
                 accessToken: accessToken.trim(),
+                agregar,
             });
             const res = data?.data ?? data;
             const aviso = avisoConexion(res);
@@ -198,7 +202,7 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
 
     return (
         <div className="flex flex-col gap-2">
-            {numeroConectado && (
+            {numeroConectado && !agregar && (
                 <span className="inline-flex items-center gap-1.5 self-start rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
                     <Icon icon="mdi:whatsapp" width={14} /> Conectado: {numeroConectado}
                 </span>
@@ -210,7 +214,7 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                 className="inline-flex w-fit items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-[#25D366]/20 transition hover:brightness-95 disabled:opacity-60"
             >
                 <Icon icon={loading === 'normal' ? 'svg-spinners:180-ring' : 'mdi:whatsapp'} width={18} />
-                {loading === 'normal' ? 'Conectando…' : numeroConectado ? 'Reconectar mi WhatsApp' : 'Conectar mi WhatsApp'}
+                {loading === 'normal' ? 'Conectando…' : agregar ? 'Agregar un número nuevo' : numeroConectado ? 'Reconectar mi WhatsApp' : 'Conectar mi WhatsApp'}
             </button>
             <span className="text-[11px] text-gray-400">
                 Conecta tu número de WhatsApp Business en unos clics. Los avisos a tus clientes saldrán desde tu propio número.
@@ -224,7 +228,7 @@ export default function ConectarWhatsAppButton({ numeroConectado, onConectado }:
                 className="mt-1 inline-flex w-fit items-center justify-center gap-2 rounded-xl border-2 border-[#25D366] px-4 py-2 text-sm font-black text-[#128C7E] transition hover:bg-[#25D366]/10 disabled:opacity-60 dark:text-[#25D366]"
             >
                 <Icon icon={loading === 'coexistencia' ? 'svg-spinners:180-ring' : 'solar:smartphone-bold'} width={18} />
-                {loading === 'coexistencia' ? 'Conectando…' : 'Usar el WhatsApp Business de mi celular'}
+                {loading === 'coexistencia' ? 'Conectando…' : agregar ? 'Agregar el WhatsApp Business de un celular' : 'Usar el WhatsApp Business de mi celular'}
             </button>
             <span className="text-[11px] text-gray-400">
                 Sigues contestando desde tu celular y la IA responde por ti. Cuando tú escribes en un chat, la IA se
