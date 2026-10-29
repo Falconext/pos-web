@@ -7,6 +7,16 @@ import useAlertStore from '@/zustand/alert';
 import { useAuthStore } from '@/zustand/auth';
 import CodigoBarrasEAN13 from '@/components/CodigoBarrasEAN13';
 import { esEan13Valido } from '@/utils/ean13';
+import {
+  FORMATOS_PREDEFINIDOS,
+  LIMITES,
+  estiloPagina,
+  guardarFormato,
+  leerFormatoGuardado,
+  medidasCodigo,
+  normalizarFormato,
+  type FormatoEtiqueta,
+} from '../etiquetaFormato';
 
 interface EtiquetaProducto {
   id: number;
@@ -27,26 +37,6 @@ interface Props {
   productoIds: number[];
 }
 
-/** Formatos de papel soportados. Medidas en mm. */
-const FORMATOS = {
-  rollo: {
-    label: 'Rollo térmico',
-    detalle: '50 × 25 mm, una etiqueta por corte',
-    ancho: 50,
-    alto: 25,
-    columnas: 1,
-  },
-  a4: {
-    label: 'Hoja A4',
-    detalle: '3 × 8 etiquetas de 65 × 35 mm',
-    ancho: 65,
-    alto: 35,
-    columnas: 3,
-  },
-} as const;
-
-type FormatoKey = keyof typeof FORMATOS;
-
 export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: Props) {
   const auth = useAuthStore((s) => s.auth);
   const [cargando, setCargando] = useState(false);
@@ -54,7 +44,13 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
   const [productos, setProductos] = useState<EtiquetaProducto[]>([]);
   const [seleccionados, setSeleccionados] = useState<Set<number>>(new Set());
   const [cantidades, setCantidades] = useState<Record<number, number>>({});
-  const [formato, setFormato] = useState<FormatoKey>('rollo');
+  // Cada impresora usa su rollo: el tamaño elegido se recuerda en este equipo.
+  const [cfg, setCfg] = useState<FormatoEtiqueta>(leerFormatoGuardado);
+  const elegirFormato = (f: Partial<FormatoEtiqueta>) => {
+    const nuevo = normalizarFormato(f);
+    setCfg(nuevo);
+    guardarFormato(nuevo);
+  };
 
   // El código escaneado ya trae nombre/variante/precio desde el sistema, así que
   // el texto va apagado por defecto: se enciende para el vendedor que mira la
@@ -121,18 +117,44 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
     return out;
   }, [productos, seleccionados, cantidades]);
 
-  const cfg = FORMATOS[formato];
+  const codigo = medidasCodigo(cfg, { nombre: mostrarNombre, variante: mostrarVariante, precio: mostrarPrecio });
+  const filas = useMemo(() => {
+    const out: EtiquetaProducto[][] = [];
+    for (let i = 0; i < etiquetas.length; i += cfg.columnas) out.push(etiquetas.slice(i, i + cfg.columnas));
+    return out;
+  }, [etiquetas, cfg.columnas]);
+
+  // Función y no componente: un componente declarado acá se remontaría en cada render.
+  const renderEtiqueta = (p: EtiquetaProducto, key: string) => (
+    <div
+      key={key}
+      style={{ width: `${cfg.ancho}mm`, height: `${cfg.alto}mm`, breakInside: 'avoid', pageBreakInside: 'avoid' }}
+      className="flex shrink-0 flex-col items-center justify-center overflow-hidden bg-white px-1 text-center text-black"
+    >
+      {mostrarNombre && (
+        <span className="w-full truncate text-[6.5pt] font-bold leading-tight">{p.descripcion}</span>
+      )}
+      {mostrarVariante && p.variante && (
+        <span className="w-full truncate text-[6pt] leading-tight">{p.variante}</span>
+      )}
+      {p.codigoBarras && esEan13Valido(p.codigoBarras) && (
+        <CodigoBarrasEAN13
+          codigo={p.codigoBarras}
+          moduloPx={codigo.moduloPx}
+          altoBarras={codigo.altoBarras}
+          altoTexto={codigo.altoTexto}
+          margenModulos={codigo.margenModulos}
+        />
+      )}
+      {mostrarPrecio && <span className="text-[8pt] font-black leading-tight">S/ {p.precio.toFixed(2)}</span>}
+    </div>
+  );
   const printRef = useRef<HTMLDivElement>(null);
   const imprimir = useReactToPrint({
     // @ts-ignore la versión instalada usa contentRef
     contentRef: printRef,
     documentTitle: `Etiquetas_${auth?.empresa?.razonSocial?.replace(/\s+/g, '_') || 'Productos'}`,
-    pageStyle:
-      formato === 'rollo'
-        ? `@page { size: ${cfg.ancho}mm ${cfg.alto}mm; margin: 0; }
-           @media print { html, body { margin: 0 !important; padding: 0 !important; } }`
-        : `@page { size: A4; margin: 6mm; }
-           @media print { html, body { margin: 0 !important; padding: 0 !important; } }`,
+    pageStyle: estiloPagina(cfg),
   });
 
   const toggle = (id: number) =>
@@ -175,26 +197,52 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
           {/* Configuración */}
           <div className="flex w-full shrink-0 flex-col gap-4 border-b border-gray-100 bg-white p-4 dark:border-slate-800 dark:bg-slate-900 md:w-80 md:gap-5 md:overflow-y-auto md:border-b-0 md:border-r md:p-5">
             <div>
-              <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-gray-500">Formato</p>
-              <div className="grid grid-cols-2 gap-2 md:flex md:flex-col">
-                {(Object.keys(FORMATOS) as FormatoKey[]).map((key) => (
+              <p className="mb-2 text-[10px] font-black uppercase tracking-wide text-gray-500">Tamaño de etiqueta</p>
+              <div className="grid grid-cols-2 gap-2">
+                {[...FORMATOS_PREDEFINIDOS, { id: 'personalizado', label: 'Personalizado', detalle: 'Escribe la medida de tu rollo' }].map((f) => (
                   <button
-                    key={key}
+                    key={f.id}
                     type="button"
-                    onClick={() => setFormato(key)}
-                    className={`rounded-xl border p-3 text-left transition ${
-                      formato === key
+                    onClick={() => elegirFormato(f.id === 'personalizado' ? { ...cfg, id: 'personalizado' } : f)}
+                    className={`rounded-xl border p-2.5 text-left transition ${
+                      cfg.id === f.id
                         ? 'border-violet-400 bg-violet-50 dark:bg-violet-900/20'
                         : 'border-gray-200 hover:border-violet-300 dark:border-slate-700'
                     }`}
                   >
-                    <span className="block text-xs font-black text-gray-800 dark:text-white">
-                      {FORMATOS[key].label}
-                    </span>
-                    <span className="block text-[11px] text-gray-500">{FORMATOS[key].detalle}</span>
+                    <span className="block text-xs font-black text-gray-800 dark:text-white">{f.label}</span>
+                    <span className="block text-[10px] leading-tight text-gray-500">{f.detalle}</span>
                   </button>
                 ))}
               </div>
+              {cfg.id === 'personalizado' && (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  {([
+                    ['ancho', 'Ancho (mm)', LIMITES.anchoMin, LIMITES.anchoMax],
+                    ['alto', 'Alto (mm)', LIMITES.altoMin, LIMITES.altoMax],
+                    ['columnas', 'Por fila', 1, LIMITES.columnasMax],
+                  ] as const).map(([campo, label, min, max]) => (
+                    <label key={campo} className="block">
+                      <span className="mb-1 block text-[10px] font-bold text-gray-500">{label}</span>
+                      <input
+                        type="number"
+                        min={min}
+                        max={max}
+                        defaultValue={cfg[campo]}
+                        key={`${campo}-${cfg[campo]}`}
+                        onBlur={(e) => elegirFormato({ ...cfg, [campo]: Number(e.target.value) })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                        }}
+                        className="w-full rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 text-xs font-bold outline-none focus:border-violet-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                      />
+                    </label>
+                  ))}
+                  <p className="col-span-3 text-[10px] leading-snug text-gray-400">
+                    Mide una etiqueta de tu rollo. "Por fila" es para rollos de 2 o 3 etiquetas lado a lado.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -317,52 +365,39 @@ export default function ModalEtiquetasBarras({ isOpen, onClose, productoIds }: P
 
             <div className="min-h-[260px] flex-1 overflow-auto bg-gray-100 p-3 dark:bg-slate-950 sm:p-5">
               <div ref={printRef}>
-                <div
-                  className="mx-auto bg-white"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${cfg.columnas}, ${cfg.ancho}mm)`,
-                    width: `${cfg.columnas * cfg.ancho}mm`,
-                  }}
-                >
-                  {etiquetas.map((p, i) => (
+                {cfg.tipo === 'rollo' ? (
+                  // Rollo: cada fila (1 a 4 etiquetas lado a lado) es su propia página física.
+                  filas.map((fila, f) => (
                     <div
-                      key={`${p.id}-${i}`}
+                      key={f}
+                      className="mx-auto flex bg-white"
                       style={{
-                        width: `${cfg.ancho}mm`,
+                        width: `${cfg.ancho * cfg.columnas}mm`,
                         height: `${cfg.alto}mm`,
-                        // Cada etiqueta del rollo es su propia página física.
                         breakInside: 'avoid',
                         pageBreakInside: 'avoid',
-                        ...(formato === 'rollo' && i > 0 ? { pageBreakBefore: 'always' } : {}),
+                        ...(f > 0 ? { breakBefore: 'page', pageBreakBefore: 'always' } : {}),
                       }}
-                      className="flex flex-col items-center justify-center overflow-hidden bg-white px-1 text-center text-black"
                     >
-                      {mostrarNombre && (
-                        <span className="w-full truncate text-[6.5pt] font-bold leading-tight">
-                          {p.descripcion}
-                        </span>
-                      )}
-                      {mostrarVariante && p.variante && (
-                        <span className="w-full truncate text-[6pt] leading-tight">{p.variante}</span>
-                      )}
-                      {p.codigoBarras && esEan13Valido(p.codigoBarras) && (
-                        <CodigoBarrasEAN13
-                          codigo={p.codigoBarras}
-                          moduloPx={formato === 'rollo' ? 1.3 : 1.5}
-                          altoBarras={formato === 'rollo' ? 34 : 42}
-                          altoTexto={9}
-                          margenModulos={6}
-                        />
-                      )}
-                      {mostrarPrecio && (
-                        <span className="text-[8pt] font-black leading-tight">
-                          S/ {p.precio.toFixed(2)}
-                        </span>
-                      )}
+                      {fila.map((p, i) => (
+                        renderEtiqueta(p, `${p.id}-${f}-${i}`)
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  ))
+                ) : (
+                  <div
+                    className="mx-auto bg-white"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${cfg.columnas}, ${cfg.ancho}mm)`,
+                      width: `${cfg.columnas * cfg.ancho}mm`,
+                    }}
+                  >
+                    {etiquetas.map((p, i) => (
+                      renderEtiqueta(p, `${p.id}-${i}`)
+                    ))}
+                  </div>
+                )}
                 {!etiquetas.length && (
                   <p className="py-10 text-center text-xs text-gray-400">
                     Selecciona al menos un producto con código de barras.
