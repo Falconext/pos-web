@@ -60,6 +60,17 @@ export const TODOS_LOS_PLANES: PlanNovedad[] = ['EMPRENDEDOR', 'NEGOCIO', 'CORPO
 export const NOVEDADES: Novedad[] = [
     // ── Octubre 2026 (19-09 → 26-10) ────────────────────────────────────────
     {
+        id: '2026-10-ia-puntaje-derivacion',
+        fecha: '2026-10-29',
+        titulo: 'Puntaje de tu vendedor IA y cuándo pasa el chat a tu equipo',
+        descripcion:
+            'Ves de 0 a 100 qué tan listo está tu vendedor, con lo que le falta y un botón para completarlo. Y eliges con casillas en qué casos te pasa el chat (reclamos, mayoristas, cancelaciones…) y cuáles resuelve solo.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor',
+        nota: 'Requiere el módulo IA de Ventas contratado.',
+    },
+    {
         id: '2026-10-ia-menu-bienvenida',
         fecha: '2026-10-29',
         titulo: 'Menú de bienvenida con botones en WhatsApp',
