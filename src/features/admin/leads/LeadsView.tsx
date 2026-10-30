@@ -37,6 +37,7 @@ import type {
   TipoLeadDocumento,
 } from '@/services/leads.service'
 import { ReporteDiarioCard } from './ReporteDiarioCard'
+import { MetaConversionesCard } from './MetaConversionesCard'
 import { useNumerosWhatsapp } from './useNumerosWhatsapp'
 
 /**
@@ -1023,6 +1024,8 @@ export function ConfigForm({
       </div>
 
       <ReporteDiarioCard />
+
+      <MetaConversionesCard />
 
       <div className="flex justify-end gap-2 pt-1">
         <Button
