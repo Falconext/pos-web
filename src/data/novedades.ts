@@ -91,6 +91,15 @@ export const NOVEDADES: Novedad[] = [
         nota: 'Viene apagado: marca Shalom y/o Olva en la configuración de envío de tu tienda.',
     },
     {
+        id: '2026-10-chat-tienda-ia',
+        fecha: '2026-10-30',
+        titulo: 'Tu vendedor IA ahora atiende también en tu tienda online',
+        descripcion:
+            'Aparece un chat en tu tienda virtual atendido por tu mismo vendedor: conoce tu catálogo con precio y stock, sabe qué producto está mirando el cliente y le manda fotos con un botón para agregarlo al carrito. Las conversaciones llegan a tu bandeja como "Tienda web" y puedes tomarlas cuando quieras.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor → Ajustes → Chat con tu vendedor en la tienda online',
+        nota: 'Viene apagado. Un visitante que solo saluda no cuenta para el tope de conversaciones de tu plan.',
         id: '2026-10-meta-conversiones',
         fecha: '2026-10-29',
         titulo: 'Meta ya sabe qué anuncios te traen compras',

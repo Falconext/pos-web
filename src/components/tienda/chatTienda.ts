@@ -86,3 +86,21 @@ export function sugerencias(enProducto: boolean): string[] {
     ? ['¿Tienen stock de este?', '¿Cuánto cuesta el envío?', '¿Cómo puedo pagar?']
     : ['Busco un producto', '¿Hacen envíos?', '¿Cómo puedo pagar?']
 }
+
+/**
+ * ¿El producto se compra eligiendo algo (talla, color, presentación)? Esos
+ * no se agregan directo: el cliente elige en la página del producto, como
+ * haría sin el chat. Si no, el carrito recibe el producto base sin talla.
+ */
+export function requiereElegirOpciones(p: {
+  variantes?: unknown[] | null
+  opcionesAtributos?: unknown
+  codigosBarras?: unknown[] | null
+} | null | undefined): boolean {
+  if (!p) return false
+  if (Array.isArray(p.variantes) && p.variantes.length > 0) return true
+  if (Array.isArray(p.codigosBarras) && p.codigosBarras.length > 0) return true
+  const o = p.opcionesAtributos
+  if (Array.isArray(o)) return o.length > 0
+  return Boolean(o && typeof o === 'object' && Object.keys(o as object).length > 0)
+}

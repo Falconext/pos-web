@@ -17,7 +17,7 @@ jest.mock('axios', () => ({
 jest.mock('@iconify/react', () => ({ Icon: () => null }))
 
 import ChatTiendaIa from '../ChatTiendaIa'
-import { trozosDeTexto, ubicacionEnTienda, unirMensajes } from '../chatTienda'
+import { requiereElegirOpciones, trozosDeTexto, ubicacionEnTienda, unirMensajes } from '../chatTienda'
 import { canalDe, contactoVisible, nombreVisible, sinTelefono } from '@/features/admin/leads/LeadsModel'
 
 function Donde() {
@@ -74,6 +74,15 @@ describe('reglas', () => {
       { ...base, id: 'p2', de: 'cliente', texto: 'otro', clienteId: 'def', pendiente: true },
     ] as any
     expect(unirMensajes(srv, pend).map((m) => m.id)).toEqual(['u1', 'p2'])
+  })
+
+  it('con talla/color/presentación hay que elegir en la página del producto', () => {
+    expect(requiereElegirOpciones({ variantes: [{ id: 1 }] })).toBe(true)
+    expect(requiereElegirOpciones({ opcionesAtributos: { talla: ['M'] } })).toBe(true)
+    expect(requiereElegirOpciones({ codigosBarras: [{ alias: 'Caja x12' }] })).toBe(true)
+    expect(requiereElegirOpciones({ variantes: [], opcionesAtributos: {}, codigosBarras: [] })).toBe(false)
+    expect(requiereElegirOpciones({ opcionesAtributos: null })).toBe(false)
+    expect(requiereElegirOpciones(null)).toBe(false)
   })
 
   it('bandeja: el cliente de la tienda se ve como "Tienda web"', () => {
@@ -133,8 +142,33 @@ describe('widget', () => {
     montar('/tienda/carrito-chat/catalogo')
     fireEvent.click(await screen.findByTestId('chat-tienda-abrir'))
     expect(await screen.findByText('Te atiende una persona del equipo')).toBeInTheDocument()
-    fireEvent.click(await screen.findByTestId('chat-tienda-agregar'))
+    fireEvent.click(await screen.findByText('Agregar al carrito'))
     expect(screen.getByTestId('ruta')).toHaveTextContent('/tienda/carrito-chat?product=77&carrito=1')
+  })
+
+  it('si el producto tiene tallas, lleva a su página para elegir', async () => {
+    getMock.mockImplementation((url: string) =>
+      url.endsWith('/chat')
+        ? Promise.resolve({
+            data: {
+              data: {
+                mensajes: [
+                  { id: 's1', de: 'tienda', tipo: 'IMAGEN', texto: 'Zapatilla — S/189.90', url: 'https://x/z.jpg', productoId: 88, opciones: null, clienteId: null, creadoEn: '2026-10-30T10:00:00Z' },
+                ],
+                escribiendo: false,
+                atiendePersona: false,
+              },
+            },
+          })
+        : url.endsWith('/products/88')
+          ? Promise.resolve({ data: { data: { id: 88, variantes: [{ id: 1, descripcion: 'Talla 38' }] } } })
+          : Promise.resolve(TIENDA(true)),
+    )
+    montar('/tienda/tallas-chat')
+    fireEvent.click(await screen.findByTestId('chat-tienda-abrir'))
+    const boton = await screen.findByText('Elegir talla y color')
+    fireEvent.click(boton)
+    expect(screen.getByTestId('ruta')).toHaveTextContent('/tienda/tallas-chat/producto/88')
   })
 
   it('si el servidor lo frena, devuelve el texto y explica', async () => {
