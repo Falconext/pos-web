@@ -6,6 +6,8 @@ import DataTable from '@/components/Datatable';
 import Button from '@/components/Button';
 import EmpresaFormModal from '@/components/Empresa/EmpresaFormModal';
 import EmpresaDrawer from '@/components/Empresa/EmpresaDrawer';
+import DemoRapidaModal from '@/components/Empresa/DemoRapidaModal';
+import PasarProduccionModal from '@/components/Empresa/PasarProduccionModal';
 import SeguimientoModal from '@/components/Empresa/SeguimientoModal';
 import InputPro from '@/components/InputPro';
 import Select from '@/components/Select';
@@ -76,6 +78,8 @@ const EmpresasIndex = () => {
   const [paginaPorGrupo, setPaginaPorGrupo] = useState<Record<GrupoCliente, number>>({ DEMO: 1, MENSUAL: 1, ANUAL: 1 });
   // Empresa recién creada: se resalta para que el que la dio de alta la ubique.
   const [recienCreada, setRecienCreada] = useState<number | null>(null);
+  const [demoAbierta, setDemoAbierta] = useState(false);
+  const [paseProduccion, setPaseProduccion] = useState<{ id: number; razonSocial?: string; ruc?: string } | null>(null);
 
   const irAPagina = (g: GrupoCliente, pagina: number) =>
     setPaginaPorGrupo((p) => ({ ...p, [g]: pagina }));
@@ -362,6 +366,15 @@ const EmpresasIndex = () => {
             Excel
           </button>
           <button
+            onClick={() => setDemoAbierta(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-violet-200 bg-white text-sm font-bold text-violet-600 hover:bg-violet-50 transition-all dark:border-slate-700 dark:bg-slate-800 dark:text-violet-300 dark:hover:bg-slate-700"
+            title="Crear una demo solo con el RUC, el correo y el celular"
+            data-testid="abrir-demo-rapida"
+          >
+            <Icon icon="solar:rocket-2-bold-duotone" className="text-lg" />
+            Demo rápida
+          </button>
+          <button
             onClick={() => { vm.setEmpresaEditingId(undefined); vm.setEmpresaModalMode('create'); vm.setOpenEmpresaModal(true); }}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
           >
@@ -389,7 +402,7 @@ const EmpresasIndex = () => {
           {vm.saludFiltro === 'EN_RIESGO' && <Icon icon="solar:close-circle-bold" className="ml-auto text-gray-400 text-lg" />}
         </button>
         {kpiCards.map((c) => {
-          const isActive = vm.vencimientoFiltro === c.key;
+          const isActive = c.key === 'VENCIDOS' ? vm.vista === 'VENCIDAS' && !vm.buscando : vm.vencimientoFiltro === c.key;
           return (
             <button
               key={c.key}
@@ -417,6 +430,111 @@ const EmpresasIndex = () => {
           <div className="w-full lg:w-44"><Select name="grupoFiltro" label="Grupo" error={() => { }} options={GRUPO_OPTIONS} onChange={(id: any) => vm.setGrupoFiltro(id)} withLabel value={vm.grupoFiltro} /></div>
           <div className="w-full lg:w-44"><Select name="tipoFiltro" label="Tipo" error={() => { }} options={[{ id: '', value: 'Todas' }, { id: 'FORMAL', value: 'Formales' }, { id: 'INFORMAL', value: 'Informales' }]} onChange={(id: any) => { vm.setTipoFiltro(id); vm.setCurrentPageState(1); }} withLabel /></div>
           <div className="w-full lg:w-40"><Select name="estadoFiltro" label="Estado" error={() => { }} options={[{ id: 'TODOS', value: 'Todos' }, { id: 'ACTIVO', value: 'Activos' }, { id: 'INACTIVO', value: 'Inactivos' }]} onChange={(id: any) => { vm.setEstadoFiltro(id); vm.setCurrentPageState(1); }} withLabel value={vm.estadoFiltro} /></div>
+        </div>
+      </div>
+
+      {/* Las que más facturan: el panorama de quién está usando el sistema. */}
+      {vm.vistaEfectiva !== 'VENCIDAS' && vm.ranking.length > 0 && (
+        <div className="mb-5 rounded-2xl border border-gray-100 bg-white p-5 dark:border-slate-800 dark:bg-[#111827]" data-testid="empresas-mas-activas">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Icon icon="solar:fire-bold-duotone" className="text-2xl text-orange-500" />
+              <h2 className="text-base font-bold text-gray-900 dark:text-white">Más activas</h2>
+              <span className="text-xs text-gray-400 dark:text-gray-500">comprobantes emitidos en los últimos 30 días</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-x-8 gap-y-2 lg:grid-cols-2">
+            {vm.ranking.map((e: any, i: number) => {
+              const max = Number(vm.ranking[0]?.salud?.ventas30 ?? 1) || 1;
+              const v30 = Number(e.salud?.ventas30 ?? 0);
+              return (
+                <button
+                  key={e.id}
+                  type="button"
+                  onClick={() => vm.handleViewDetails(e)}
+                  className="group flex items-center gap-3 rounded-xl px-2 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-slate-800/60"
+                >
+                  <span className="w-5 text-right text-xs font-bold text-gray-400">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-semibold text-gray-800 dark:text-gray-100">{e.nombreComercial || e['Razon Social']}</span>
+                      {e.grupo === 'DEMO' && (
+                        <span className="shrink-0 rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">Demo</span>
+                      )}
+                    </div>
+                    <div className="mt-1 h-1.5 w-full rounded-full bg-gray-100 dark:bg-slate-800">
+                      <div className="h-1.5 rounded-full bg-orange-400" style={{ width: `${Math.max(4, (v30 / max) * 100)}%` }} />
+                    </div>
+                  </div>
+                  <div className="w-28 shrink-0 text-right leading-tight">
+                    <p className="text-sm font-extrabold tabular-nums text-gray-900 dark:text-white">{v30.toLocaleString('es-PE')}</p>
+                    <p className="text-[11px] text-gray-400 dark:text-gray-500">{e.ultimaVentaTexto}</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Vigentes / vencidas / todas + orden */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-xl border border-gray-200 bg-white p-1 dark:border-slate-700 dark:bg-[#111827]" role="tablist" aria-label="Vista de empresas">
+            {([
+              { v: 'VIGENTES', label: 'Vigentes', n: vm.conteoVista.vigentes },
+              { v: 'VENCIDAS', label: 'Vencidas', n: vm.conteoVista.vencidas },
+              { v: 'TODAS', label: 'Todas', n: vm.conteoVista.todas },
+            ] as const).map((op) => {
+              const activo = vm.vistaEfectiva === op.v;
+              return (
+                <button
+                  key={op.v}
+                  type="button"
+                  role="tab"
+                  aria-selected={activo}
+                  data-testid={`vista-${op.v}`}
+                  disabled={vm.buscando}
+                  onClick={() => { vm.setVista(op.v); if (op.v === 'VENCIDAS') vm.setVencimientoFiltro(''); }}
+                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed ${
+                    activo
+                      ? op.v === 'VENCIDAS' ? 'bg-rose-600 text-white' : 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                      : 'text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {op.label}
+                  <span className={`rounded-full px-1.5 text-[11px] font-bold ${activo ? 'bg-white/20' : 'bg-gray-100 text-gray-500 dark:bg-slate-800 dark:text-gray-400'}`}>{op.n}</span>
+                </button>
+              );
+            })}
+          </div>
+          {vm.buscando ? (
+            <span className="text-xs text-gray-500 dark:text-gray-400">Buscando en todas las empresas</span>
+          ) : vm.vista === 'VENCIDAS' && vm.conteoVista.vencidas > 0 ? (
+            <span className="text-xs text-gray-500 dark:text-gray-400" data-testid="detalle-vencidas">
+              <b className="text-amber-600 dark:text-amber-400">{vm.conteoVista.enGracia}</b> en gracia (todavía pueden entrar) ·{' '}
+              <b className="text-slate-600 dark:text-slate-300">{vm.conteoVista.sinAcceso}</b> sin acceso
+            </span>
+          ) : null}
+        </div>
+        <div className="inline-flex items-center gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
+          Ordenar por
+          <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 dark:border-slate-700 dark:bg-[#111827]">
+            {([
+              { v: 'VENCIMIENTO', label: 'Vencimiento' },
+              { v: 'ACTIVIDAD', label: 'Actividad' },
+            ] as const).map((op) => (
+              <button
+                key={op.v}
+                type="button"
+                data-testid={`orden-${op.v}`}
+                onClick={() => vm.setOrden(op.v)}
+                className={`rounded-md px-2.5 py-1 ${vm.orden === op.v ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900' : 'hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+              >
+                {op.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -507,7 +625,9 @@ const EmpresasIndex = () => {
           <Icon icon="solar:buildings-3-linear" className="text-5xl text-gray-300 dark:text-gray-600 mx-auto mb-3" />
           <p className="text-gray-500 dark:text-gray-400 font-medium">No se encontraron empresas</p>
           <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
-            {vm.searchTerm || vm.vencimientoFiltro ? 'Intenta con otros filtros o términos de búsqueda' : 'Aún no tienes empresas registradas'}
+            {vm.searchTerm || vm.vencimientoFiltro || vm.vista !== 'TODAS'
+              ? 'Intenta con otra vista, otros filtros o términos de búsqueda'
+              : 'Aún no tienes empresas registradas'}
           </p>
           <Button variant="default" onClick={() => { vm.setEmpresaEditingId(undefined); vm.setEmpresaModalMode('create'); vm.setOpenEmpresaModal(true); }} className="mt-4"><Icon icon="solar:add-circle-bold" className="mr-2" />Crear Primera Empresa</Button>
         </div>
@@ -532,6 +652,8 @@ const EmpresasIndex = () => {
       />
       <EmpresaFormModal open={vm.openEmpresaModal} mode={vm.empresaModalMode} empresaId={vm.empresaEditingId} onClose={() => vm.setOpenEmpresaModal(false)} onSaved={alGuardarEmpresa} />
       <EmpresaDrawer empresa={vm.drawerEmpresa} onClose={() => vm.setDrawerEmpresa(null)} />
+      <DemoRapidaModal open={demoAbierta} onClose={() => setDemoAbierta(false)} onCreada={alGuardarEmpresa} />
+      <PasarProduccionModal empresa={paseProduccion} onClose={() => setPaseProduccion(null)} onHecho={vm.refreshEmpresas} />
       <SeguimientoModal empresa={vm.seguimientoEmpresa} onClose={vm.closeSeguimiento} onGestionActualizada={vm.onGestionActualizada} />
       <TableActionMenu
         isOpen={Boolean(menuAnchor)}
@@ -553,6 +675,17 @@ const EmpresasIndex = () => {
               <Icon icon="material-symbols:edit" width={16} height={16} />
               <span>Editar</span>
             </button>
+            {selectedMenuRow.usaDemo && (
+              <button
+                type="button"
+                onClick={() => runMenuAction((row) => setPaseProduccion({ id: row.id, razonSocial: row['Razon Social'], ruc: row['RUC'] }))}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                data-testid="menu-pasar-produccion"
+              >
+                <Icon icon="solar:verified-check-bold-duotone" width={16} height={16} />
+                <span>Pasar a producción</span>
+              </button>
+            )}
             {/* Contrato de servicios — solo clientes reales (mensuales/anuales), no demo */}
             {selectedMenuRow.grupo !== 'DEMO' && (
               <>

@@ -5,6 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { post, patch } from '@/utils/fetch';
 import apiClient from '@/utils/apiClient';
 import { esEmpresaNueva, ordenarGrupo } from './ordenGrupoEmpresas';
+import { contarPorVista, masActivas, ordenarPorActividad, pasaVista, type OrdenEmpresas, type VistaEmpresas } from './vistaEmpresas';
 
 const DAY_MS = 86400000;
 
@@ -105,6 +106,21 @@ export const useEmpresaIndexViewModel = (): any => {
     const [grupoFiltro, setGrupoFiltro] = useState<GrupoCliente | ''>('');
     const [vencimientoFiltro, setVencimientoFiltro] = useState<'' | 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30'>('');
     const [saludFiltro, setSaludFiltro] = useState<'' | 'EN_RIESGO'>('');
+    // Por defecto solo las vigentes: las vencidas se acumulan y tapaban a las
+    // que usan el sistema. Se recuerda la elección de quien administra.
+    const [vista, setVistaState] = useState<VistaEmpresas>(() => {
+        try {
+            const v = localStorage.getItem('admin:empresas:vista');
+            return v === 'VENCIDAS' || v === 'TODAS' ? v : 'VIGENTES';
+        } catch {
+            return 'VIGENTES';
+        }
+    });
+    const setVista = (v: VistaEmpresas) => {
+        setVistaState(v);
+        try { localStorage.setItem('admin:empresas:vista', v); } catch { /* sin almacenamiento */ }
+    };
+    const [orden, setOrden] = useState<OrdenEmpresas>('VENCIMIENTO');
     const [itemsPerPage, setItemsPerPage] = useState(300);
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
@@ -231,6 +247,7 @@ export const useEmpresaIndexViewModel = (): any => {
             adminNombre: adminPrincipal?.nombre || '',
             adminCelular: adminPrincipal?.celular || '',
             'Ambiente': ambienteDisplay,
+            usaDemo: empresa.usaDemo === true,
             'Rubro': empresa?.rubro?.nombre || '-',
             'Plan': empresa.plan?.nombre || '-',
             planCosto: empresa.plan?.costo != null ? Number(empresa.plan.costo) : null,
@@ -401,8 +418,15 @@ export const useEmpresaIndexViewModel = (): any => {
     const toggleSalud = () => setSaludFiltro((prev) => (prev === 'EN_RIESGO' ? '' : 'EN_RIESGO'));
 
 
+    // Buscando por RUC o nombre se muestran todas: una vencida no puede
+    // "desaparecer" de la búsqueda por estar en otra vista.
+    const buscando = debounceSearch.trim().length > 0;
+    const vistaEfectiva: VistaEmpresas = buscando ? 'TODAS' : vista;
+    const conteoVista = contarPorVista(empresasTable);
+    const ranking = masActivas(empresasTable.filter((e: any) => e.estado === 'ACTIVO'));
+
     const filasVisibles = empresasTable
-        .filter((e: any) => pasaVencimiento(e) && pasaSalud(e))
+        .filter((e: any) => pasaVista(e, vistaEfectiva) && pasaVencimiento(e) && pasaSalud(e))
         .map((e: any) => ({ ...e, esNueva: esEmpresaNueva(e) }));
 
     // Agrupa por tipo de cliente y ordena cada grupo por proximidad de vencimiento (lo que vence primero, arriba)
@@ -411,10 +435,21 @@ export const useEmpresaIndexViewModel = (): any => {
     // Nuevas arriba y después el resto por vencimiento: una empresa recién
     // creada tiene el vencimiento más lejano y quedaba al final de su grupo,
     // justo donde no la ve el que la acaba de dar de alta.
-    (Object.keys(grupos) as GrupoCliente[]).forEach((k) => { grupos[k] = ordenarGrupo(grupos[k]); });
+    (Object.keys(grupos) as GrupoCliente[]).forEach((k) => {
+        grupos[k] = orden === 'ACTIVIDAD' ? ordenarPorActividad(grupos[k]) : ordenarGrupo(grupos[k]);
+    });
 
-    const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') =>
+    // "Vencidos" es una vista, no un filtro más: lleva a la vista de vencidas.
+    // "Por vencer" vive entre las vigentes.
+    const toggleVencimiento = (valor: 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30') => {
+        if (valor === 'VENCIDOS') {
+            setVencimientoFiltro('');
+            setVista(vista === 'VENCIDAS' ? 'VIGENTES' : 'VENCIDAS');
+            return;
+        }
+        if (vista === 'VENCIDAS') setVista('VIGENTES');
         setVencimientoFiltro((prev) => (prev === valor ? '' : valor));
+    };
 
-    return { exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, empresaAEliminar, cancelarEliminacion, confirmarEliminacion, handleToggleOnboarding, onboardingGuardando, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
+    return { vista, setVista, vistaEfectiva, buscando, conteoVista, orden, setOrden, ranking, exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, empresaAEliminar, cancelarEliminacion, confirmarEliminacion, handleToggleOnboarding, onboardingGuardando, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
 };

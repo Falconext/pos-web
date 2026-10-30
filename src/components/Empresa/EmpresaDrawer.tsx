@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Icon } from '@iconify/react';
 import apiClient from '@/utils/apiClient';
 import useAlertStore from '@/zustand/alert';
+import { detalleDelLog } from './historialEmpresa';
 
 interface Empresa {
     id: number;
@@ -43,6 +44,12 @@ const LOG_ICONS: Record<string, { icon: string; color: string; label: string }> 
     DESACTIVADA: { icon: 'solar:close-circle-bold-duotone', color: '#EF4444', label: 'Desactivada' },
     EDITADA: { icon: 'solar:pen-bold-duotone', color: '#6366F1', label: 'Editada' },
     PLAN_CAMBIADO: { icon: 'solar:star-bold-duotone', color: '#F59E0B', label: 'Plan cambiado' },
+    SERIES_SUNAT_ACTUALIZADAS: { icon: 'solar:document-text-bold-duotone', color: '#0EA5E9', label: 'Series SUNAT actualizadas' },
+    DEMO_RAPIDA: { icon: 'solar:rocket-2-bold-duotone', color: '#7C3AED', label: 'Demo rápida creada' },
+    PASO_A_PRODUCCION: { icon: 'solar:verified-check-bold-duotone', color: '#10B981', label: 'Pasó a producción' },
+    REGISTRO_PRUEBA: { icon: 'solar:user-plus-bold-duotone', color: '#7C3AED', label: 'Se registró desde la web' },
+    SALESFILTER_PROVISIONADO: { icon: 'solar:link-circle-bold-duotone', color: '#10B981', label: 'IA de Ventas conectada' },
+    SALESFILTER_ERROR: { icon: 'solar:danger-triangle-bold-duotone', color: '#EF4444', label: 'Error al conectar IA de Ventas' },
 };
 
 const DAY_MS = 86400000;
@@ -564,9 +571,25 @@ export default function EmpresaDrawer({
                                                             <span className="text-sm font-semibold text-gray-800 dark:text-white">{info.label}</span>
                                                             <span className="text-[11px] text-gray-400">{relativeTime(log.creadoEn)}</span>
                                                         </div>
-                                                        {log.detalle && (
-                                                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{log.detalle}</p>
-                                                        )}
+                                                        {(() => {
+                                                            const det = detalleDelLog(log.accion, log.detalle);
+                                                            if (!det) return null;
+                                                            if (det.tipo === 'texto') {
+                                                                return <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words">{det.texto}</p>;
+                                                            }
+                                                            return (
+                                                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                                                    {det.series.map((s) => (
+                                                                        <span
+                                                                            key={s.texto}
+                                                                            className={`text-[11px] px-1.5 py-0.5 rounded-md border ${s.activo ? 'border-gray-200 text-gray-600 dark:border-slate-700 dark:text-gray-300' : 'border-dashed border-gray-200 text-gray-400 line-through dark:border-slate-700'}`}
+                                                                        >
+                                                                            {s.texto}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            );
+                                                        })()}
                                                         <p className="text-[11px] text-gray-400 mt-0.5">por {log.autorNombre}</p>
                                                     </div>
                                                 </div>
