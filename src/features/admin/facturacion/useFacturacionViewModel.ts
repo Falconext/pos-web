@@ -1217,6 +1217,15 @@ export const useFacturacionViewModel = () => {
                 if (Array.isArray(pedido.items) && pedido.items.length > 0) {
                     resetProductInvoice();
                     pedido.items.forEach((item: any) => {
+                        // El pedido no trae la afectación del producto: se toma del
+                        // catálogo (como al facturar una guía). Sin eso un exonerado
+                        // salía gravado.
+                        const enCatalogo = Array.isArray(products)
+                            ? products.find((p: any) => p.id === (item.productoId || item.producto?.id))
+                            : null;
+                        const afectacionPedido = String(
+                            item.producto?.tipoAfectacionIGV || enCatalogo?.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any),
+                        );
                         addProductsInvoice({
                             productoId: item.productoId || item.producto?.id || 0,
                             id: item.productoId || item.producto?.id || 0,
@@ -1231,8 +1240,8 @@ export const useFacturacionViewModel = () => {
                             descuento: 0,
                             unidadMedidaId: 1,
                             unidadMedidaNombre: 'NIU',
-                            tipoAfectacionIGV: String(item.producto?.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any)),
-                            afectacionNombre: nombreAfectacion(String(item.producto?.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any))),
+                            tipoAfectacionIGV: afectacionPedido,
+                            afectacionNombre: nombreAfectacion(afectacionPedido),
                             stock: 999,
                             estado: 'ACTIVO',
                             atributosTecnicos: item.producto?.atributosTecnicos || undefined,
