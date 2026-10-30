@@ -323,7 +323,7 @@ export default function DemoRapidaModal({ open, onClose, onCreada }: Props) {
                                             onClick={() => set('dias', d)}
                                             className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${form.dias === d ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm' : 'text-gray-500 dark:text-gray-400'}`}
                                         >
-                                            {d} días
+                                            {d} {d === 1 ? 'día' : 'días'}
                                         </button>
                                     ))}
                                 </div>

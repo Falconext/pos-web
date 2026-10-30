@@ -16,7 +16,7 @@ export interface PlanLite {
     tipoFacturacion?: string | null;
 }
 
-export const DIAS_DEMO = [7, 15, 30] as const;
+export const DIAS_DEMO = [1, 7, 15, 30] as const;
 
 const costo = (p: PlanLite) => Number(p.costo ?? 0) || 0;
 
