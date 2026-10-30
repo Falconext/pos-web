@@ -65,6 +65,8 @@ export default function AvisoSuscripcion() {
     if (nivel === 'porVencer' && pospuestoHoy) return null;
 
     const urgente = nivel === 'vencida';
+    // La prueba gratis no se "paga por WhatsApp": se cierra eligiendo plan.
+    const enPrueba = Boolean(estado?.plan?.esPrueba);
     const monto = estado?.cobroPendiente?.monto;
 
     const mensajeWsp = encodeURIComponent(
@@ -96,7 +98,13 @@ export default function AvisoSuscripcion() {
                     </div>
                     <div className="min-w-0">
                         <p className={`text-sm font-bold ${urgente ? 'text-red-800 dark:text-red-300' : 'text-amber-900 dark:text-amber-300'}`}>
-                            {urgente
+                            {enPrueba
+                                ? urgente
+                                    ? 'Tu prueba gratis terminó — elige tu plan para seguir'
+                                    : dias === 0
+                                        ? 'Tu prueba gratis termina hoy'
+                                        : `Tu prueba gratis termina ${dias === 1 ? 'mañana' : `en ${dias} días`}`
+                                : urgente
                                 ? estado?.enGracia
                                     ? `Tu plan venció — te ${estado.diasRestantes === 1 ? 'queda 1 día' : `quedan ${estado?.diasRestantes} días`} para regularizarlo`
                                     : 'Tu plan venció'
@@ -114,6 +122,7 @@ export default function AvisoSuscripcion() {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
+                    {!enPrueba && (
                     <a
                         href={`https://wa.me/${BRAND.whatsappCobranza || BRAND.whatsapp}?text=${mensajeWsp}`}
                         target="_blank"
@@ -126,6 +135,7 @@ export default function AvisoSuscripcion() {
                         <Icon icon="solar:chat-round-dots-bold" width={15} aria-hidden="true" />
                         Coordinar pago
                     </a>
+                    )}
                     <Link
                         to="/administrador/mi-plan"
                         className={`inline-flex items-center gap-1.5 px-3.5 py-2.5 min-h-[44px] sm:min-h-0 sm:py-2 rounded-xl text-xs font-bold border transition-colors cursor-pointer ${urgente
@@ -133,7 +143,7 @@ export default function AvisoSuscripcion() {
                             : 'border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-500/40 dark:text-amber-300 dark:hover:bg-amber-500/10'
                             }`}
                     >
-                        Ver mi plan
+                        {enPrueba ? 'Elegir plan' : 'Ver mi plan'}
                     </Link>
                     {!urgente && (
                         <button

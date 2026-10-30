@@ -93,6 +93,8 @@ const ResellerRecargas = cargaPerezosa(() => import('./pages/reseller/Recargas')
 const ResellerEstadoCuenta = cargaPerezosa(() => import('./pages/reseller/EstadoCuenta'))
 const SedeSelectionScreen = cargaPerezosa(() => import('./features/auth/sede-selection/SedeSelectionScreen'))
 const ForgotPasswordPage = cargaPerezosa(() => import('./pages/ForgotPassword'))
+const RegistroPruebaPage = cargaPerezosa(() => import('./features/auth/registro/RegistroPruebaView'))
+const BienvenidaPage = cargaPerezosa(() => import('./features/admin/bienvenida/BienvenidaPage'))
 const ResetPasswordPage = cargaPerezosa(() => import('./pages/ResetPassword'))
 const ProduccionRecetasPage = cargaPerezosa(() => import('./pages/admin/produccion/Recetas'))
 const ProduccionOrdenesPage = cargaPerezosa(() => import('./pages/admin/produccion/Ordenes'))
@@ -137,6 +139,8 @@ function App() {
       <Suspense fallback={<CargandoPagina />}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        {/* Prueba gratis de IA de Ventas: destino de los botones de planes de la web */}
+        <Route path="/registro" element={<RegistroPruebaPage />} />
         {/* Política de privacidad pública (requerida por Meta para publicar la app de WhatsApp) */}
         <Route path="/privacidad" element={<PrivacidadPage />} />
         <Route path="/privacy" element={<PrivacidadPage />} />
@@ -263,6 +267,7 @@ function App() {
           <Route path="notificaciones" element={<NotificacionesIndex />} />
           {/* Su propia suscripción: el empresario ve su plan y sus pagos. */}
           <Route path="mi-plan" element={<MiPlan />} />
+          <Route path="bienvenida" element={<BienvenidaPage />} />
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/template" element={<TemplateTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />

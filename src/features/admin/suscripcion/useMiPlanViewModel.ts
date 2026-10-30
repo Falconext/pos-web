@@ -10,7 +10,8 @@ import apiClient from '@/utils/apiClient';
  */
 
 export interface EstadoSuscripcion {
-    plan: { nombre: string; costo: number | string } | null;
+    /** esPrueba: prueba gratis de IA de Ventas; se cierra eligiendo plan. */
+    plan: { nombre: string; costo: number | string; esPrueba?: boolean } | null;
     fechaExpiracion: string;
     /** Desde cuándo es cliente. */
     clienteDesde?: string | null;

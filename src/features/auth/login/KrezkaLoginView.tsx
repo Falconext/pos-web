@@ -173,8 +173,13 @@ export default function KrezkaLoginView() {
                         <img src={BRAND.logo} alt={BRAND.name} className="h-8 w-auto object-contain lg:invisible" />
                         <p className="text-[13px] text-slate-500">
                             <span className="hidden sm:inline">¿Aún no tienes cuenta? </span>
-                            <a href={asesorUrl} target="_blank" rel="noopener noreferrer"
+                            <button type="button" onClick={() => navigate('/registro')}
                                 className="font-semibold hover:underline" style={{ color: ACCENT }}>
+                                Prueba 7 días gratis
+                            </button>
+                            <span className="hidden sm:inline text-slate-300"> · </span>
+                            <a href={asesorUrl} target="_blank" rel="noopener noreferrer"
+                                className="hidden sm:inline font-semibold hover:underline" style={{ color: ACCENT }}>
                                 Habla con un asesor
                             </a>
                         </p>
