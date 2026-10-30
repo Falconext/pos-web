@@ -124,12 +124,14 @@ const PrivacidadPage = cargaPerezosa(() => import('./pages/legal/PrivacidadPage'
 const EntregaRepartidorPage = cargaPerezosa(() => import('./pages/entrega/EntregaRepartidorPage'))
 const EliminarDatosPage = cargaPerezosa(() => import('./pages/legal/EliminarDatosPage'))
 import SeoTienda from './components/tienda/SeoTienda'
+import ChatTiendaIa from './components/tienda/ChatTiendaIa'
 
 function App() {
   console.log('App initialized - Checkpoint')
   return (
     <BrowserRouter>
       <SeoTienda />
+      <ChatTiendaIa />
       <Alert />
       {/* Cada pantalla se descarga al abrirla: quien entra a una tienda ya no baja
           el panel completo (antes, un solo archivo de 11 MB). */}

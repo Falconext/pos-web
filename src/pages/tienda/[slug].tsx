@@ -127,6 +127,7 @@ export default function TiendaPublica() {
 
 
   const productIdParam = searchParams.get('product');
+  const abrirCarrito = searchParams.get('carrito') === '1';
 
   useEffect(() => {
     if (productIdParam && slug) {
@@ -136,6 +137,8 @@ export default function TiendaPublica() {
           const product = data.data ? withPricing(data.data) : data ? withPricing(data) : null;
           if (product) {
             handleAgregarProducto(product);
+            // Desde el chat de la tienda: que vea su carrito con lo agregado.
+            if (abrirCarrito) setMostrarCarrito(true);
             // Remove param to avoid re-triggering on refresh
             navigate('.', { replace: true });
           }
@@ -419,22 +422,23 @@ export default function TiendaPublica() {
     };
     delete (nuevoItem as any).__cantidad;
 
-    if (!modificadores?.length) {
-      // Sin modificadores: buscar si ya existe y sumar cantidad
-      const existe = carrito.find((item) => item.id === producto.id && !item.modificadores?.length);
-      if (existe) {
-        setCarrito(
-          carrito.map((item) =>
+    // Sobre el carrito ACTUAL y no el de este render: quien llega por un enlace
+    // (?product=, banner o el chat de la tienda) agrega desde un efecto que
+    // capturó el carrito vacío del primer render, y pisaba lo que ya tenía.
+    setCarrito((actual) => {
+      if (!modificadores?.length) {
+        // Sin modificadores: buscar si ya existe y sumar cantidad
+        const existe = actual.find((item) => item.id === producto.id && !item.modificadores?.length);
+        if (existe) {
+          return actual.map((item) =>
             item.id === producto.id && !item.modificadores?.length
               ? { ...item, cantidad: Number(item.cantidad || 1) + cantidadInicial }
               : item
-          )
-        );
-        return;
+          );
+        }
       }
-    }
-
-    setCarrito([...carrito, nuevoItem]);
+      return [...actual, nuevoItem];
+    });
   };
 
   const agregarAlCarrito = (producto: any) => {
