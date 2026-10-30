@@ -279,7 +279,7 @@ describe('Mi vendedor: tu tienda física', () => {
       </MemoryRouter>,
     )
     expect(screen.getByDisplayValue('Puerta 3')).toBeInTheDocument()
-    expect(screen.getByAltText('Foto de la fachada de la tienda')).toHaveAttribute('src', 'https://s3/nueva.jpg')
+    expect(screen.getByAltText('Foto de la fachada')).toHaveAttribute('src', 'https://s3/nueva.jpg')
   })
 
   it('no sube un archivo que no es JPG ni PNG', () => {
@@ -293,7 +293,7 @@ describe('Mi vendedor: tu tienda física', () => {
   it('quitar la foto la borra y deja lo demás como está', () => {
     const vm = vmCon({ tienda: { ...TIENDA, fotoUrl: 'https://s3/foto.jpg' } })
     abrirEntrega(vm)
-    expect(screen.getByAltText('Foto de la fachada de la tienda')).toHaveAttribute('src', 'https://s3/foto.jpg')
+    expect(screen.getByAltText('Foto de la fachada')).toHaveAttribute('src', 'https://s3/foto.jpg')
     fireEvent.click(screen.getByRole('button', { name: /Quitar/ }))
     expect(vm.actions.guardarConfig).toHaveBeenCalledWith({ tienda: { ...TIENDA, fotoUrl: '' } })
   })
