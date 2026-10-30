@@ -28,6 +28,7 @@ import {
 } from './usePanelVentasViewModel';
 import { EditarDespachoModal } from './EditarDespachoModal';
 import { ModalMensajeEstado } from './ModalMensajeEstado';
+import { OperacionesLogisticasBar } from './OperacionesLogisticasBar';
 import { ModalTrazabilidad } from './ModalTrazabilidad';
 import { ReporteEnviosModal } from './ReporteEnviosModal';
 import { GuiasShalomLoteModal } from './GuiasShalomLoteModal';
@@ -920,6 +921,21 @@ export default function PanelVentasView() {
                     <KpiCard key={kpi.label} {...kpi} />
                 ))}
             </div>
+
+            {/* Operaciones logísticas: picking, packing, rótulos y plantillas de courier
+                sobre los envíos de la vista (pedido HELOU SHOP 29-10). */}
+            <OperacionesLogisticasBar
+                items={vm.filtrados}
+                diaLabel={
+                    vm.fechaEnvio
+                        ? `Sale el ${moment(vm.fechaEnvio).format('DD/MM/YYYY')}`
+                        : vm.fechaFin && vm.fechaFin > vm.fecha
+                          ? `Del ${moment(vm.fecha).format('DD/MM')} al ${moment(vm.fechaFin).format('DD/MM')}`
+                          : `Ventas del ${moment(vm.fecha).format('DD/MM/YYYY')}`
+                }
+                rotulosDisponibles={rotulosAImprimir(preparandoParaRotulo, seleccionRotulos).length}
+                onRotulos={() => setRotulosLote(rotulosAImprimir(preparandoParaRotulo, seleccionRotulos))}
+            />
 
             {/* Reparto propio / motorizado: resumen del rango (solo si hay despachos propios) */}
             {vm.repartoResumen && (Number(vm.repartoResumen.totales?.pedidos ?? 0) > 0 || (vm.repartoResumen.otrasFechas?.length ?? 0) > 0) && (
