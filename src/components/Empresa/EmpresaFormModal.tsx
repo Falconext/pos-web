@@ -10,6 +10,7 @@ import { useAuthStore } from '@/zustand/auth';
 import { useExtentionsStore } from '@/zustand/extentions';
 import useAlertStore from '@/zustand/alert';
 import { useClientsStore } from '@/zustand/clients';
+import apiClient from '@/utils/apiClient';
 
 export type EmpresaFormMode = 'create' | 'edit';
 
@@ -174,6 +175,9 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   const [logoPreview, setLogoPreview] = useState<string>('');
   const [searchingRuc, setSearchingRuc] = useState(false);
   const [seriesConfig, setSeriesConfig] = useState<EmpresaSerieConfig[]>(() => crearSeriesIniciales());
+  const [traendoPse, setTraendoPse] = useState(false);
+  const [pseMensaje, setPseMensaje] = useState<string | null>(null);
+  const [pseAMano, setPseAMano] = useState(false);
 
   const initialCreate: CreateFormData = useMemo(() => ({
     ruc: '',
@@ -259,6 +263,8 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
     getUbigeos();
     getPlanes();
     setActiveTab('datos');
+    setPseMensaje(null);
+    setPseAMano(false);
 
     if (isEdit && empresaId) {
       obtenerEmpresa(empresaId);
@@ -371,6 +377,29 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
   };
 
   const currentUsaDemo = isEdit ? editData.usaDemo : createData.usaDemo;
+
+  // Pide al PSE el usuario y la clave del ambiente de la empresa y los deja en
+  // el formulario: así "Guardar" no los pisa con los que se cargaron al abrir.
+  const traerDelPse = async () => {
+    if (!editData.id) return;
+    setTraendoPse(true);
+    setPseMensaje(null);
+    try {
+      const resp: any = await apiClient.post(`/empresa/${editData.id}/pse`);
+      const r = resp?.data?.data;
+      if (r?.ok) {
+        setEditData(prev => ({ ...prev, usuarioPse: r.usuarioPse, contrasenaPse: r.contrasenaPse }));
+        alert('Credenciales traídas del PSE', 'success');
+      } else {
+        setPseMensaje(r?.mensaje || resp?.data?.message || 'El PSE no devolvió credenciales.');
+      }
+    } catch (err: any) {
+      const m = err?.response?.data?.message ?? err?.message;
+      setPseMensaje(Array.isArray(m) ? m.join(' · ') : m || 'No se pudo conectar con el PSE.');
+    } finally {
+      setTraendoPse(false);
+    }
+  };
 
   const handleUsaDemoToggle = (enabled: boolean) => {
     if (isEdit) {
@@ -550,9 +579,11 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
         await guardarSeriesEmpresa(editData.id, seriesConfig);
         alert('Empresa actualizada correctamente', 'success');
       } else {
-        const creada = await crearEmpresa(createData as any);
-        creadaId = creada?.id != null ? Number(creada.id) : undefined;
-        alert('Empresa creada correctamente', 'success');
+        const creada: any = await crearEmpresa(createData as any);
+        const datos = creada?.data ?? creada;
+        creadaId = datos?.id != null ? Number(datos.id) : undefined;
+        if (datos?.pse && !datos.pse.ok) alert(`Empresa creada, pero falta conectar el PSE: ${datos.pse.mensaje}`, 'warning');
+        else alert('Empresa creada correctamente', 'success');
       }
       onSaved?.(creadaId);
       onClose();
@@ -938,22 +969,54 @@ export default function EmpresaFormModal({ open, mode, empresaId, onClose, onSav
 
               {activeTab === 'sunat' && (
                 <div className="space-y-5 animate-in fade-in duration-300">
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Credenciales SUNAT / PSE</h3>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-700 pb-2">Conexión con el PSE (QPSE)</h3>
 
-                  <div className="bg-amber-50/50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4">
-                    <div className="flex items-start">
-                      <svg className="w-4 h-4 text-amber-500 mt-0.5 mr-2.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
-                        Emisión estándar activa con <strong>QPSE</strong>. Usa aquí las credenciales QPSE de la empresa. APISUNAT está desactivado temporalmente.
-                      </p>
+                  {(() => {
+                    const datos = isEdit ? editData : createData;
+                    const tieneClaves = Boolean(datos.usuarioPse?.trim() && datos.contrasenaPse?.trim());
+                    const ambiente = currentUsaDemo ? 'prueba' : 'producción';
+                    return (
+                      <div className={`rounded-xl border p-4 ${tieneClaves ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-900/20' : 'border-gray-200 bg-gray-50 dark:border-slate-700 dark:bg-slate-800/50'}`}>
+                        <div className="flex items-start gap-3">
+                          <Icon
+                            icon={tieneClaves ? 'solar:check-circle-bold' : 'solar:link-round-bold-duotone'}
+                            width={20}
+                            className={`mt-0.5 shrink-0 ${tieneClaves ? 'text-emerald-500' : 'text-gray-400'}`}
+                          />
+                          <div className="flex-1 text-sm">
+                            {!isEdit ? (
+                              <p className="text-gray-700 dark:text-gray-300">
+                                Al guardar se registra sola en QPSE y se traen el usuario y la clave de {ambiente}. No hace falta copiar nada.
+                              </p>
+                            ) : tieneClaves ? (
+                              <p className="text-emerald-800 dark:text-emerald-200">
+                                Conectada · usuario <span className="font-mono font-semibold">{datos.usuarioPse}</span> · ambiente de {ambiente}
+                              </p>
+                            ) : (
+                              <p className="text-gray-700 dark:text-gray-300">Sin credenciales: sus comprobantes no pueden salir a SUNAT.</p>
+                            )}
+                            {pseMensaje && <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">{pseMensaje}</p>}
+                          </div>
+                          {isEdit && (
+                            <Button type="button" variant="default" onClick={traerDelPse} disabled={traendoPse} data-testid="traer-pse">
+                              {traendoPse ? 'Trayendo…' : tieneClaves ? 'Volver a traer' : 'Traer del PSE'}
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {pseAMano ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <InputPro name="usuarioPse" label="Usuario PSE (QPSE)" isLabel value={isEdit ? (editData.usuarioPse || '') : (createData.usuarioPse || '')} onChange={handleChange} placeholder="Ej. 0HGRQ55B" />
+                      <InputPro name="contrasenaPse" label="Contraseña PSE (QPSE)" type="password" isLabel value={isEdit ? (editData.contrasenaPse || '') : (createData.contrasenaPse || '')} onChange={handleChange} placeholder="Ej. R8101ZBD" />
                     </div>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <InputPro name="usuarioPse" label="Usuario PSE (QPSE)" isLabel value={isEdit ? (editData.usuarioPse || '') : (createData.usuarioPse || '')} onChange={handleChange} placeholder="Ej. 0HGRQ55B" />
-                    <InputPro name="contrasenaPse" label="Contraseña PSE (QPSE)" type="password" isLabel value={isEdit ? (editData.contrasenaPse || '') : (createData.contrasenaPse || '')} onChange={handleChange} placeholder="Ej. R8101ZBD" />
-                  </div>
+                  ) : (
+                    <button type="button" onClick={() => setPseAMano(true)} className="text-xs font-medium text-gray-500 underline-offset-2 hover:text-gray-700 hover:underline dark:text-gray-400 dark:hover:text-gray-200">
+                      Escribir las credenciales a mano
+                    </button>
+                  )}
                 </div>
               )}
 
