@@ -5,7 +5,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { post, patch } from '@/utils/fetch';
 import apiClient from '@/utils/apiClient';
 import { esEmpresaNueva, ordenarGrupo } from './ordenGrupoEmpresas';
-import { contarPorVista, masActivas, ordenarPorActividad, pasaVista, type OrdenEmpresas, type VistaEmpresas } from './vistaEmpresas';
+import { clientesNuevos, contarPorVista, esClienteNuevoDelMes, masActivas, ordenarPorActividad, ordenarPorAlta, pasaVista, type OrdenEmpresas, type VistaEmpresas } from './vistaEmpresas';
 
 const DAY_MS = 86400000;
 
@@ -120,7 +120,9 @@ export const useEmpresaIndexViewModel = (): any => {
         setVistaState(v);
         try { localStorage.setItem('admin:empresas:vista', v); } catch { /* sin almacenamiento */ }
     };
-    const [orden, setOrden] = useState<OrdenEmpresas>('VENCIMIENTO');
+    // Por defecto lo último que se registró arriba (pedido 30-10); vencimiento y actividad a un clic.
+    const [orden, setOrden] = useState<OrdenEmpresas>('RECIENTES');
+    const [soloNuevosMes, setSoloNuevosMes] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(300);
     const [isOpenModalConfirm, setIsOpenModalConfirm] = useState(false);
     const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
@@ -255,6 +257,8 @@ export const useEmpresaIndexViewModel = (): any => {
             fechaExpiracion: formatDateOnly(empresa.fechaExpiracion),
             'Vence en': formatDaysUntil(diasRestantes),
             'Mes Activacion': mesAbrev(empresa.fechaActivacion),
+            // La fecha cruda: sin ella "nueva" y "más recientes" no tenían con qué ordenar.
+            fechaActivacion: empresa.fechaActivacion ?? null,
             capacitacion: onboardingLocal[`${empresa.id}:capacitacion`] ?? Boolean(empresa.capacitacion),
             altaSunat: onboardingLocal[`${empresa.id}:altaSunat`] ?? Boolean(empresa.altaSunat),
             contrato: onboardingLocal[`${empresa.id}:contrato`] ?? Boolean(empresa.contrato),
@@ -425,8 +429,10 @@ export const useEmpresaIndexViewModel = (): any => {
     const conteoVista = contarPorVista(empresasTable);
     const ranking = masActivas(empresasTable.filter((e: any) => e.estado === 'ACTIVO'));
 
+    const nuevos = clientesNuevos(empresasTable);
     const filasVisibles = empresasTable
         .filter((e: any) => pasaVista(e, vistaEfectiva) && pasaVencimiento(e) && pasaSalud(e))
+        .filter((e: any) => !soloNuevosMes || esClienteNuevoDelMes(e, nuevos.mes))
         .map((e: any) => ({ ...e, esNueva: esEmpresaNueva(e) }));
 
     // Agrupa por tipo de cliente y ordena cada grupo por proximidad de vencimiento (lo que vence primero, arriba)
@@ -436,7 +442,10 @@ export const useEmpresaIndexViewModel = (): any => {
     // creada tiene el vencimiento más lejano y quedaba al final de su grupo,
     // justo donde no la ve el que la acaba de dar de alta.
     (Object.keys(grupos) as GrupoCliente[]).forEach((k) => {
-        grupos[k] = orden === 'ACTIVIDAD' ? ordenarPorActividad(grupos[k]) : ordenarGrupo(grupos[k]);
+        grupos[k] =
+            orden === 'ACTIVIDAD' ? ordenarPorActividad(grupos[k])
+                : orden === 'RECIENTES' ? ordenarPorAlta(grupos[k])
+                    : ordenarGrupo(grupos[k]);
     });
 
     // "Vencidos" es una vista, no un filtro más: lleva a la vista de vencidas.
@@ -451,5 +460,5 @@ export const useEmpresaIndexViewModel = (): any => {
         setVencimientoFiltro((prev) => (prev === valor ? '' : valor));
     };
 
-    return { vista, setVista, vistaEfectiva, buscando, conteoVista, orden, setOrden, ranking, exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, empresaAEliminar, cancelarEliminacion, confirmarEliminacion, handleToggleOnboarding, onboardingGuardando, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
+    return { vista, setVista, vistaEfectiva, buscando, conteoVista, orden, setOrden, nuevos, soloNuevosMes, setSoloNuevosMes, ranking, exportando, exportarEmpresas, empresas, empresasTable: filasVisibles, grupos, kpis, totalEmpresas, loading, error, searchTerm, tipoFiltro, estadoFiltro, grupoFiltro, setGrupoFiltro, vencimientoFiltro, setVencimientoFiltro, toggleVencimiento, saludFiltro, setSaludFiltro, toggleSalud, itemsPerPage, currentPageState, setCurrentPageState, setItemsPerPage, pages, indexOfFirstItem, indexOfLastItem, isOpenModalConfirm, setIsOpenModalConfirm, selectedEmpresa, openEmpresaModal, setOpenEmpresaModal, empresaModalMode, empresaEditingId, setEmpresaEditingId, setEmpresaModalMode, handleSearch, handleEdit, handleToggleState, handleDelete, empresaAEliminar, cancelarEliminacion, confirmarEliminacion, handleToggleOnboarding, onboardingGuardando, confirmAction, refreshEmpresas, setTipoFiltro, setEstadoFiltro, drawerEmpresa, setDrawerEmpresa, handleViewDetails, proximasVencer, alertasDismissed, setAlertasDismissed, filtroPorVencer, setFiltroPorVencer, getDiasRestantes, handleEnviarRecordatorioEmail, handleEnviarRecordatorioWhatsapp, handleAbrirWhatsapp, handleDescargarContrato, handleEnviarContrato, seguimientoEmpresa, openSeguimiento, closeSeguimiento, onGestionActualizada };
 };
