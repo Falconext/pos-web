@@ -7,6 +7,7 @@ import {
     diasParaVencer,
     type CobroPropio,
 } from '@/features/admin/suscripcion/useMiPlanViewModel';
+import ElegirPlanVentas from '@/features/admin/suscripcion/ElegirPlanVentas';
 
 /**
  * "Mi plan": lo que el empresario necesita saber de su suscripción.
@@ -146,6 +147,14 @@ export default function MiPlanPage() {
                 </div>
             ) : (
                 <>
+                    {/* ── Prueba gratis de IA de Ventas: se cierra eligiendo plan ── */}
+                    {estado?.plan?.esPrueba && (
+                        <ElegirPlanVentas
+                            cobroAutomaticoDisponible={Boolean(vm.automatico?.disponible)}
+                            activarCobroAutomatico={vm.activarCobroAutomatico}
+                        />
+                    )}
+
                     {/* ── Tarjeta principal ── */}
                     <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
                         <div className={`px-6 py-5 ${vencida
@@ -246,7 +255,7 @@ export default function MiPlanPage() {
                     </div>
 
                     {/* ── Débito automático ── */}
-                    {vm.automatico?.disponible && (
+                    {vm.automatico?.disponible && !estado?.plan?.esPrueba && (
                         <div className={`rounded-2xl border shadow-sm overflow-hidden ${vm.automatico.activo
                             ? 'border-emerald-200 bg-emerald-50/60 dark:border-emerald-500/30 dark:bg-emerald-950/20'
                             : 'border-gray-100 bg-white dark:border-slate-800 dark:bg-[#111827]'
