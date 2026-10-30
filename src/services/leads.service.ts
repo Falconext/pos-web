@@ -128,6 +128,8 @@ export interface LeadsConfig {
   cobroConLink?: boolean
   /** El vendedor también atiende el chat de la tienda online. */
   chatTienda?: boolean
+  /** La IA nunca menciona médicos ni tratamientos (ni el descargo). */
+  sinAvisosMedicos?: boolean
   /** El negocio tiene su Mercado Pago conectado (sin eso no hay link). */
   mpConectado?: boolean
   // ─── "Mi vendedor" ─────────────────────────────────────────────────────────
