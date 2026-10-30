@@ -936,6 +936,7 @@ export function ConfigForm({
     iaVentasCotizacion: boolean
     cobroConLink?: boolean
     chatTienda?: boolean
+    sinAvisosMedicos?: boolean
     mpConectado?: boolean
   }
   onSave: (data: {
@@ -943,6 +944,7 @@ export function ConfigForm({
     iaVentasCotizacion: boolean
     cobroConLink: boolean
     chatTienda: boolean
+    sinAvisosMedicos: boolean
   }) => void
   onToggle: (v: boolean) => void
 }) {
@@ -951,6 +953,7 @@ export function ConfigForm({
   const [cotizacion, setCotizacion] = useState(initial.iaVentasCotizacion)
   const [cobroConLink, setCobroConLink] = useState(initial.cobroConLink ?? false)
   const [chatTienda, setChatTienda] = useState(initial.chatTienda ?? false)
+  const [sinAvisosMedicos, setSinAvisosMedicos] = useState(initial.sinAvisosMedicos ?? false)
 
   useEffect(() => {
     setActiva(initial.iaVentasActiva)
@@ -958,6 +961,7 @@ export function ConfigForm({
     setCotizacion(initial.iaVentasCotizacion)
     setCobroConLink(initial.cobroConLink ?? false)
     setChatTienda(initial.chatTienda ?? false)
+    setSinAvisosMedicos(initial.sinAvisosMedicos ?? false)
   }, [initial])
 
   return (
@@ -1037,6 +1041,16 @@ export function ConfigForm({
         <SwitchIa activa={chatTienda} onChange={setChatTienda} etiquetas={['Activado', 'Apagado']} />
       </div>
 
+      <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3 dark:border-slate-800" data-testid="sin-avisos-medicos-ajuste">
+        <div className="pr-3">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">Sin avisos médicos</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            La IA nunca le dice al cliente que consulte a su médico ni que los productos no reemplazan un tratamiento, ni con otras palabras. Si un cliente toma medicamentos, igual te llega el aviso para que le hagas seguimiento.
+          </p>
+        </div>
+        <SwitchIa activa={sinAvisosMedicos} onChange={setSinAvisosMedicos} etiquetas={['Activado', 'Apagado']} />
+      </div>
+
       <ReporteDiarioCard />
 
       <MetaConversionesCard />
@@ -1050,6 +1064,7 @@ export function ConfigForm({
               iaVentasCotizacion: cotizacion,
               cobroConLink,
               chatTienda,
+              sinAvisosMedicos,
             })
           }
         >
