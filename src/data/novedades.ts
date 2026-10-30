@@ -91,6 +91,17 @@ export const NOVEDADES: Novedad[] = [
         nota: 'Viene apagado: marca Shalom y/o Olva en la configuración de envío de tu tienda.',
     },
     {
+        id: '2026-10-meta-conversiones',
+        fecha: '2026-10-29',
+        titulo: 'Meta ya sabe qué anuncios te traen compras',
+        descripcion:
+            'Cuando alguien que te escribió desde un anuncio de WhatsApp compra, le avisamos a Meta cuánto compró. Así puedes optimizar tus campañas por compras —Meta busca gente parecida a la que te compró— y ver en el Administrador de anuncios cuánto vendió cada uno.',
+        categoria: 'IA de Ventas',
+        tipo: 'NUEVO',
+        donde: 'IA de Ventas → Mi vendedor → Ajustes → Avisar a Meta las ventas de tus anuncios',
+        nota: 'Viene apagado. Funciona con los anuncios de clic a WhatsApp y con tu WhatsApp conectado.',
+    },
+    {
         id: '2026-10-ia-puntaje-derivacion',
         fecha: '2026-10-29',
         titulo: 'Puntaje de tu vendedor IA y cuándo pasa el chat a tu equipo',
