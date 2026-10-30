@@ -658,6 +658,7 @@ export const useProductsViewModel = () => {
                             disponibilidad: full.disponibilidad ?? undefined,
                             prioridadVenta: full.prioridadVenta ?? 0,
                             diasRecompra: full.diasRecompra ?? null,
+                            modoDeUso: full.modoDeUso ?? '',
                             atributosTecnicos: full.atributosTecnicos ?? (prev.formValues as any).atributosTecnicos,
                             codigosBarrasExtra: Array.isArray(full.codigosBarrasExtra)
                                 ? full.codigosBarrasExtra

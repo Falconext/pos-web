@@ -1693,6 +1693,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               ? Number((formValues as any).prioridadVenta)
               : undefined,
           diasRecompra: diasRecompraParaGuardar((formValues as any)?.diasRecompra),
+          // Solo si la ficha lo cargó: undefined = no tocar lo guardado.
+          modoDeUso:
+            (formValues as any)?.modoDeUso !== undefined
+              ? String((formValues as any).modoDeUso ?? '')
+              : undefined,
           preciosMayorista: Array.isArray(formValues?.preciosMayorista)
             ? formValues.preciosMayorista.map((p) => ({
                 cantidadMinima: Number(p.cantidadMinima),
@@ -1911,6 +1916,11 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               ? Number((formValues as any).prioridadVenta)
               : undefined,
           diasRecompra: diasRecompraParaGuardar((formValues as any)?.diasRecompra),
+          // Solo si la ficha lo cargó: undefined = no tocar lo guardado.
+          modoDeUso:
+            (formValues as any)?.modoDeUso !== undefined
+              ? String((formValues as any).modoDeUso ?? '')
+              : undefined,
           preciosMayorista: Array.isArray(formValues?.preciosMayorista)
             ? formValues.preciosMayorista.map((p) => ({
                 cantidadMinima: Number(p.cantidadMinima),

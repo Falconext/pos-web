@@ -14,7 +14,7 @@ import { Icon } from '@iconify/react'
 import { Link } from 'react-router-dom'
 import { rutaAlChat } from './LeadsModel'
 import moment from 'moment'
-import { crmService, ETAPA_META, type Ficha360 as Ficha } from '@/services/crm.service'
+import { crmService, ETAPA_META, type Ficha360 as Ficha, type GuiaConsumo } from '@/services/crm.service'
 import DrawerHearth, {
   DRAWER_H3,
   DRAWER_MONTO_STYLE,
@@ -180,6 +180,10 @@ export function Ficha360({
             )}
           </Seccion>
 
+          <Seccion titulo="Guía de consumo">
+            <GuiaDeConsumo conversacionId={ficha.cliente.conversacionId} />
+          </Seccion>
+
           <Seccion titulo="Pidió y no teníamos">
             {ficha.noHabidos.length === 0 ? (
               <p className={VACIO}>Nada: siempre encontró lo que buscaba.</p>
@@ -277,6 +281,113 @@ export function Ficha360({
         </div>
       )}
     </DrawerHearth>
+  )
+}
+
+/**
+ * La guía se arma con el "cómo se toma" de cada producto y lo que contó el
+ * cliente; el negocio la revisa y la envía. Nunca sale sola: es tema de
+ * salud. Lo guardado lo repite la IA cuando el cliente pregunta.
+ */
+function GuiaDeConsumo({ conversacionId }: { conversacionId: number }) {
+  const [guia, setGuia] = useState<GuiaConsumo | null>(null)
+  const [texto, setTexto] = useState('')
+  const [estado, setEstado] = useState<'cargando' | 'listo' | 'guardando' | 'enviando'>('cargando')
+  const [aviso, setAviso] = useState<{ tono: 'ok' | 'error'; texto: string } | null>(null)
+
+  useEffect(() => {
+    let vivo = true
+    setEstado('cargando')
+    crmService
+      .guia(conversacionId)
+      .then((g) => {
+        if (!vivo) return
+        setGuia(g)
+        setTexto(g.guardada?.texto || g.borrador || '')
+      })
+      .catch(() => undefined)
+      .finally(() => vivo && setEstado('listo'))
+    return () => {
+      vivo = false
+    }
+  }, [conversacionId])
+
+  const guardar = async (enviar: boolean) => {
+    setEstado(enviar ? 'enviando' : 'guardando')
+    setAviso(null)
+    try {
+      const r = await crmService.guardarGuia(conversacionId, texto, enviar)
+      setGuia((g) => (g ? { ...g, guardada: r.guardada } : g))
+      setAviso({ tono: 'ok', texto: enviar ? 'Enviada por WhatsApp y guardada.' : 'Guardada. La IA ya la usa.' })
+    } catch (e: any) {
+      const m = e?.response?.data?.message ?? e?.message
+      setAviso({ tono: 'error', texto: Array.isArray(m) ? m.join(' · ') : m || 'No se pudo guardar.' })
+    } finally {
+      setEstado('listo')
+    }
+  }
+
+  if (estado === 'cargando') return <p className={VACIO}>Cargando…</p>
+  const ocupado = estado !== 'listo'
+
+  return (
+    <div className="flex flex-col gap-2" data-testid="guia-consumo">
+      {guia?.guardada ? (
+        <p className="text-[12.5px] text-[#6b645c] dark:text-slate-400">
+          Guardada el {moment(guia.guardada.en).format('DD/MM/YYYY')}. La IA la repite si pregunta cómo tomarlo.
+        </p>
+      ) : guia?.borrador ? (
+        <p className="text-[12.5px] text-[#6b645c] dark:text-slate-400">
+          Borrador con su última compra. Revísalo antes de enviarlo.
+        </p>
+      ) : (
+        <p className={VACIO}>
+          {guia?.productos.length
+            ? 'Ningún producto de su última compra tiene "Modo de uso". Escríbelo en el producto o arma la guía aquí.'
+            : 'Todavía no compró. Puedes escribirla aquí igual.'}
+        </p>
+      )}
+      {guia && guia.sinModoDeUso.length > 0 && (guia.borrador || guia.guardada) && (
+        <p className="rounded-xl bg-[#f8ecd2] px-3 py-2 text-[12.5px] text-[#8f600a] dark:bg-amber-500/15 dark:text-amber-200">
+          Sin modo de uso (no entran en el borrador): {guia.sinModoDeUso.join(', ')}.
+        </p>
+      )}
+      <textarea
+        value={texto}
+        onChange={(e) => setTexto(e.target.value)}
+        rows={8}
+        maxLength={4096}
+        placeholder="Cómo debe tomar cada producto…"
+        data-testid="guia-texto"
+        className="w-full rounded-xl border border-[rgba(40,30,20,0.12)] bg-[#fffdfa] px-3 py-2 text-[13.5px] text-[#1d1915] outline-none focus:border-[rgba(40,30,20,0.32)] dark:border-white/10 dark:bg-slate-800 dark:text-slate-100"
+      />
+      {aviso && (
+        <p className={`text-[12.5px] font-semibold ${aviso.tono === 'ok' ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+          {aviso.texto}
+        </p>
+      )}
+      <div className="flex flex-wrap justify-end gap-2">
+        <button
+          type="button"
+          onClick={() => guardar(false)}
+          disabled={ocupado}
+          data-testid="guia-guardar"
+          className="rounded-xl border border-[rgba(40,30,20,0.15)] px-3 py-2 text-[13px] font-bold text-[#1d1915] hover:bg-[#f3eee6] disabled:opacity-50 dark:border-white/15 dark:text-slate-100 dark:hover:bg-slate-800"
+        >
+          {estado === 'guardando' ? 'Guardando…' : 'Guardar'}
+        </button>
+        <button
+          type="button"
+          onClick={() => guardar(true)}
+          disabled={ocupado || !texto.trim()}
+          data-testid="guia-enviar"
+          className="flex items-center gap-1.5 rounded-xl bg-[#1f7a4d] px-3 py-2 text-[13px] font-bold text-white hover:bg-[#19663f] disabled:opacity-50"
+        >
+          <Icon icon="ic:baseline-whatsapp" />
+          {estado === 'enviando' ? 'Enviando…' : 'Guardar y enviar por WhatsApp'}
+        </button>
+      </div>
+    </div>
   )
 }
 

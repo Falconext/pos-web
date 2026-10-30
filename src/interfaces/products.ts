@@ -123,6 +123,8 @@ export type IFormProduct = {
     prioridadVenta?: number;
     /** Días hasta el aviso de recompra. null = lo de la empresa; 0 = no se recompra. */
     diasRecompra?: number | string | null;
+    /** Cómo se usa o se toma: la IA lo dice tal cual y arma la guía de consumo. */
+    modoDeUso?: string | null;
   productoId: number
   descripcion: string,
   categoriaNombre: string

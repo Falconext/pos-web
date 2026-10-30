@@ -117,6 +117,15 @@ export interface ConsultaCliente {
   creadoEn: string
 }
 
+export interface GuiaConsumo {
+  guardada: { texto: string; en: string } | null
+  /** Armado con el "cómo se toma" de lo último que compró y su perfil. Vacío si nada lo tiene. */
+  borrador: string
+  productos: string[]
+  /** Productos de esa compra que no tienen modo de uso: no entran en el borrador. */
+  sinModoDeUso: string[]
+}
+
 export interface Ficha360 {
   cliente: {
     id: number
@@ -215,6 +224,17 @@ export const crmService = {
     apiClient
       .get(`/leads/crm/cliente/${encodeURIComponent(telefono)}`)
       .then(datos<Ficha360 | null>),
+
+  /** Guía de consumo: la guardada y un borrador con la última compra. */
+  guia: (conversacionId: number) =>
+    apiClient
+      .get(`/leads/crm/guia/${conversacionId}`)
+      .then(datos<GuiaConsumo>),
+
+  guardarGuia: (conversacionId: number, texto: string, enviar: boolean) =>
+    apiClient
+      .put(`/leads/crm/guia/${conversacionId}`, { texto, enviar })
+      .then(datos<{ guardada: { texto: string; en: string } | null; enviada: boolean }>),
 
   posiblesDuplicados: (telefono: string) =>
     apiClient

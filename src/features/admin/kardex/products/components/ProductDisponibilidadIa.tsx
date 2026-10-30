@@ -193,6 +193,26 @@ export const ProductDisponibilidadIa: React.FC<{ vm: ViewProps }> = ({ vm }) => 
         </p>
       </div>
 
+      {/* Se escribe UNA vez: con esto la IA contesta "¿cómo se toma?" y se arma
+          la guía de consumo de cada cliente. Sin esto la IA no da dosis. */}
+      <div className="mt-3 border-t border-gray-100 pt-2 dark:border-slate-800">
+        <p className="mb-1.5 text-[11px] font-bold text-gray-600 dark:text-gray-300">
+          Modo de uso / cómo se toma
+        </p>
+        <textarea
+          data-testid="modo-de-uso"
+          rows={3}
+          maxLength={2000}
+          value={String(formValues?.modoDeUso ?? '')}
+          placeholder={'Ej.: Adultos, 2 cápsulas en ayunas.\nMayores de 60: 1 cápsula.\nNo tomar en embarazo.'}
+          onChange={(e) => poner('modoDeUso', e.target.value)}
+          className="w-full rounded-lg border border-gray-200 px-2 py-1.5 text-[12px] dark:border-slate-700 dark:bg-slate-900"
+        />
+        <p className="mt-1 text-[10px] text-gray-400">
+          La IA lo dice tal cual cuando el cliente pregunta y lo usa para su guía de consumo. Vacío: la IA no da dosis.
+        </p>
+      </div>
+
       {/* Cada producto se acaba a su ritmo: un suplemento de 30 cápsulas no
           dura lo mismo que uno de 90, y un mueble no se repone. */}
       <div className="mt-3 border-t border-gray-100 pt-2 dark:border-slate-800">
