@@ -446,9 +446,11 @@ export function useLeadsViewModel() {
     try {
       const res = await api.convertirACliente(prospectoId)
       alertStore.alert(
-        res.yaExistia
-          ? 'Este prospecto ya era cliente'
-          : `Cliente creado: ${res.cliente.nombre} ✅`,
+        res.unidoPorCelular
+          ? `Ya era tu cliente: se unió con ${res.cliente.nombre} (mismo celular) ✅`
+          : res.yaExistia
+            ? 'Este prospecto ya era cliente'
+            : `Cliente creado: ${res.cliente.nombre} ✅`,
         'success',
       )
       // Reflejar en el chat abierto y refrescar el kanban.

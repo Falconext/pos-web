@@ -513,6 +513,8 @@ export async function enviarAudioManual(
 export interface ConvertirResult {
   cliente: { id: number; nombre: string; nroDoc: string }
   yaExistia: boolean
+  /** Ya había un cliente con ese celular y se usó ese, sin crear otro. */
+  unidoPorCelular?: boolean
 }
 
 export async function convertirACliente(
