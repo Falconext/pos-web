@@ -55,7 +55,7 @@ async function generarGuiaShalomSiCorresponde(comprobanteId: number, transportis
         );
     }
 }
-import { mapDetalleToInvoiceProduct } from "./utils/comprobanteProductMapper";
+import { mapDetalleToInvoiceProduct, nombreAfectacion } from "./utils/comprobanteProductMapper";
 import { detalleAdicionalParaPayload } from "@/utils/detalleAdicional";
 import { tipoCambioService } from "@/services/tipoCambio.service";
 import { PORCENTAJE_RETENCION, aplicaRetencion, calcularRetencion } from './retencion';
@@ -1231,8 +1231,8 @@ export const useFacturacionViewModel = () => {
                             descuento: 0,
                             unidadMedidaId: 1,
                             unidadMedidaNombre: 'NIU',
-                            afectacionNombre: 'Gravado – Operación Onerosa',
-                            tipoAfectacionIGV: '10',
+                            tipoAfectacionIGV: String(item.producto?.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any)),
+                            afectacionNombre: nombreAfectacion(String(item.producto?.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any))),
                             stock: 999,
                             estado: 'ACTIVO',
                             atributosTecnicos: item.producto?.atributosTecnicos || undefined,
@@ -1402,8 +1402,10 @@ export const useFacturacionViewModel = () => {
                         precioUnitario: d.precioUnitario || mapped.precioUnitario,
                         descuento: 0,
                         unidadMedidaNombre: d.unidad || mapped.unidadMedidaNombre || 'NIU',
-                        afectacionNombre: 'Gravado – Operación Onerosa',
-                        tipoAfectacionIGV: '10',
+                        // La de la nota de venta, no '10' fijo: FRUTA PURA (Amazonía)
+                        // convertía notas exoneradas en boletas con IGV.
+                        tipoAfectacionIGV: mapped.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any),
+                        afectacionNombre: nombreAfectacion(mapped.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any)),
                         stock: mapped.stock || 999,
                         estado: 'ACTIVO',
                         atributosTecnicos: mapped.atributosTecnicos || d.producto?.atributosTecnicos || undefined,
@@ -1777,8 +1779,8 @@ export const useFacturacionViewModel = () => {
                     unidadMedida: 'KIT',
                     unidadMedidaNombre: 'KIT',
                     unidadMedidaCodigo: 'ZZ',
-                    tipoAfectacionIGV: '10',
-                    afectacionNombre: 'Gravado – Operación Onerosa',
+                    tipoAfectacionIGV: afectacionPorDefecto(auth?.empresa as any),
+                    afectacionNombre: nombreAfectacion(afectacionPorDefecto(auth?.empresa as any)),
                     estado: 'ACTIVO',
                     esItemLibre: true,
                     esKit: true,

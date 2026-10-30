@@ -28,6 +28,29 @@ export const getDetalleProductImage = (detalle: any) =>
 export const getDetalleSerials = (detalle: any) =>
   normalizeSerialsForCart(firstValue(detalle?.numerosSerie, detalle?.series, detalle?.productoSeries));
 
+const NOMBRE_AFECTACION: Record<string, string> = {
+  '10': 'Gravado – Operación Onerosa',
+  '20': 'Exonerado',
+  '30': 'Inafecto',
+  '40': 'Exportación',
+};
+
+/**
+ * La afectación de IGV con la que se vendió esta línea.
+ *
+ * FRUTA PURA (Ley de Amazonía, 30-10): sus notas de venta salían exoneradas,
+ * pero al convertirlas a boleta o factura cada línea se armaba gravada fija
+ * ('10') y SUNAT recibió 46 comprobantes con IGV que no correspondía. Al
+ * convertir manda lo que quedó en el documento de origen (`tipAfeIgv`); si
+ * no hay, la del producto. null = no se sabe, que decida quien llama.
+ */
+export const afectacionDeDetalle = (detalle: any): string | null => {
+  const v = firstValue(detalle?.tipAfeIgv, detalle?.tipoAfectacionIGV, detalle?.producto?.tipoAfectacionIGV);
+  return v === null ? null : String(v);
+};
+
+export const nombreAfectacion = (codigo: string): string => NOMBRE_AFECTACION[codigo] ?? NOMBRE_AFECTACION['10'];
+
 export const mapDetalleToInvoiceProduct = (detalle: any) => {
   const producto = detalle?.producto || {};
   // Línea guardada SIN producto de catálogo (kit vendido como una línea, ítem
@@ -69,5 +92,12 @@ export const mapDetalleToInvoiceProduct = (detalle: any) => {
     codigo: firstValue(detalle?.codigo, producto?.codigo, undefined),
     codigoBarras: firstValue(detalle?.codigoBarras, producto?.codigoBarras, undefined),
     ...(numerosSerie ? { numerosSerie } : {}),
+    // Sin esto la línea viajaba sin afectación y el POS la ponía gravada.
+    ...(afectacionDeDetalle(detalle)
+      ? {
+          tipoAfectacionIGV: afectacionDeDetalle(detalle) as string,
+          afectacionNombre: nombreAfectacion(afectacionDeDetalle(detalle) as string),
+        }
+      : {}),
   };
 };
