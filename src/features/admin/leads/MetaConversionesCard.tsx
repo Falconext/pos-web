@@ -31,6 +31,15 @@ interface EstadoConversiones {
   conectado: boolean
   datasetId: string | null
   ultimoError: string | null
+  /** Lo que contestó Meta al último envío. Solo llega de un servidor que ya la guarda. */
+  ultimaRespuesta?: {
+    en: string
+    enviados: number
+    recibidos: number | null
+    avisos: string[]
+    fbtraceId: string | null
+    prueba: boolean
+  } | null
   ultimos30Dias: {
     comprasAvisadas: number
     montoAvisado: number
@@ -177,6 +186,32 @@ export function MetaConversionesCard() {
             </p>
           )}
 
+          {/* Lo que Meta dijo de verdad: un 200 no basta, Meta puede no registrar el evento. */}
+          {estado.ultimaRespuesta && (
+            <div
+              className="mt-2 rounded-lg border border-gray-100 px-2.5 py-1.5 text-[11px] text-gray-600 dark:border-slate-800 dark:text-gray-300"
+              data-testid="meta-conversiones-respuesta"
+            >
+              <p>
+                <span className="font-semibold">
+                  Última respuesta de Meta{estado.ultimaRespuesta.prueba ? ' (prueba)' : ''}:
+                </span>{' '}
+                {estado.ultimaRespuesta.recibidos === null
+                  ? `aceptó el envío de ${estado.ultimaRespuesta.enviados}`
+                  : `registró ${estado.ultimaRespuesta.recibidos} de ${estado.ultimaRespuesta.enviados} evento${estado.ultimaRespuesta.enviados === 1 ? '' : 's'}`}
+                {' · '}
+                {new Date(estado.ultimaRespuesta.en).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+              </p>
+              {estado.ultimaRespuesta.avisos.map((a, i) => (
+                <p key={i} className="mt-0.5 text-amber-700 dark:text-amber-300">Aviso de Meta: {a}</p>
+              ))}
+              <p className="mt-0.5 text-gray-400 dark:text-gray-500">
+                {estado.datasetId ? `Conjunto de datos ${estado.datasetId}` : ''}
+                {estado.ultimaRespuesta.fbtraceId ? ` · código Meta ${estado.ultimaRespuesta.fbtraceId}` : ''}
+              </p>
+            </div>
+          )}
+
           {estado.ultimos.length > 0 && (
             <ul className="mt-2 divide-y divide-gray-100 dark:divide-slate-800" data-testid="meta-conversiones-ultimos">
               {estado.ultimos.slice(0, 5).map((u) => (
@@ -226,8 +261,9 @@ export function MetaConversionesCard() {
           {verPrueba && (
             <div className="mt-2 rounded-lg bg-gray-50 p-2.5 dark:bg-slate-800/60">
               <p className="text-[11px] text-gray-500 dark:text-gray-400">
-                En el Administrador de eventos de Meta, abre tu dataset de WhatsApp → Probar eventos y copia el código. Se
-                manda una compra de prueba de S/ 1.00 que no cuenta como venta.
+                En el Administrador de eventos de Meta, abre el conjunto de datos
+                {estado.datasetId ? ` ${estado.datasetId}` : ' de tu WhatsApp'} → Probar eventos → Mensajes → WhatsApp y copia el
+                código. Se manda una compra de prueba de S/ 1.00 que no cuenta como venta.
               </p>
               <div className="mt-1.5 flex gap-2">
                 <input
