@@ -136,7 +136,9 @@ export default function ChatTiendaIa() {
   const lugar = useMemo(() => ubicacionEnTienda(pathname), [pathname])
   const slug = lugar?.slug ?? null
 
-  const [tienda, setTienda] = useState<TiendaChat | null>(null)
+  // No es la tienda (esa la carga cada plantilla y registra su política de
+  // stock): es la configuración del chat, nombre, color, logo y asesor.
+  const [tienda, setConfigChat] = useState<TiendaChat | null>(null)
   const [abierto, setAbierto] = useState(false)
   const [servidor, setServidor] = useState<MensajeChat[]>([])
   const [pendientes, setPendientes] = useState<MensajeChat[]>([])
@@ -151,12 +153,12 @@ export default function ChatTiendaIa() {
   const sesion = useMemo(() => (slug && tienda ? sesionDelChat(slug) : null), [slug, tienda])
 
   useEffect(() => {
-    setTienda(null)
+    setConfigChat(null)
     setServidor([])
     setPendientes([])
     if (!slug) return
     let vigente = true
-    tiendaDelChat(slug).then((t) => vigente && setTienda(t))
+    tiendaDelChat(slug).then((t) => vigente && setConfigChat(t))
     return () => {
       vigente = false
     }
