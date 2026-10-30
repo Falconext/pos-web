@@ -330,6 +330,11 @@ const EmpresasIndex = () => {
     { key: 'POR_VENCER_30', label: 'Vencen en ≤ 30 días', value: vm.kpis.porVencer30, icon: 'solar:bell-bing-bold-duotone', active: 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 ring-2 ring-amber-300/50', idle: 'border-amber-100 dark:border-amber-900/30 hover:border-amber-300' },
   ];
 
+  const nombreMes = (mes: string) => {
+    const [y, m] = mes.split('-').map(Number);
+    return new Intl.DateTimeFormat('es-PE', { month: 'long', timeZone: 'UTC' }).format(new Date(Date.UTC(y, m - 1, 1)));
+  };
+
   const kpiIconColor: Record<string, string> = {
     VENCIDOS: 'text-rose-500', POR_VENCER_7: 'text-orange-500', POR_VENCER_30: 'text-amber-500',
   };
@@ -385,7 +390,27 @@ const EmpresasIndex = () => {
       </div>
 
       {/* KPIs — clic para filtrar. El de fuga cruza actividad de facturación (retención). */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-5">
+        {/* Clientes que pagan (mensual o anual) activados este mes; las demos no cuentan. */}
+        <button
+          type="button"
+          onClick={() => vm.setSoloNuevosMes(!vm.soloNuevosMes)}
+          data-testid="kpi-nuevos-mes"
+          title="Clientes mensuales y anuales que se activaron este mes (una demo cuenta el mes en que pasa a producción). Clic para verlos."
+          className={`flex items-center gap-3 p-4 rounded-2xl border bg-white dark:bg-[#111827] text-left transition-all active:scale-[0.98] ${vm.soloNuevosMes ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 ring-2 ring-emerald-300/50' : 'border-emerald-100 dark:border-emerald-900/30 hover:border-emerald-300'}`}
+        >
+          <div className="shrink-0">
+            <Icon icon="solar:user-plus-rounded-bold-duotone" className="text-3xl text-emerald-500" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-2xl font-extrabold text-gray-900 dark:text-white leading-none">{vm.nuevos.esteMes}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium">
+              Clientes nuevos en {nombreMes(vm.nuevos.mes)}
+            </p>
+            <p className="text-[11px] text-gray-400 dark:text-gray-500">{vm.nuevos.mesAnterior} el mes pasado</p>
+          </div>
+          {vm.soloNuevosMes && <Icon icon="solar:close-circle-bold" className="ml-auto text-gray-400 text-lg" />}
+        </button>
         <button
           type="button"
           onClick={vm.toggleSalud}
@@ -521,6 +546,7 @@ const EmpresasIndex = () => {
           Ordenar por
           <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5 dark:border-slate-700 dark:bg-[#111827]">
             {([
+              { v: 'RECIENTES', label: 'Más recientes' },
               { v: 'VENCIMIENTO', label: 'Vencimiento' },
               { v: 'ACTIVIDAD', label: 'Actividad' },
             ] as const).map((op) => (
