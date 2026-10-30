@@ -100,6 +100,8 @@ export const NOVEDADES: Novedad[] = [
         tipo: 'NUEVO',
         donde: 'IA de Ventas → Mi vendedor → Ajustes → Chat con tu vendedor en la tienda online',
         nota: 'Viene apagado. Un visitante que solo saluda no cuenta para el tope de conversaciones de tu plan.',
+    },
+    {
         id: '2026-10-meta-conversiones',
         fecha: '2026-10-29',
         titulo: 'Meta ya sabe qué anuncios te traen compras',
