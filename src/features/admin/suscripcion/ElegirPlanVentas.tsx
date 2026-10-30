@@ -68,6 +68,10 @@ export default function ElegirPlanVentas({
       <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
         Todos incluyen facturación electrónica SUNAT y todas las funciones de la IA de Ventas. Cambian los leads al mes.
       </p>
+      <p className="mt-2 text-[13px] text-gray-500 dark:text-gray-400">
+        Al confirmarse tu pago, tu facturación pasa a real: borramos las boletas y facturas de prueba y la numeración
+        empieza en 1. Tus notas de venta se quedan.
+      </p>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Planes">
         {planes.map((p) => {
