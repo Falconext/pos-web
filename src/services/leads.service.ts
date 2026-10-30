@@ -88,7 +88,7 @@ export interface LeadConversacion {
   cantidadMensajes: number
   numeroWhatsappId: string | null
   /** Por qué red escribe: WHATSAPP, INSTAGRAM o MESSENGER. */
-  canal?: 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER'
+  canal?: 'WHATSAPP' | 'INSTAGRAM' | 'MESSENGER' | 'WEB'
   /** false = alguien tomó el chat y la IA no responde en ESTA conversación. */
   botActivo: boolean
   actualizadoEn: string
@@ -126,6 +126,8 @@ export interface LeadsConfig {
   tieneDemos?: boolean
   /** La IA ofrece el link de Mercado Pago para pagar lo cotizado. */
   cobroConLink?: boolean
+  /** El vendedor también atiende el chat de la tienda online. */
+  chatTienda?: boolean
   /** El negocio tiene su Mercado Pago conectado (sin eso no hay link). */
   mpConectado?: boolean
   // ─── "Mi vendedor" ─────────────────────────────────────────────────────────

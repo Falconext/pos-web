@@ -935,12 +935,14 @@ export function ConfigForm({
     iaVentasSeguimiento: boolean
     iaVentasCotizacion: boolean
     cobroConLink?: boolean
+    chatTienda?: boolean
     mpConectado?: boolean
   }
   onSave: (data: {
     iaVentasSeguimiento: boolean
     iaVentasCotizacion: boolean
     cobroConLink: boolean
+    chatTienda: boolean
   }) => void
   onToggle: (v: boolean) => void
 }) {
@@ -948,12 +950,14 @@ export function ConfigForm({
   const [seguimiento, setSeguimiento] = useState(initial.iaVentasSeguimiento)
   const [cotizacion, setCotizacion] = useState(initial.iaVentasCotizacion)
   const [cobroConLink, setCobroConLink] = useState(initial.cobroConLink ?? false)
+  const [chatTienda, setChatTienda] = useState(initial.chatTienda ?? false)
 
   useEffect(() => {
     setActiva(initial.iaVentasActiva)
     setSeguimiento(initial.iaVentasSeguimiento)
     setCotizacion(initial.iaVentasCotizacion)
     setCobroConLink(initial.cobroConLink ?? false)
+    setChatTienda(initial.chatTienda ?? false)
   }, [initial])
 
   return (
@@ -1023,6 +1027,16 @@ export function ConfigForm({
         />
       </div>
 
+      <div className="flex items-center justify-between rounded-xl border border-gray-100 p-3 dark:border-slate-800" data-testid="chat-tienda-ajuste">
+        <div className="pr-3">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">Chat con tu vendedor en la tienda online</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Aparece un chat en tu tienda virtual y lo atiende este mismo vendedor: conoce tu catálogo, sabe qué producto está mirando el cliente y le manda fotos con un botón para agregarlo al carrito. Las conversaciones llegan a tu bandeja como "Tienda web".
+          </p>
+        </div>
+        <SwitchIa activa={chatTienda} onChange={setChatTienda} etiquetas={['Activado', 'Apagado']} />
+      </div>
+
       <ReporteDiarioCard />
 
       <MetaConversionesCard />
@@ -1035,6 +1049,7 @@ export function ConfigForm({
               iaVentasSeguimiento: seguimiento,
               iaVentasCotizacion: cotizacion,
               cobroConLink,
+              chatTienda,
             })
           }
         >

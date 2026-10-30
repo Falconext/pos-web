@@ -78,15 +78,21 @@ export function esMessenger(telefono: string | null | undefined): boolean {
   return String(telefono ?? '').startsWith('fb:')
 }
 
-/** Instagram o Messenger: no hay número, así que no hay llamada ni nota de voz. */
+/** El chat de la tienda online: el cliente se guarda como "web:<sesión>". */
+export function esChatTienda(telefono: string | null | undefined): boolean {
+  return String(telefono ?? '').startsWith('web:')
+}
+
+/** Instagram, Messenger o la tienda: no hay número, así que no hay llamada ni nota de voz. */
 export function sinTelefono(telefono: string | null | undefined): boolean {
-  return esInstagram(telefono) || esMessenger(telefono)
+  return esInstagram(telefono) || esMessenger(telefono) || esChatTienda(telefono)
 }
 
 /** Cómo se muestra el contacto: el número en WhatsApp, el nombre de la red en las otras. */
 export function contactoVisible(telefono: string): string {
   if (esInstagram(telefono)) return 'Instagram'
   if (esMessenger(telefono)) return 'Messenger'
+  if (esChatTienda(telefono)) return 'Tienda web'
   return telefono
 }
 
@@ -110,6 +116,15 @@ export function canalDe(telefono: string): Canal {
       fondo: 'bg-[#0084FF]',
       nombre: 'Messenger',
       insignia: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
+    }
+  }
+  if (esChatTienda(telefono)) {
+    return {
+      icono: 'solar:shop-2-bold',
+      color: 'text-violet-600',
+      fondo: 'bg-violet-600',
+      nombre: 'Tienda web',
+      insignia: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
     }
   }
   return {
@@ -151,13 +166,15 @@ export function nombreVisible(nombre: string | null, telefono: string): string {
   if (nombre?.trim()) return nombre.trim()
   if (esInstagram(telefono)) return 'Cliente de Instagram'
   if (esMessenger(telefono)) return 'Cliente de Messenger'
+  if (esChatTienda(telefono)) return 'Cliente de la tienda'
   return telefono
 }
 
 /** Iniciales para el avatar. */
 export function iniciales(nombre: string | null, telefono: string): string {
   const base =
-    nombre?.trim().replace(/^@/, '') || (esInstagram(telefono) ? 'IG' : esMessenger(telefono) ? 'FB' : telefono)
+    nombre?.trim().replace(/^@/, '') ||
+    (esInstagram(telefono) ? 'IG' : esMessenger(telefono) ? 'FB' : esChatTienda(telefono) ? 'TW' : telefono)
   const partes = base.split(/\s+/).filter(Boolean)
   if (partes.length >= 2) return (partes[0][0] + partes[1][0]).toUpperCase()
   // Un teléfono se reconoce por sus últimos dígitos; un nombre, por el inicio.
