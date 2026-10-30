@@ -5,6 +5,8 @@ import Alert from '@/components/Alert';
 import { BRAND } from '@/lib/branding';
 import { post } from '@/utils/fetch';
 import { useAuthStore } from '@/zustand/auth';
+import { marcarLanzamientoVisto } from '@/data/lanzamiento';
+import { marcarNovedadesVistas } from '@/data/novedades';
 
 /**
  * Prueba gratis de IA de Ventas: el destino de los botones de planes de la web.
@@ -95,6 +97,10 @@ export default function RegistroPruebaView() {
       }
       await useAuthStore.getState().login({ email: campos.email.trim(), password: campos.password });
       if (useAuthStore.getState().success) {
+        // Para una cuenta recién creada todo es nuevo: las notas de versión
+        // tapaban la bienvenida justo en el primer paso.
+        marcarLanzamientoVisto();
+        marcarNovedadesVistas();
         navigate('/administrador/bienvenida', { replace: true });
       } else {
         // La cuenta existe aunque el login automático falle: que entre a mano.

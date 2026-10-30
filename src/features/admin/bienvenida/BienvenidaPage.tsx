@@ -38,7 +38,11 @@ async function cargarProgreso(): Promise<Progreso> {
     whatsapp: Boolean(empresa?.whatsappProvider === 'EMPRESA' && empresa?.whatsappApiTokenConfigured),
     productos: Number(productos.data?.total ?? 0),
     documentos: Array.isArray(docs.data) ? docs.data.length : 0,
-    contexto: Boolean(String(config.data?.iaVentasContexto ?? '').trim()),
+    // "Mi vendedor" guarda en `vendedor` (audiencia, reglas, estilo…); el texto
+    // libre viejo vive en iaVentasContexto. Cualquiera de los dos cuenta.
+    contexto:
+      Boolean(String(config.data?.iaVentasContexto ?? '').trim()) ||
+      Object.values(config.data?.vendedor ?? {}).some((v) => String(v ?? '').trim() !== ''),
     iaActiva: Boolean(config.data?.iaVentasActiva),
   };
 }

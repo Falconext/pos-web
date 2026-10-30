@@ -28,7 +28,8 @@ export default function ElegirPlanVentas({
 
   useEffect(() => {
     void get<{ sugerido: string; planes: PlanVentas[] }>('suscripcion/planes-ventas').then((r) => {
-      if (!r.success || !r.data) return;
+      // Si algo no cuadra, el bloque no aparece: Mi plan no puede caerse por esto.
+      if (!r.success || !Array.isArray(r.data?.planes)) return;
       setPlanes(r.data.planes);
       setElegido(r.data.sugerido);
     });
