@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import { BRAND } from '@/lib/branding';
-import { get, patch } from '@/utils/fetch';
+import { get, patch, post } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import { useAuthStore } from '@/zustand/auth';
 import { diasParaVencer, useEstadoSuscripcion } from '@/features/admin/suscripcion/useMiPlanViewModel';
@@ -22,9 +22,21 @@ type Progreso = {
   documentos: number;
   contexto: boolean;
   iaActiva: boolean;
+  facturacionLista: boolean;
+  logo: string;
 };
 
-const INICIAL: Progreso = { whatsapp: false, productos: 0, documentos: 0, contexto: false, iaActiva: false };
+const INICIAL: Progreso = {
+  whatsapp: false,
+  productos: 0,
+  documentos: 0,
+  contexto: false,
+  iaActiva: false,
+  facturacionLista: false,
+  logo: '',
+};
+
+const LOGO_MAX_MB = 2.5;
 
 async function cargarProgreso(): Promise<Progreso> {
   const [perfil, productos, docs, config] = await Promise.all([
@@ -44,6 +56,8 @@ async function cargarProgreso(): Promise<Progreso> {
       Boolean(String(config.data?.iaVentasContexto ?? '').trim()) ||
       Object.values(config.data?.vendedor ?? {}).some((v) => String(v ?? '').trim() !== ''),
     iaActiva: Boolean(config.data?.iaVentasActiva),
+    facturacionLista: Boolean(empresa?.facturacionLista),
+    logo: String(empresa?.logoVista || empresa?.logo || ''),
   };
 }
 
@@ -89,6 +103,8 @@ export default function BienvenidaPage() {
   const [progreso, setProgreso] = useState<Progreso>(INICIAL);
   const [cargando, setCargando] = useState(true);
   const [activando, setActivando] = useState(false);
+  const [subiendoLogo, setSubiendoLogo] = useState(false);
+  const inputLogo = useRef<HTMLInputElement>(null);
 
   const recargar = useCallback(async () => {
     try {
@@ -114,6 +130,36 @@ export default function BienvenidaPage() {
       await recargar();
     } finally {
       setActivando(false);
+    }
+  };
+
+  // Mismo endpoint que Configuración de la tienda: guarda `empresa.logo`, que
+  // es el que sale en boletas, facturas, tickets y la tienda.
+  const subirLogo = async (archivo: File | undefined) => {
+    if (!archivo) return;
+    if (!archivo.type.startsWith('image/')) {
+      alert('El logo tiene que ser una imagen (PNG o JPG)', 'error');
+      return;
+    }
+    if (archivo.size > LOGO_MAX_MB * 1024 * 1024) {
+      alert(`La imagen pesa más de ${LOGO_MAX_MB} MB`, 'error');
+      return;
+    }
+    setSubiendoLogo(true);
+    try {
+      const fd = new FormData();
+      fd.append('file', archivo);
+      const r = await post<any>('tienda/logo', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (!r.success) {
+        alert(r.error || 'No se pudo subir el logo', 'error');
+        return;
+      }
+      const vista = r.data?.signedUrl || r.data?.url || (r as any).signedUrl || (r as any).url;
+      setProgreso((p) => ({ ...p, logo: vista || URL.createObjectURL(archivo) }));
+      alert('Listo: tu logo ya sale en tus comprobantes', 'success');
+    } finally {
+      setSubiendoLogo(false);
+      if (inputLogo.current) inputLogo.current.value = '';
     }
   };
 
@@ -212,6 +258,78 @@ export default function BienvenidaPage() {
           )}
         </Paso>
       </ol>
+
+      <section className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h2 className="font-bold text-gray-900 dark:text-white">Tus boletas y facturas</h2>
+        <p className="mt-0.5 text-sm text-gray-500 dark:text-gray-400">
+          La prueba incluye toda la facturación, no solo la IA.
+        </p>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {/* Facturación demo: la activa el registro en QPSE; si no pudo, el equipo. */}
+          <div className="flex gap-3 rounded-xl bg-gray-50 p-4 dark:bg-slate-800/60">
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${progreso.facturacionLista ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15' : 'bg-amber-100 text-amber-600 dark:bg-amber-500/15'}`}
+            >
+              <Icon icon={progreso.facturacionLista ? 'solar:document-add-bold-duotone' : 'solar:clock-circle-bold-duotone'} width={22} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                {progreso.facturacionLista ? 'Facturación de prueba lista' : 'Activando tu facturación de prueba'}
+              </p>
+              <p className="mt-0.5 text-[13px] text-gray-500 dark:text-gray-400">
+                {progreso.facturacionLista
+                  ? 'Emite boletas y facturas en el ambiente demo de SUNAT: no tienen valor tributario.'
+                  : 'La dejamos lista en unas horas y te avisamos. Mientras tanto puedes emitir notas de venta.'}
+              </p>
+              {progreso.facturacionLista && (
+                <Link to="/administrador/facturacion/nuevo" className="mt-2 inline-flex text-[13px] font-bold hover:underline" style={{ color: ACCENT }}>
+                  Emitir una boleta de prueba
+                </Link>
+              )}
+            </div>
+          </div>
+
+          {/* Logo: opcional. */}
+          <div className="flex gap-3 rounded-xl bg-gray-50 p-4 dark:bg-slate-800/60">
+            {progreso.logo ? (
+              <img
+                src={progreso.logo}
+                alt="Logo de tu negocio"
+                className="h-10 w-10 shrink-0 rounded-xl bg-white object-contain p-0.5 ring-1 ring-gray-200 dark:ring-slate-700"
+              />
+            ) : (
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-gray-400 ring-1 ring-dashed ring-gray-300 dark:bg-slate-900 dark:ring-slate-600">
+                <Icon icon="solar:gallery-add-bold-duotone" width={22} />
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                Tu logo <span className="font-medium text-gray-400">(opcional)</span>
+              </p>
+              <p className="mt-0.5 text-[13px] text-gray-500 dark:text-gray-400">
+                Sale en tus boletas, facturas, tickets y tienda virtual. PNG o JPG, hasta {LOGO_MAX_MB} MB.
+              </p>
+              <input
+                ref={inputLogo}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => void subirLogo(e.target.files?.[0])}
+              />
+              <button
+                type="button"
+                onClick={() => inputLogo.current?.click()}
+                disabled={subiendoLogo}
+                className="mt-2 inline-flex text-[13px] font-bold hover:underline disabled:opacity-50"
+                style={{ color: ACCENT }}
+              >
+                {subiendoLogo ? 'Subiendo…' : progreso.logo ? 'Cambiar logo' : 'Subir mi logo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <p className="text-center text-sm text-gray-500 dark:text-gray-400">
         ¿Te ayudamos a configurarlo?{' '}
