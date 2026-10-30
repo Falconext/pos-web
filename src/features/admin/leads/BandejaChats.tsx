@@ -188,7 +188,7 @@ function FilaConversacion({
   }
   // El resumen de la IA dice más que el último mensaje suelto: "quiere 3
   // frascos, pregunta por envío a Arequipa" contra "ok".
-  const resumen = p.proximaAccion || p.resumen || p.telefonoProspecto
+  const resumen = p.proximaAccion || p.resumen || contactoVisible(p.telefonoProspecto)
 
   return (
     <button
