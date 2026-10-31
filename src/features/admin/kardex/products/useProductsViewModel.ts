@@ -571,6 +571,10 @@ export const useProductsViewModel = () => {
                     unidadMedidaNombre: originalProduct.unidadMedida?.nombre,
                     categoriaId: originalProduct.categoria?.id || originalProduct.categoriaId,
                     categoriaNombre: originalProduct.categoria?.nombre,
+                    // undefined si el backend no las devuelve: el campo se oculta y no se envía.
+                    categoriasExtraIds: Array.isArray(originalProduct.categoriasExtra)
+                        ? originalProduct.categoriasExtra.map((c) => c.id)
+                        : undefined,
                     marcaId: (originalProduct as any).marca?.id || (originalProduct as any).marcaId,
                     marcaNombre: (originalProduct as any).marca?.nombre,
                     precioUnitario: Number(originalProduct.precioUnitario),
@@ -804,9 +808,17 @@ export const useProductsViewModel = () => {
             const resp: any = await patch(`productos/${productoId}/categoria`, { categoriaId });
             if (resp?.code === 1 || resp?.success) {
                 const nueva = resp?.data?.categoria ?? null;
+                // Si la nueva principal era adicional, el backend la quita de
+                // las adicionales y devuelve cómo quedaron.
+                const extras = resp?.data?.categoriasExtra;
                 setProducts(prev => prev.map(p =>
                     p.id === productoId
-                        ? ({ ...p, categoriaId: nueva?.id ?? null, categoria: nueva } as IProduct)
+                        ? ({
+                            ...p,
+                            categoriaId: nueva?.id ?? null,
+                            categoria: nueva,
+                            ...(Array.isArray(extras) ? { categoriasExtra: extras } : {}),
+                        } as IProduct)
                         : p
                 ));
                 useAlertStore.getState().alert(
