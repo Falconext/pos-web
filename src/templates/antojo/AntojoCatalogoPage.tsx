@@ -6,12 +6,15 @@ import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { ANTOJO, AntojoFooter, AntojoHeader, AntojoProductCard, antojoDots } from './AntojoParts';
 import { antojoCard, antojoPage, antojoSection, antojoStagger, antojoViewport } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 function getName(item: any) {
   return typeof item === 'string' ? item : item?.nombre;
 }
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
+  // Categoría: cuenta también los productos que la tienen como adicional.
+  if (key === 'categoria') return products.filter((product) => productoEnCategoria(product, name)).length;
   return products.filter((product) => {
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;

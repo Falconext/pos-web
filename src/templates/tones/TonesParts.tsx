@@ -7,6 +7,8 @@ import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { tnCard, tnEase, tnHover, tnViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { TONES_MENU } from './menu';
 
 /**
  * Identidad visual de la plantilla "Tones" (ropa infantil / familiar premium).
@@ -201,10 +203,12 @@ export function TnHeader({
   const topCats = categories.slice(0, 4);
   const announcement = diseno?.tonesAnnouncement || 'Envío gratis en pedidos desde S/ 150   ·   Cambios sin complicaciones';
   const catHref = (c: string) => `/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`;
-  const goProduct = (id: any) => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    window.location.href = `/tienda/${slug}/producto/${id}`;
-  };
+  const menu = itemsDeMenu(TONES_MENU, { diseno, slug, categorias: allCategories });
+  const ir = useIrEnTienda(slug, diseno);
+  const goProduct = (id: any) => ir(`/tienda/${slug}/producto/${id}`);
+  const enlaceMenu = (item: (typeof menu)[number], className: string, style?: React.CSSProperties) => (
+    <EnlaceTienda key={item.key} href={item.href!} slug={slug} diseno={diseno} target={item.externo ? '_blank' : undefined} rel={item.externo ? 'noreferrer' : undefined} className={className} style={style}>{item.label}</EnlaceTienda>
+  );
 
   return (
     <>
@@ -232,20 +236,20 @@ export function TnHeader({
             <Icon icon={openMenu ? 'solar:close-square-linear' : 'solar:hamburger-menu-linear'} width={22} />
           </button>
 
-          <a href={`/tienda/${slug}`} className="flex shrink-0 items-center">
+          <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="flex shrink-0 items-center">
             {tienda?.logo ? (
               <img src={tienda.logo} alt={name} className="h-9 object-contain" />
             ) : (
               <span className="text-[30px] leading-none tracking-[-0.02em]" style={{ fontFamily: TN.brand, fontWeight: 700, color: TN.ink }}>{name.toLowerCase()}</span>
             )}
-          </a>
+          </EnlaceTienda>
 
           <nav className="ml-6 hidden items-center gap-1 lg:flex">
-            <a href={`/tienda/${slug}/catalogo?sort=new`} className="rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-700 transition-colors hover:text-neutral-950">Novedades</a>
+            {menu.map((item) => enlaceMenu(item, 'rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-700 transition-colors hover:text-neutral-950'))}
             {topCats.map((c) => (
-              <a key={c} href={catHref(c)} className="rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-700 transition-colors hover:text-neutral-950">{c}</a>
+              <EnlaceTienda key={c} href={catHref(c)} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-700 transition-colors hover:text-neutral-950">{c}</EnlaceTienda>
             ))}
-            <a href={`/tienda/${slug}/catalogo`} className="rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-700 transition-colors hover:text-neutral-950">Tienda</a>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-[12px] font-semibold uppercase tracking-[0.12em] text-neutral-700 transition-colors hover:text-neutral-950">Tienda</EnlaceTienda>
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
@@ -269,9 +273,9 @@ export function TnHeader({
                 <Icon icon="solar:magnifer-linear" width={21} />
               </button>
             )}
-            <a href={`/tienda/${slug}/seguimiento`} className="hidden h-11 w-11 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-black/5 sm:flex" title="Seguir pedido">
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="hidden h-11 w-11 items-center justify-center rounded-full text-neutral-700 transition-colors hover:bg-black/5 sm:flex" title="Seguir pedido">
               <Icon icon="solar:user-linear" width={21} />
-            </a>
+            </EnlaceTienda>
             <button type="button" onClick={() => setOpenFavs(true)} className="relative flex h-11 w-11 items-center justify-center rounded-full text-neutral-800 transition-colors hover:bg-black/5" title="Favoritos">
               <Icon icon="solar:heart-linear" width={22} />
               {favoritos.length > 0 && (
@@ -313,11 +317,12 @@ export function TnHeader({
                   />
                 </form>
                 <div className="flex flex-col">
-                  <a href={`/tienda/${slug}/catalogo`} className="border-b py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-800" style={{ borderColor: TN.line }}>Tienda</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} onClick={() => setOpenMenu(false)} className="border-b py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-800" style={{ borderColor: TN.line }}>Tienda</EnlaceTienda>
+                  {menu.map((item) => enlaceMenu(item, 'border-b py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-700', { borderColor: TN.line }))}
                   {topCats.map((c) => (
-                    <a key={c} href={catHref(c)} className="border-b py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-700" style={{ borderColor: TN.line }}>{c}</a>
+                    <EnlaceTienda key={c} href={catHref(c)} slug={slug} diseno={diseno} onClick={() => setOpenMenu(false)} className="border-b py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-700" style={{ borderColor: TN.line }}>{c}</EnlaceTienda>
                   ))}
-                  <a href={`/tienda/${slug}/contacto`} className="py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-700">Contacto</a>
+                  <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} onClick={() => setOpenMenu(false)} className="py-3 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-700">Contacto</EnlaceTienda>
                 </div>
               </div>
             </motion.div>
@@ -329,6 +334,7 @@ export function TnHeader({
         open={openFavs}
         onClose={() => setOpenFavs(false)}
         slug={slug}
+        diseno={diseno}
         cp={primary}
         favoritos={favoritos}
         onRemove={removeFavorito}
@@ -388,19 +394,19 @@ export function TnFooter({ tienda, slug, diseno, cp, categories = [] }: { tienda
           <div className="space-y-3 text-sm text-white/60">
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-white">{cat}</a>
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">{cat}</EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Ver todo</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Ver todo</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em] text-white/45">Ayuda</h4>
           <div className="space-y-3 text-sm text-white/60">
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Tienda completa</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Tienda completa</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Contacto</EnlaceTienda>
           </div>
         </div>
         <div>
@@ -553,6 +559,7 @@ export function TnFavoritesModal({
   open,
   onClose,
   slug,
+  diseno,
   cp,
   favoritos,
   onRemove,
@@ -561,6 +568,7 @@ export function TnFavoritesModal({
   open: boolean;
   onClose: () => void;
   slug: string;
+  diseno?: any;
   cp: string;
   favoritos: any[];
   onRemove: (id: number, slug: string) => void;
@@ -639,9 +647,9 @@ export function TnFavoritesModal({
             </div>
 
             <div className="border-t px-6 py-5" style={{ borderColor: TN.line }}>
-              <a href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 rounded-full border py-3.5 text-xs font-bold uppercase tracking-[0.12em] transition-colors" style={{ borderColor: TN.lineStrong, color: TN.cocoa }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} onClick={onClose} className="flex w-full items-center justify-center gap-2 rounded-full border py-3.5 text-xs font-bold uppercase tracking-[0.12em] transition-colors" style={{ borderColor: TN.lineStrong, color: TN.cocoa }}>
                 Seguir comprando
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.aside>
         </div>

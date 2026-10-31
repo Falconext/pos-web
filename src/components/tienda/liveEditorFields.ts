@@ -19,6 +19,11 @@ import { JOYERIA_MENU } from '@/templates/joyeria/menuJoyeria';
 import { CARTERAS_MENU } from '@/templates/carteras/menuCarteras';
 import { LUXURY_COLECCIONES, LUXURY_FAMILIAS, LUXURY_HERO_BOTONES, LUXURY_MENU } from '@/templates/luxury/menuLuxury';
 import { SPA_MENU, SPA_SERVICIOS } from '@/templates/spa/menuSpa';
+import { TONES_MENU } from '@/templates/tones/menu';
+import { ROPA_HOMBRE_MENU } from '@/templates/ropa-hombre/menu';
+import { URBANO_MENU } from '@/templates/urbano/menu';
+import { AUTOPARTES_MENU } from '@/templates/autopartes/menu';
+import { MODA_MENU } from '@/templates/moda/menu';
 
 export interface ImageFieldDef {
   key: string;
@@ -294,6 +299,8 @@ const AUTOPARTES_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'widgetTwoSubtitle', label: 'Widget 2: Subtítulo', placeholder: '¡Rendimiento Suave!', group: 'Widgets promocionales' },
   { key: 'widgetThreeTitle', label: 'Widget 3: Título', placeholder: 'COMPRA 1 LLEVA 1!', group: 'Widgets promocionales' },
   { key: 'widgetThreeSubtitle', label: 'Widget 3: Subtítulo', placeholder: '¡Aprovecha ahora!', group: 'Widgets promocionales' },
+  // Accesos rápidos de la barra del header (también en "Navegación" del pie).
+  ...camposDeMenu(AUTOPARTES_MENU).textFields,
 ];
 
 const URBANO_TEXT_FIELDS: TextFieldDef[] = [
@@ -302,6 +309,7 @@ const URBANO_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'urbanoHeroTitle', label: 'Hero título', placeholder: 'Estilo urbano para la ciudad', group: 'Hero' },
   { key: 'urbanoHeroBtn', label: 'Hero botón', placeholder: '[ VER COLECCIÓN ]', group: 'Hero' },
   { key: 'urbanoAnnouncementText', label: 'Barra superior', placeholder: '[ VER COLECCIÓN ]', group: 'Header' },
+  ...camposDeMenu(URBANO_MENU).textFields,
   { key: 'urbanoCat1Text', label: 'Categoría 1', placeholder: 'Automática', group: 'Categorías', type: 'categorySelect' },
   { key: 'urbanoCat2Text', label: 'Categoría 2', placeholder: 'Automática', group: 'Categorías', type: 'categorySelect' },
   { key: 'urbanoCat3Text', label: 'Categoría 3', placeholder: 'Automática', group: 'Categorías', type: 'categorySelect' },
@@ -310,7 +318,7 @@ const URBANO_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'urbanoShopTheLookTitle', label: 'Título "Compra el look"', placeholder: 'COMPRA EL LOOK', group: 'Bloques' },
   { key: 'urbanoBottomBannerText', label: 'Marquesina inferior', placeholder: 'VISTE A TU MANERA.', group: 'Bloques' },
   { key: 'urbanoBottomBannerBtn', label: 'Botón banner inferior', placeholder: '[ VER COLECCIÓN ]', group: 'Bloques' },
-  { key: 'urbanoFeatureLabel', label: 'Etiqueta producto macro', placeholder: 'CASACA', group: 'Bloques' },
+  { key: 'urbanoFeatureTitle', label: 'Título "Completa el look"', placeholder: 'Completa el look', group: 'Bloques' },
   { key: 'urbanoSlogan', label: 'Slogan footer', placeholder: 'Moda urbana minimalista...', group: 'Footer' },
   { key: 'urbanoFooterTitle', label: 'Footer: título contacto', placeholder: 'Atención', group: 'Footer' },
   { key: 'urbanoFooterHelpText', label: 'Footer: texto contacto', placeholder: 'Compra desde la tienda oficial...', group: 'Footer' },
@@ -647,9 +655,6 @@ const APICULTURA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'apiculturaContactHours', label: 'Contacto: horario', placeholder: '9:00 AM - 6:00 PM', group: 'Contacto' },
   { key: 'apiculturaContactSubmitLabel', label: 'Contacto: botón', placeholder: 'Enviar', group: 'Contacto' },
   { key: 'apiculturaOcultarEnvio', label: 'Ocultar costo de envío', placeholder: '', group: 'Checkout', type: 'toggle', hint: 'Actívalo si coordinas el envío internamente. Oculta la línea "Envío" y el mensaje de delivery gratis en el checkout.' },
-  { key: 'apiculturaNewsletterTitle', label: 'Newsletter: título', placeholder: 'Subscribe To Our Newsletter', group: 'Newsletter' },
-  { key: 'apiculturaNewsletterText', label: 'Newsletter: texto', placeholder: 'Recibe novedades y promociones...', group: 'Newsletter' },
-  { key: 'apiculturaNewsletterButton', label: 'Newsletter: botón', placeholder: 'Suscribirse', group: 'Newsletter' },
   { key: 'apiculturaCheckoutTitle', label: 'Checkout: título', placeholder: 'Finalizar compra', group: 'Checkout' },
   { key: 'apiculturaCheckoutCustomerTitle', label: 'Checkout: datos cliente', placeholder: 'Datos del cliente', group: 'Checkout' },
   { key: 'apiculturaCheckoutDeliveryTitle', label: 'Checkout: entrega y pago', placeholder: 'Entrega y pago', group: 'Checkout' },
@@ -790,6 +795,7 @@ const TONES_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'tonesLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Tones', group: 'Marca' },
   { key: 'tonesAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío gratis desde S/ 150 · Cambios sin complicaciones', group: 'Header' },
   { key: 'tonesSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar prendas...', group: 'Header' },
+  ...camposDeMenu(TONES_MENU).textFields,
   heroIntervalField('tonesHeroInterval', 'Hero · Slide 1', 6.5),
   { key: 'tonesHeroOnlyImage', label: 'Slide 1: solo imagen (sin tarjeta de texto)', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 1).' },
   { key: 'tonesHeroOculto', label: 'No mostrar este banner', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Ocúltalo si no lo vas a usar. Si ocultas todos, se conserva el primero.' },
@@ -1249,8 +1255,20 @@ const MOTOS_TEXT_FIELDS: TextFieldDef[] = [
   ...categoryTileTextFields('motos', 2),
 ];
 
+const MODA_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'modaBrandName', label: 'Nombre de la tienda (logo)', placeholder: 'chiclara', group: 'Header' },
+  { key: 'modaPromoText', label: 'Barra superior (promoción)', placeholder: 'Oferta de verano: hasta 30% OFF', group: 'Header' },
+  // Botones del menú (header, menú móvil y flechas de la barra superior).
+  ...camposDeMenu(MODA_MENU).textFields,
+  { key: 'modaHeroTitle', label: 'Hero: título (texto alternativo del banner)', placeholder: 'Banner de la tienda', group: 'Hero' },
+  { key: 'modaTrendsTitle', label: 'Título "En tendencia"', placeholder: 'En tendencia', group: 'Secciones' },
+  { key: 'modaStylesTitle', label: 'Título "Elige tu estilo"', placeholder: 'Elige tu estilo', group: 'Secciones' },
+  { key: 'modaCollectionsTitle', label: 'Título "Colecciones destacadas"', placeholder: 'Colecciones destacadas', group: 'Secciones' },
+];
+
 const MODA_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'modaHeroAction', label: 'Banner del hero', group: 'Hero', defaultType: 'catalog' },
+  ...camposDeMenu(MODA_MENU).linkFields,
 ];
 
 const MAYE_LINK_FIELDS: LinkFieldDef[] = [
@@ -1310,6 +1328,39 @@ const APICULTURA_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'apiculturaAboutAction', label: 'Botón nosotros', group: 'About', defaultType: 'catalog' },
 ];
 
+const ANTOJO_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'antojoLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Antojería', group: 'Marca' },
+  { key: 'antojoSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar pizza, frappe, cremolada...', group: 'Header' },
+  { key: 'antojoHeroEyebrow', label: 'Hero: etiqueta', placeholder: 'Recién hecho, siempre antojable', group: 'Hero' },
+  { key: 'antojoHeroTitle', label: 'Hero: título', placeholder: 'Pizzas, frappes y cremoladas', group: 'Hero' },
+  { key: 'antojoHeroSubtitle', label: 'Hero: subtítulo', placeholder: 'El caliente y el helado que se te antojan...', group: 'Hero' },
+  { key: 'antojoHeroButton', label: 'Hero: botón', placeholder: 'Ver la carta', group: 'Hero' },
+  { key: 'antojoFeaturedEyebrow', label: 'Destacados: etiqueta', placeholder: 'Lo más pedido', group: 'Destacados' },
+  { key: 'antojoFeaturedTitle', label: 'Destacados: título', placeholder: 'Antojos del día', group: 'Destacados' },
+  { key: 'antojoPromoHotTitle', label: 'Promo caliente: título', placeholder: 'Pizzas recién horneadas', group: 'Promos' },
+  { key: 'antojoPromoColdTitle', label: 'Promo fría: título', placeholder: 'Frappes y cremoladas', group: 'Promos' },
+  { key: 'antojoStepsEyebrow', label: 'Pasos: etiqueta', placeholder: 'Fácil y rápido', group: 'Cómo pedir' },
+  { key: 'antojoStepsTitle', label: 'Pasos: título', placeholder: 'Tu antojo en 3 pasos', group: 'Cómo pedir' },
+  { key: 'antojoPopularEyebrow', label: 'Favoritos: etiqueta', placeholder: 'Los favoritos', group: 'Favoritos' },
+  { key: 'antojoPopularTitle', label: 'Favoritos: título', placeholder: 'También te va a encantar', group: 'Favoritos' },
+  { key: 'antojoFooterText', label: 'Footer: descripción', placeholder: 'Pizzas al horno, frappes cremosos y cremoladas heladas...', group: 'Footer' },
+  { key: 'antojoFooterPhone', label: 'Footer: teléfono de pedidos', placeholder: '+51 999 999 999', group: 'Footer' },
+  { key: 'antojoFooterEmail', label: 'Footer: correo', placeholder: 'hola@antojeria.com', group: 'Footer' },
+  { key: 'antojoCheckoutTitle', label: 'Checkout: título', placeholder: 'Casi listo tu antojo', group: 'Checkout' },
+  { key: 'antojoOcultarEnvio', label: 'Ocultar costo de envío', placeholder: '', group: 'Checkout', type: 'toggle', hint: 'Actívalo si coordinas el envío internamente. Oculta la línea "Envío" y no lo suma al total.' },
+];
+
+const ANTOJO_PRODUCT_FIELDS: ProductFieldDef[] = [
+  { key: 'antojoFeaturedProducts', label: 'Antojos del día (destacados)' },
+  { key: 'antojoLatestProducts', label: 'Favoritos (también te va a encantar)' },
+];
+
+const ANTOJO_LINK_FIELDS: LinkFieldDef[] = [
+  { key: 'antojoHeroAction', label: 'Hero: botón', group: 'Hero', defaultType: 'catalog' },
+  { key: 'antojoPromoHotAction', label: 'Promo caliente (sin configurar: busca "pizza")', group: 'Promos', defaultType: 'search' },
+  { key: 'antojoPromoColdAction', label: 'Promo fría (sin configurar: busca "frappe")', group: 'Promos', defaultType: 'search' },
+];
+
 const CARTERAS_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'carterasHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Slider · Slide 1', defaultType: 'catalog' },
   { key: 'carterasSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Slider · Slide 2', defaultType: 'catalog' },
@@ -1335,6 +1386,8 @@ const ROPA_HOMBRE_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'ropaHombreSlide2Action', label: 'Slide 2: enlace (foto y botón)', group: 'Hero · Slide 2', defaultType: 'catalog' },
   { key: 'ropaHombreSlide3Action', label: 'Slide 3: enlace (foto y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
   { key: 'ropaHombrePremiumAction', label: 'Editorial: enlace del botón', group: 'Editorial', defaultType: 'catalog' },
+  // Texto en "Menú: novedades" (ropaHombreNavNew); el destino aplica al header y al pie.
+  ...camposDeMenu(ROPA_HOMBRE_MENU, 'Header').linkFields,
 ];
 
 const BICICLETAS_LINK_FIELDS: LinkFieldDef[] = [
@@ -1373,6 +1426,9 @@ const TONES_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'tonesSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
   { key: 'tonesSplit1Action', label: 'Tarjeta split 1: enlace', group: 'Tarjeta split 1', defaultType: 'catalog' },
   { key: 'tonesSplit2Action', label: 'Tarjeta split 2: enlace', group: 'Tarjeta split 2', defaultType: 'catalog' },
+  { key: 'tonesFeatureAction', label: 'Destacado: enlace (sin configurar: novedades)', group: 'Bloque destacado', defaultType: 'catalog' },
+  { key: 'tonesBannerAction', label: 'Banner ancho: enlace', group: 'Banner ancho', defaultType: 'catalog' },
+  ...camposDeMenu(TONES_MENU).linkFields,
 ];
 
 const MODA_MINIMAL_LINK_FIELDS: LinkFieldDef[] = [
@@ -3388,14 +3444,15 @@ const CELULARES_LINK_FIELDS: LinkFieldDef[] = [
 ];
 
 export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
-  autopartes: { textFields: AUTOPARTES_TEXT_FIELDS, imageFields: AUTOPARTES_IMAGE_FIELDS, productFields: [], linkFields: [] },
-  urbano: { textFields: URBANO_TEXT_FIELDS, imageFields: URBANO_IMAGE_FIELDS, productFields: URBANO_PRODUCT_FIELDS, linkFields: [] },
-  moda: { textFields: [], imageFields: MODA_IMAGE_FIELDS, productFields: [], linkFields: MODA_LINK_FIELDS },
+  autopartes: { textFields: AUTOPARTES_TEXT_FIELDS, imageFields: AUTOPARTES_IMAGE_FIELDS, productFields: [], linkFields: camposDeMenu(AUTOPARTES_MENU).linkFields },
+  urbano: { textFields: URBANO_TEXT_FIELDS, imageFields: URBANO_IMAGE_FIELDS, productFields: URBANO_PRODUCT_FIELDS, linkFields: camposDeMenu(URBANO_MENU).linkFields },
+  moda: { textFields: MODA_TEXT_FIELDS, imageFields: MODA_IMAGE_FIELDS, productFields: [], linkFields: MODA_LINK_FIELDS },
   maye: { textFields: MAYE_TEXT_FIELDS, imageFields: MAYE_IMAGE_FIELDS, productFields: MAYE_PRODUCT_FIELDS, linkFields: MAYE_LINK_FIELDS },
   tecnologia: { textFields: TECNOLOGIA_TEXT_FIELDS, imageFields: TECNOLOGIA_IMAGE_FIELDS, productFields: TECNOLOGIA_PRODUCT_FIELDS, linkFields: TECNOLOGIA_LINK_FIELDS },
   falcon: { textFields: FALCON_TEXT_FIELDS, imageFields: FALCON_IMAGE_FIELDS, productFields: FALCON_PRODUCT_FIELDS, linkFields: FALCON_LINK_FIELDS },
   construccion: { textFields: CONSTRUCCION_TEXT_FIELDS, imageFields: CONSTRUCCION_IMAGE_FIELDS, productFields: CONSTRUCCION_PRODUCT_FIELDS, linkFields: CONSTRUCCION_LINK_FIELDS },
   apicultura: { textFields: APICULTURA_TEXT_FIELDS, imageFields: APICULTURA_IMAGE_FIELDS, productFields: APICULTURA_PRODUCT_FIELDS, linkFields: APICULTURA_LINK_FIELDS },
+  antojo: { textFields: ANTOJO_TEXT_FIELDS, imageFields: [], productFields: ANTOJO_PRODUCT_FIELDS, linkFields: ANTOJO_LINK_FIELDS },
   carteras: { textFields: CARTERAS_TEXT_FIELDS, imageFields: CARTERAS_IMAGE_FIELDS, productFields: [], linkFields: CARTERAS_LINK_FIELDS },
   joyeria: { textFields: JOYERIA_TEXT_FIELDS, imageFields: JOYERIA_IMAGE_FIELDS, productFields: [], linkFields: JOYERIA_LINK_FIELDS },
   luxury: { textFields: LUXURY_TEXT_FIELDS, imageFields: [], productFields: [], linkFields: LUXURY_LINK_FIELDS },
