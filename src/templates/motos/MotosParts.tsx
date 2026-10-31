@@ -1,12 +1,15 @@
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { motoCard, motoEase, motoHover, motoSection, motoViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { useCategoriasTienda } from '@/templates/shared/enlacesTienda';
+import { MOTOS_FOOTER_MENU, MOTOS_MENU } from './menu';
 
 /**
  * Identidad visual de la plantilla "Voltia Motos" (venta de motos + servicio/taller mecánico).
@@ -216,8 +219,6 @@ export function MotoProductCard({
 
 /* ─────────────────────────────────── Header ─────────────────────────────── */
 
-const NAV_LINKS = ['Servicio', 'Tuning', 'Repuestos', 'Equipamiento', 'Envíos y garantía'];
-
 export function MotoHeader({
   tienda,
   slug,
@@ -248,11 +249,15 @@ export function MotoHeader({
   const favoritos = getFavoritosBySlug(slug);
   const socials = getSocials(tienda, diseno);
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
+  // El checkout no recibe categorías: se piden para que el menú filtre igual en todas las páginas.
+  const categoriasMenu = useCategoriasTienda(slug, allCategories);
+  const menu = useMemo(() => itemsDeMenu(MOTOS_MENU, { diseno, slug, categorias: categoriasMenu }), [diseno, slug, categoriasMenu]);
+  const ir = useIrEnTienda(slug, diseno);
   const phoneStore = diseno?.motosHeaderPhone || tienda?.whatsappTienda || tienda?.telefono || '+51 999 955 41 43';
   const phoneService = diseno?.motosHeaderPhoneService || tienda?.celular || '+51 999 938 47 39';
   const goProduct = (id: any) => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    window.location.href = `/tienda/${slug}/producto/${id}`;
+    setOpenFavs(false);
+    ir(`/tienda/${slug}/producto/${id}`);
   };
 
   const CONTACT_COLS = [
@@ -271,7 +276,7 @@ export function MotoHeader({
       >
         {/* Fila superior: logo + contactos + acciones */}
         <div className="mx-auto flex h-[64px] max-w-7xl items-center gap-4 px-6">
-          <a href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-2.5 leading-none">
+          <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="flex shrink-0 items-center gap-2.5 leading-none">
             {tienda?.logo ? (
               <img src={tienda.logo} alt={name} className="h-9 object-contain" />
             ) : (
@@ -282,7 +287,7 @@ export function MotoHeader({
             <span className="hidden flex-col sm:flex">
               <span className="text-lg font-extrabold uppercase tracking-[0.02em]" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>{name}</span>
             </span>
-          </a>
+          </EnlaceTienda>
 
           <div className="ml-4 hidden items-center gap-7 lg:flex">
             {CONTACT_COLS.map((c) => (
@@ -302,23 +307,23 @@ export function MotoHeader({
             <a href={waLink(tienda, 'Hola, quiero que me llamen')} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-[12px] font-bold text-white transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary }}>
               <Icon icon="solar:phone-calling-linear" width={16} /> Te llamamos
             </a>
-            <a href={`/tienda/${slug}/seguimiento`} className="flex h-10 w-10 items-center justify-center rounded-lg border transition-colors hover:bg-black/[0.03]" style={{ borderColor: MOTO.line, color: MOTO.ink }} title="Mi cuenta / Seguir pedido">
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="flex h-10 w-10 items-center justify-center rounded-lg border transition-colors hover:bg-black/[0.03]" style={{ borderColor: MOTO.line, color: MOTO.ink }} title="Mi cuenta / Seguir pedido">
               <Icon icon="solar:user-linear" width={20} />
-            </a>
+            </EnlaceTienda>
           </div>
         </div>
 
         {/* Fila inferior: catálogo + nav + búsqueda + iconos */}
         <div className="border-t" style={{ borderColor: MOTO.lineSoft }}>
           <div className="mx-auto flex h-[56px] max-w-7xl items-center gap-3 px-6">
-            <a href={`/tienda/${slug}/catalogo`} className="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-[12px] font-bold uppercase tracking-[0.06em]" style={{ backgroundColor: MOTO.soft, color: MOTO.ink }}>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-[12px] font-bold uppercase tracking-[0.06em]" style={{ backgroundColor: MOTO.soft, color: MOTO.ink }}>
               <Icon icon="solar:widget-2-bold" width={16} /> Catálogo
-            </a>
+            </EnlaceTienda>
             <nav className="hidden items-center gap-1 lg:flex">
-              {NAV_LINKS.map((label) => (
-                <a key={label} href={`/tienda/${slug}/catalogo`} className="rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors" style={{ color: MOTO.body }} onMouseEnter={(e) => (e.currentTarget.style.color = MOTO.ink)} onMouseLeave={(e) => (e.currentTarget.style.color = MOTO.body)}>{label}</a>
+              {menu.map((item) => (
+                <EnlaceTienda key={item.key} href={item.href as string} slug={slug} diseno={diseno} {...(item.externo ? { target: '_blank', rel: 'noreferrer' } : {})} className="rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors" style={{ color: MOTO.body }} onMouseEnter={(e) => (e.currentTarget.style.color = MOTO.ink)} onMouseLeave={(e) => (e.currentTarget.style.color = MOTO.body)}>{item.label}</EnlaceTienda>
               ))}
-              <a href={`/tienda/${slug}/contacto`} className="rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors" style={{ color: MOTO.body }} onMouseEnter={(e) => (e.currentTarget.style.color = MOTO.ink)} onMouseLeave={(e) => (e.currentTarget.style.color = MOTO.body)}>Contacto</a>
+              <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="rounded-lg px-3 py-2 text-[12px] font-semibold transition-colors" style={{ color: MOTO.body }} onMouseEnter={(e) => (e.currentTarget.style.color = MOTO.ink)} onMouseLeave={(e) => (e.currentTarget.style.color = MOTO.body)}>Contacto</EnlaceTienda>
             </nav>
 
             <div className="ml-auto flex items-center gap-1.5">
@@ -351,13 +356,13 @@ export function MotoHeader({
         {categories.length > 0 && (
           <div className="flex gap-2 overflow-x-auto border-t px-6 py-2.5 lg:hidden" style={{ borderColor: MOTO.lineSoft }}>
             {categories.map((category) => (
-              <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em]" style={{ borderColor: MOTO.line, color: MOTO.body }}>{category}</a>
+              <EnlaceTienda key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} slug={slug} diseno={diseno} className="shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em]" style={{ borderColor: MOTO.line, color: MOTO.body }}>{category}</EnlaceTienda>
             ))}
           </div>
         )}
       </motion.header>
 
-      <MotoFavoritesModal open={openFavs} onClose={() => setOpenFavs(false)} slug={slug} cp={primary} favoritos={favoritos} onRemove={removeFavorito} onProduct={goProduct} />
+      <MotoFavoritesModal open={openFavs} onClose={() => setOpenFavs(false)} slug={slug} cp={primary} favoritos={favoritos} onRemove={removeFavorito} onProduct={goProduct} diseno={diseno} />
     </>
   );
 }
@@ -392,6 +397,8 @@ export function MotoFooter({ tienda, slug, diseno, cp, categories = [] }: { tien
   const cats = categories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 5);
   const phone = diseno?.motosFooterPhone || tienda?.whatsappTienda || tienda?.telefono || '+51 999 999 999';
   const socials = getSocials(tienda, diseno);
+  const categoriasMenu = useCategoriasTienda(slug, categories);
+  const menuServicio = useMemo(() => itemsDeMenu(MOTOS_FOOTER_MENU, { diseno, slug, categorias: categoriasMenu }), [diseno, slug, categoriasMenu]);
 
   return (
     <motion.footer initial="hidden" whileInView="show" viewport={motoViewport} variants={motoSection} style={{ backgroundColor: MOTO.night, color: MOTO.onNight }}>
@@ -421,20 +428,22 @@ export function MotoFooter({ tienda, slug, diseno, cp, categories = [] }: { tien
           <div className="space-y-3 text-sm" style={{ color: MOTO.onNightMuted }}>
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-white">{cat}</a>
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">{cat}</EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Ver todo</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Ver todo</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.22em]" style={{ color: primary }}>Servicio</h4>
           <div className="space-y-3 text-sm" style={{ color: MOTO.onNightMuted }}>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Agenda tu service</a>
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Repuestos y accesorios</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Agenda tu service</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Seguir mi pedido</EnlaceTienda>
+            {menuServicio.map((item) => (
+              <EnlaceTienda key={item.key} href={item.href as string} slug={slug} diseno={diseno} {...(item.externo ? { target: '_blank', rel: 'noreferrer' } : {})} className="block transition-colors hover:text-white">{item.label}</EnlaceTienda>
+            ))}
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Contacto</EnlaceTienda>
           </div>
         </div>
         <div>
@@ -587,6 +596,7 @@ export function MotoFavoritesModal({
   favoritos,
   onRemove,
   onProduct,
+  diseno,
 }: {
   open: boolean;
   onClose: () => void;
@@ -595,6 +605,7 @@ export function MotoFavoritesModal({
   favoritos: any[];
   onRemove: (id: number, slug: string) => void;
   onProduct: (id: number | string) => void;
+  diseno?: any;
 }) {
   const primary = motoPrimary(cp);
 
@@ -668,9 +679,9 @@ export function MotoFavoritesModal({
             </div>
 
             <div className="border-t bg-white px-6 py-5" style={{ borderColor: MOTO.line }}>
-              <a href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 rounded-lg border py-3.5 text-xs font-bold uppercase tracking-[0.12em] transition-colors hover:bg-black/[0.03]" style={{ borderColor: MOTO.line, color: MOTO.ink }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} onClick={onClose} className="flex w-full items-center justify-center gap-2 rounded-lg border py-3.5 text-xs font-bold uppercase tracking-[0.12em] transition-colors hover:bg-black/[0.03]" style={{ borderColor: MOTO.line, color: MOTO.ink }}>
                 Seguir explorando
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.aside>
         </div>

@@ -4,6 +4,7 @@ import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { MIN, MinFooter, MinHeader, MinProductImage, MinWhatsAppFab, minFont, minPrimary } from './ModaMinimalParts';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 import { minCard, minPage, minSection, minViewport } from './motion';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
@@ -49,6 +50,7 @@ export default function ModaMinimalCheckoutPage(props: TemplateCheckoutPageProps
     enviarPedido,
   } = props;
 
+  const ir = useIrEnTienda(slug, diseno);
   const primary = minPrimary(cp);
   const font = minFont(diseno);
   const cartCount = carritoState.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
@@ -64,20 +66,20 @@ export default function ModaMinimalCheckoutPage(props: TemplateCheckoutPageProps
         cp={primary}
         diseno={diseno}
         carritoSize={cartCount}
-        onOpenCart={() => (window.location.href = `/tienda/${slug}/catalogo`)}
+        onOpenCart={() => ir(`/tienda/${slug}/catalogo`)}
         searchQuery={search}
         setSearchQuery={setSearch}
         allCategories={[]}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          if (value?.trim()) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`;
+          if (value?.trim()) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`);
         }}
       />
 
       <section className="border-b" style={{ borderColor: MIN.line }}>
         <div className="mx-auto max-w-7xl px-6 py-10 md:px-8 md:py-12">
           <div className="text-[11px] font-medium uppercase tracking-[0.14em]" style={{ color: MIN.muted }}>
-            <a href={`/tienda/${slug}`} className="hover:text-black">Inicio</a>
+            <EnlaceTienda href={`/tienda/${slug}`} className="hover:text-black" slug={slug} diseno={diseno}>Inicio</EnlaceTienda>
             <span className="mx-2">/</span>
             <span style={{ color: MIN.soft }}>Finalizar compra</span>
           </div>
@@ -175,7 +177,7 @@ export default function ModaMinimalCheckoutPage(props: TemplateCheckoutPageProps
                 <div className="my-8 text-center">
                   <Icon icon="solar:bag-cross-linear" className="mx-auto text-4xl text-neutral-300" />
                   <p className="mt-3 text-sm" style={{ color: MIN.soft }}>Tu carrito está vacío.</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex bg-black px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white">Ver tienda</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex bg-black px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white" slug={slug} diseno={diseno}>Ver tienda</EnlaceTienda>
                 </div>
               ) : (
                 carritoState.map((item) => {

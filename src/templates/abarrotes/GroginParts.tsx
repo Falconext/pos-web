@@ -1,12 +1,15 @@
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { groCard, groEase, groHover, groSection, groTap, groViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { useCategoriasTienda } from '@/templates/shared/enlacesTienda';
+import { ABARROTES_MENU } from './menu';
 
 /**
  * Identidad visual de la plantilla "Grogin" (abarrotes, minimarket, bodega, supermercado).
@@ -213,8 +216,9 @@ function GroSearchBox({ slug, primary, diseno, initial = '', setValue, onSubmit,
     return () => document.removeEventListener('mousedown', h);
   }, []);
 
-  const goProduct = (id: any) => { setOpen(false); if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; } window.location.href = `/tienda/${slug}/producto/${id}`; };
-  const goAll = () => { setOpen(false); const term = q.trim(); if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; } window.location.href = `/tienda/${slug}/catalogo${term ? `?search=${encodeURIComponent(term)}` : ''}`; };
+  const ir = useIrEnTienda(slug, diseno);
+  const goProduct = (id: any) => { setOpen(false); ir(`/tienda/${slug}/producto/${id}`); };
+  const goAll = () => { setOpen(false); const term = q.trim(); ir(`/tienda/${slug}/catalogo${term ? `?search=${encodeURIComponent(term)}` : ''}`); };
 
   return (
     <div ref={boxRef} className={`relative ${mobile ? '' : 'mx-auto hidden max-w-2xl flex-1 md:block'}`}>
@@ -250,6 +254,8 @@ function GroSearchBox({ slug, primary, diseno, initial = '', setValue, onSubmit,
 
 /* ─────────────────────────────────── Header ─────────────────────────────── */
 
+const MotionEnlace = motion.create(EnlaceTienda);
+
 export function GroHeader({
   tienda,
   slug,
@@ -281,10 +287,13 @@ export function GroHeader({
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean);
   const navCats = categories.slice(0, 5);
   const announcement = diseno?.abarrotesAnnouncement || 'Envío gratis en pedidos desde S/ 80  ·  Productos frescos todos los días';
+  const ir = useIrEnTienda(slug, diseno);
   const goProduct = (id: any) => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    window.location.href = `/tienda/${slug}/producto/${id}`;
+    setOpenFavs(false);
+    ir(`/tienda/${slug}/producto/${id}`);
   };
+  const categoriasMenu = useCategoriasTienda(slug, allCategories);
+  const menu = useMemo(() => itemsDeMenu(ABARROTES_MENU, { diseno, slug, categorias: categoriasMenu }), [diseno, slug, categoriasMenu]);
 
   return (
     <>
@@ -292,17 +301,19 @@ export function GroHeader({
       <div className="w-full text-white" style={{ backgroundColor: GRO.ink }}>
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-5 py-2 text-[11.5px] font-medium md:px-6">
           <span className="line-clamp-1 opacity-85">{announcement}</span>
-          <a href={`/tienda/${slug}/seguimiento`} className="hidden shrink-0 items-center gap-1.5 opacity-85 transition-opacity hover:opacity-100 sm:flex">
+          <EnlaceTienda href={`/tienda/${slug}/seguimiento`} className="hidden shrink-0 items-center gap-1.5 opacity-85 transition-opacity hover:opacity-100 sm:flex" slug={slug} diseno={diseno}>
             <Icon icon="solar:box-minimalistic-linear" width={15} /> Seguir mi pedido
-          </a>
+          </EnlaceTienda>
         </div>
       </div>
 
       {/* Header principal */}
       <header className="border-b bg-white" style={{ borderColor: GRO.line }}>
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-4 md:px-6">
-          <motion.a
+          <MotionEnlace
             href={`/tienda/${slug}`}
+            slug={slug}
+            diseno={diseno}
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, ease: groEase }}
@@ -317,7 +328,7 @@ export function GroHeader({
               </span>
             )}
             <span className="text-2xl font-bold lowercase leading-none tracking-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{name}</span>
-          </motion.a>
+          </MotionEnlace>
 
           {/* Buscador con dropdown en vivo */}
           <GroSearchBox slug={slug} primary={primary} diseno={diseno} initial={searchQuery} setValue={setSearchQuery} onSubmit={onSearchSubmit} />
@@ -354,17 +365,19 @@ export function GroHeader({
       {/* Barra de navegación */}
       <div className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur" style={{ borderColor: GRO.line }}>
         <div className="mx-auto flex max-w-7xl items-center gap-2 px-5 py-2.5 md:px-6">
-          <a href={`/tienda/${slug}/catalogo`} className="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-bold text-white" style={{ backgroundColor: GRO.ink }}>
+          <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-bold text-white" style={{ backgroundColor: GRO.ink }} slug={slug} diseno={diseno}>
             <Icon icon="solar:hamburger-menu-linear" width={18} /> Categorías
-          </a>
+          </EnlaceTienda>
           <nav className="flex items-center gap-0.5 overflow-x-auto">
-            <a href={`/tienda/${slug}`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--gro-cp)]" style={{ color: GRO.ink, ['--gro-cp' as any]: primary }}>Inicio</a>
-            <a href={`/tienda/${slug}/catalogo`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--gro-cp)]" style={{ color: GRO.ink, ['--gro-cp' as any]: primary }}>Tienda</a>
+            <EnlaceTienda href={`/tienda/${slug}`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--gro-cp)]" style={{ color: GRO.ink, ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>Inicio</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--gro-cp)]" style={{ color: GRO.ink, ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>Tienda</EnlaceTienda>
             {navCats.map((category) => (
-              <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--gro-cp)] lg:inline" style={{ ['--gro-cp' as any]: primary }}>{titleCase(category)}</a>
+              <EnlaceTienda key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--gro-cp)] lg:inline" style={{ ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>{titleCase(category)}</EnlaceTienda>
             ))}
-            <a href={`/tienda/${slug}/catalogo`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors" style={{ color: GRO.pink }}>Ofertas</a>
-            <a href={`/tienda/${slug}/contacto`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>Contacto</a>
+            {menu.map((item) => (
+              <EnlaceTienda key={item.key} href={item.href as string} slug={slug} diseno={diseno} {...(item.externo ? { target: '_blank', rel: 'noreferrer' } : {})} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors" style={{ color: GRO.pink }}>{item.label}</EnlaceTienda>
+            ))}
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>Contacto</EnlaceTienda>
           </nav>
         </div>
       </div>
@@ -377,6 +390,7 @@ export function GroHeader({
         favoritos={favoritos}
         onRemove={removeFavorito}
         onProduct={goProduct}
+        diseno={diseno}
       />
     </>
   );
@@ -459,19 +473,19 @@ export function GroFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           <div className="space-y-2.5 text-sm" style={{ color: GRO.inkSoft }}>
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>{titleCase(cat)}</a>
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>{titleCase(cat)}</EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block">Ver todo</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="block" slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-sm font-bold" style={{ fontFamily: GRO.display, color: GRO.ink }}>Ayuda</h4>
           <div className="space-y-2.5 text-sm" style={{ color: GRO.inkSoft }}>
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>Tienda completa</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }}>Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>Tienda completa</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-[var(--gro-cp)]" style={{ ['--gro-cp' as any]: primary }} slug={slug} diseno={diseno}>Contacto</EnlaceTienda>
           </div>
         </div>
         <div>
@@ -624,6 +638,7 @@ export function GroFavoritesModal({
   favoritos,
   onRemove,
   onProduct,
+  diseno,
 }: {
   open: boolean;
   onClose: () => void;
@@ -632,6 +647,7 @@ export function GroFavoritesModal({
   favoritos: any[];
   onRemove: (id: number, slug: string) => void;
   onProduct: (id: number | string) => void;
+  diseno?: any;
 }) {
   const primary = groPrimary(cp);
   const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -705,9 +721,9 @@ export function GroFavoritesModal({
             </div>
 
             <div className="border-t px-6 py-5" style={{ borderColor: GRO.line }}>
-              <a href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 rounded-full border py-3.5 text-sm font-bold transition-colors" style={{ borderColor: primary, color: GRO.greenDark }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 rounded-full border py-3.5 text-sm font-bold transition-colors" style={{ borderColor: primary, color: GRO.greenDark }} slug={slug} diseno={diseno} onClick={onClose}>
                 Seguir comprando
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.aside>
         </div>

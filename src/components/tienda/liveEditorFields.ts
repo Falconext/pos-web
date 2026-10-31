@@ -6,6 +6,12 @@
 
 import { categoryTileImageFields, categoryTileTextFields } from '@/templates/shared/categoryTiles';
 import { heroIntervalField, heroSlideOcultoField } from '@/templates/shared/heroSlider';
+import { camposDeMenu } from '@/components/tienda/navTienda';
+import { MOTOS_FOOTER_MENU, MOTOS_MENU } from '@/templates/motos/menu';
+import { MODA_MINIMAL_MENU } from '@/templates/moda-minimal/menu';
+import { ABARROTES_MENU } from '@/templates/abarrotes/menu';
+import { SUPERMERCADO_MENU } from '@/templates/supermercado/menu';
+import { COMIDA_APP_MENU } from '@/templates/comida-app/menu';
 
 export interface ImageFieldDef {
   key: string;
@@ -825,15 +831,14 @@ const TONES_TEXT_FIELDS: TextFieldDef[] = [
   ...categoryTileTextFields('tones', 6),
 ];
 
+const MODA_MINIMAL_MENU_CAMPOS = camposDeMenu(MODA_MINIMAL_MENU, 'Menú (Header)');
+
 const MODA_MINIMAL_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'modaMinimalLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Norda', group: 'Marca' },
   { key: 'modaMinimalAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío gratis en pedidos desde S/ 199', group: 'Header' },
   { key: 'modaMinimalSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar', group: 'Header' },
-  { key: 'modaMinimalNav1', label: 'Menú: enlace 1', placeholder: 'Novedades', group: 'Menú (Header)' },
-  { key: 'modaMinimalNav2', label: 'Menú: enlace 2', placeholder: 'Ropa', group: 'Menú (Header)' },
-  { key: 'modaMinimalNav3', label: 'Menú: enlace 3', placeholder: 'Calzado', group: 'Menú (Header)' },
-  { key: 'modaMinimalNav4', label: 'Menú: enlace 4', placeholder: 'Colección', group: 'Menú (Header)' },
-  { key: 'modaMinimalNav5', label: 'Menú: enlace 5', placeholder: 'Nosotros', group: 'Menú (Header)' },
+  ...MODA_MINIMAL_MENU_CAMPOS.textFields,
+  { key: 'modaMinimalNav5', label: 'Botón 5 del menú (va a Contacto)', placeholder: 'Nosotros', group: 'Menú (Header)' },
   heroIntervalField('modaMinimalHeroInterval', 'Hero · Slide 1', 6.5),
   { key: 'modaMinimalHeroOnlyImage', label: 'Slide 1: solo imagen (sin textos ni botones)', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado (Enlace del Slide 1).' },
   { key: 'modaMinimalHeroOculto', label: 'No mostrar este banner', placeholder: '', group: 'Hero · Slide 1', type: 'toggle', hint: 'Ocúltalo si no lo vas a usar. Si ocultas todos, se conserva el primero.' },
@@ -900,8 +905,11 @@ const MODA_MINIMAL_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'modaMinimalPdpTraditionalFactor', label: 'PDP: factor precio tradicional (ej. 2 = doble)', placeholder: '2', group: 'Detalle de producto' },
 ];
 
+const COMIDA_APP_MENU_CAMPOS = camposDeMenu(COMIDA_APP_MENU, 'Menú');
+
 const COMIDA_APP_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'comidaAppLogoText', label: 'Nombre de la tienda', placeholder: 'Mi Restaurante', group: 'Marca' },
+  ...COMIDA_APP_MENU_CAMPOS.textFields,
   { key: 'comidaAppGreeting', label: 'Saludo (arriba)', placeholder: '¡Hola! 👋', group: 'Encabezado' },
   { key: 'comidaAppTagline', label: 'Titular (arriba)', placeholder: 'Tu comida favorita, a un clic', group: 'Encabezado' },
   { key: 'comidaAppSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Busca tu plato favorito...', group: 'Encabezado' },
@@ -1163,9 +1171,13 @@ const APICULTURA_PRODUCT_FIELDS: ProductFieldDef[] = [
   { key: 'apiculturaFeaturedProducts', label: 'Productos destacados de portada' },
 ];
 
+const MOTOS_MENU_CAMPOS = camposDeMenu(MOTOS_MENU, 'Menú');
+const MOTOS_FOOTER_MENU_CAMPOS = camposDeMenu(MOTOS_FOOTER_MENU, 'Menú · pie de página');
+
 const MOTOS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'motosLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Voltia Motos', group: 'Marca' },
-  { key: 'motosLogoTagline', label: 'Bajada del logo', placeholder: 'Moto · Service', group: 'Marca' },
+  ...MOTOS_MENU_CAMPOS.textFields,
+  ...MOTOS_FOOTER_MENU_CAMPOS.textFields,
   { key: 'motosHeaderPhone', label: 'Teléfono tienda (header)', placeholder: '+51 999 955 41 43', group: 'Header' },
   { key: 'motosHeaderPhoneService', label: 'Teléfono servicio técnico (header)', placeholder: '+51 999 938 47 39', group: 'Header' },
   { key: 'motosSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Quiero encontrar...', group: 'Header' },
@@ -1200,10 +1212,6 @@ const MOTOS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'motosSlide3Title2', label: 'Slide 3: título (línea 2, acento)', placeholder: 'y accesorios de regalo.', group: 'Slider · Slide 3' },
   { key: 'motosSlide3Subtitle', label: 'Slide 3: subtítulo', placeholder: 'Aprovecha descuentos exclusivos...', group: 'Slider · Slide 3' },
   { key: 'motosSlide3Button', label: 'Slide 3: botón', placeholder: 'Ver ofertas', group: 'Slider · Slide 3' },
-  { key: 'motosCategoriesTitle', label: 'Título "Comprar por categoría"', placeholder: 'Comprar por categoría', group: 'Secciones' },
-  { key: 'motosServicesEyebrow', label: 'Servicios: etiqueta', placeholder: 'Más que una tienda', group: 'Servicios' },
-  { key: 'motosServicesTitle', label: 'Servicios: título', placeholder: 'Servicio y equipamiento', group: 'Servicios' },
-  { key: 'motosBrandsTitle', label: 'Marcas: título', placeholder: 'Marcas oficiales', group: 'Marcas' },
   { key: 'motosBestsellersTitle', label: 'Título "Más vendidos"', placeholder: 'Los más vendidos', group: 'Secciones' },
   { key: 'motosServiceLabel', label: 'Banner service: etiqueta', placeholder: 'Taller propio', group: 'Banner service (taller)' },
   { key: 'motosServiceTitle', label: 'Banner service: título', placeholder: 'Agenda tu service', group: 'Banner service (taller)' },
@@ -1319,6 +1327,15 @@ const MOTOS_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'motosHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Slider · Slide 1', defaultType: 'catalog' },
   { key: 'motosSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Slider · Slide 2', defaultType: 'catalog' },
   { key: 'motosSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Slider · Slide 3', defaultType: 'catalog' },
+  ...MOTOS_MENU_CAMPOS.linkFields,
+  ...MOTOS_FOOTER_MENU_CAMPOS.linkFields,
+  { key: 'motosGearAction', label: 'Tarjeta equipamiento ("Ver equipamiento")', group: 'Bento categorías', defaultType: 'catalog', permiteAuto: true },
+  { key: 'motosSaleAction', label: 'Tarjeta Ofertas', group: 'Bento categorías', defaultType: 'catalog', permiteAuto: true },
+  { key: 'motosPreorderAction', label: 'Tarjeta Preventa', group: 'Bento categorías', defaultType: 'catalog', permiteAuto: true },
+  { key: 'motosServiceCard1Action', label: 'Servicios · tarjeta 1 (“Servicio”)', group: 'Servicios', defaultType: 'catalog', permiteAuto: true },
+  { key: 'motosServiceCard2Action', label: 'Servicios · tarjeta 2 (“Tuning”)', group: 'Servicios', defaultType: 'catalog', permiteAuto: true },
+  { key: 'motosServiceCard3Action', label: 'Servicios · tarjeta 3 (“Equipamiento”)', group: 'Servicios', defaultType: 'catalog', permiteAuto: true },
+  { key: 'motosServiceCard4Action', label: 'Servicios · tarjeta 4 (“Equipo adicional”)', group: 'Servicios', defaultType: 'catalog', permiteAuto: true },
 ];
 
 const HOODIE_LINK_FIELDS: LinkFieldDef[] = [
@@ -1339,12 +1356,19 @@ const MODA_MINIMAL_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'modaMinimalHeroAction', label: 'Slide 1: enlace (banner y botón principal)', group: 'Hero · Slide 1', defaultType: 'catalog' },
   { key: 'modaMinimalSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Hero · Slide 2', defaultType: 'catalog' },
   { key: 'modaMinimalSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
+  { key: 'modaMinimalHeroButton2Action', label: 'Slide 1: destino del enlace 2', group: 'Hero · Slide 1', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El enlace 2 no se muestra.' },
+  { key: 'modaMinimalSlide2Button2Action', label: 'Slide 2: destino del enlace 2', group: 'Hero · Slide 2', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El enlace 2 no se muestra.' },
+  { key: 'modaMinimalSlide3Button2Action', label: 'Slide 3: destino del enlace 2', group: 'Hero · Slide 3', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El enlace 2 no se muestra.' },
+  { key: 'modaMinimalEditorialAction', label: 'Editorial: destino del botón', group: 'Banner editorial', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El botón no se muestra.' },
+  ...MODA_MINIMAL_MENU_CAMPOS.linkFields,
 ];
 
 const COMIDA_APP_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'comidaAppHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Hero · Slide 1', defaultType: 'catalog' },
   { key: 'comidaAppSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Hero · Slide 2', defaultType: 'catalog' },
   { key: 'comidaAppSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Hero · Slide 3', defaultType: 'catalog' },
+  { key: 'comidaAppPromoAction', label: 'Banner ofertas: destino del botón', group: 'Banner ofertas', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El botón no se muestra.' },
+  ...COMIDA_APP_MENU_CAMPOS.linkFields,
 ];
 
 const ABARROTES_IMAGE_FIELDS: ImageFieldDef[] = [
@@ -1369,8 +1393,11 @@ const ABARROTES_IMAGE_FIELDS: ImageFieldDef[] = [
   ], 'rec. 400×400px, circular'),
 ];
 
+const ABARROTES_MENU_CAMPOS = camposDeMenu(ABARROTES_MENU, 'Menú');
+
 const ABARROTES_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'abarrotesLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Grogin', group: 'Marca' },
+  ...ABARROTES_MENU_CAMPOS.textFields,
   { key: 'abarrotesAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío gratis en pedidos desde S/ 80 · Productos frescos todos los días', group: 'Header' },
   { key: 'abarrotesSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Busca productos, marcas y categorías...', group: 'Header' },
   heroIntervalField('abarrotesHeroInterval', 'Slider · Slide 1', 6),
@@ -1438,6 +1465,10 @@ const ABARROTES_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'abarrotesSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Slider · Slide 3', defaultType: 'catalog' },
   { key: 'abarrotesPromoOneAction', label: 'Banner promo 1: enlace', group: 'Banner promo', defaultType: 'catalog' },
   { key: 'abarrotesPromoTwoAction', label: 'Banner promo 2: enlace', group: 'Banner promo', defaultType: 'catalog' },
+  { key: 'abarrotesCardOneAction', label: 'Tarjeta 1: destino del botón', group: 'Tarjetas inferiores', defaultType: 'catalog', textoSinEnlace: 'El botón no se muestra.' },
+  { key: 'abarrotesCardTwoAction', label: 'Tarjeta 2: destino del botón', group: 'Tarjetas inferiores', defaultType: 'catalog', textoSinEnlace: 'El botón no se muestra.' },
+  { key: 'abarrotesCardThreeAction', label: 'Tarjeta 3: destino del botón', group: 'Tarjetas inferiores', defaultType: 'catalog', textoSinEnlace: 'El botón no se muestra.' },
+  ...ABARROTES_MENU_CAMPOS.linkFields,
 ];
 
 const SUPERMERCADO_IMAGE_FIELDS: ImageFieldDef[] = [
@@ -1457,8 +1488,11 @@ const SUPERMERCADO_IMAGE_FIELDS: ImageFieldDef[] = [
   ], 'rec. 400×400px, circular'),
 ];
 
+const SUPERMERCADO_MENU_CAMPOS = camposDeMenu(SUPERMERCADO_MENU, 'Menú');
+
 const SUPERMERCADO_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'supermercadoLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'FreshMart', group: 'Marca' },
+  ...SUPERMERCADO_MENU_CAMPOS.textFields,
   { key: 'supermercadoLogoTagline', label: 'Bajada del logo', placeholder: 'Fresco. Calidad. Cada día.', group: 'Marca' },
   { key: 'supermercadoSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar productos, categorías...', group: 'Header' },
   heroIntervalField('supermercadoHeroInterval', 'Slider · Slide 1', 6),
@@ -1519,6 +1553,12 @@ const SUPERMERCADO_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'supermercadoHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Slider · Slide 1', defaultType: 'catalog' },
   { key: 'supermercadoSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Slider · Slide 2', defaultType: 'catalog' },
   { key: 'supermercadoSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Slider · Slide 3', defaultType: 'catalog' },
+  { key: 'supermercadoHeroButton2Action', label: 'Slide 1: destino del botón secundario', group: 'Slider · Slide 1', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El botón secundario no se muestra.' },
+  { key: 'supermercadoSlide2Button2Action', label: 'Slide 2: destino del botón secundario', group: 'Slider · Slide 2', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El botón secundario no se muestra.' },
+  { key: 'supermercadoSlide3Button2Action', label: 'Slide 3: destino del botón secundario', group: 'Slider · Slide 3', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El botón secundario no se muestra.' },
+  { key: 'supermercadoSaverAction', label: 'Súper ahorro: destino del botón', group: 'Banner ahorro', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El botón no se muestra.' },
+  { key: 'supermercadoDeliveryAction', label: 'Entrega rápida: destino de "Pedir ahora"', group: 'Banner entrega', defaultType: 'catalog', permiteAuto: true, textoSinEnlace: 'El botón no se muestra.' },
+  ...SUPERMERCADO_MENU_CAMPOS.linkFields,
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -5,10 +5,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, productoEnCategoria, useIrEnTienda } from '@/components/tienda/navTienda';
 import { VELO, VeloCartModal, VeloFooter, VeloHeader, VeloProductCard, VeloWhatsAppFab, veloFont, veloPrimary } from './BicicletasParts';
 import { veloCard, veloEase, veloPage, veloSection, veloStagger, veloViewport } from './motion';
-
-const navigate = (to: string) => { window.location.href = to; };
 
 const HERO_SLIDE_FALLBACKS = [
   'https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=1400&q=80',
@@ -27,11 +26,6 @@ const TRUST = [
   { icon: 'solar:shield-check-linear', title: 'Garantía real', text: 'Cobertura de cuadro y partes' },
   { icon: 'solar:headphones-round-linear', title: 'Soporte experto', text: 'Ciclistas listos para ayudarte' },
 ];
-
-function catName(p: any) {
-  const c = p?.categoria;
-  return (typeof c === 'object' ? c?.nombre : c) || '';
-}
 
 interface HeroSlide {
   image: string;
@@ -279,11 +273,13 @@ function TopCategories({
     .filter(Boolean)
     .slice(0, 4) as string[], [allCategories]);
   const [active, setActive] = useState<string>('');
+  const ir = useIrEnTienda(slug, diseno);
   const current = active || tabs[0] || '';
 
   const filtered = useMemo(() => {
     if (!current) return productos.slice(0, 8);
-    const byCat = productos.filter((p) => catName(p).toLowerCase() === current.toLowerCase());
+    // Cuenta también los productos que tienen la categoría como adicional.
+    const byCat = productos.filter((p) => productoEnCategoria(p, current));
     return (byCat.length ? byCat : productos).slice(0, 8);
   }, [productos, current]);
 
@@ -323,15 +319,15 @@ function TopCategories({
       ) : (
         <motion.div variants={veloStagger} className="mt-10 grid grid-cols-2 gap-5 lg:grid-cols-4">
           {filtered.map((producto) => (
-            <VeloProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={onAddToCart} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+            <VeloProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={onAddToCart} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
           ))}
         </motion.div>
       )}
 
       <div className="mt-10 text-center">
-        <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-2 px-8 py-4 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg" style={{ backgroundColor: primary }}>
+        <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-2 px-8 py-4 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-lg" style={{ backgroundColor: primary }} slug={slug} diseno={diseno}>
           Ver toda la tienda <Icon icon="solar:arrow-right-linear" width={16} />
-        </a>
+        </EnlaceTienda>
       </div>
     </motion.section>
   );
@@ -374,6 +370,7 @@ export default function BicicletasHomePage({
 }: TemplateHomePageProps) {
   const primary = veloPrimary(cp);
   const font = veloFont(diseno);
+  const ir = useIrEnTienda(slug, diseno);
   const brand = diseno?.bicicletasLogoText || tienda?.nombreComercial || tienda?.razonSocial || tienda?.nombre || 'Vonica';
 
   return (
@@ -388,7 +385,7 @@ export default function BicicletasHomePage({
         allCategories={allCategories}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
+          ir(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
         }}
       />
 
@@ -433,7 +430,7 @@ export default function BicicletasHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

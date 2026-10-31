@@ -6,10 +6,12 @@ import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { hrefDeBloque, pistaDeBoton, useIrADestino } from '@/templates/shared/enlacesTienda';
 import { MIN, MinCartModal, MinFooter, MinHeader, MinProductCard, MinWhatsAppFab, minFont, minPrimary } from './ModaMinimalParts';
 import { minCard, minEase, minPage, minSection, minStagger, minViewport } from './motion';
 
-const navigate = (to: string) => { window.location.href = to; };
+const MotionEnlace = motion.create(EnlaceTienda);
 
 const HERO_FALLBACKS = [
   'https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1900&q=80',
@@ -47,6 +49,8 @@ interface HeroSlide {
   button2?: string;
   onlyImage: boolean;
   actionKey: string;
+  /** Destino del enlace 2 (antes iba siempre al catálogo sin filtro). */
+  action2Key: string;
 }
 
 function buildHeroSlides(diseno: any): HeroSlide[] {
@@ -60,6 +64,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       button2: diseno?.modaMinimalHeroButton2 || 'Comprar calzado',
       onlyImage: Boolean(diseno?.modaMinimalHeroOnlyImage),
       actionKey: 'modaMinimalHeroAction',
+      action2Key: 'modaMinimalHeroButton2Action',
     },
     {
       image: diseno?.modaMinimalSlide2Image || '',
@@ -70,6 +75,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       button2: diseno?.modaMinimalSlide2Button2 || '',
       onlyImage: Boolean(diseno?.modaMinimalSlide2OnlyImage),
       actionKey: 'modaMinimalSlide2Action',
+      action2Key: 'modaMinimalSlide2Button2Action',
     },
     {
       image: diseno?.modaMinimalSlide3Image || '',
@@ -80,12 +86,13 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       button2: diseno?.modaMinimalSlide3Button2 || '',
       onlyImage: Boolean(diseno?.modaMinimalSlide3OnlyImage),
       actionKey: 'modaMinimalSlide3Action',
+      action2Key: 'modaMinimalSlide3Button2Action',
     },
   ]);
   return raw.map((slide, i) => ({ ...slide, image: slide.image || HERO_FALLBACKS[i % HERO_FALLBACKS.length] }));
 }
 
-function HeroSlider({ slides, slug, diseno }: { slides: HeroSlide[]; slug: string; diseno: any }) {
+function HeroSlider({ slides, slug, diseno, categorias }: { slides: HeroSlide[]; slug: string; diseno: any; categorias: any[] }) {
   const navigateRouter = useNavigate();
   const [index, setIndex] = useState(0);
   const count = slides.length;
@@ -102,10 +109,9 @@ function HeroSlider({ slides, slug, diseno }: { slides: HeroSlide[]; slug: strin
 
   const go = (dir: number) => setIndex((prev) => (prev + dir + count) % count);
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
-  const goCatalog = () => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    navigateRouter(`/tienda/${slug}/catalogo`);
-  };
+  const irADestino = useIrADestino(slug, diseno);
+  // Enlace 2: destino elegido; sin elegir, la categoría que nombra ("Comprar calzado" → Calzado) o el catálogo.
+  const href2 = (s: HeroSlide) => hrefDeBloque(diseno, s.action2Key, { slug, categorias, pistas: [pistaDeBoton(s.button2 || '')] });
   const slide = slides[index];
 
   return (
@@ -154,7 +160,7 @@ function HeroSlider({ slides, slug, diseno }: { slides: HeroSlide[]; slug: strin
                     {s.subtitle && <p className="mt-3 max-w-md text-sm leading-relaxed text-white/85 md:text-base">{s.subtitle}</p>}
                     <div className="mt-6 flex flex-wrap items-center gap-5">
                       {s.button && <ShopLink onClick={() => goAction(s.actionKey)}>{s.button}</ShopLink>}
-                      {s.button2 && <ShopLink onClick={goCatalog}>{s.button2}</ShopLink>}
+                      {s.button2 && href2(s) && <ShopLink onClick={() => irADestino(href2(s))}>{s.button2}</ShopLink>}
                     </div>
                   </div>
                 </div>
@@ -202,6 +208,9 @@ export default function ModaMinimalHomePage({
 }: TemplateHomePageProps) {
   const primary = minPrimary(cp);
   const font = minFont(diseno);
+  const ir = useIrEnTienda(slug, diseno);
+  const irADestino = useIrADestino(slug, diseno);
+  const editorialHref = hrefDeBloque(diseno, 'modaMinimalEditorialAction', { slug, categorias: allCategories });
   const nuevos = productos.slice(0, 8);
   const favoritos = productos.slice(0, 4);
 
@@ -234,25 +243,27 @@ export default function ModaMinimalHomePage({
         allCategories={allCategories}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
+          ir(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
         }}
       />
 
       <main>
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
-        <HeroSlider slides={buildHeroSlides(diseno)} slug={slug} diseno={diseno} />
+        <HeroSlider slides={buildHeroSlides(diseno)} slug={slug} diseno={diseno} categorias={allCategories} />
 
         {/* ── Tiles por categoría ──────────────────────────────────────────── */}
         <motion.section variants={minSection} initial="hidden" whileInView="show" viewport={minViewport} className="mx-auto max-w-7xl px-5 py-14 md:px-8 md:py-20">
           <motion.div variants={minStagger} className="grid gap-4 md:grid-cols-3">
             {tiles.map((cat, i) => (
-              <motion.a
+              <MotionEnlace
                 // Clave por posición: si cambia la categoría desde el editor, el bloque
                 // se actualiza en sitio (con key por nombre se remontaba en estado
                 // "hidden" y desaparecía hasta recargar).
                 key={`tile-${i}`}
                 variants={minCard}
                 href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
+                slug={slug}
+                diseno={diseno}
                 className="group relative flex aspect-[4/5] items-end justify-center overflow-hidden"
                 style={{ backgroundColor: MIN.stone }}
               >
@@ -262,7 +273,7 @@ export default function ModaMinimalHomePage({
                   <h3 className="mb-3 text-lg font-medium">{cat.label}</h3>
                   <span className="border-b border-white pb-0.5 text-[11px] font-semibold uppercase tracking-[0.16em]">Comprar</span>
                 </div>
-              </motion.a>
+              </MotionEnlace>
             ))}
           </motion.div>
         </motion.section>
@@ -271,7 +282,7 @@ export default function ModaMinimalHomePage({
         <motion.section variants={minSection} initial="hidden" whileInView="show" viewport={minViewport} className="mx-auto max-w-7xl px-5 pb-14 md:px-8 md:pb-20">
           <div className="mb-8 flex items-end justify-between gap-4">
             <h2 className="text-xl font-medium tracking-tight md:text-2xl" style={{ color: MIN.ink }}>{diseno?.modaMinimalNewTitle || 'Novedades'}</h2>
-            <a href={`/tienda/${slug}/catalogo`} className="border-b pb-0.5 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: MIN.ink, borderColor: MIN.ink }}>Ver todo</a>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="border-b pb-0.5 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: MIN.ink, borderColor: MIN.ink }} slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>
           </div>
           {loading ? (
             <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-4">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="aspect-[3/4] animate-pulse" style={{ backgroundColor: MIN.stone }} />)}</div>
@@ -280,7 +291,7 @@ export default function ModaMinimalHomePage({
           ) : (
             <motion.div variants={minStagger} className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4">
               {nuevos.map((producto) => (
-                <MinProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+                <MinProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
               ))}
             </motion.div>
           )}
@@ -296,9 +307,9 @@ export default function ModaMinimalHomePage({
                   <p className="text-[11px] font-semibold uppercase tracking-[0.24em]">{diseno?.modaMinimalEditorialEyebrow || 'Nuestra promesa'}</p>
                   <h2 className="mt-3 text-3xl font-medium leading-tight md:text-4xl">{diseno?.modaMinimalEditorialTitle || 'Transparencia radical.'}</h2>
                   <p className="mt-4 text-sm leading-relaxed text-white/85">{diseno?.modaMinimalEditorialText || 'Conoce el origen de cada prenda: los materiales, quién la hizo y cuánto cuesta realmente producirla.'}</p>
-                  <button type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-6 inline-flex bg-white px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
+                  {editorialHref && <button type="button" onClick={() => irADestino(editorialHref)} className="mt-6 inline-flex bg-white px-7 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
                     {diseno?.modaMinimalEditorialButton || 'Conocer más'}
-                  </button>
+                  </button>}
                 </div>
               </div>
             </div>
@@ -323,11 +334,11 @@ export default function ModaMinimalHomePage({
           <motion.section variants={minSection} initial="hidden" whileInView="show" viewport={minViewport} className="mx-auto max-w-7xl px-5 py-16 md:px-8 md:py-20">
             <div className="mb-8 flex items-end justify-between gap-4">
               <h2 className="text-xl font-medium tracking-tight md:text-2xl" style={{ color: MIN.ink }}>{diseno?.modaMinimalBestTitle || 'Los favoritos'}</h2>
-              <a href={`/tienda/${slug}/catalogo`} className="border-b pb-0.5 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: MIN.ink, borderColor: MIN.ink }}>Ver todo</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="border-b pb-0.5 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: MIN.ink, borderColor: MIN.ink }} slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>
             </div>
             <motion.div variants={minStagger} className="grid grid-cols-2 gap-x-4 gap-y-10 md:grid-cols-4">
               {favoritos.map((producto) => (
-                <MinProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+                <MinProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
               ))}
             </motion.div>
           </motion.section>
@@ -357,7 +368,7 @@ export default function ModaMinimalHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

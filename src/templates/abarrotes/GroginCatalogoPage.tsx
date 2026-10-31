@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroWhatsAppFab, groFont, groPrimary, titleCase } from './GroginParts';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 import { groCard, groPage, groSection, groStagger, groViewport } from './motion';
 
 function getName(item: any) {
@@ -11,6 +12,8 @@ function getName(item: any) {
 }
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
+  // Categoría: cuenta también los productos que la tienen como adicional.
+  if (key === 'categoria') return products.filter((product) => productoEnCategoria(product, name)).length;
   return products.filter((product) => {
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;

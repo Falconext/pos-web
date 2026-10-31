@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { MOTO, MotoCartModal, MotoFooter, MotoHeader, MotoWhatsAppFab, motoFont, motoPrimary, waLink, withAlpha } from './MotosParts';
+import { useIrEnTienda } from '@/components/tienda/navTienda';
 import { motoCard, motoPage, motoSection, motoStagger, motoTap, motoViewport } from './motion';
 
 function pickContact(tienda: any, diseno: any) {
@@ -49,9 +50,10 @@ export default function MotosContactPage({
   const displayHours = contact.hours || 'Lun a Sáb · 09:00 – 19:00';
   const inputStyle = { borderColor: MOTO.line, backgroundColor: MOTO.soft, color: MOTO.ink } as const;
 
+  const ir = useIrEnTienda(slug, diseno);
   const go = (page: 'home' | 'catalogo' | 'checkout' | 'contacto') => {
     if (onNavigate) { onNavigate(page); return; }
-    window.location.href = page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`;
+    ir(page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`);
   };
 
   const inputCls = 'mt-2 h-12 w-full rounded-lg border px-4 text-sm outline-none transition-colors focus:border-[var(--moto-cp)]';
@@ -69,7 +71,7 @@ export default function MotosContactPage({
         onSearchSubmit={(event, value) => {
           event.preventDefault();
           const term = value?.trim();
-          if (term) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(term)}`;
+          if (term) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(term)}`);
         }}
       />
 

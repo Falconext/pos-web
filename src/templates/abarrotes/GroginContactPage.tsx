@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { GRO, GroCartModal, GroFooter, GroHeader, GroWhatsAppFab, groFont, groPrimary, waLink, withAlpha } from './GroginParts';
+import { useIrEnTienda } from '@/components/tienda/navTienda';
 import { groCard, groPage, groSection, groStagger, groTap, groViewport } from './motion';
 
 function pickContact(tienda: any, diseno: any) {
@@ -38,6 +39,7 @@ export default function GroginContactPage({
   actualizarCantidad?: (id: any, cantidad: number) => void;
   onNavigate?: (page: 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto') => void;
 }) {
+  const ir = useIrEnTienda(slug, diseno);
   const primary = groPrimary(cp);
   const font = groFont(diseno);
   const [sent, setSent] = useState(false);
@@ -50,7 +52,7 @@ export default function GroginContactPage({
 
   const go = (page: 'home' | 'catalogo' | 'checkout' | 'contacto') => {
     if (onNavigate) { onNavigate(page); return; }
-    window.location.href = page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`;
+    ir(page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`);
   };
 
   const inputCls = 'mt-2 h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--gro-cp)]';
@@ -65,7 +67,7 @@ export default function GroginContactPage({
         carritoSize={carrito.reduce((sum, item) => sum + Number(item.cantidad || 1), 0)}
         onOpenCart={() => setMostrarCarrito?.(true)}
         allCategories={allCategories}
-        onSearchSubmit={(event, value) => { event.preventDefault(); const t = value?.trim(); if (t) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(t)}`; }}
+        onSearchSubmit={(event, value) => { event.preventDefault(); const t = value?.trim(); if (t) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(t)}`); }}
       />
 
       <div className="border-b bg-white" style={{ borderColor: GRO.line }}>

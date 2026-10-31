@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { buildCategoryTiles } from '../shared/categoryTiles';
 import { resolveHeroIntervalMs, usePreloadImages, slidesVisibles } from '../shared/heroSlider';
 import { useNavigate } from 'react-router-dom';
@@ -6,10 +6,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { hrefDeBloque } from '@/templates/shared/enlacesTienda';
+import { BloqueEnlace } from '@/templates/shared/BloqueEnlace';
 import { MOTO, MotoCartModal, MotoFooter, MotoHeader, MotoProductCard, MotoWhatsAppFab, motoFont, motoPrimary, waLink, withAlpha } from './MotosParts';
 import { motoCard, motoEase, motoPage, motoSection, motoStagger, motoViewport } from './motion';
 
-const navigate = (to: string) => { window.location.href = to; };
+const MotionBloque = motion.create(BloqueEnlace);
 
 const HERO_SLIDE_FALLBACKS = [
   'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=1600&q=80',
@@ -32,12 +35,18 @@ const SERVICE_FALLBACKS = [
 ];
 const PROMO_FALLBACK = 'https://images.unsplash.com/photo-1547549082-6bc09f2049ae?auto=format&fit=crop&w=1200&q=80';
 
+/**
+ * Tarjetas de servicio: sin destino elegido van a la categoría de nombre
+ * parecido (`pistas`) y, si no hay, a `ruta` (Servicio → contacto: es taller).
+ */
 const SERVICES_DEFAULT = [
-  { icon: 'solar:wrench-bold', title: 'Servicio', text: 'Mantenimiento y diagnóstico' },
-  { icon: 'solar:bolt-bold', title: 'Tuning', text: 'Personaliza tu moto' },
-  { icon: 'mdi:racing-helmet', title: 'Equipamiento', text: 'Cascos, guantes y más' },
-  { icon: 'solar:box-bold', title: 'Equipo adicional', text: 'Repuestos y accesorios' },
+  { icon: 'solar:wrench-bold', title: 'Servicio', text: 'Mantenimiento y diagnóstico', pistas: ['Servicio', 'Servicios'], ruta: '/contacto' },
+  { icon: 'solar:bolt-bold', title: 'Tuning', text: 'Personaliza tu moto', pistas: ['Tuning'], ruta: '/catalogo' },
+  { icon: 'mdi:racing-helmet', title: 'Equipamiento', text: 'Cascos, guantes y más', pistas: ['Equipamiento'], ruta: '/catalogo' },
+  { icon: 'solar:box-bold', title: 'Equipo adicional', text: 'Repuestos y accesorios', pistas: ['Equipo adicional', 'Repuestos', 'Accesorios'], ruta: '/catalogo' },
 ];
+
+const nombreMarca = (p: any): string => String((typeof p?.marca === 'object' ? p?.marca?.nombre : p?.marca) ?? '').trim();
 
 const BRANDS_DEFAULT = ['ECOOTER', 'TINBOT', 'SUPER SOCO', 'HORWIN', 'NIU', 'VOLTIA', 'SEGWAY'];
 
@@ -195,8 +204,24 @@ export default function MotosHomePage({
   const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'motos', count: 2, fallbackImages: CATEGORY_FALLBACKS,
     fallbackNames: ['Deportivas', 'Urbanas'], });
 
-  const gearHref = `/tienda/${slug}/catalogo`;
+  const ir = useIrEnTienda(slug, diseno);
   const catalogHref = `/tienda/${slug}/catalogo`;
+  const bloque = (key: string, pistas: string[], rutaPorDefecto = '/catalogo') =>
+    hrefDeBloque(diseno, key, { slug, categorias: allCategories, pistas, rutaPorDefecto });
+  const gearHref = bloque('motosGearAction', ['Equipamiento', diseno?.motosGearTitle || 'Motoequipo']);
+  const saleHref = bloque('motosSaleAction', [diseno?.motosSaleTitle || 'Ofertas', 'Ofertas']);
+  const preorderHref = bloque('motosPreorderAction', [diseno?.motosPreorderTitle || 'Preventa', 'Preventa'], '/catalogo?sort=new');
+
+  // Marcas reales de los productos (filtran el catálogo con ?brand=); sin
+  // marcas cargadas se muestran las de ejemplo, que llevan al catálogo.
+  const marcas = useMemo(() => {
+    const vistas = new Map<string, string>();
+    productos.forEach((p) => { const n = nombreMarca(p); if (n && !vistas.has(n.toLowerCase())) vistas.set(n.toLowerCase(), n); });
+    return [...vistas.values()].slice(0, 12);
+  }, [productos]);
+  const brandItems = marcas.length
+    ? marcas.map((m) => ({ label: m, href: `/tienda/${slug}/catalogo?brand=${encodeURIComponent(m)}` }))
+    : BRANDS_DEFAULT.map((m) => ({ label: m, href: catalogHref }));
 
   const scrollBrands = (dir: number) => brandsRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
 
@@ -212,7 +237,7 @@ export default function MotosHomePage({
         allCategories={allCategories}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
+          ir(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
         }}
       />
 
@@ -220,7 +245,7 @@ export default function MotosHomePage({
         {/* ── Hero bento: banner grande + tarjeta equipamiento ─────────────── */}
         <motion.section variants={motoSection} className="grid gap-4 pt-6 md:pt-8 lg:grid-cols-[1.9fr_1fr]">
           <HeroSlider slides={buildHeroSlides(diseno)} slug={slug} primary={primary} diseno={diseno} />
-          <a href={gearHref} className="group relative hidden h-[520px] overflow-hidden rounded-3xl lg:block" style={{ backgroundColor: MOTO.night }}>
+          <BloqueEnlace href={gearHref} slug={slug} diseno={diseno} className="group relative hidden h-[520px] overflow-hidden rounded-3xl lg:block" style={{ backgroundColor: MOTO.night }}>
             <img src={diseno?.motosGearImage || GEAR_FALLBACK} alt="Equipamiento" className="h-full w-full object-cover opacity-90 transition-transform duration-[1200ms] ease-out group-hover:scale-[1.06]" />
             <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,9,12,0.1) 40%, rgba(8,9,12,0.92) 100%)' }} />
             <div className="absolute inset-x-0 bottom-0 p-7">
@@ -229,49 +254,49 @@ export default function MotosHomePage({
                 Ver equipamiento <Icon icon="solar:arrow-right-up-linear" width={14} className="transition-transform group-hover:translate-x-0.5" />
               </span>
             </div>
-          </a>
+          </BloqueEnlace>
         </motion.section>
 
         {/* ── Tira de categorías (bento horizontal) ────────────────────────── */}
         <motion.section variants={motoSection} initial="hidden" whileInView="show" viewport={motoViewport} className="mt-4">
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             {/* Ofertas */}
-            <a href={catalogHref} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.night }}>
+            <BloqueEnlace href={saleHref} slug={slug} diseno={diseno} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.night }}>
               <img src={diseno?.motosSaleImage || SALE_FALLBACK} alt="Ofertas" className="absolute inset-0 h-full w-full object-cover opacity-55 transition-transform duration-[900ms] group-hover:scale-[1.08]" />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,9,12,0.2), rgba(8,9,12,0.85))' }} />
               <span className="absolute left-4 top-4 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white" style={{ backgroundColor: MOTO.sale }}>Sale</span>
               <h3 className="relative z-10 p-4 text-lg font-extrabold uppercase tracking-[0.02em] text-white" style={{ fontFamily: MOTO.display }}>{diseno?.motosSaleTitle || 'Ofertas'}</h3>
-            </a>
+            </BloqueEnlace>
             {/* Preventa */}
-            <a href={catalogHref} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.nightSoft }}>
+            <BloqueEnlace href={preorderHref} slug={slug} diseno={diseno} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.nightSoft }}>
               <img src={diseno?.motosPreorderImage || PREORDER_FALLBACK} alt="Preventa" className="absolute inset-0 h-full w-full object-cover opacity-55 transition-transform duration-[900ms] group-hover:scale-[1.08]" />
               <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,9,12,0.2), rgba(8,9,12,0.85))' }} />
               <span className="absolute left-4 top-4 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-white" style={{ backgroundColor: primary }}>New</span>
               <h3 className="relative z-10 p-4 text-lg font-extrabold uppercase tracking-[0.02em] text-white" style={{ fontFamily: MOTO.display }}>{diseno?.motosPreorderTitle || 'Preventa'}</h3>
-            </a>
+            </BloqueEnlace>
             {/* Categorías reales (tiles oscuros como Ofertas/Preventa) o fallback */}
             {categoryCards.map((cat, i) => (
-              <a key={`cat-${i}`} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.night }}>
+              <EnlaceTienda key={`cat-${i}`} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} slug={slug} diseno={diseno} className="group relative flex aspect-[4/3] flex-col justify-end overflow-hidden rounded-2xl" style={{ backgroundColor: MOTO.night }}>
                 <img src={cat.imagenUrl} alt={cat.nombre} loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-70 transition-transform duration-[900ms] group-hover:scale-[1.08]" />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(8,9,12,0.15), rgba(8,9,12,0.85))' }} />
                 <div className="relative z-10 flex items-center justify-between p-4">
                   <h3 className="text-lg font-extrabold uppercase tracking-[0.02em] text-white" style={{ fontFamily: MOTO.display }}>{cat.label}</h3>
                   <Icon icon="solar:arrow-right-up-linear" width={18} className="text-white/80 transition-transform group-hover:translate-x-0.5" />
                 </div>
-              </a>
+              </EnlaceTienda>
             ))}
           </div>
           <div className="mt-4 flex justify-center">
-            <a href={catalogHref} className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary }}>
+            <EnlaceTienda href={catalogHref} slug={slug} diseno={diseno} className="inline-flex items-center gap-2 rounded-lg px-6 py-3 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-sm transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary }}>
               Todo el catálogo <Icon icon="solar:play-bold" width={13} />
-            </a>
+            </EnlaceTienda>
           </div>
         </motion.section>
 
         {/* ── Buscador ancho ───────────────────────────────────────────────── */}
         <motion.section variants={motoSection} initial="hidden" whileInView="show" viewport={motoViewport} className="mt-10">
           <form
-            onSubmit={(e) => { e.preventDefault(); navigate(`/tienda/${slug}/catalogo${searchValue.trim() ? `?search=${encodeURIComponent(searchValue.trim())}` : ''}`); }}
+            onSubmit={(e) => { e.preventDefault(); ir(`/tienda/${slug}/catalogo${searchValue.trim() ? `?search=${encodeURIComponent(searchValue.trim())}` : ''}`); }}
             className="flex items-center gap-2 rounded-2xl border bg-white p-2 shadow-[0_1px_2px_rgba(15,18,26,0.04)]"
             style={{ borderColor: MOTO.line }}
           >
@@ -292,11 +317,13 @@ export default function MotosHomePage({
         <motion.section variants={motoSection} initial="hidden" whileInView="show" viewport={motoViewport} className="mt-12 md:mt-16">
           <motion.div variants={motoStagger} className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {SERVICES_DEFAULT.map((s, i) => (
-              <motion.a
+              <MotionBloque
                 key={s.title}
                 variants={motoCard}
                 whileHover={{ y: -6 }}
-                href={catalogHref}
+                href={bloque(`motosServiceCard${i + 1}Action`, s.pistas, s.ruta)}
+                slug={slug}
+                diseno={diseno}
                 className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl"
                 style={{ backgroundColor: MOTO.night }}
               >
@@ -309,7 +336,7 @@ export default function MotosHomePage({
                   <h3 className="mt-4 text-lg font-extrabold uppercase tracking-[0.02em] text-white" style={{ fontFamily: MOTO.display }}>{s.title}</h3>
                   <p className="mt-1 text-xs text-white/70">{s.text}</p>
                 </div>
-              </motion.a>
+              </MotionBloque>
             ))}
           </motion.div>
         </motion.section>
@@ -322,8 +349,8 @@ export default function MotosHomePage({
                 <Icon icon="solar:alt-arrow-left-linear" width={20} />
               </button>
               <div ref={brandsRef} className="flex flex-1 items-center gap-4 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {BRANDS_DEFAULT.map((brand) => (
-                  <a key={brand} href={catalogHref} className="flex h-16 shrink-0 items-center justify-center rounded-xl px-8 text-lg font-extrabold uppercase tracking-[0.08em] transition-colors" style={{ backgroundColor: MOTO.soft, color: MOTO.faint, fontFamily: MOTO.display, minWidth: 180 }} onMouseEnter={(e) => (e.currentTarget.style.color = MOTO.ink)} onMouseLeave={(e) => (e.currentTarget.style.color = MOTO.faint)}>{brand}</a>
+                {brandItems.map(({ label: brand, href }) => (
+                  <EnlaceTienda key={brand} href={href} slug={slug} diseno={diseno} className="flex h-16 shrink-0 items-center justify-center rounded-xl px-8 text-lg font-extrabold uppercase tracking-[0.08em] transition-colors" style={{ backgroundColor: MOTO.soft, color: MOTO.faint, fontFamily: MOTO.display, minWidth: 180 }} onMouseEnter={(e) => (e.currentTarget.style.color = MOTO.ink)} onMouseLeave={(e) => (e.currentTarget.style.color = MOTO.faint)}>{brand}</EnlaceTienda>
                 ))}
               </div>
               <button type="button" onClick={() => scrollBrands(1)} aria-label="Siguiente" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors hover:bg-black/[0.03]" style={{ borderColor: MOTO.line, color: MOTO.ink }}>
@@ -340,9 +367,9 @@ export default function MotosHomePage({
               <Eyebrow color={primary}>Top ventas</Eyebrow>
               <h2 className="mt-3 text-3xl font-extrabold uppercase tracking-[-0.01em] md:text-4xl" style={{ fontFamily: MOTO.display, color: MOTO.ink }}>{diseno?.motosBestsellersTitle || 'Los más vendidos'}</h2>
             </div>
-            <a href={catalogHref} className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] hover:opacity-70" style={{ color: primary }}>
+            <EnlaceTienda href={catalogHref} slug={slug} diseno={diseno} className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] hover:opacity-70" style={{ color: primary }}>
               Ver todo <Icon icon="solar:arrow-right-linear" width={15} />
-            </a>
+            </EnlaceTienda>
           </div>
           {loading ? (
             <div className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-4">
@@ -353,7 +380,7 @@ export default function MotosHomePage({
           ) : (
             <motion.div variants={motoStagger} className="grid grid-cols-2 gap-4 md:gap-6 lg:grid-cols-4">
               {featured.map((producto) => (
-                <MotoProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+                <MotoProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
               ))}
             </motion.div>
           )}
@@ -380,9 +407,9 @@ export default function MotosHomePage({
                 <Eyebrow color="rgba(255,255,255,0.85)">{diseno?.motosClubLabel || 'Financiamiento'}</Eyebrow>
                 <h3 className="mt-3 text-3xl font-extrabold uppercase leading-tight text-white" style={{ fontFamily: MOTO.display }}>{diseno?.motosClubTitle || 'Llévatela hoy, paga en cuotas'}</h3>
                 <p className="mt-2 max-w-sm text-sm text-white/85">{diseno?.motosClubSubtitle || 'Aprobación rápida y planes flexibles. Estrena tu moto sin descapitalizarte.'}</p>
-                <a href={`/tienda/${slug}/contacto`} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-[11px] font-bold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5" style={{ color: MOTO.ink }}>
+                <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-[11px] font-bold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5" style={{ color: MOTO.ink }}>
                   {diseno?.motosClubButton || 'Simular mi cuota'} <Icon icon="solar:arrow-right-linear" width={15} />
-                </a>
+                </EnlaceTienda>
               </div>
             </div>
           </div>
@@ -412,7 +439,7 @@ export default function MotosHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

@@ -7,6 +7,7 @@ import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { veloCard, veloEase, veloHover, veloSection, veloTap, veloViewport } from './motion';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 
 /**
  * Identidad visual de la plantilla "Vonica" (bicicletas, ciclismo & deportes).
@@ -268,9 +269,10 @@ export function VeloHeader({
   const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
   const favoritos = getFavoritosBySlug(slug);
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
+  const ir = useIrEnTienda(slug, diseno);
   const goProduct = (id: any) => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    window.location.href = `/tienda/${slug}/producto/${id}`;
+    setOpenFavs(false);
+    ir(`/tienda/${slug}/producto/${id}`);
   };
 
   return (
@@ -283,7 +285,7 @@ export function VeloHeader({
         style={{ borderColor: VELO.line }}
       >
         <div className="mx-auto flex h-[74px] max-w-7xl items-center gap-4 px-6">
-          <a href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-2 leading-none">
+          <EnlaceTienda href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-2 leading-none" slug={slug} diseno={diseno}>
             {tienda?.logo ? (
               <img src={tienda.logo} alt={name} className="h-10 object-contain" />
             ) : (
@@ -291,15 +293,15 @@ export function VeloHeader({
                 {name}
               </span>
             )}
-          </a>
+          </EnlaceTienda>
 
           <nav className="mx-auto hidden items-center gap-1 lg:flex">
-            <a href={`/tienda/${slug}`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-800 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }}>Inicio</a>
-            <a href={`/tienda/${slug}/catalogo`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-800 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }}>Tienda</a>
+            <EnlaceTienda href={`/tienda/${slug}`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-800 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }} slug={slug} diseno={diseno}>Inicio</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-800 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }} slug={slug} diseno={diseno}>Tienda</EnlaceTienda>
             {categories.map((category) => (
-              <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-600 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }}>{category}</a>
+              <EnlaceTienda key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-600 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }} slug={slug} diseno={diseno}>{category}</EnlaceTienda>
             ))}
-            <a href={`/tienda/${slug}/contacto`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-800 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }}>Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} className="rounded px-3 py-2 text-[12px] font-bold uppercase tracking-[0.12em] text-neutral-800 transition-colors hover:text-[var(--velo-cp)]" style={{ ['--velo-cp' as any]: primary }} slug={slug} diseno={diseno}>Contacto</EnlaceTienda>
           </nav>
 
           <div className="ml-auto flex items-center gap-1">
@@ -323,9 +325,9 @@ export function VeloHeader({
                 <Icon icon="solar:magnifer-linear" width={21} />
               </button>
             )}
-            <a href={`/tienda/${slug}/seguimiento`} className="hidden rounded-full p-2.5 text-neutral-700 transition-colors hover:bg-neutral-100 sm:block" title="Seguir pedido">
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} className="hidden rounded-full p-2.5 text-neutral-700 transition-colors hover:bg-neutral-100 sm:block" title="Seguir pedido" slug={slug} diseno={diseno}>
               <Icon icon="solar:user-linear" width={21} />
-            </a>
+            </EnlaceTienda>
             <button type="button" onClick={() => setOpenFavs(true)} className="relative rounded-full p-2.5 text-neutral-800 transition-colors hover:bg-neutral-100" title="Favoritos">
               <Icon icon="solar:heart-linear" width={22} />
               {favoritos.length > 0 && (
@@ -354,6 +356,7 @@ export function VeloHeader({
         favoritos={favoritos}
         onRemove={removeFavorito}
         onProduct={goProduct}
+        diseno={diseno}
       />
     </>
   );
@@ -409,19 +412,19 @@ export function VeloFooter({ tienda, slug, diseno, cp, categories = [] }: { tien
           <div className="space-y-3 text-sm text-white/55">
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-white">{cat}</a>
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>{cat}</EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Ver todo</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: primary }}>Ayuda</h4>
           <div className="space-y-3 text-sm text-white/55">
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Tienda completa</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Tienda completa</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Contacto</EnlaceTienda>
           </div>
         </div>
         <div>
@@ -578,6 +581,7 @@ export function VeloFavoritesModal({
   favoritos,
   onRemove,
   onProduct,
+  diseno,
 }: {
   open: boolean;
   onClose: () => void;
@@ -586,6 +590,7 @@ export function VeloFavoritesModal({
   favoritos: any[];
   onRemove: (id: number, slug: string) => void;
   onProduct: (id: number | string) => void;
+  diseno?: any;
 }) {
   const primary = veloPrimary(cp);
   const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -663,9 +668,9 @@ export function VeloFavoritesModal({
 
             {/* Footer */}
             <div className="border-t px-6 py-5" style={{ borderColor: VELO.line }}>
-              <a href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 border py-3.5 text-xs font-bold uppercase tracking-[0.14em] transition-colors" style={{ borderColor: VELO.ink, color: VELO.ink }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 border py-3.5 text-xs font-bold uppercase tracking-[0.14em] transition-colors" style={{ borderColor: VELO.ink, color: VELO.ink }} slug={slug} diseno={diseno} onClick={onClose}>
                 Seguir comprando
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.aside>
         </div>

@@ -1,12 +1,15 @@
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { fmCard, fmEase, fmHover, fmSection, fmTap, fmViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { useCategoriasTienda } from '@/templates/shared/enlacesTienda';
+import { SUPERMERCADO_MENU } from './menu';
 
 /**
  * Identidad visual de la plantilla "FreshMart" (supermercado, abarrotes, minimarket).
@@ -210,10 +213,19 @@ export function FmHeader({
   const address = diseno?.supermercadoContactAddress || tienda?.direccionTienda || tienda?.direccion || 'Av. Principal 123, Lima';
   const phone = diseno?.supermercadoContactPhone || tienda?.whatsappTienda || tienda?.telefono || '+51 999 999 999';
   const hours = diseno?.supermercadoContactHours || 'Lun a Dom · 8am – 10pm';
+  const ir = useIrEnTienda(slug, diseno);
   const goProduct = (id: any) => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    window.location.href = `/tienda/${slug}/producto/${id}`;
+    setOpenFavs(false);
+    ir(`/tienda/${slug}/producto/${id}`);
   };
+  const categoriasMenu = useCategoriasTienda(slug, allCategories);
+  const menu = useMemo(() => itemsDeMenu(SUPERMERCADO_MENU, { diseno, slug, categorias: categoriasMenu }), [diseno, slug, categoriasMenu]);
+  // Redes de la barra superior: solo las que tienen enlace (antes Facebook/Instagram iban a "#").
+  const redes = [
+    { ic: 'mdi:facebook', url: String(tienda?.facebookUrl || '').trim() },
+    { ic: 'mdi:instagram', url: String(tienda?.instagramUrl || '').trim() },
+    { ic: 'mdi:whatsapp', url: waLink(tienda) },
+  ].filter((r) => r.url);
 
   return (
     <>
@@ -228,8 +240,8 @@ export function FmHeader({
             <span className="flex items-center gap-1.5"><Icon icon="solar:phone-linear" width={14} style={{ color: primary }} /> {phone}</span>
             <span className="hidden items-center gap-1.5 lg:flex"><Icon icon="solar:clock-circle-linear" width={14} style={{ color: primary }} /> {hours}</span>
             <span className="flex items-center gap-2">
-              {['mdi:facebook', 'mdi:instagram', 'mdi:whatsapp'].map((ic) => (
-                <a key={ic} href={ic === 'mdi:whatsapp' ? waLink(tienda) : '#'} target="_blank" rel="noreferrer" className="transition-colors hover:text-[var(--fm-cp)]" style={{ ['--fm-cp' as any]: primary }}><Icon icon={ic} width={15} /></a>
+              {redes.map(({ ic, url }) => (
+                <a key={ic} href={/^https?:\/\//i.test(url) ? url : `https://${url}`} target="_blank" rel="noreferrer" className="transition-colors hover:text-[var(--fm-cp)]" style={{ ['--fm-cp' as any]: primary }}><Icon icon={ic} width={15} /></a>
               ))}
             </span>
           </div>
@@ -239,7 +251,7 @@ export function FmHeader({
       {/* Header principal */}
       <header className="border-b bg-white" style={{ borderColor: FM.line }}>
         <div className="mx-auto flex max-w-7xl items-center gap-5 px-5 py-4 md:px-6">
-          <a href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-2.5">
+          <EnlaceTienda href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-2.5" slug={slug} diseno={diseno}>
             {tienda?.logo ? (
               <img src={tienda.logo} alt={name} className="h-11 object-contain" />
             ) : (
@@ -251,7 +263,7 @@ export function FmHeader({
                 </span>
               </>
             )}
-          </a>
+          </EnlaceTienda>
 
           <form onSubmit={(e) => onSearchSubmit?.(e, searchQuery)} className="mx-auto hidden h-11 max-w-2xl flex-1 items-center overflow-hidden rounded-lg border md:flex" style={{ borderColor: primary }}>
             <input
@@ -264,10 +276,10 @@ export function FmHeader({
           </form>
 
           <div className="ml-auto flex items-center gap-2 md:ml-0">
-            <a href={`/tienda/${slug}/seguimiento`} className="hidden items-center gap-1.5 text-sm font-medium sm:flex" style={{ color: FM.ink }} title="Mi cuenta">
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} className="hidden items-center gap-1.5 text-sm font-medium sm:flex" style={{ color: FM.ink }} title="Mi cuenta" slug={slug} diseno={diseno}>
               <Icon icon="solar:user-circle-linear" width={26} style={{ color: primary }} />
               <span className="hidden leading-tight lg:block"><span className="block text-[11px]" style={{ color: FM.inkSoft }}>Seguir</span><span className="block text-[12px] font-bold">Mi pedido</span></span>
-            </a>
+            </EnlaceTienda>
             <button type="button" onClick={() => setOpenFavs(true)} className="relative rounded-full p-2.5 transition-colors hover:bg-neutral-100" style={{ color: FM.ink }} title="Favoritos">
               <Icon icon="solar:heart-linear" width={23} />
               {favoritos.length > 0 && <span className="absolute right-0.5 top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-bold text-white" style={{ backgroundColor: FM.red }}>{favoritos.length}</span>}
@@ -293,22 +305,24 @@ export function FmHeader({
       {/* Barra de navegación */}
       <div className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur" style={{ borderColor: FM.line }}>
         <div className="mx-auto flex max-w-7xl items-center gap-2 px-5 py-2.5 md:px-6">
-          <a href={`/tienda/${slug}/catalogo`} className="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-bold text-white" style={{ backgroundColor: primary }}>
+          <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="flex shrink-0 items-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-bold text-white" style={{ backgroundColor: primary }} slug={slug} diseno={diseno}>
             <Icon icon="solar:hamburger-menu-linear" width={18} /> Categorías
-          </a>
+          </EnlaceTienda>
           <nav className="flex items-center gap-0.5 overflow-x-auto">
-            <a href={`/tienda/${slug}`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--fm-cp)]" style={{ color: FM.ink, ['--fm-cp' as any]: primary }}>Inicio</a>
-            <a href={`/tienda/${slug}/catalogo`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--fm-cp)]" style={{ color: FM.ink, ['--fm-cp' as any]: primary }}>Tienda</a>
+            <EnlaceTienda href={`/tienda/${slug}`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--fm-cp)]" style={{ color: FM.ink, ['--fm-cp' as any]: primary }} slug={slug} diseno={diseno}>Inicio</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:text-[var(--fm-cp)]" style={{ color: FM.ink, ['--fm-cp' as any]: primary }} slug={slug} diseno={diseno}>Tienda</EnlaceTienda>
             {navCats.map((c) => (
-              <a key={c} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`} className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--fm-cp)] lg:inline" style={{ ['--fm-cp' as any]: primary }}>{c}</a>
+              <EnlaceTienda key={c} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`} className="hidden whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--fm-cp)] lg:inline" style={{ ['--fm-cp' as any]: primary }} slug={slug} diseno={diseno}>{c}</EnlaceTienda>
             ))}
-            <a href={`/tienda/${slug}/contacto`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--fm-cp)]" style={{ ['--fm-cp' as any]: primary }}>Contacto</a>
-            <a href={`/tienda/${slug}/catalogo`} className="ml-1 flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-bold text-white" style={{ backgroundColor: FM.orange }}><Icon icon="solar:fire-bold" width={14} /> Ofertas flash</a>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} className="whitespace-nowrap rounded-lg px-3 py-2 text-[13px] font-semibold text-neutral-600 transition-colors hover:text-[var(--fm-cp)]" style={{ ['--fm-cp' as any]: primary }} slug={slug} diseno={diseno}>Contacto</EnlaceTienda>
+            {menu.map((item) => (
+              <EnlaceTienda key={item.key} href={item.href as string} slug={slug} diseno={diseno} {...(item.externo ? { target: '_blank', rel: 'noreferrer' } : {})} className="ml-1 flex items-center gap-1 whitespace-nowrap rounded-full px-3 py-1.5 text-[12px] font-bold text-white" style={{ backgroundColor: FM.orange }}><Icon icon="solar:fire-bold" width={14} /> {item.label}</EnlaceTienda>
+            ))}
           </nav>
         </div>
       </div>
 
-      <FmFavoritesModal open={openFavs} onClose={() => setOpenFavs(false)} slug={slug} cp={primary} favoritos={favoritos} onRemove={removeFavorito} onProduct={goProduct} />
+      <FmFavoritesModal open={openFavs} onClose={() => setOpenFavs(false)} slug={slug} cp={primary} favoritos={favoritos} onRemove={removeFavorito} onProduct={goProduct} diseno={diseno} />
     </>
   );
 }
@@ -354,18 +368,18 @@ export function FmFooter({ tienda, slug, diseno, cp, categories = [] }: { tienda
         <div>
           <h4 className="mb-4 text-sm font-bold" style={{ fontFamily: FM.display }}>Enlaces</h4>
           <div className="space-y-2.5 text-sm text-white/65">
-            <a href={`/tienda/${slug}`} className="block transition-colors hover:text-white">Inicio</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Tienda</a>
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Inicio</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Tienda</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Contacto</EnlaceTienda>
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-sm font-bold" style={{ fontFamily: FM.display }}>Categorías</h4>
           <div className="space-y-2.5 text-sm text-white/65">
             {cats.length ? cats.map((c) => (
-              <a key={c} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`} className="block transition-colors hover:text-white">{c}</a>
-            )) : <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Ver todo</a>}
+              <EnlaceTienda key={c} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>{c}</EnlaceTienda>
+            )) : <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white" slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>}
           </div>
         </div>
         <div>
@@ -492,7 +506,7 @@ export function FmCartModal({
 /* ─────────────────────────── Modal / Drawer favoritos ───────────────────── */
 
 export function FmFavoritesModal({
-  open, onClose, slug, cp, favoritos, onRemove, onProduct,
+  open, onClose, slug, cp, favoritos, onRemove, onProduct, diseno,
 }: {
   open: boolean;
   onClose: () => void;
@@ -501,6 +515,7 @@ export function FmFavoritesModal({
   favoritos: any[];
   onRemove: (id: number, slug: string) => void;
   onProduct: (id: number | string) => void;
+  diseno?: any;
 }) {
   const primary = fmPrimary(cp);
   const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -552,7 +567,7 @@ export function FmFavoritesModal({
             </div>
 
             <div className="border-t px-6 py-5" style={{ borderColor: FM.line }}>
-              <a href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 rounded-lg border py-3.5 text-sm font-bold transition-colors" style={{ borderColor: primary, color: primary }}>Seguir comprando</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 rounded-lg border py-3.5 text-sm font-bold transition-colors" style={{ borderColor: primary, color: primary }} slug={slug} diseno={diseno} onClick={onClose}>Seguir comprando</EnlaceTienda>
             </div>
           </motion.aside>
         </div>
