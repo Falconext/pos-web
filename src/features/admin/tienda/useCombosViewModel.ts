@@ -120,6 +120,24 @@ export const useCombosViewModel = () => {
         return producto ? sum + Number(producto.precioUnitario) * item.cantidad : sum;
     }, 0);
 
+    /**
+     * Lo que le cuesta al negocio armar el kit: costo de cada producto por su
+     * cantidad, con el mismo criterio del editor de producto (precio y costo
+     * tal como están cargados). Los productos sin costo no suman y se avisan.
+     */
+    const calcularCosto = () => {
+        let costo = 0;
+        const sinCosto: string[] = [];
+        for (const item of form.items) {
+            const producto = buscarEnCatalogo(item.productoId);
+            if (!producto) continue;
+            const unitario = Number(producto.costoUnitario ?? producto.costoPromedio ?? 0);
+            if (unitario > 0) costo += unitario * item.cantidad;
+            else sinCosto.push(String(producto.descripcion || '').toUpperCase());
+        }
+        return { costo, sinCosto };
+    };
+
     const calcularDescuento = () => {
         const precioRegular = calcularPrecioRegular();
         return precioRegular === 0 ? 0 : ((precioRegular - form.precioCombo) / precioRegular) * 100;
@@ -193,7 +211,7 @@ export const useCombosViewModel = () => {
         abrirModal, cerrarModal, agregarProducto, actualizarItem, eliminarItem,
         getProductOptionLabel,
         opcionesProducto, buscarProductos,
-        calcularPrecioRegular, calcularDescuento, guardarCombo, onFileSelect,
+        calcularPrecioRegular, calcularDescuento, calcularCosto, guardarCombo, onFileSelect,
         handleEliminarCombo, toggleComboActivo, refreshCombos,
     };
 };
