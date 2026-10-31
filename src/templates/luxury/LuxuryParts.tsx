@@ -3,7 +3,10 @@ import { BRAND } from '@/lib/branding';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
+import { useMemo } from 'react';
 import { luxCard, luxEase, luxHover, luxSection, luxTap, luxViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { LUXURY_MENU } from './menuLuxury';
 
 /**
  * Identidad visual de la plantilla "Luxury Essence" (perfumería de lujo).
@@ -158,6 +161,8 @@ export function LuxuryHeader({
   const primary = luxPrimary(cp);
   const name = storeName(tienda, diseno);
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
+  const ir = useIrEnTienda(slug, diseno);
+  const menu = useMemo(() => itemsDeMenu(LUXURY_MENU, { diseno, slug, categorias: allCategories }), [diseno, slug, allCategories]);
 
   return (
     <motion.header
@@ -168,7 +173,7 @@ export function LuxuryHeader({
     >
       <div className="mx-auto flex h-[70px] max-w-7xl items-center gap-4 px-5 md:h-[78px] md:px-8">
         {/* Logo + nombre */}
-        <a href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-3">
+        <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="flex shrink-0 items-center gap-3">
           {tienda?.logo ? (
             <img src={tienda.logo} alt={name} className="h-10 w-10 rounded-full object-cover ring-1 ring-black/10" />
           ) : (
@@ -177,16 +182,18 @@ export function LuxuryHeader({
             </span>
           )}
           <span className="hidden text-lg tracking-wide text-neutral-900 sm:block md:text-xl" style={{ fontFamily: LUX.serif }}>{name}</span>
-        </a>
+        </EnlaceTienda>
 
         {/* Nav */}
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
-          <a href={`/tienda/${slug}`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Inicio</a>
-          <a href={`/tienda/${slug}/catalogo`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Colección</a>
-          {categories.map((category) => (
-            <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-600 transition-colors hover:text-neutral-900">{category}</a>
+          <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Inicio</EnlaceTienda>
+          {menu.map((it) => (
+            <EnlaceTienda key={it.key} href={it.href!} slug={slug} diseno={diseno} target={it.externo ? '_blank' : undefined} rel={it.externo ? 'noreferrer' : undefined} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">{it.label}</EnlaceTienda>
           ))}
-          <a href={`/tienda/${slug}/contacto`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Contacto</a>
+          {categories.map((category) => (
+            <EnlaceTienda key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-600 transition-colors hover:text-neutral-900">{category}</EnlaceTienda>
+          ))}
+          <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Contacto</EnlaceTienda>
         </nav>
 
         {/* Búsqueda */}
@@ -204,7 +211,7 @@ export function LuxuryHeader({
         </form>
 
         {/* Acciones */}
-        <button type="button" onClick={() => (window.location.href = `/tienda/${slug}/catalogo`)} className="rounded-full p-2 text-neutral-700 hover:bg-neutral-100 md:hidden" title="Buscar">
+        <button type="button" onClick={() => ir(`/tienda/${slug}/catalogo`)} className="rounded-full p-2 text-neutral-700 hover:bg-neutral-100 md:hidden" title="Buscar">
           <Icon icon="solar:magnifer-linear" width={22} />
         </button>
         <button type="button" onClick={onOpenCart} className="relative shrink-0 rounded-full p-2 text-neutral-800 transition-colors hover:bg-neutral-100" title="Carrito">
@@ -248,19 +255,19 @@ export function LuxuryFooter({ tienda, slug, diseno, cp, categories = [] }: { ti
           <div className="space-y-3 text-sm text-white/55">
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-white">{cat}</a>
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">{cat}</EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Ver toda la colección</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Ver toda la colección</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: LUX.gold }}>Ayuda</h4>
           <div className="space-y-3 text-sm text-white/55">
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Colección completa</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Colección completa</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Contacto</EnlaceTienda>
           </div>
         </div>
         <div>

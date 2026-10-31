@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { LUX, LuxCartModal, LuxFooter, LuxHeader, LuxProductCard, LuxWhatsAppFab, luxFont, luxPrimary } from './CarterasParts';
 import { luxCard, luxPage, luxSection, luxStagger, luxViewport } from './motion';
@@ -12,6 +13,8 @@ function getName(item: any) {
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
   return products.filter((product) => {
+    // Categoría: cuenta también las categorías adicionales del producto.
+    if (key === 'categoria') return productoEnCategoria(product, name);
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;
     return String(current || '').toLowerCase() === String(name || '').toLowerCase();

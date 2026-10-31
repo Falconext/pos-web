@@ -6,6 +6,14 @@
 
 import { categoryTileImageFields, categoryTileTextFields } from '@/templates/shared/categoryTiles';
 import { heroIntervalField, heroSlideOcultoField } from '@/templates/shared/heroSlider';
+import { camposDeMenu } from '@/components/tienda/navTienda';
+import { camposDeBloques } from '@/templates/shared/destinoBloque';
+import { FALCON_MENU_ATENCION, FALCON_MENU_OFERTAS, FALCON_MENU_PIE } from '@/templates/falcon/menuFalcon';
+import { CONSTRUCCION_MENU, CONSTRUCCION_MENU_PIE } from '@/templates/construccion/menuConstruccion';
+import { JOYERIA_MENU } from '@/templates/joyeria/menuJoyeria';
+import { CARTERAS_MENU } from '@/templates/carteras/menuCarteras';
+import { LUXURY_COLECCIONES, LUXURY_FAMILIAS, LUXURY_HERO_BOTONES, LUXURY_MENU } from '@/templates/luxury/menuLuxury';
+import { SPA_MENU, SPA_SERVICIOS } from '@/templates/spa/menuSpa';
 
 export interface ImageFieldDef {
   key: string;
@@ -502,6 +510,8 @@ const FALCON_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'falconContactPhoneTitle', label: 'Contacto: título teléfono', placeholder: 'Teléfono', group: 'Contacto' },
   { key: 'falconContactEmailTitle', label: 'Contacto: título correo', placeholder: 'Correo', group: 'Contacto' },
   { key: 'falconContactHoursTitle', label: 'Contacto: título horario', placeholder: 'Horario', group: 'Contacto' },
+  ...camposDeMenu(FALCON_MENU_PIE, 'Menú · pie de página').textFields,
+  ...camposDeMenu(FALCON_MENU_ATENCION, 'Menú · atención al cliente').textFields,
 ];
 
 const CONSTRUCCION_TEXT_FIELDS: TextFieldDef[] = [
@@ -594,6 +604,7 @@ const CONSTRUCCION_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'construccionProductSecureTitle', label: 'Detalle: pago seguro', placeholder: 'Pago seguro garantizado', group: 'Detalle producto' },
   { key: 'construccionProductSecureMethods', label: 'Detalle: medios pago', placeholder: 'VISA · Mastercard · Yape · Plin', group: 'Detalle producto' },
   { key: 'construccionRelatedTitle', label: 'Detalle: relacionados', placeholder: 'Productos relacionados', group: 'Detalle producto' },
+  ...camposDeMenu(CONSTRUCCION_MENU_PIE, 'Menú · pie de página').textFields,
 ];
 
 const APICULTURA_TEXT_FIELDS: TextFieldDef[] = [
@@ -699,6 +710,7 @@ const CARTERAS_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'carterasFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
   { key: 'carterasFooterEmail', label: 'Footer: correo', placeholder: 'hola@luxora.pe', group: 'Footer' },
   ...categoryTileTextFields('carteras', 5),
+  ...camposDeMenu(CARTERAS_MENU).textFields,
 ];
 
 const HOODIE_TEXT_FIELDS: TextFieldDef[] = [
@@ -944,7 +956,6 @@ const COMIDA_APP_TEXT_FIELDS: TextFieldDef[] = [
 
 const JOYERIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'joyeriaLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Aurum Joyería', group: 'Marca' },
-  { key: 'joyeriaLogoTagline', label: 'Bajada del logo', placeholder: 'Fine Jewelry', group: 'Marca' },
   { key: 'joyeriaAnnouncement', label: 'Barra superior (anuncio)', placeholder: 'Envío asegurado · Certificado de autenticidad · Grabado de regalo sin costo', group: 'Header' },
   { key: 'joyeriaSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar anillos, collares...', group: 'Header' },
   heroIntervalField('joyeriaHeroInterval', 'Slider · Slide 1', 6),
@@ -955,7 +966,6 @@ const JOYERIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'joyeriaHeroTitle2', label: 'Slide 1: título (línea 2, cursiva)', placeholder: 'momento.', group: 'Slider · Slide 1' },
   { key: 'joyeriaHeroSubtitle', label: 'Slide 1: subtítulo', placeholder: 'Joyería fina elaborada a mano con oro, plata y piedras seleccionadas...', group: 'Slider · Slide 1' },
   { key: 'joyeriaHeroButton', label: 'Slide 1: botón principal', placeholder: 'Ver la colección', group: 'Slider · Slide 1' },
-  { key: 'joyeriaHeroButton2', label: 'Slide 1: botón secundario', placeholder: 'Novedades', group: 'Slider · Slide 1' },
   { key: 'joyeriaSlide2OnlyImage', label: 'Slide 2: solo imagen (banner sin textos ni botón)', placeholder: '', group: 'Slider · Slide 2', type: 'toggle', hint: 'Actívalo para un banner de solo imagen. Al hacer clic lleva al destino configurado abajo (Enlace del Slide 2).' },
   { key: 'joyeriaSlide2Oculto', label: 'No mostrar el banner 2', placeholder: '', group: 'Slider · Slide 2', type: 'toggle', hint: 'Ocúltalo si no lo vas a usar. Si ocultas todos, se conserva el primero.' },
   { key: 'joyeriaSlide2Eyebrow', label: 'Slide 2: etiqueta', placeholder: 'Hecho a mano', group: 'Slider · Slide 2' },
@@ -997,6 +1007,7 @@ const JOYERIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'joyeriaFooterEmail', label: 'Footer: correo', placeholder: 'hola@aurum.pe', group: 'Footer' },
   { key: 'joyeriaFooterTagline', label: 'Footer: frase grande (final)', placeholder: 'convierte tus ideas en joyas', group: 'Footer' },
   ...categoryTileTextFields('joyeria', 5),
+  ...camposDeMenu(JOYERIA_MENU).textFields,
 ];
 
 const ROPA_HOMBRE_TEXT_FIELDS: TextFieldDef[] = [
@@ -1268,6 +1279,9 @@ const FALCON_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'falconSideTwoAction', label: 'Banner lateral 2', group: 'Hero', defaultType: 'catalog' },
   { key: 'falconBannerAction', label: 'Banner promociones', group: 'Banners', defaultType: 'catalog' },
   { key: 'falconCountdownAction', label: 'Cuenta regresiva', group: 'Banners', defaultType: 'catalog' },
+  ...camposDeMenu(FALCON_MENU_OFERTAS, 'Header').linkFields,
+  ...camposDeMenu(FALCON_MENU_PIE, 'Menú · pie de página').linkFields,
+  ...camposDeMenu(FALCON_MENU_ATENCION, 'Menú · atención al cliente').linkFields,
 ];
 
 const CONSTRUCCION_LINK_FIELDS: LinkFieldDef[] = [
@@ -1278,6 +1292,8 @@ const CONSTRUCCION_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'construccionWideBannerAction', label: 'Banner ancho', group: 'Banners', defaultType: 'catalog' },
   { key: 'construccionHalfBannerOneAction', label: 'Banner inferior 1', group: 'Banners', defaultType: 'catalog' },
   { key: 'construccionHalfBannerTwoAction', label: 'Banner inferior 2', group: 'Banners', defaultType: 'catalog' },
+  ...camposDeMenu(CONSTRUCCION_MENU, 'Header').linkFields,
+  ...camposDeMenu(CONSTRUCCION_MENU_PIE, 'Menú · pie de página').linkFields,
 ];
 
 const APICULTURA_LINK_FIELDS: LinkFieldDef[] = [
@@ -1291,12 +1307,20 @@ const CARTERAS_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'carterasHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Slider · Slide 1', defaultType: 'catalog' },
   { key: 'carterasSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Slider · Slide 2', defaultType: 'catalog' },
   { key: 'carterasSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Slider · Slide 3', defaultType: 'catalog' },
+  { key: 'carterasHeroButton2Action', label: 'Slide 1: enlace del botón secundario', group: 'Slider · Slide 1', defaultType: 'catalog' },
+  { key: 'carterasPromoAction', label: 'Promo oscura: enlace del botón', group: 'Banner promo', defaultType: 'catalog', textoSinEnlace: 'El botón no se muestra.' },
+  { key: 'carterasClubAction', label: 'Club: enlace del botón', group: 'Banner club', defaultType: 'catalog', textoSinEnlace: 'El botón no se muestra.' },
+  ...camposDeMenu(CARTERAS_MENU).linkFields,
 ];
 
 const JOYERIA_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'joyeriaHeroAction', label: 'Slide 1: enlace (banner y botón)', group: 'Slider · Slide 1', defaultType: 'catalog' },
   { key: 'joyeriaSlide2Action', label: 'Slide 2: enlace (banner y botón)', group: 'Slider · Slide 2', defaultType: 'catalog' },
   { key: 'joyeriaSlide3Action', label: 'Slide 3: enlace (banner y botón)', group: 'Slider · Slide 3', defaultType: 'catalog' },
+  { key: 'joyeriaPromoAction', label: 'Promo: enlace del botón', group: 'Banner promo', defaultType: 'catalog', textoSinEnlace: 'El botón no se muestra.' },
+  { key: 'joyeriaBoardsAction', label: '"Colecciones que te van a encantar": enlace de las tarjetas', group: 'Secciones', defaultType: 'catalog', textoSinEnlace: 'Las tarjetas llevan al catálogo.' },
+  { key: 'joyeriaClubAction', label: 'Club: enlace del botón', group: 'Banner club', defaultType: 'catalog', textoSinEnlace: 'El botón no se muestra.' },
+  ...camposDeMenu(JOYERIA_MENU).linkFields,
 ];
 
 const ROPA_HOMBRE_LINK_FIELDS: LinkFieldDef[] = [
@@ -2494,6 +2518,76 @@ const CANASTA_LINK_FIELDS: LinkFieldDef[] = [
   { key: 'canastaPromo2Action', label: 'Banner 2: enlace', group: 'Banners de categoría', defaultType: 'category' },
 ];
 
+// ─── Luxury (perfumería) ─────────────────────────────────────────────────────
+const LUXURY_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'luxuryLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Nombre comercial', group: 'Marca' },
+  { key: 'luxurySearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar fragancia, marca...', group: 'Header' },
+  ...camposDeMenu(LUXURY_MENU).textFields,
+  { key: 'luxuryHeroEyebrow', label: 'Hero: etiqueta', placeholder: 'Atrévete a ser inolvidable', group: 'Hero' },
+  { key: 'luxuryHeroTitle', label: 'Hero: título', placeholder: 'La fragancia que te', group: 'Hero' },
+  { key: 'luxuryHeroAccent', label: 'Hero: palabra destacada (cursiva)', placeholder: 'define', group: 'Hero' },
+  { key: 'luxuryHeroSubtitle', label: 'Hero: subtítulo', placeholder: 'Perfumes de autor y fragancias nicho, seleccionados para dejar una huella que perdura...', group: 'Hero' },
+  ...camposDeBloques(LUXURY_HERO_BOTONES, 'Hero', 'Botón').textFields,
+  ...camposDeBloques(LUXURY_COLECCIONES, 'Colecciones', 'Colección').textFields,
+  ...LUXURY_COLECCIONES.map((_, i): TextFieldDef => ({ key: `luxuryCollection${i + 1}Desc`, label: `Colección ${i + 1}: descripción`, placeholder: ['Florales y sofisticados', 'Amaderados e intensos', 'Sin etiquetas', 'Ediciones exclusivas'][i], group: 'Colecciones' })),
+  ...camposDeBloques(LUXURY_FAMILIAS, 'Encuentra tu fragancia', 'Familia').textFields,
+  { key: 'luxuryCupon', label: 'Código de cupón de bienvenida', placeholder: 'WELCOME15', group: 'Oferta' },
+  { key: 'luxuryOcultarEnvio', label: 'Ocultar costo de envío', placeholder: '', group: 'Checkout', type: 'toggle', hint: 'Actívalo si coordinas el envío internamente. Oculta la línea "Envío" y el mensaje de delivery gratis en el checkout.' },
+  { key: 'luxuryContactTitle', label: 'Contacto: título del formulario', placeholder: 'Escríbenos', group: 'Contacto' },
+  { key: 'luxuryContactSubmitLabel', label: 'Contacto: botón enviar', placeholder: 'Enviar mensaje', group: 'Contacto' },
+  { key: 'luxuryContactAddress', label: 'Contacto: dirección', placeholder: 'Av. Principal 123, Lima', group: 'Contacto' },
+  { key: 'luxuryContactPhone', label: 'Contacto: teléfono', placeholder: '+51 999 999 999', group: 'Contacto' },
+  { key: 'luxuryContactEmail', label: 'Contacto: correo', placeholder: 'hola@tutienda.com', group: 'Contacto' },
+  { key: 'luxuryContactHours', label: 'Contacto: horario', placeholder: 'Lun a Sáb · 10:00 – 20:00', group: 'Contacto' },
+  { key: 'luxuryFooterText', label: 'Footer: descripción', placeholder: 'Fragancias de autor y perfumes nicho seleccionados...', group: 'Footer' },
+  { key: 'luxuryFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
+  { key: 'luxuryFooterEmail', label: 'Footer: correo', placeholder: 'hola@luxuryessence.com', group: 'Footer' },
+];
+
+const LUXURY_LINK_FIELDS: LinkFieldDef[] = [
+  ...camposDeMenu(LUXURY_MENU).linkFields,
+  ...camposDeBloques(LUXURY_HERO_BOTONES, 'Hero', 'Botón').linkFields,
+  ...camposDeBloques(LUXURY_COLECCIONES, 'Colecciones', 'Colección').linkFields,
+  ...camposDeBloques(LUXURY_FAMILIAS, 'Encuentra tu fragancia', 'Familia').linkFields,
+];
+
+// ─── Spa ─────────────────────────────────────────────────────────────────────
+const SPA_IMAGE_FIELDS: ImageFieldDef[] = [
+  { key: 'spaHeroImage', label: 'Hero: imagen', hint: 'Foto principal del inicio', fallback: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=900&q=80' },
+  { key: 'spaService1Image', label: 'Servicio 1: imagen', hint: 'Tarjeta "Faciales & Skincare"', fallback: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=600&q=80' },
+  { key: 'spaService2Image', label: 'Servicio 2: imagen', hint: 'Tarjeta "Masajes & Corporales"', fallback: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=600&q=80' },
+  { key: 'spaService3Image', label: 'Servicio 3: imagen', hint: 'Tarjeta "Uñas · Mani & Pedi"', fallback: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80' },
+  { key: 'spaService4Image', label: 'Servicio 4: imagen', hint: 'Tarjeta "Cabello & Maquillaje"', fallback: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80' },
+];
+
+const SPA_TEXT_FIELDS: TextFieldDef[] = [
+  { key: 'spaLogoText', label: 'Nombre de la tienda (logo)', placeholder: 'Nombre comercial', group: 'Marca' },
+  { key: 'spaSearchPlaceholder', label: 'Placeholder del buscador', placeholder: 'Buscar producto o servicio...', group: 'Header' },
+  ...camposDeMenu(SPA_MENU).textFields,
+  { key: 'spaHeroEyebrow', label: 'Hero: etiqueta', placeholder: 'Belleza · Bienestar · Alta cosmética', group: 'Hero' },
+  { key: 'spaHeroTitle', label: 'Hero: título (inicio)', placeholder: 'Renace tu', group: 'Hero' },
+  { key: 'spaHeroAccent', label: 'Hero: palabra destacada (cursiva)', placeholder: 'belleza', group: 'Hero' },
+  { key: 'spaHeroTitle2', label: 'Hero: título (final)', placeholder: 'natural', group: 'Hero' },
+  { key: 'spaHeroSubtitle', label: 'Hero: subtítulo', placeholder: 'Un santuario de lujo donde el cuidado personalizado...', group: 'Hero' },
+  ...camposDeBloques(SPA_SERVICIOS, 'Servicios', 'Servicio').textFields,
+  ...SPA_SERVICIOS.map((_, i): TextFieldDef => ({ key: `spaService${i + 1}Desc`, label: `Servicio ${i + 1}: descripción`, placeholder: ['Limpieza profunda, antiedad e hidratación.', 'Relajantes, descontracturantes y spa.', 'Nail art y esmaltado semipermanente.', 'Color, peinado y makeup profesional.'][i], group: 'Servicios' })),
+  { key: 'spaOcultarEnvio', label: 'Ocultar costo de envío', placeholder: '', group: 'Checkout', type: 'toggle', hint: 'Actívalo si coordinas el envío internamente. Oculta la línea "Envío" y el mensaje de delivery gratis en el checkout.' },
+  { key: 'spaContactTitle', label: 'Contacto: título del formulario', placeholder: 'Escríbenos', group: 'Contacto' },
+  { key: 'spaContactSubmitLabel', label: 'Contacto: botón enviar', placeholder: 'Enviar mensaje', group: 'Contacto' },
+  { key: 'spaContactAddress', label: 'Contacto: dirección', placeholder: 'Av. Principal 123, Lima', group: 'Contacto' },
+  { key: 'spaContactPhone', label: 'Contacto: teléfono', placeholder: '+51 999 999 999', group: 'Contacto' },
+  { key: 'spaContactEmail', label: 'Contacto: correo', placeholder: 'hola@tutienda.com', group: 'Contacto' },
+  { key: 'spaContactHours', label: 'Contacto: horario', placeholder: 'Lun a Sáb · 10:00 – 20:00', group: 'Contacto' },
+  { key: 'spaFooterText', label: 'Footer: descripción', placeholder: 'Tu santuario de belleza y bienestar...', group: 'Footer' },
+  { key: 'spaFooterPhone', label: 'Footer: teléfono', placeholder: '+51 999 999 999', group: 'Footer' },
+  { key: 'spaFooterEmail', label: 'Footer: correo', placeholder: 'hola@tutienda.com', group: 'Footer' },
+];
+
+const SPA_LINK_FIELDS: LinkFieldDef[] = [
+  ...camposDeMenu(SPA_MENU).linkFields,
+  ...camposDeBloques(SPA_SERVICIOS, 'Servicios', 'Servicio').linkFields,
+];
+
 const EMPTY: LiveEditorPlantillaConfig = { textFields: [], imageFields: [], productFields: [], linkFields: [] };
 
 // ── Bolsos (Rosé) ──
@@ -3262,6 +3356,8 @@ export const LIVE_EDITOR_FIELDS: Record<string, LiveEditorPlantillaConfig> = {
   apicultura: { textFields: APICULTURA_TEXT_FIELDS, imageFields: APICULTURA_IMAGE_FIELDS, productFields: APICULTURA_PRODUCT_FIELDS, linkFields: APICULTURA_LINK_FIELDS },
   carteras: { textFields: CARTERAS_TEXT_FIELDS, imageFields: CARTERAS_IMAGE_FIELDS, productFields: [], linkFields: CARTERAS_LINK_FIELDS },
   joyeria: { textFields: JOYERIA_TEXT_FIELDS, imageFields: JOYERIA_IMAGE_FIELDS, productFields: [], linkFields: JOYERIA_LINK_FIELDS },
+  luxury: { textFields: LUXURY_TEXT_FIELDS, imageFields: [], productFields: [], linkFields: LUXURY_LINK_FIELDS },
+  spa: { textFields: SPA_TEXT_FIELDS, imageFields: SPA_IMAGE_FIELDS, productFields: [], linkFields: SPA_LINK_FIELDS },
   abarrotes: { textFields: ABARROTES_TEXT_FIELDS, imageFields: ABARROTES_IMAGE_FIELDS, productFields: [], linkFields: ABARROTES_LINK_FIELDS },
   supermercado: { textFields: SUPERMERCADO_TEXT_FIELDS, imageFields: SUPERMERCADO_IMAGE_FIELDS, productFields: [], linkFields: SUPERMERCADO_LINK_FIELDS },
   'ropa-hombre': { textFields: ROPA_HOMBRE_TEXT_FIELDS, imageFields: ROPA_HOMBRE_IMAGE_FIELDS, productFields: [], linkFields: ROPA_HOMBRE_LINK_FIELDS },

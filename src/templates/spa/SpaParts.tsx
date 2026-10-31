@@ -1,10 +1,12 @@
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { spaCard, spaEase, spaHover, spaSection, spaTap, spaViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { SPA_MENU } from './menuSpa';
 
 /**
  * Identidad visual de la plantilla "Aura Spa" (salón de belleza & spa).
@@ -170,6 +172,8 @@ export function SpaHeader({
   const primary = spaPrimary(cp);
   const name = storeName(tienda, diseno);
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
+  const ir = useIrEnTienda(slug, diseno);
+  const menu = useMemo(() => itemsDeMenu(SPA_MENU, { diseno, slug, categorias: allCategories }), [diseno, slug, allCategories]);
 
   return (
     <motion.header
@@ -179,7 +183,7 @@ export function SpaHeader({
       className="sticky top-0 z-40 border-b border-black/[0.05] bg-white/80 backdrop-blur-xl"
     >
       <div className="mx-auto flex h-[70px] max-w-7xl items-center gap-4 px-5 md:h-[78px] md:px-8">
-        <a href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-3">
+        <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="flex shrink-0 items-center gap-3">
           {tienda?.logo ? (
             <img src={tienda.logo} alt={name} className="h-11 w-11 rounded-full object-cover ring-1 ring-black/10" />
           ) : (
@@ -188,15 +192,17 @@ export function SpaHeader({
             </span>
           )}
           <span className="hidden text-lg tracking-wide sm:block md:text-xl" style={{ fontFamily: SPA.serif, color: SPA.ink }}>{name}</span>
-        </a>
+        </EnlaceTienda>
 
         <nav className="ml-4 hidden items-center gap-1 lg:flex">
-          <a href={`/tienda/${slug}`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Inicio</a>
-          <a href={`/tienda/${slug}/catalogo`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Servicios</a>
-          {categories.map((category) => (
-            <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-600 transition-colors hover:text-neutral-900">{category}</a>
+          <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Inicio</EnlaceTienda>
+          {menu.map((it) => (
+            <EnlaceTienda key={it.key} href={it.href!} slug={slug} diseno={diseno} target={it.externo ? '_blank' : undefined} rel={it.externo ? 'noreferrer' : undefined} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">{it.label}</EnlaceTienda>
           ))}
-          <a href={`/tienda/${slug}/contacto`} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Contacto</a>
+          {categories.map((category) => (
+            <EnlaceTienda key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-600 transition-colors hover:text-neutral-900">{category}</EnlaceTienda>
+          ))}
+          <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.14em] text-neutral-700 transition-colors hover:text-neutral-900">Contacto</EnlaceTienda>
         </nav>
 
         <form
@@ -222,7 +228,7 @@ export function SpaHeader({
           <Icon icon="solar:calendar-linear" width={16} /> Reservar
         </a>
 
-        <button type="button" onClick={() => (window.location.href = `/tienda/${slug}/catalogo`)} className="rounded-full p-2 text-neutral-700 hover:bg-neutral-100 md:hidden" title="Buscar">
+        <button type="button" onClick={() => ir(`/tienda/${slug}/catalogo`)} className="rounded-full p-2 text-neutral-700 hover:bg-neutral-100 md:hidden" title="Buscar">
           <Icon icon="solar:magnifer-linear" width={22} />
         </button>
         <button type="button" onClick={onOpenCart} className="relative shrink-0 rounded-full p-2 text-neutral-800 transition-colors hover:bg-neutral-100" title="Carrito">
@@ -276,8 +282,13 @@ export function SpaFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
             {diseno?.spaFooterText || tienda?.descripcionTienda || 'Tu santuario de belleza y bienestar. Rituales de lujo, cuidado personalizado y resultados que enamoran.'}
           </p>
           <div className="mt-6 flex gap-3">
-            {['mdi:instagram', 'mdi:facebook', 'ic:baseline-tiktok', 'mdi:whatsapp'].map((icon) => (
-              <a key={icon} href={icon === 'mdi:whatsapp' ? waLink(tienda) : '#'} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/75 transition-colors hover:bg-white/20">
+            {[
+              { icon: 'mdi:instagram', url: tienda?.instagramUrl },
+              { icon: 'mdi:facebook', url: tienda?.facebookUrl },
+              { icon: 'ic:baseline-tiktok', url: tienda?.tiktokUrl },
+              { icon: 'mdi:whatsapp', url: waLink(tienda) },
+            ].filter((r) => typeof r.url === 'string' && r.url.trim()).map(({ icon, url }) => (
+              <a key={icon} href={url} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/75 transition-colors hover:bg-white/20">
                 <Icon icon={icon} width={19} />
               </a>
             ))}
@@ -288,19 +299,19 @@ export function SpaFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           <div className="space-y-3 text-sm text-white/55">
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block transition-colors hover:text-white">{cat}</a>
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">{cat}</EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Ver todos los servicios</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Ver todos los servicios</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.22em]" style={{ color: SPA.goldSoft }}>Aura</h4>
           <div className="space-y-3 text-sm text-white/55">
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Tienda completa</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Tienda completa</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Contacto</EnlaceTienda>
           </div>
         </div>
         <div>
