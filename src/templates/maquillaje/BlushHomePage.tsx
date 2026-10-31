@@ -16,6 +16,7 @@ import {
 } from './BlushParts';
 import { ProductRail, GridSkeleton, OfferCountdown, SectionHeader, soonestOfferEnd, storeChannels, instagramHandle, getName, hasImage, type OpenFn, type AddFn } from './BlushSections';
 import { blEase, blHeroText, blItem, blReveal, blStagger, blViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 /** "Brilla.|Define.|Sé tú." → saltos de línea (el editor es de una línea). */
 const lines = (s: string) => s.replace(/\s*\|\s*/g, '\n');
@@ -39,7 +40,7 @@ export default function BlushHomePage(props: TemplateHomePageProps) {
   }, [list, withImg]);
   const offers = useMemo(() => list.filter((p) => getProductPricing(p).enOferta).slice(0, 10), [list]);
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'maquillaje', count: 4, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);

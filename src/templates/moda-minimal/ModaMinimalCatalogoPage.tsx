@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { MIN, MinCartModal, MinFooter, MinHeader, MinProductCard, MinWhatsAppFab, minFont, minPrimary } from './ModaMinimalParts';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 import { minEase, minPage, minSection, minStagger } from './motion';
 
 const CATALOG_BANNER_FALLBACK = 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=1900&q=80';
@@ -13,6 +14,8 @@ function getName(item: any) {
 }
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
+  // Categoría: cuenta también los productos que la tienen como adicional.
+  if (key === 'categoria') return products.filter((product) => productoEnCategoria(product, name)).length;
   return products.filter((product) => {
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;
@@ -244,7 +247,7 @@ export default function ModaMinimalCatalogoPage({
           </button>
 
           <p className="hidden text-sm sm:block" style={{ color: MIN.soft }}>
-            <span className="font-semibold" style={{ color: MIN.ink }}>{sortedProductos.length}</span> de {totalLabel} productos
+            {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-semibold" style={{ color: MIN.ink }}>{sortedProductos.length}</span> de {totalLabel} productos</>}
           </p>
 
           <div className="flex items-center gap-2">

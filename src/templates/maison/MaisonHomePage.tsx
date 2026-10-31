@@ -18,6 +18,7 @@ import {
 import { ProductGrid, ProductRail, GridSkeleton, SectionHeader, OfferCountdown, soonestOfferEnd, storeChannels, getName, hasImage, type OpenFn, type AddFn } from './MaisonSections';
 import { useFreeShipping, useStoreTotal } from './MaisonExtras';
 import { msEase, msHeroText, msItem, msReveal, msStagger, msViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -41,7 +42,7 @@ export default function MaisonHomePage(props: TemplateHomePageProps) {
   const offers = useMemo(() => list.filter((p) => getProductPricing(p).enOferta), [list]);
   const maxOff = useMemo(() => offers.reduce((m, p) => Math.max(m, Number(getProductPricing(p).porcentajeDescuento || 0)), 0), [offers]);
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'maison', count: 6, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);

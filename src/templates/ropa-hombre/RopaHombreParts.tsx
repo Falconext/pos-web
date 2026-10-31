@@ -7,6 +7,8 @@ import { getFashionColors, getFashionColorGallery } from '@/templates/urbano/fas
 import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { mix, urEase } from './motion';
+import { itemsDeMenu, type ItemMenu } from '@/components/tienda/navTienda';
+import { ROPA_HOMBRE_MENU } from './menu';
 
 import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
 /**
@@ -120,6 +122,15 @@ function Wordmark({ tienda, diseno, t, color, onClick, size = 22 }: { tienda: an
   return onClick ? <button type="button" onClick={onClick} className="flex items-center">{content}</button> : <div className="flex items-center">{content}</div>;
 }
 
+/** Botones configurables del menú; los externos se abren en otra pestaña. */
+function menuDe(diseno: any, slug: string, categories: string[] | undefined) {
+  return itemsDeMenu(ROPA_HOMBRE_MENU, { diseno, slug, categorias: categories });
+}
+const abrirItem = (it: ItemMenu, navigate: (to: string) => void) => {
+  if (it.externo) window.open(it.href!, '_blank', 'noopener,noreferrer');
+  else navigate(it.href!);
+};
+
 // ─────────────────────────────────────────────────────────────── Header ──
 /**
  * Header de la casa. Con `overlay` (home) es transparente sobre el hero y se vuelve sólido al hacer scroll.
@@ -133,6 +144,7 @@ export function UrbHeader({ tienda, slug, diseno, categories, t, cartCount, favC
   const panelRef = useRef<HTMLDivElement>(null);
   const cats: string[] = categories || [];
   const go = (to: string) => { setMenu(null); navigate(to); };
+  const items = menuDe(diseno, slug, cats);
   const announce = optional(diseno?.ropaHombreAnnouncement, buildServices(tienda).slice(0, 2).map((s) => s.label).join('   ·   '));
 
   useEffect(() => {
@@ -169,7 +181,9 @@ export function UrbHeader({ tienda, slug, diseno, categories, t, cartCount, favC
                 </button>
               </div>
             )}
-            <button type="button" onClick={() => go(`/tienda/${slug}/catalogo`)} className={`${link} hidden lg:block`} style={{ color: fg }}>{editable(diseno?.ropaHombreNavNew, 'Novedades')}</button>
+            {items.map((it) => (
+              <button key={it.key} type="button" onClick={() => abrirItem(it, go)} className={`${link} hidden lg:block`} style={{ color: fg }}>{it.label}</button>
+            ))}
             <button type="button" onClick={() => go(`/tienda/${slug}/contacto`)} className={`${link} hidden lg:block`} style={{ color: fg }}>{editable(diseno?.ropaHombreNavContact, 'Contacto')}</button>
           </nav>
 
@@ -215,11 +229,11 @@ export function UrbHeader({ tienda, slug, diseno, categories, t, cartCount, favC
             <motion.nav key="mobile" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} className="border-t px-5 pb-6 pt-3 lg:hidden" style={{ borderColor: t.line, background: t.bg }} aria-label="Menú móvil">
               {[
                 { label: 'Inicio', to: `/tienda/${slug}` },
-                { label: editable(diseno?.ropaHombreNavNew, 'Novedades'), to: `/tienda/${slug}/catalogo` },
+                ...items.map((it) => ({ label: it.label, to: it.href!, externo: it.externo })),
                 ...cats.slice(0, 8).map((c) => ({ label: c, to: `/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}` })),
                 { label: editable(diseno?.ropaHombreNavContact, 'Contacto'), to: `/tienda/${slug}/contacto` },
-              ].map((it, i) => (
-                <button key={`${it.label}-${i}`} type="button" onClick={() => go(it.to)} className="block w-full border-b py-3.5 text-left text-[22px]" style={serif(t, { color: t.ink, borderColor: t.line })}>{it.label}</button>
+              ].map((it: { label: string; to: string; externo?: boolean }, i) => (
+                <button key={`${it.label}-${i}`} type="button" onClick={() => (it.externo ? window.open(it.to, '_blank', 'noopener,noreferrer') : go(it.to))} className="block w-full border-b py-3.5 text-left text-[22px]" style={serif(t, { color: t.ink, borderColor: t.line })}>{it.label}</button>
               ))}
             </motion.nav>
           )}
@@ -244,9 +258,10 @@ export function UrbFooter({ tienda, slug, diseno, t, categories, navigate }: any
   const cats: string[] = (categories || []).slice(0, 6);
   const about = String(diseno?.ropaHombreFooterText || tienda?.descripcionTienda || '').trim();
   const sub = mix(t.onPrimary, 62, t.primary);
+  const items = menuDe(diseno, slug, categories);
   const cols = [
     ...(cats.length ? [{ title: 'Colección', items: cats.map((c) => ({ label: c, to: `/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}` })) }] : []),
-    { title: 'La casa', items: [{ label: 'Inicio', to: `/tienda/${slug}` }, { label: 'Novedades', to: `/tienda/${slug}/catalogo` }, { label: 'Contacto', to: `/tienda/${slug}/contacto` }] },
+    { title: 'La casa', items: [{ label: 'Inicio', to: `/tienda/${slug}` }, ...items.map((it) => ({ label: it.label, to: it.href!, externo: it.externo })), { label: 'Contacto', to: `/tienda/${slug}/contacto` }] },
     { title: 'Atención', items: [{ label: 'Seguimiento de pedido', to: `/tienda/${slug}/seguimiento` }, { label: 'Preguntas frecuentes', to: `/tienda/${slug}/contacto#faq` }] },
   ];
   return (
@@ -259,7 +274,7 @@ export function UrbFooter({ tienda, slug, diseno, t, categories, navigate }: any
           <div key={col.title}>
             <h4 className="text-[10.5px] font-semibold uppercase tracking-[0.24em]" style={{ color: sub }}>{col.title}</h4>
             <ul className="mt-5 space-y-3 text-[13.5px]">
-              {col.items.map((it) => <li key={it.label}><button type="button" onClick={() => navigate(it.to)} className="text-left transition-opacity hover:opacity-60">{it.label}</button></li>)}
+              {col.items.map((it: { label: string; to: string; externo?: boolean }) => <li key={it.label}><button type="button" onClick={() => (it.externo ? window.open(it.to, '_blank', 'noopener,noreferrer') : navigate(it.to))} className="text-left transition-opacity hover:opacity-60">{it.label}</button></li>)}
             </ul>
           </div>
         ))}

@@ -16,6 +16,7 @@ import {
 } from './EsenciaParts';
 import { SectionHeader, MoreLink, GridSkeleton, getName, hasImage, categoryIcon, soonestOfferEnd, storeChannels, type OpenFn, type AddFn } from './EsenciaSections';
 import { esEase, esHeroText, esItem, esReveal, esStagger, esViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
@@ -55,7 +56,7 @@ export default function EsenciaHomePage(props: TemplateHomePageProps) {
   const maxDiscount = useMemo(() => offers.reduce((m, p) => Math.max(m, Number(getProductPricing(p).porcentajeDescuento) || 0), 0), [offers]);
   const offerEnd = useMemo(() => soonestOfferEnd(offers), [offers]);
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'esencial', count: 6, fallbackImages: [] }).map((tile) => {
-    const fromProduct = tile.imagenUrl ? '' : withImg.find((p) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase())?.imagenUrl || '';
+    const fromProduct = tile.imagenUrl ? '' : withImg.find((p) => productoEnCategoria(p, tile.nombre))?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);
   const ch = storeChannels(tienda, diseno);

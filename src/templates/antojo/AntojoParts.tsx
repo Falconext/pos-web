@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { antojoCard, antojoEase, antojoHover, antojoSection, antojoTap, antojoViewport } from './motion';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { irAAccionConfigurada } from '@/templates/shared/accionConfigurada';
 
 /**
  * Paleta de identidad de la plantilla "Antojo" (pizzería + frappes + cremoladas).
@@ -41,30 +43,8 @@ export function antojoTemp(producto: any): 'cold' | 'hot' | null {
   return null;
 }
 
-export function antojoAction(action: any, slug: string, navigate: (to: string) => void, fallback = `/tienda/${slug}/catalogo`) {
-  if (!action || typeof action !== 'object') {
-    navigate(fallback);
-    return;
-  }
-  if (action.type === 'url' && action.url) {
-    window.open(action.url, '_blank');
-    return;
-  }
-  if (action.type === 'product' && action.productId) {
-    navigate(`/tienda/${slug}/producto/${action.productId}`);
-    return;
-  }
-  if (action.type === 'category' && action.categoryName) {
-    navigate(`/tienda/${slug}/catalogo?category=${encodeURIComponent(action.categoryName)}`);
-    return;
-  }
-  if (action.type === 'search' && action.search) {
-    navigate(`/tienda/${slug}/catalogo?search=${encodeURIComponent(action.search)}`);
-    return;
-  }
-  if (action.type === 'none') return;
-  navigate(fallback);
-}
+/** Enlace configurable de un bloque del home (claves planas del editor o formato viejo). */
+export const antojoAction = irAAccionConfigurada;
 
 function storeName(tienda: any, diseno: any) {
   return diseno?.antojoLogoText || tienda?.nombreComercial || tienda?.razonSocial || tienda?.nombre || 'Antojería';
@@ -143,6 +123,7 @@ export function AntojoHeader({
   overlay?: boolean;
 }) {
   const name = storeName(tienda, diseno);
+  const ir = useIrEnTienda(slug, diseno);
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
 
   return (
@@ -161,7 +142,7 @@ export function AntojoHeader({
         >
           <button
             type="button"
-            onClick={() => (window.location.href = `/tienda/${slug}`)}
+            onClick={() => ir(`/tienda/${slug}`)}
             title={name}
             className="group relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full text-white shadow-md transition-transform hover:scale-105 md:h-[54px] md:w-[54px]"
             style={{ background: `linear-gradient(135deg, ${ANTOJO.orange}, ${cp || ANTOJO.tomato})` }}
@@ -172,20 +153,20 @@ export function AntojoHeader({
               <span className="text-lg font-black md:text-2xl">{name.charAt(0).toUpperCase()}</span>
             )}
           </button>
-          <a href={`/tienda/${slug}`} className="rounded-full px-3 py-2.5 text-xs font-black text-white md:px-5 md:py-3 md:text-sm" style={{ backgroundColor: cp || ANTOJO.tomato }}>
+          <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2.5 text-xs font-black text-white md:px-5 md:py-3 md:text-sm" style={{ backgroundColor: cp || ANTOJO.tomato }}>
             Inicio
-          </a>
-          <a href={`/tienda/${slug}/catalogo`} className="rounded-full px-3 py-2.5 text-xs font-black text-neutral-800 hover:bg-orange-50 md:px-4 md:py-3 md:text-sm">
+          </EnlaceTienda>
+          <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2.5 text-xs font-black text-neutral-800 hover:bg-orange-50 md:px-4 md:py-3 md:text-sm">
             Carta
-          </a>
-          <a href={`/tienda/${slug}/contacto`} className="hidden rounded-full px-3 py-2.5 text-xs font-black text-neutral-800 hover:bg-orange-50 sm:block md:px-4 md:py-3 md:text-sm">
+          </EnlaceTienda>
+          <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="hidden rounded-full px-3 py-2.5 text-xs font-black text-neutral-800 hover:bg-orange-50 sm:block md:px-4 md:py-3 md:text-sm">
             Contacto
-          </a>
+          </EnlaceTienda>
           <div className="hidden items-center gap-1 lg:flex">
             {categories.map((category) => (
-              <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="rounded-full px-4 py-3 text-sm font-black text-neutral-800 hover:bg-orange-50">
+              <EnlaceTienda key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} slug={slug} diseno={diseno} className="rounded-full px-4 py-3 text-sm font-black text-neutral-800 hover:bg-orange-50">
                 {category}
-              </a>
+              </EnlaceTienda>
             ))}
           </div>
           <form
@@ -210,7 +191,7 @@ export function AntojoHeader({
           </form>
           <button
             type="button"
-            onClick={() => (window.location.href = `/tienda/${slug}/catalogo`)}
+            onClick={() => ir(`/tienda/${slug}/catalogo`)}
             className="ml-auto rounded-full p-2 text-neutral-800 hover:bg-orange-50 md:hidden"
             title="Buscar"
           >
@@ -260,21 +241,21 @@ export function AntojoFooter({ tienda, slug, diseno, cp, categories = [] }: { ti
           <div className="space-y-3 text-sm font-semibold text-white/60">
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block hover:text-white">
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} slug={slug} diseno={diseno} className="block hover:text-white">
                   {cat}
-                </a>
+                </EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block hover:text-white">Ver toda la carta</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block hover:text-white">Ver toda la carta</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-sm font-black uppercase tracking-[0.16em]" style={{ color: ANTOJO.orange }}>Ayuda</h4>
           <div className="space-y-3 text-sm font-semibold text-white/60">
-            <a href={`/tienda/${slug}/seguimiento`} className="block hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block hover:text-white">Carta completa</a>
-            <a href={`/tienda/${slug}/contacto`} className="block hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="block hover:text-white">Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block hover:text-white">Carta completa</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="block hover:text-white">Contacto</EnlaceTienda>
           </div>
         </div>
         <div>

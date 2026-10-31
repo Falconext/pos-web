@@ -16,6 +16,7 @@ import {
 } from './HoodieParts';
 import { SectionHeader, ProductGrid, GridSkeleton, ProductRail, OfferCountdown, RealReviews, soonestOfferEnd, storeChannels, getName, hasImage, type OpenFn, type AddFn } from './HoodieSections';
 import { hdEase, hdHeroText, hdItem, hdReveal, hdStagger, hdViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const HOME_PAGE_SIZE = 30; // límite de productos que carga [slug].tsx para el home
 const u = (id: string, w = 1400) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -54,7 +55,7 @@ export default function HoodieHomePage(props: TemplateHomePageProps) {
   // Índice: todas las categorías reales con su foto (bloque del editor > categoría > producto real).
   const exact = list.length < HOME_PAGE_SIZE;
   const index = useMemo(() => categories.slice(0, 10).map((name) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === name.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, name);
     const tile = tiles.find((x) => x.nombre.toLowerCase() === name.toLowerCase() && !x.placeholder);
     const img = (tile && tile.imagenUrl) || withImg.find(same)?.imagenUrl || '';
     return { name, img, count: exact ? list.filter(same).length : 0 };

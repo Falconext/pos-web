@@ -5,15 +5,19 @@ import type { TemplateHomePageProps } from '@/templates/shared/types';
 import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import { SPA, SpaFooter, SpaHeader, SpaProductCard, SpaProductImage, SpaWhatsAppFab, spaFont, spaPrimary, storeName, waLink, withAlpha } from './SpaParts';
 import { spaCard, spaFade, spaPage, spaSection, spaStagger, spaTap, spaViewport } from './motion';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { bloquesConDestino } from '@/templates/shared/destinoBloque';
+import { SPA_SERVICIOS } from './menuSpa';
 
-const navigate = (to: string) => { window.location.href = to; };
+/** Tarjeta animada que navega sin recargar la página. */
+const MotionEnlace = motion.create(EnlaceTienda);
 
-/** Servicios estrella del spa (enlazan al catálogo por búsqueda). */
+/** Servicios estrella del spa: descripción, ícono e imagen (texto y destino en `SPA_SERVICIOS`). */
 const SERVICES = [
-  { label: 'Faciales & Skincare', desc: 'Limpieza profunda, antiedad e hidratación.', icon: 'mdi:face-woman-shimmer', q: 'facial', img: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=600&q=80' },
-  { label: 'Masajes & Corporales', desc: 'Relajantes, descontracturantes y spa.', icon: 'mdi:spa-outline', q: 'masaje', img: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=600&q=80' },
-  { label: 'Uñas · Mani & Pedi', desc: 'Nail art y esmaltado semipermanente.', icon: 'solar:hand-stars-bold', q: 'uñas', img: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80' },
-  { label: 'Cabello & Maquillaje', desc: 'Color, peinado y makeup profesional.', icon: 'mdi:content-cut', q: 'cabello', img: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80' },
+  { desc: 'Limpieza profunda, antiedad e hidratación.', icon: 'mdi:face-woman-shimmer', img: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?auto=format&fit=crop&w=600&q=80' },
+  { desc: 'Relajantes, descontracturantes y spa.', icon: 'mdi:spa-outline', img: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=600&q=80' },
+  { desc: 'Nail art y esmaltado semipermanente.', icon: 'solar:hand-stars-bold', img: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=600&q=80' },
+  { desc: 'Color, peinado y makeup profesional.', icon: 'mdi:content-cut', img: 'https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=600&q=80' },
 ];
 
 const RITUAL = [
@@ -80,6 +84,17 @@ export default function SpaHomePage({
   const name = storeName(tienda, diseno);
   const featured = productos.slice(0, 8);
   const heroImg = diseno?.spaHeroImage || 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=900&q=80';
+  const ir = useIrEnTienda(slug, diseno);
+  const servicios = bloquesConDestino(SPA_SERVICIOS, { diseno, slug, categorias: allCategories }).map((b) => {
+    const base = SERVICES[b.indice];
+    const n = b.indice + 1;
+    return {
+      ...b,
+      icon: base.icon,
+      desc: String(diseno?.[`spaService${n}Desc`] || '').trim() || base.desc,
+      img: String(diseno?.[`spaService${n}Image`] || '').trim() || base.img,
+    };
+  });
 
   return (
     <motion.div initial="hidden" animate="show" variants={spaPage} className="min-h-screen" style={{ backgroundColor: SPA.cream, fontFamily: font }}>
@@ -102,7 +117,7 @@ export default function SpaHomePage({
         allCategories={allCategories}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
+          ir(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
         }}
       />
 
@@ -133,9 +148,9 @@ export default function SpaHomePage({
                 >
                   Reservar mi cita <Icon icon="solar:arrow-right-linear" width={16} />
                 </motion.a>
-                <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-7 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-800 transition-colors hover:border-neutral-900">
+                <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-7 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-800 transition-colors hover:border-neutral-900">
                   <Icon icon="solar:bag-4-linear" width={16} /> Ver tienda
-                </a>
+                </EnlaceTienda>
               </div>
               <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
                 {[['solar:check-circle-bold', 'Productos premium'], ['solar:medal-ribbon-bold', 'Especialistas certificados'], ['solar:heart-bold', 'Trato personalizado']].map(([icon, label]) => (
@@ -181,12 +196,15 @@ export default function SpaHomePage({
             <p className="mx-auto mt-4 max-w-xl text-sm text-neutral-500">Cada tratamiento combina técnica profesional, productos de alta gama y un ambiente diseñado para desconectar.</p>
           </div>
           <motion.div variants={spaStagger} className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-            {SERVICES.map((s) => (
-              <motion.a
-                key={s.label}
+            {servicios.map((s) => (
+              <MotionEnlace
+                key={s.key}
                 variants={spaCard}
                 whileHover={{ y: -8 }}
-                href={`/tienda/${slug}/catalogo?search=${encodeURIComponent(s.q)}`}
+                href={s.href}
+                slug={slug}
+                diseno={diseno}
+                {...(s.externo ? { target: '_blank', rel: 'noreferrer' } : {})}
                 className="group relative flex aspect-[3/4] flex-col justify-end overflow-hidden rounded-3xl shadow-sm"
               >
                 <img src={s.img} alt={s.label} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.07]" />
@@ -201,7 +219,7 @@ export default function SpaHomePage({
                     Reservar <Icon icon="solar:arrow-right-linear" width={14} className="transition-transform group-hover:translate-x-1" />
                   </span>
                 </div>
-              </motion.a>
+              </MotionEnlace>
             ))}
           </motion.div>
         </motion.section>
@@ -252,9 +270,9 @@ export default function SpaHomePage({
               <Eyebrow color={primary}>Tienda virtual</Eyebrow>
               <h2 className="mt-4 text-3xl md:text-4xl" style={{ fontFamily: SPA.serif, color: SPA.ink }}>Belleza para llevar a casa</h2>
             </div>
-            <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] hover:opacity-70" style={{ color: SPA.ink }}>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] hover:opacity-70" style={{ color: SPA.ink }}>
               Ver todo <Icon icon="solar:arrow-right-linear" width={15} />
-            </a>
+            </EnlaceTienda>
           </div>
           {loading ? (
             <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
@@ -265,7 +283,7 @@ export default function SpaHomePage({
           ) : (
             <motion.div variants={spaStagger} className="grid grid-cols-2 gap-6 lg:grid-cols-4">
               {featured.map((producto) => (
-                <SpaProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+                <SpaProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
               ))}
             </motion.div>
           )}
@@ -385,9 +403,9 @@ export default function SpaHomePage({
               <a href={waLink(tienda, `Hola ${name}, quiero reservar una cita`)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full px-8 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-lg" style={{ backgroundColor: '#25D366' }}>
                 <Icon icon="mdi:whatsapp" width={18} /> Reservar por WhatsApp
               </a>
-              <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-2 rounded-full border border-neutral-400/50 px-8 py-4 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: SPA.espresso }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex items-center gap-2 rounded-full border border-neutral-400/50 px-8 py-4 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: SPA.espresso }}>
                 Comprar productos
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.div>
         </section>
@@ -420,7 +438,7 @@ export default function SpaHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

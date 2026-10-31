@@ -20,6 +20,7 @@ import {
 import { ProductRail, GridSkeleton, SectionHeader, OfferCountdown, soonestOfferEnd, storeChannels, getName, hasImage, type OpenFn, type AddFn } from './PetalaSections';
 import { announceAdded, useStoreTotal } from './PetalaExtras';
 import { flEase, flHeroText, flItem, flReveal, flStagger, flViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -42,7 +43,7 @@ export default function PetalaHomePage(props: TemplateHomePageProps) {
   }, [list, withImg]);
   const offers = useMemo(() => list.filter((p) => getProductPricing(p).enOferta), [list]);
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'floreria', count: 8, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);
@@ -356,7 +357,7 @@ function BouquetBuilder({ t, diseno, slug, categories, list, onAdd, onOpen }: { 
     if (!step) return;
     let alive = true;
     if (!slug || slug === 'preview') {
-      setOptions(list.filter((p) => norm(getName(p?.categoria)) === norm(step.category)).slice(0, 24));
+      setOptions(list.filter((p) => productoEnCategoria(p, step.category)).slice(0, 24));
       return;
     }
     setLoading(true);
@@ -403,7 +404,7 @@ function BouquetBuilder({ t, diseno, slug, categories, list, onAdd, onOpen }: { 
         <div className="flex gap-1.5 overflow-x-auto rounded-[20px] bg-white/70 p-2 backdrop-blur [scrollbar-width:none] lg:flex-col lg:overflow-visible [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Pasos para armar tu ramo">
           {steps.map((st, i) => {
             const on = i === active;
-            const n = items.filter((it) => norm(getName(it.producto?.categoria)) === norm(st.category)).reduce((s, it) => s + it.qty, 0);
+            const n = items.filter((it) => productoEnCategoria(it.producto, st.category)).reduce((s, it) => s + it.qty, 0);
             return (
               <button key={st.key} type="button" role="tab" aria-selected={on} onClick={() => setActive(i)} className="relative flex shrink-0 items-center gap-2.5 rounded-[14px] px-3 py-2.5 text-left text-[13px] font-medium transition-colors" style={{ color: on ? t.ink : t.muted }}>
                 {on && <motion.span layoutId="fl-builder-step" className="absolute inset-0 rounded-[14px]" style={{ background: t.blush }} transition={{ type: 'spring', stiffness: 380, damping: 32 }} />}

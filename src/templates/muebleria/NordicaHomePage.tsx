@@ -19,6 +19,7 @@ import {
   soonestOfferEnd, storeChannels, getName, hasImage, categoryIcon, type OpenFn, type AddFn,
 } from './NordicaSections';
 import { mix, ndEase, ndHeroText, ndItem, ndReveal, ndStagger, ndViewport } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const HOME_PAGE_SIZE = 30; // límite de productos que carga [slug].tsx para el home
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -56,7 +57,7 @@ export default function NordicaHomePage(props: TemplateHomePageProps) {
   const services = useMemo(() => buildServices(tienda, ch.hasWhatsapp), [tienda, ch.hasWhatsapp]);
   // Círculos de categoría: imagen del editor > de la categoría > primera foto real de un producto de esa categoría.
   const circles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'muebleria', count: 8, fallbackImages: [] }).map((tile) => {
-    const fromProduct = tile.imagenUrl ? '' : withImg.find((p) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase())?.imagenUrl || '';
+    const fromProduct = tile.imagenUrl ? '' : withImg.find((p) => productoEnCategoria(p, tile.nombre))?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);
   const productImgs = useMemo(() => withImg.map((p) => p.imagenUrl as string), [withImg]);

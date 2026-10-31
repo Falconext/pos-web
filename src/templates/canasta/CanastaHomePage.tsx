@@ -19,12 +19,13 @@ import {
 import { ProductGrid, GridSkeleton, SectionHeader, OfferCountdown, soonestOfferEnd, storeChannels, getName, hasImage, listSig, type OpenFn, type AddFn, type Channels } from './CanastaSections';
 import { announceAdded } from './CanastaExtras';
 import { caEase, caHeroText, caItem, caReveal, caStagger, caViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 /** "Frescura que|llega a tu casa" → saltos de línea (el editor es de una línea). */
 const lines = (s: string) => s.replace(/\s*\|\s*/g, '\n');
-const sameCat = (p: any, cat: string) => getName(p?.categoria).toLowerCase() === cat.toLowerCase();
+const sameCat = (p: any, cat: string) => productoEnCategoria(p, cat);
 /** Mayor descuento REAL de una lista (0 si no hay ofertas). */
 const maxDiscount = (list: any[]) => list.reduce((m, p) => { const pr = getProductPricing(p); return pr.enOferta ? Math.max(m, Number(pr.porcentajeDescuento || 0)) : m; }, 0);
 

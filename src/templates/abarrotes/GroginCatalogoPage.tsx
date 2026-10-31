@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroWhatsAppFab, groFont, groPrimary, titleCase } from './GroginParts';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 import { groCard, groPage, groSection, groStagger, groViewport } from './motion';
 
 function getName(item: any) {
@@ -11,6 +12,8 @@ function getName(item: any) {
 }
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
+  // Categoría: cuenta también los productos que la tienen como adicional.
+  if (key === 'categoria') return products.filter((product) => productoEnCategoria(product, name)).length;
   return products.filter((product) => {
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;
@@ -169,7 +172,7 @@ export default function GroginCatalogoPage({
           <section className="min-w-0">
             <div className="mb-6 flex flex-col justify-between gap-3 rounded-2xl border bg-white p-4 md:flex-row md:items-center" style={{ borderColor: GRO.line }}>
               <p className="px-1 text-sm" style={{ color: GRO.inkSoft }}>
-                <span className="font-bold" style={{ color: GRO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: GRO.ink }}>{totalLabel}</span> productos
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-bold" style={{ color: GRO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: GRO.ink }}>{totalLabel}</span> productos</>}
               </p>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="h-10 min-w-[210px] rounded-full border bg-neutral-50 px-5 text-sm font-medium outline-none" style={{ borderColor: GRO.line, color: GRO.ink }}>
                 <option value="relevance">Orden recomendado</option>

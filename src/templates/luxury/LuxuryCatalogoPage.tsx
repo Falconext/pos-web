@@ -2,6 +2,7 @@ import { type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { LUX, LuxuryFooter, LuxuryHeader, LuxuryProductCard, luxFont, luxPrimary } from './LuxuryParts';
@@ -13,6 +14,8 @@ function getName(item: any) {
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
   return products.filter((product) => {
+    // Categoría: cuenta también las categorías adicionales del producto.
+    if (key === 'categoria') return productoEnCategoria(product, name);
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;
     return String(current || '').toLowerCase() === String(name || '').toLowerCase();
@@ -209,7 +212,7 @@ export default function LuxuryCatalogoPage({
           <section className="min-w-0">
             <div className="mb-8 flex flex-col justify-between gap-4 rounded-2xl border border-black/[0.06] bg-white p-4 md:flex-row md:items-center">
               <p className="px-2 text-sm text-neutral-500">
-                <span className="font-semibold text-neutral-900">{sortedProductos.length}</span> de <span className="font-semibold text-neutral-900">{totalLabel}</span> fragancias
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-semibold text-neutral-900">{sortedProductos.length}</span> de <span className="font-semibold text-neutral-900">{totalLabel}</span> fragancias</>}
               </p>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 min-w-[210px] rounded-full border border-neutral-200 bg-neutral-50 px-5 text-sm font-medium text-neutral-600 outline-none">
                 <option value="relevance">Orden recomendado</option>

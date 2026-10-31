@@ -6,16 +6,18 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, hrefDeAccion, useIrEnTienda } from '@/components/tienda/navTienda';
 import { LUX, LuxCartModal, LuxFooter, LuxHeader, LuxProductCard, LuxWhatsAppFab, luxFont, luxPrimary } from './CarterasParts';
 import { luxCard, luxEase, luxPage, luxSection, luxStagger, luxTap, luxViewport } from './motion';
-
-const navigate = (to: string) => { window.location.href = to; };
 
 const HERO_SLIDE_FALLBACKS = [
   '/assets/templates/carteras/carterahero1.png',
   'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=1600&q=80',
   'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=1600&q=80',
 ];
+/** Tarjeta animada que navega sin recargar la página. */
+const MotionEnlace = motion.create(EnlaceTienda);
+
 const CATEGORY_FALLBACKS = [
   'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1548036328-c9fa89d128fa?auto=format&fit=crop&w=600&q=80',
@@ -50,6 +52,8 @@ interface HeroSlide {
   subtitle: string;
   button: string;
   button2?: string;
+  /** Clave del enlace del botón secundario (si el slide lo tiene). */
+  button2ActionKey?: string;
   /** true = banner solo imagen (sin textos ni botón), clickeable al destino. */
   onlyImage: boolean;
   /** Clave del enlace (categoría/producto/URL) configurable en el editor. */
@@ -67,6 +71,7 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
       subtitle: diseno?.carterasHeroSubtitle || 'Carteras y accesorios de lujo elaborados con materiales premium y atención a cada detalle.',
       button: diseno?.carterasHeroButton || 'Comprar novedades',
       button2: diseno?.carterasHeroButton2 || 'Ver colección',
+      button2ActionKey: 'carterasHeroButton2Action',
       onlyImage: Boolean(diseno?.carterasHeroOnlyImage),
       actionKey: 'carterasHeroAction',
     },
@@ -115,7 +120,8 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   const goAction = (key: string) => {
     runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
   };
-  const goCatalog = () => {
+  const goButton2 = (key?: string) => {
+    if (key) { goAction(key); return; }
     if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
     navigateRouter(`/tienda/${slug}/catalogo`);
   };
@@ -180,7 +186,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
                         </motion.button>
                       )}
                       {slide.button2 && (
-                        <button type="button" onClick={goCatalog} className="inline-flex items-center gap-2 rounded-full border px-7 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-800 transition-colors hover:border-neutral-900" style={{ borderColor: LUX.tan }}>
+                        <button type="button" onClick={() => goButton2(slide.button2ActionKey)} className="inline-flex items-center gap-2 rounded-full border px-7 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-800 transition-colors hover:border-neutral-900" style={{ borderColor: LUX.tan }}>
                           {slide.button2}
                         </button>
                       )}
@@ -261,6 +267,12 @@ export default function CarterasHomePage({
   loading,
 }: TemplateHomePageProps) {
   const primary = luxPrimary(cp);
+  const ir = useIrEnTienda(slug, diseno);
+  // Destinos de los bloques del inicio, configurables en "Personalizar tienda" (por defecto, el catálogo).
+  const destino = (key: string) => hrefDeAccion(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), slug);
+  const promoHref = destino('carterasPromoAction');
+  const clubHref = destino('carterasClubAction');
+  const externo = (href: string | null) => (href && !href.startsWith('/') ? { target: '_blank', rel: 'noreferrer' } : {});
   const font = luxFont(diseno);
   const featured = productos.slice(0, 8);
 
@@ -280,7 +292,7 @@ export default function CarterasHomePage({
         allCategories={allCategories}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
+          ir(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
         }}
       />
 
@@ -311,11 +323,13 @@ export default function CarterasHomePage({
             </div>
             <motion.div variants={luxStagger} className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
               {categoryCards.map((cat: any, i: number) => (
-                <motion.a
+                <MotionEnlace
                   key={`cat-${i}`}
                   variants={luxCard}
                   whileHover={{ y: -6 }}
                   href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
+                  slug={slug}
+                  diseno={diseno}
                   className="group relative flex aspect-[4/5] flex-col justify-end overflow-hidden rounded-2xl shadow-sm"
                 >
                   <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]" />
@@ -326,7 +340,7 @@ export default function CarterasHomePage({
                       Comprar <Icon icon="solar:arrow-right-linear" width={12} className="transition-transform group-hover:translate-x-1" />
                     </span>
                   </div>
-                </motion.a>
+                </MotionEnlace>
               ))}
             </motion.div>
           </motion.section>
@@ -336,9 +350,9 @@ export default function CarterasHomePage({
         <motion.section variants={luxSection} initial="hidden" whileInView="show" viewport={luxViewport} className="mx-auto max-w-7xl px-6 pb-16 md:pb-20">
           <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
             <h2 className="text-2xl uppercase tracking-[0.14em] md:text-3xl" style={{ fontFamily: LUX.serif, color: LUX.ink }}>{diseno?.carterasBestsellersTitle || 'Más vendidos'}</h2>
-            <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] hover:opacity-70" style={{ color: LUX.ink }}>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] hover:opacity-70" style={{ color: LUX.ink }}>
               Ver todo <Icon icon="solar:arrow-right-linear" width={15} />
-            </a>
+            </EnlaceTienda>
           </div>
           {loading ? (
             <div className="grid grid-cols-2 gap-6 lg:grid-cols-4">
@@ -349,7 +363,7 @@ export default function CarterasHomePage({
           ) : (
             <motion.div variants={luxStagger} className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
               {featured.map((producto) => (
-                <LuxProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+                <LuxProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
               ))}
             </motion.div>
           )}
@@ -366,9 +380,11 @@ export default function CarterasHomePage({
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: LUX.goldSoft }}>{diseno?.carterasPromoLabel || 'Oferta por tiempo limitado'}</p>
                 <h3 className="mt-3 text-3xl leading-tight" style={{ fontFamily: LUX.serif }}>{diseno?.carterasPromoTitle || 'Minimal look. Máximo impacto.'}</h3>
                 <p className="mt-3 text-sm text-white/70">{diseno?.carterasPromoSubtitle || 'Hasta 20% de descuento en estilos seleccionados.'}</p>
-                <a href={`/tienda/${slug}/catalogo`} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
-                  {diseno?.carterasPromoButton || 'Ver la oferta'}
-                </a>
+                {promoHref && (
+                  <EnlaceTienda href={promoHref} slug={slug} diseno={diseno} {...externo(promoHref)} className="mt-6 inline-flex rounded-full bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-900 shadow-lg transition-transform hover:-translate-y-0.5" style={{ textShadow: 'none' }}>
+                    {diseno?.carterasPromoButton || 'Ver la oferta'}
+                  </EnlaceTienda>
+                )}
               </div>
             </div>
             {/* Club / newsletter destacado */}
@@ -377,9 +393,11 @@ export default function CarterasHomePage({
                 <p className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: primary }}>{diseno?.carterasClubLabel || 'Únete a Luxora Club'}</p>
                 <h3 className="mt-3 text-3xl leading-tight" style={{ fontFamily: LUX.serif, color: LUX.ink }}>{diseno?.carterasClubTitle || 'Más beneficios. Más recompensas.'}</h3>
                 <p className="mt-3 max-w-sm text-sm text-neutral-600">{diseno?.carterasClubSubtitle || 'Regístrate hoy y disfruta de perks exclusivos, acceso anticipado y más.'}</p>
-                <a href={`/tienda/${slug}/catalogo`} className="mt-6 inline-flex rounded-full px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition-transform hover:-translate-y-0.5" style={{ backgroundColor: LUX.ink }}>
-                  {diseno?.carterasClubButton || 'Unirme ahora'}
-                </a>
+                {clubHref && (
+                  <EnlaceTienda href={clubHref} slug={slug} diseno={diseno} {...externo(clubHref)} className="mt-6 inline-flex rounded-full px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.16em] text-white transition-transform hover:-translate-y-0.5" style={{ backgroundColor: LUX.ink }}>
+                    {diseno?.carterasClubButton || 'Unirme ahora'}
+                  </EnlaceTienda>
+                )}
               </div>
               <Icon icon="solar:bag-heart-bold" className="absolute -bottom-6 -right-4 text-[10rem] opacity-10" style={{ color: LUX.ink }} />
             </div>
@@ -412,7 +430,7 @@ export default function CarterasHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

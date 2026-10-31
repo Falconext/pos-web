@@ -8,8 +8,15 @@ import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
 import { TN, TnCartModal, TnFooter, TnHeader, TnProductCard, TnWhatsAppFab, tnFont, tnPrimary } from './TonesParts';
 import { tnCard, tnEase, tnPage, tnSection, tnStagger, tnTap, tnViewport } from './motion';
+import { EnlaceTienda, hrefDeAccion, useIrEnTienda } from '@/components/tienda/navTienda';
 
-const navigate = (to: string) => { window.location.href = to; };
+const MotionEnlace = motion.create(EnlaceTienda);
+
+/** Destino de un bloque del home: el configurado en el editor o, sin configurar, `porDefecto`. */
+function hrefDeBloque(diseno: any, slug: string, key: string, porDefecto: string): string | null {
+  if (!diseno?.[`${key}Type`]) return `/tienda/${slug}${porDefecto}`;
+  return hrefDeAccion(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), slug);
+}
 
 const HERO_SLIDE_FALLBACKS = [
   'https://images.unsplash.com/photo-1519457431-44ccd64a579b?auto=format&fit=crop&w=1600&q=80',
@@ -70,16 +77,16 @@ function buildHeroSlides(diseno: any): HeroSlide[] {
 
 /* ─────────────────────────── Encabezado de sección ───────────────────────── */
 
-function SectionHead({ label, title, slug, action = 'Ver todo' }: { label?: string; title: ReactNode; slug: string; action?: string }) {
+function SectionHead({ label, title, slug, diseno, action = 'Ver todo' }: { label?: string; title: ReactNode; slug: string; diseno: any; action?: string }) {
   return (
     <div className="mb-7 flex items-end justify-between gap-4">
       <div>
         {label && <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: TN.taupe }}>{label}</p>}
         <h2 className="text-2xl lowercase tracking-[-0.01em] md:text-[30px]" style={{ fontFamily: TN.brand, fontWeight: 700, color: TN.ink }}>{title}</h2>
       </div>
-      <a href={`/tienda/${slug}/catalogo`} className="group inline-flex shrink-0 items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: TN.cocoa }}>
+      <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="group inline-flex shrink-0 items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: TN.cocoa }}>
         {action} <Icon icon="solar:arrow-right-linear" width={16} className="transition-transform group-hover:translate-x-1" />
-      </a>
+      </EnlaceTienda>
     </div>
   );
 }
@@ -220,6 +227,10 @@ export default function TonesHomePage({
   // Bloques de categoría configurables desde el editor (categoría/título/imagen);
   // sin configurar, se rellenan con las categorías reales de la tienda.
   const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'tones', count: 6, fallbackImages: [], });
+  const navigate = useIrEnTienda(slug, diseno);
+  // "Lo nuevo…" va a las novedades; el banner "Esenciales" al catálogo. Ambos configurables.
+  const featureHref = hrefDeBloque(diseno, slug, 'tonesFeatureAction', '/catalogo?sort=new');
+  const bannerHref = hrefDeBloque(diseno, slug, 'tonesBannerAction', '/catalogo');
 
   return (
     <motion.div initial="hidden" animate="show" variants={tnPage} className="min-h-screen" style={{ backgroundColor: TN.cream, fontFamily: font }}>
@@ -243,7 +254,7 @@ export default function TonesHomePage({
 
         {/* ── Nuestros favoritos ───────────────────────────────────────────── */}
         <motion.section variants={tnSection} initial="hidden" whileInView="show" viewport={tnViewport} className="mx-auto max-w-[1240px] px-4 py-12 md:px-6 md:py-14">
-          <SectionHead label={diseno?.tonesFavoritesLabel || 'Selección'} title={diseno?.tonesFavoritesTitle || 'nuestros favoritos'} slug={slug} />
+          <SectionHead label={diseno?.tonesFavoritesLabel || 'Selección'} title={diseno?.tonesFavoritesTitle || 'nuestros favoritos'} slug={slug} diseno={diseno} />
           {loading ? (
             <div className="grid grid-cols-2 gap-5 lg:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => <div key={i} className="aspect-[4/5] animate-pulse rounded-[20px] bg-black/[0.05]" />)}
@@ -286,14 +297,16 @@ export default function TonesHomePage({
         {/* ── Por categoría ────────────────────────────────────────────────── */}
         {categoryCards.length > 0 && (
           <motion.section variants={tnSection} initial="hidden" whileInView="show" viewport={tnViewport} className="mx-auto max-w-[1240px] px-4 pb-12 md:px-6 md:pb-14">
-            <SectionHead label={diseno?.tonesCategoriesLabel || 'Explora'} title={diseno?.tonesCategoriesTitle || 'por categoría'} slug={slug} />
+            <SectionHead label={diseno?.tonesCategoriesLabel || 'Explora'} title={diseno?.tonesCategoriesTitle || 'por categoría'} slug={slug} diseno={diseno} />
             <motion.div variants={tnStagger} className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
               {categoryCards.map((cat: any, i: number) => (
-                <motion.a
+                <MotionEnlace
                   key={`cat-${i}`}
                   variants={tnCard}
                   whileHover={{ y: -5 }}
                   href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
+                  slug={slug}
+                  diseno={diseno}
                   className="group flex flex-col items-center gap-3 rounded-[18px] border p-4 text-center transition-colors hover:border-transparent"
                   style={{ backgroundColor: TN.panel, borderColor: TN.line }}
                 >
@@ -305,7 +318,7 @@ export default function TonesHomePage({
                     )}
                   </span>
                   <span className="line-clamp-1 text-[11px] font-bold uppercase tracking-[0.08em]" style={{ color: TN.ink }}>{cat.label}</span>
-                </motion.a>
+                </MotionEnlace>
               ))}
             </motion.div>
           </motion.section>
@@ -314,9 +327,14 @@ export default function TonesHomePage({
         {/* ── Feature + productos ──────────────────────────────────────────── */}
         <motion.section variants={tnStagger} initial="hidden" whileInView="show" viewport={tnViewport} className="mx-auto max-w-[1240px] px-4 pb-12 md:px-6 md:pb-14">
           <div className="grid gap-5 lg:grid-cols-[1fr_1fr]">
-            <motion.a
+            <MotionEnlace
               variants={tnCard}
-              href={`/tienda/${slug}/catalogo`}
+              href={featureHref || '#'}
+              slug={slug}
+              diseno={diseno}
+              onClick={(e) => { if (!featureHref) e.preventDefault(); }}
+              target={featureHref && !featureHref.startsWith('/') ? '_blank' : undefined}
+              rel={featureHref && !featureHref.startsWith('/') ? 'noreferrer' : undefined}
               className="group relative flex h-[340px] flex-col justify-end overflow-hidden rounded-[24px] lg:h-auto lg:min-h-[420px]"
               style={{ backgroundColor: TN.sand }}
             >
@@ -329,7 +347,7 @@ export default function TonesHomePage({
                   {diseno?.tonesFeatureButton || 'Comprar ahora'} <Icon icon="solar:arrow-right-linear" width={14} />
                 </span>
               </div>
-            </motion.a>
+            </MotionEnlace>
 
             <div className="grid grid-cols-2 gap-5">
               {featurePair.length > 0 ? featurePair.map((producto) => (
@@ -347,8 +365,13 @@ export default function TonesHomePage({
 
         {/* ── Banner ancho ─────────────────────────────────────────────────── */}
         <motion.section variants={tnSection} initial="hidden" whileInView="show" viewport={tnViewport} className="mx-auto max-w-[1240px] px-4 pb-14 md:px-6 md:pb-16">
-          <a
-            href={`/tienda/${slug}/catalogo`}
+          <EnlaceTienda
+            href={bannerHref || '#'}
+            slug={slug}
+            diseno={diseno}
+            onClick={(e) => { if (!bannerHref) e.preventDefault(); }}
+            target={bannerHref && !bannerHref.startsWith('/') ? '_blank' : undefined}
+            rel={bannerHref && !bannerHref.startsWith('/') ? 'noreferrer' : undefined}
             className="group relative flex h-[280px] items-end overflow-hidden rounded-[26px] md:h-[360px]"
             style={{ backgroundColor: TN.nude }}
           >
@@ -361,7 +384,7 @@ export default function TonesHomePage({
                 {diseno?.tonesBannerButton || 'Comprar ahora'} <Icon icon="solar:arrow-right-linear" width={14} />
               </span>
             </div>
-          </a>
+          </EnlaceTienda>
         </motion.section>
       </main>
 
@@ -374,7 +397,7 @@ export default function TonesHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => navigate(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

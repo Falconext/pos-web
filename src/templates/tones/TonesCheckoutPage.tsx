@@ -6,6 +6,7 @@ import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationMod
 import { TN, TnFooter, TnHeader, TnProductImage, TnWhatsAppFab, tnFont, tnPrimary } from './TonesParts';
 import { tnCard, tnPage, tnSection, tnStagger, tnTap, tnViewport } from './motion';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 
 function money(value: number) {
   return `S/ ${Number(value || 0).toFixed(2)}`;
@@ -55,6 +56,7 @@ export default function TonesCheckoutPage(props: TemplateCheckoutPageProps) {
   const canSubmit = !enviando && carritoState.length > 0;
   const deliveryType = formData.tipoEntrega || 'RECOJO';
   const ocultarEnvio = Boolean(diseno?.tonesOcultarEnvio);
+  const ir = useIrEnTienda(slug, diseno);
 
   return (
     <motion.div
@@ -70,19 +72,19 @@ export default function TonesCheckoutPage(props: TemplateCheckoutPageProps) {
         cp={primary}
         diseno={diseno}
         carritoSize={cartCount}
-        onOpenCart={() => (window.location.href = `/tienda/${slug}/catalogo`)}
+        onOpenCart={() => ir(`/tienda/${slug}/catalogo`)}
         searchQuery={search}
         setSearchQuery={setSearch}
         allCategories={[]}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          if (value?.trim()) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`;
+          if (value?.trim()) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`);
         }}
       />
 
       <section className="mx-auto max-w-[1240px] px-4 pt-10 md:px-6 md:pt-12">
         <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-neutral-400">
-          <a href={`/tienda/${slug}`} className="hover:text-neutral-900">Inicio</a>
+          <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="hover:text-neutral-900">Inicio</EnlaceTienda>
           <span className="mx-2">/</span>
           <span className="text-neutral-600">Finalizar compra</span>
         </div>
@@ -179,7 +181,7 @@ export default function TonesCheckoutPage(props: TemplateCheckoutPageProps) {
                     <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: TN.taupe }}>Combina el look</p>
                     <h2 className="text-2xl lowercase" style={{ fontFamily: TN.brand, fontWeight: 700, color: TN.ink }}>también te encantará</h2>
                   </div>
-                  <a href={`/tienda/${slug}/catalogo`} className="text-xs font-bold uppercase tracking-[0.12em] hover:opacity-70" style={{ color: TN.cocoa }}>Ver todo</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="text-xs font-bold uppercase tracking-[0.12em] hover:opacity-70" style={{ color: TN.cocoa }}>Ver todo</EnlaceTienda>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {suggestedProducts.slice(0, 3).map((producto) => (
@@ -217,7 +219,7 @@ export default function TonesCheckoutPage(props: TemplateCheckoutPageProps) {
                 <div className="my-6 rounded-2xl bg-white p-8 text-center">
                   <Icon icon="solar:bag-cross-linear" className="mx-auto text-4xl text-neutral-300" />
                   <p className="mt-3 text-sm font-medium text-neutral-500">Tu carrito está vacío.</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white" style={{ backgroundColor: TN.cocoa }}>Ver tienda</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="mt-5 inline-flex rounded-full px-5 py-3 text-[11px] font-bold uppercase tracking-[0.12em] text-white" style={{ backgroundColor: TN.cocoa }}>Ver tienda</EnlaceTienda>
                 </div>
               ) : (
                 carritoState.map((item) => {

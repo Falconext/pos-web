@@ -7,6 +7,7 @@ import ProductCardActions from '@/components/tienda/ProductCardActions';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 
 import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
+import { useIrEnTienda } from '@/components/tienda/navTienda';
 // ── Design tokens (paleta verde médico "MediCare", editable vía Personalizar) ──
 export const fmMoney = (v: any) => `S/ ${Number(v || 0).toFixed(2)}`;
 export const editable = (v: any, fallback: string) => String(v || '').trim() || fallback;
@@ -57,8 +58,10 @@ export function Stars({ rating = 0, count, size = 14 }: { rating?: number; count
 
 // ─────────────────────────────────────────────────────────────── Header ──
 export function FarmaciaHeader({
-  tienda, slug, diseno, categories, t, cartCount, favCount, onOpenCart, onOpenFav, onSearch, navigate,
+  tienda, slug, diseno, categories, t, cartCount, favCount, onOpenCart, onOpenFav, onSearch,
 }: any) {
+  // Sin recarga y respetando la vista previa (slug `preview` / ?previewPlantilla).
+  const navigate = useIrEnTienda(slug, diseno);
   const [q, setQ] = useState('');
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'MediCare';
   const phone = formatPhone(tienda?.whatsappTienda || tienda?.telefono); // sin número inventado: si no hay, se oculta
@@ -155,7 +158,8 @@ export function FarmaciaHeader({
 }
 
 // ─────────────────────────────────────────────────────────────── Footer ──
-export function FarmaciaFooter({ tienda, slug, diseno, t, categories, navigate }: any) {
+export function FarmaciaFooter({ tienda, slug, diseno, t, categories }: any) {
+  const navigate = useIrEnTienda(slug, diseno);
   const storeName = tienda?.nombreComercial || tienda?.nombre || tienda?.razonSocial || 'MediCare';
   const phone = formatPhone(tienda?.whatsappTienda || tienda?.telefono); // sin número inventado: si no hay, se oculta
   // Solo enlaces a páginas que existen (nada de "términos" o "programas" inventados).

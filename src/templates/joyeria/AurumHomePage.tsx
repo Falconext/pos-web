@@ -6,10 +6,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, hrefDeAccion, useIrEnTienda } from '@/components/tienda/navTienda';
 import { AUR, AurCartModal, AurFooter, AurHeader, AurProductCard, AurWhatsAppFab, aurFont, aurPrimary } from './AurumParts';
 import { aurCard, aurEase, aurPage, aurSection, aurStagger, aurViewport } from './motion';
-
-const navigate = (to: string) => { window.location.href = to; };
 
 const HERO_SLIDE_FALLBACKS = [
   'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1600&q=80',
@@ -23,6 +22,9 @@ const TILE_FALLBACKS = [
   'https://images.unsplash.com/photo-1602173574767-37ac01994b2a?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1518131672697-613becd4fab5?auto=format&fit=crop&w=600&q=80',
 ];
+/** Tarjeta animada que navega sin recargar la página. */
+const MotionEnlace = motion.create(EnlaceTienda);
+
 const TILE_TINTS = ['#F3E7D8', '#EFE9DC', '#F1E4E0', '#E6ECE7', '#F0EAD6'];
 const STORY_FALLBACKS = [
   'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=800&q=80',
@@ -44,7 +46,7 @@ const COMING_SOON = [
 
 /* ─────────────────────────── Helpers de sección ─────────────────────────── */
 
-function SectionHead({ title, sub, action, slug }: { title: string; sub?: string; action?: string; slug?: string }) {
+function SectionHead({ title, sub, action, slug, diseno }: { title: string; sub?: string; action?: string; slug?: string; diseno?: any }) {
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
       <div>
@@ -52,9 +54,9 @@ function SectionHead({ title, sub, action, slug }: { title: string; sub?: string
         {sub && <p className="mt-1.5 text-sm text-neutral-500">{sub}</p>}
       </div>
       {action && slug && (
-        <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1 rounded-full border px-4 py-2 text-[12px] font-semibold transition-colors hover:bg-white" style={{ borderColor: AUR.line, color: AUR.ink }}>
+        <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex items-center gap-1 rounded-full border px-4 py-2 text-[12px] font-semibold transition-colors hover:bg-white" style={{ borderColor: AUR.line, color: AUR.ink }}>
           {action} <Icon icon="solar:arrow-right-linear" width={14} />
-        </a>
+        </EnlaceTienda>
       )}
     </div>
   );
@@ -289,12 +291,19 @@ export default function AurumHomePage({
   const categoryCards = buildCategoryTiles({ allCategories, diseno, prefix: 'joyeria', count: 5, fallbackImages: TILE_FALLBACKS, });
 
   const boards = chunk4(productos);
-  const goSearch = (value: string) => navigate(`/tienda/${slug}/catalogo${value.trim() ? `?search=${encodeURIComponent(value.trim())}` : ''}`);
+  const ir = useIrEnTienda(slug, diseno);
+  const goSearch = (value: string) => ir(`/tienda/${slug}/catalogo${value.trim() ? `?search=${encodeURIComponent(value.trim())}` : ''}`);
+  // Destinos de los bloques del inicio, configurables en "Personalizar tienda" (por defecto, el catálogo).
+  const destino = (key: string) => hrefDeAccion(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), slug);
+  const promoHref = destino('joyeriaPromoAction');
+  const boardsHref = destino('joyeriaBoardsAction');
+  const clubHref = destino('joyeriaClubAction');
+  const externo = (href: string | null) => (href && !href.startsWith('/') ? { target: '_blank', rel: 'noreferrer' } : {});
 
   const renderRow = (items: any[], key: string) => (
     <motion.div variants={aurStagger} className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {items.map((producto, i) => (
-        <AurProductCard key={`${key}-${producto.id ?? i}`} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+        <AurProductCard key={`${key}-${producto.id ?? i}`} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
       ))}
     </motion.div>
   );
@@ -340,6 +349,7 @@ export default function AurumHomePage({
             sub="selección del mes · lo más nuevo · bajo S/100 · para regalar"
             action="ver todo"
             slug={slug}
+            diseno={diseno}
           />
           {loading ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -358,11 +368,13 @@ export default function AurumHomePage({
             </div>
             <motion.div variants={aurStagger} className="grid grid-cols-3 gap-3 md:grid-cols-5 md:gap-4">
               {categoryCards.map((cat: any, i: number) => (
-                <motion.a
+                <MotionEnlace
                   key={`cat-${i}`}
                   variants={aurCard}
                   whileHover={{ y: -5 }}
                   href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
+                  slug={slug}
+                  diseno={diseno}
                   className="group flex flex-col overflow-hidden rounded-2xl border bg-white p-2"
                   style={{ borderColor: AUR.line }}
                 >
@@ -370,7 +382,7 @@ export default function AurumHomePage({
                     <img src={cat.imagenUrl || cat.imagen || TILE_FALLBACKS[i % TILE_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-[900ms] ease-out group-hover:scale-[1.08]" />
                   </div>
                   <span className="px-1.5 py-2.5 text-[13px] font-semibold capitalize" style={{ color: AUR.ink }}>{cat.label}</span>
-                </motion.a>
+                </MotionEnlace>
               ))}
             </motion.div>
           </motion.section>
@@ -383,9 +395,11 @@ export default function AurumHomePage({
               <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: AUR.gold }}>{diseno?.joyeriaPromoLabel || 'servicio exclusivo'}</p>
               <h3 className="mt-3 text-3xl font-bold lowercase leading-tight md:text-4xl" style={{ fontFamily: AUR.serif, color: AUR.ink }}>{diseno?.joyeriaPromoTitle || 'grabado personalizado'}</h3>
               <p className="mt-3 max-w-md text-sm leading-relaxed text-neutral-600">{diseno?.joyeriaPromoSubtitle || 'grabamos iniciales, fechas y mensajes en tu joya sin costo adicional. una pieza única, tan tuya como tu historia.'}</p>
-              <a href={`/tienda/${slug}/catalogo`} className="mt-6 inline-flex w-fit items-center gap-2 rounded-full px-6 py-3 text-[12px] font-bold transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary, color: AUR.ink }}>
-                {diseno?.joyeriaPromoButton || 'descubrir'} <Icon icon="solar:arrow-right-linear" width={15} />
-              </a>
+              {promoHref && (
+                <EnlaceTienda href={promoHref} slug={slug} diseno={diseno} {...externo(promoHref)} className="mt-6 inline-flex w-fit items-center gap-2 rounded-full px-6 py-3 text-[12px] font-bold transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary, color: AUR.ink }}>
+                  {diseno?.joyeriaPromoButton || 'descubrir'} <Icon icon="solar:arrow-right-linear" width={15} />
+                </EnlaceTienda>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[diseno?.joyeriaPromoImage || STORY_FALLBACKS[0], STORY_FALLBACKS[1]].map((src, i) => (
@@ -415,10 +429,13 @@ export default function AurumHomePage({
             <SectionHead title="colecciones que te van a encantar" sub="curadurías de nuestras piezas favoritas" />
             <div className="flex snap-x gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {boards.map((board, bi) => (
-                <motion.a
+                <MotionEnlace
                   key={bi}
                   variants={aurCard}
-                  href={`/tienda/${slug}/catalogo`}
+                  href={boardsHref || `/tienda/${slug}/catalogo`}
+                  slug={slug}
+                  diseno={diseno}
+                  {...externo(boardsHref)}
                   className="group w-[240px] shrink-0 snap-start rounded-2xl border bg-white p-3 transition-shadow hover:shadow-[0_22px_44px_-26px_rgba(29,27,23,0.5)]"
                   style={{ borderColor: AUR.line }}
                 >
@@ -436,7 +453,7 @@ export default function AurumHomePage({
                     </div>
                     <span className="rounded-full border px-3 py-1 text-[10px] font-bold" style={{ borderColor: AUR.line, color: AUR.ink }}>ver</span>
                   </div>
-                </motion.a>
+                </MotionEnlace>
               ))}
             </div>
           </motion.section>
@@ -449,9 +466,11 @@ export default function AurumHomePage({
               <p className="text-[11px] font-bold uppercase tracking-[0.18em]" style={{ color: primary }}>{diseno?.joyeriaClubLabel || 'artesanía'}</p>
               <h3 className="mt-3 text-3xl font-bold lowercase leading-tight text-white md:text-4xl" style={{ fontFamily: AUR.serif }}>{diseno?.joyeriaClubTitle || 'donde nace cada joya'}</h3>
               <p className="mt-3 max-w-md text-sm leading-relaxed text-white/65">{diseno?.joyeriaClubSubtitle || 'nuestros maestros joyeros funden, tallan y pulen cada pieza a mano. tradición y técnica en cada detalle.'}</p>
-              <a href={`/tienda/${slug}/catalogo`} className="mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-[12px] font-bold transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary, color: AUR.ink }}>
-                {diseno?.joyeriaClubButton || 'ver colección'} <Icon icon="solar:arrow-right-linear" width={15} />
-              </a>
+              {clubHref && (
+                <EnlaceTienda href={clubHref} slug={slug} diseno={diseno} {...externo(clubHref)} className="mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-[12px] font-bold transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary, color: AUR.ink }}>
+                  {diseno?.joyeriaClubButton || 'ver colección'} <Icon icon="solar:arrow-right-linear" width={15} />
+                </EnlaceTienda>
+              )}
             </div>
             <div className="relative h-full min-h-[280px]">
               <img src={STORY_FALLBACKS[1]} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
@@ -497,7 +516,7 @@ export default function AurumHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

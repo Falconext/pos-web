@@ -1,6 +1,6 @@
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
@@ -8,6 +8,9 @@ import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { getFashionColors, getFashionColorGallery } from '@/templates/urbano/fashionVariants';
 import { minEase, minSection, minViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { useCategoriasTienda } from '@/templates/shared/enlacesTienda';
+import { MODA_MINIMAL_MENU } from './menu';
 
 /**
  * Identidad visual de la plantilla "Norda" (moda & calzado minimalista, estilo Everlane).
@@ -216,22 +219,22 @@ export function MinHeader({
   const cats = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
   const announcement = diseno?.modaMinimalAnnouncement || 'Envío gratis en pedidos desde S/ 199';
 
+  const ir = useIrEnTienda(slug, diseno);
   const goProduct = (id: any) => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    window.location.href = `/tienda/${slug}/producto/${id}`;
+    setOpenFavs(false);
+    ir(`/tienda/${slug}/producto/${id}`);
   };
-  const navGo = (path: string, kind: 'catalogo' | 'contacto') => {
-    if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: kind })); return; }
-    window.location.href = path;
+  const navGo = (path: string, externo = false) => {
+    if (externo) { window.open(path, '_blank', 'noopener,noreferrer'); return; }
+    ir(path);
   };
 
-  const NAV = [
-    { label: diseno?.modaMinimalNav1 || 'Novedades', path: `/tienda/${slug}/catalogo`, kind: 'catalogo' as const },
-    { label: diseno?.modaMinimalNav2 || 'Ropa', path: `/tienda/${slug}/catalogo`, kind: 'catalogo' as const },
-    { label: diseno?.modaMinimalNav3 || 'Calzado', path: `/tienda/${slug}/catalogo`, kind: 'catalogo' as const },
-    { label: diseno?.modaMinimalNav4 || 'Colección', path: `/tienda/${slug}/catalogo`, kind: 'catalogo' as const },
-    { label: diseno?.modaMinimalNav5 || 'Nosotros', path: `/tienda/${slug}/contacto`, kind: 'contacto' as const },
-  ];
+  // Botones 1–4 con destino configurable (sin elegir: categoría de nombre parecido); el 5.º va a contacto.
+  const categoriasMenu = useCategoriasTienda(slug, allCategories);
+  const NAV = useMemo(() => [
+    ...itemsDeMenu(MODA_MINIMAL_MENU, { diseno, slug, categorias: categoriasMenu }).map((it) => ({ key: it.key, label: it.label, path: it.href as string, externo: it.externo })),
+    { key: 'modaMinimalNav5', label: diseno?.modaMinimalNav5 || 'Nosotros', path: `/tienda/${slug}/contacto`, externo: false },
+  ], [diseno, slug, categoriasMenu]);
 
   return (
     <>
@@ -251,8 +254,8 @@ export function MinHeader({
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center px-5 md:px-8">
           {/* Nav izquierda */}
           <nav className="hidden items-center gap-6 lg:flex">
-            {NAV.map((item, i) => (
-              <button key={`${item.label}-${i}`} type="button" onClick={() => navGo(item.path, item.kind)} className="text-[12px] font-medium uppercase tracking-[0.08em] text-neutral-700 transition-colors hover:text-neutral-950">
+            {NAV.map((item) => (
+              <button key={item.key} type="button" onClick={() => navGo(item.path, item.externo)} className="text-[12px] font-medium uppercase tracking-[0.08em] text-neutral-700 transition-colors hover:text-neutral-950">
                 {item.label}
               </button>
             ))}
@@ -262,13 +265,13 @@ export function MinHeader({
           </button>
 
           {/* Logo central */}
-          <a href={`/tienda/${slug}`} className="justify-self-center">
+          <EnlaceTienda href={`/tienda/${slug}`} className="justify-self-center" slug={slug} diseno={diseno}>
             {tienda?.logo ? (
               <img src={tienda.logo} alt={name} className="h-8 object-contain" />
             ) : (
               <span className="text-xl font-semibold uppercase tracking-[0.34em] md:text-2xl" style={{ color: MIN.ink }}>{name}</span>
             )}
-          </a>
+          </EnlaceTienda>
 
           {/* Iconos derecha */}
           <div className="flex items-center justify-end gap-1">
@@ -298,13 +301,13 @@ export function MinHeader({
         {openMenu && (
           <div className="border-t bg-white px-5 py-3 lg:hidden" style={{ borderColor: MIN.line }}>
             <div className="flex flex-col">
-              {NAV.map((item, i) => (
-                <button key={`m-${item.label}-${i}`} type="button" onClick={() => { setOpenMenu(false); navGo(item.path, item.kind); }} className="border-b py-3 text-left text-sm font-medium uppercase tracking-[0.08em] text-neutral-700" style={{ borderColor: MIN.line }}>
+              {NAV.map((item) => (
+                <button key={`m-${item.key}`} type="button" onClick={() => { setOpenMenu(false); navGo(item.path, item.externo); }} className="border-b py-3 text-left text-sm font-medium uppercase tracking-[0.08em] text-neutral-700" style={{ borderColor: MIN.line }}>
                   {item.label}
                 </button>
               ))}
               {cats.map((c) => (
-                <button key={`mc-${c}`} type="button" onClick={() => { setOpenMenu(false); navGo(`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`, 'catalogo'); }} className="py-2 text-left text-xs uppercase tracking-wide text-neutral-500">
+                <button key={`mc-${c}`} type="button" onClick={() => { setOpenMenu(false); navGo(`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`); }} className="py-2 text-left text-xs uppercase tracking-wide text-neutral-500">
                   {c}
                 </button>
               ))}
@@ -313,7 +316,7 @@ export function MinHeader({
         )}
       </motion.header>
 
-      <MinFavoritesModal open={openFavs} onClose={() => setOpenFavs(false)} slug={slug} cp={primary} favoritos={favoritos} onRemove={removeFavorito} onProduct={goProduct} />
+      <MinFavoritesModal open={openFavs} onClose={() => setOpenFavs(false)} slug={slug} cp={primary} favoritos={favoritos} onRemove={removeFavorito} onProduct={goProduct} diseno={diseno} />
     </>
   );
 }
@@ -342,11 +345,26 @@ export function MinWhatsAppFab({ tienda }: { tienda: any }) {
 
 /* ─────────────────────────────────── Footer ─────────────────────────────── */
 
+/** URL de red social utilizable (agrega https:// si falta), o '' si no hay. */
+function urlRed(u?: string) {
+  const s = String(u || '').trim();
+  if (!s) return '';
+  if (/^https?:\/\//i.test(s)) return s;
+  return s.includes('.') ? `https://${s}` : '';
+}
+
 export function MinFooter({ tienda, slug, diseno, cp, categories = [] }: { tienda: any; slug: string; diseno?: any; cp: string; categories?: any[] }) {
   const name = storeName(tienda, diseno);
   const email = diseno?.modaMinimalFooterEmail || tienda?.email || tienda?.correo || 'hola@norda.pe';
   const phone = diseno?.modaMinimalFooterPhone || tienda?.whatsappTienda || tienda?.telefono || '+51 999 999 999';
   const cats = categories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
+  // Redes de la tienda: sin enlace configurado, el icono no se muestra (antes eran "#").
+  const redes = [
+    { icon: 'mdi:instagram', url: urlRed(tienda?.instagramUrl) },
+    { icon: 'mdi:facebook', url: urlRed(tienda?.facebookUrl) },
+    { icon: 'prime:twitter', url: urlRed(tienda?.twitterUrl || tienda?.xUrl) },
+    { icon: 'ic:baseline-tiktok', url: urlRed(tienda?.tiktokUrl) },
+  ].filter((r) => r.url);
 
   const Col = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <div>
@@ -363,24 +381,24 @@ export function MinFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           <p className="mt-4 max-w-xs text-[13px] leading-7" style={{ color: MIN.soft }}>
             {diseno?.modaMinimalFooterText || tienda?.descripcionTienda || 'Prendas y calzado de calidad, hechos para durar. Diseño honesto, materiales nobles y precios transparentes.'}
           </p>
-          <div className="mt-6 flex gap-3">
-            {['mdi:instagram', 'mdi:facebook', 'prime:twitter', 'ic:baseline-tiktok'].map((icon) => (
-              <a key={icon} href="#" className="flex h-9 w-9 items-center justify-center border transition-colors hover:bg-black hover:text-white" style={{ borderColor: MIN.line, color: MIN.soft }}>
+          {redes.length > 0 && <div className="mt-6 flex gap-3">
+            {redes.map(({ icon, url }) => (
+              <a key={icon} href={url} target="_blank" rel="noreferrer" className="flex h-9 w-9 items-center justify-center border transition-colors hover:bg-black hover:text-white" style={{ borderColor: MIN.line, color: MIN.soft }}>
                 <Icon icon={icon} width={17} />
               </a>
             ))}
-          </div>
+          </div>}
         </div>
         <Col title="Tienda">
           {cats.length ? cats.map((c) => (
-            <a key={c} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`} className="block transition-colors hover:text-black">{c}</a>
-          )) : <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-black">Ver todo</a>}
+            <EnlaceTienda key={c} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(c)}`} className="block transition-colors hover:text-black" slug={slug} diseno={diseno}>{c}</EnlaceTienda>
+          )) : <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-black" slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>}
         </Col>
         <Col title="Ayuda">
-          <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-black">Seguir mi pedido</a>
-          <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-black">Envíos y cambios</a>
-          <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-black">Guía de tallas</a>
-          <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-black">Contacto</a>
+          <EnlaceTienda href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-black" slug={slug} diseno={diseno}>Seguir mi pedido</EnlaceTienda>
+          <EnlaceTienda href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-black" slug={slug} diseno={diseno}>Envíos y cambios</EnlaceTienda>
+          <EnlaceTienda href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-black" slug={slug} diseno={diseno}>Guía de tallas</EnlaceTienda>
+          <EnlaceTienda href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-black" slug={slug} diseno={diseno}>Contacto</EnlaceTienda>
         </Col>
         <Col title="Contacto">
           <p>{email}</p>
@@ -523,6 +541,7 @@ export function MinFavoritesModal({
   favoritos,
   onRemove,
   onProduct,
+  diseno,
 }: {
   open: boolean;
   onClose: () => void;
@@ -531,6 +550,7 @@ export function MinFavoritesModal({
   favoritos: any[];
   onRemove: (id: number, slug: string) => void;
   onProduct: (id: number | string) => void;
+  diseno?: any;
 }) {
   const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
 
@@ -591,9 +611,9 @@ export function MinFavoritesModal({
             </div>
 
             <div className="border-t px-6 py-5" style={{ borderColor: MIN.line }}>
-              <a href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center border py-3.5 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: MIN.ink, color: MIN.ink }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center border py-3.5 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: MIN.ink, color: MIN.ink }} slug={slug} diseno={diseno} onClick={onClose}>
                 Seguir comprando
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.aside>
         </div>

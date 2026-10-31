@@ -6,12 +6,15 @@ import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { ANTOJO, AntojoFooter, AntojoHeader, AntojoProductCard, antojoDots } from './AntojoParts';
 import { antojoCard, antojoPage, antojoSection, antojoStagger, antojoViewport } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 function getName(item: any) {
   return typeof item === 'string' ? item : item?.nombre;
 }
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
+  // Categoría: cuenta también los productos que la tienen como adicional.
+  if (key === 'categoria') return products.filter((product) => productoEnCategoria(product, name)).length;
   return products.filter((product) => {
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;
@@ -206,7 +209,7 @@ export default function AntojoCatalogoPage({
           <section className="min-w-0">
             <div className="mb-8 flex flex-col justify-between gap-4 rounded-[22px] bg-white p-4 shadow-sm ring-1 ring-black/5 md:flex-row md:items-center">
               <p className="px-2 text-sm font-bold text-neutral-500">
-                <span className="text-neutral-900">{sortedProductos.length}</span> de <span className="text-neutral-900">{totalLabel}</span> antojos
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="text-neutral-900">{sortedProductos.length}</span> de <span className="text-neutral-900">{totalLabel}</span> antojos</>}
               </p>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 min-w-[200px] rounded-full border border-neutral-100 bg-neutral-50 px-5 text-sm font-bold text-neutral-600 outline-none">
                 <option value="relevance">Orden recomendado</option>

@@ -16,6 +16,7 @@ import {
 } from './NexoParts';
 import { SectionHeader, GridSkeleton, OfferCountdown, storeChannels, getName, hasImage, categoryIcon, soonestOfferEnd, type OpenFn, type AddFn, type Channels } from './NexoSections';
 import { nxEase, nxHeroText, nxItem, nxReveal, nxStagger, nxViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
@@ -52,14 +53,14 @@ export default function NexoHomePage(props: TemplateHomePageProps) {
     const picked = String(diseno?.celularesAccCat || '').trim();
     return picked || categories.find((c) => ACCESSORY_RE.test(c)) || '';
   }, [diseno?.celularesAccCat, categories]);
-  const isAcc = (p: any) => accCat && getName(p?.categoria).toLowerCase() === accCat.toLowerCase();
+  const isAcc = (p: any) => accCat && productoEnCategoria(p, accCat);
   const featured = useMemo(() => ordered.filter((p) => !isAcc(p)).slice(0, 4), [ordered, accCat]); // eslint-disable-line react-hooks/exhaustive-deps
   const accessories = useMemo(() => ordered.filter((p) => isAcc(p)).slice(0, 5), [ordered, accCat]); // eslint-disable-line react-hooks/exhaustive-deps
   const offers = useMemo(() => list.filter((p) => getProductPricing(p).enOferta), [list]);
   const maxDiscount = useMemo(() => offers.reduce((m, p) => Math.max(m, Number(getProductPricing(p).porcentajeDescuento) || 0), 0), [offers]);
   const offerEnd = useMemo(() => soonestOfferEnd(offers), [offers]);
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'celulares', count: 6, fallbackImages: [] }).map((tile) => {
-    const fromProduct = tile.imagenUrl ? '' : withImg.find((p) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase())?.imagenUrl || '';
+    const fromProduct = tile.imagenUrl ? '' : withImg.find((p) => productoEnCategoria(p, tile.nombre))?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);
   const ch = storeChannels(tienda, diseno);

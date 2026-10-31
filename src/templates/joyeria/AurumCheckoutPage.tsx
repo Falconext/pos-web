@@ -6,6 +6,7 @@ import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationMod
 import { AUR, AurFooter, AurHeader, AurProductImage, AurWhatsAppFab, aurFont, aurPrimary } from './AurumParts';
 import { aurCard, aurPage, aurSection, aurStagger, aurTap, aurViewport } from './motion';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 
 function money(value: number) {
   return `S/ ${Number(value || 0).toFixed(2)}`;
@@ -52,6 +53,7 @@ export default function AurumCheckoutPage(props: TemplateCheckoutPageProps) {
   const primary = aurPrimary(cp);
   const font = aurFont(diseno);
   const cartCount = carritoState.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
+  const ir = useIrEnTienda(slug, diseno);
   const canSubmit = !enviando && carritoState.length > 0;
   const deliveryType = formData.tipoEntrega || 'RECOJO';
   const ocultarEnvio = Boolean(diseno?.joyeriaOcultarEnvio);
@@ -70,20 +72,20 @@ export default function AurumCheckoutPage(props: TemplateCheckoutPageProps) {
         cp={primary}
         diseno={diseno}
         carritoSize={cartCount}
-        onOpenCart={() => (window.location.href = `/tienda/${slug}/catalogo`)}
+        onOpenCart={() => ir(`/tienda/${slug}/catalogo`)}
         searchQuery={search}
         setSearchQuery={setSearch}
         allCategories={[]}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          if (value?.trim()) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`;
+          if (value?.trim()) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`);
         }}
       />
 
       <section className="relative overflow-hidden border-b" style={{ borderColor: AUR.line, background: `linear-gradient(120% 120% at 80% 0%, ${AUR.nude}, ${AUR.cream} 60%)` }}>
         <div className="mx-auto max-w-7xl px-6 py-12 text-center md:py-14">
           <div className="text-xs font-medium uppercase tracking-[0.2em] text-neutral-400">
-            <a href={`/tienda/${slug}`} className="hover:text-neutral-900">Inicio</a>
+            <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="hover:text-neutral-900">Inicio</EnlaceTienda>
             <span className="mx-2">/</span>
             <span className="text-neutral-700">Finalizar compra</span>
           </div>
@@ -181,7 +183,7 @@ export default function AurumCheckoutPage(props: TemplateCheckoutPageProps) {
                     <p className="text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: AUR.gold }}>Completa tu joyero</p>
                     <h2 className="text-3xl" style={{ fontFamily: AUR.serif, color: AUR.ink }}>También te encantará</h2>
                   </div>
-                  <a href={`/tienda/${slug}/catalogo`} className="text-xs font-semibold uppercase tracking-[0.14em] hover:opacity-70" style={{ color: AUR.ink }}>Ver todo</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="text-xs font-semibold uppercase tracking-[0.14em] hover:opacity-70" style={{ color: AUR.ink }}>Ver todo</EnlaceTienda>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {suggestedProducts.slice(0, 3).map((producto) => (
@@ -219,7 +221,7 @@ export default function AurumCheckoutPage(props: TemplateCheckoutPageProps) {
                 <div className="my-6 rounded-2xl bg-neutral-50 p-8 text-center">
                   <Icon icon="solar:bag-cross-linear" className="mx-auto text-4xl text-neutral-300" />
                   <p className="mt-3 text-sm font-medium text-neutral-500">Tu carrito está vacío.</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex rounded-full px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white" style={{ backgroundColor: AUR.ink }}>Ver colección</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="mt-5 inline-flex rounded-full px-5 py-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-white" style={{ backgroundColor: AUR.ink }}>Ver colección</EnlaceTienda>
                 </div>
               ) : (
                 carritoState.map((item) => {

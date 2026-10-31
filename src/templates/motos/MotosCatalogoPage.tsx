@@ -5,12 +5,15 @@ import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { MOTO, MotoCartModal, MotoFooter, MotoHeader, MotoProductCard, MotoWhatsAppFab, motoFont, motoPrimary, withAlpha } from './MotosParts';
 import { motoCard, motoPage, motoSection, motoStagger } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 function getName(item: any) {
   return typeof item === 'string' ? item : item?.nombre;
 }
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
+  // Categoría: cuenta también los productos que la tienen como adicional.
+  if (key === 'categoria') return products.filter((product) => productoEnCategoria(product, name)).length;
   return products.filter((product) => {
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;
@@ -283,7 +286,7 @@ export default function MotosCatalogoPage({
                   <Icon icon="solar:filter-linear" width={16} /> Filtros{activeChips.length ? ` (${activeChips.length})` : ''}
                 </button>
                 <p className="px-1 text-sm" style={{ color: MOTO.muted }}>
-                  <span className="font-bold" style={{ color: MOTO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: MOTO.ink }}>{totalLabel}</span> productos
+                  {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-bold" style={{ color: MOTO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: MOTO.ink }}>{totalLabel}</span> productos</>}
                 </p>
               </div>
               <div className="flex items-center gap-2">
