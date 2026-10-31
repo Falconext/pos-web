@@ -16,6 +16,7 @@ import {
 } from './CalmaParts';
 import { SectionHeader, MoreLink, GridSkeleton, storeChannels, getName, hasImage, categoryIcon, type OpenFn, type AddFn, type Channels } from './CalmaSections';
 import { cmEase, cmHeroText, cmItem, cmReveal, cmStagger, cmViewport, mix } from './motion';
+import { productoEnCategoria, categoriasDeProducto } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const HOME_PAGE_SIZE = 30; // límite de productos que carga [slug].tsx para el home
@@ -51,7 +52,7 @@ export default function CalmaHomePage(props: TemplateHomePageProps) {
   const categories: string[] = useMemo(() => (allCategories || []).map(getName).filter(Boolean), [allCategories]);
   // El home trae como máximo 30 productos: solo si llegaron menos, los conteos por categoría son exactos.
   const exact = list.length < HOME_PAGE_SIZE;
-  const countIn = (name: string) => list.filter((p) => getName(p?.categoria).toLowerCase() === name.toLowerCase()).length;
+  const countIn = (name: string) => list.filter((p) => productoEnCategoria(p, name)).length;
 
   const featured = useMemo(() => pickProduct(list, diseno?.hogarFeaturedProducts) || withImg.find((p) => p?.destacado) || withImg[0] || null, [list, withImg, diseno?.hogarFeaturedProducts]);
   const roomProduct = useMemo(() => pickProduct(list, diseno?.hogarRoomProducts) || withImg.find((p) => p?.destacado && p !== featured) || withImg.find((p) => p !== featured) || null, [list, withImg, featured, diseno?.hogarRoomProducts]);
@@ -63,7 +64,7 @@ export default function CalmaHomePage(props: TemplateHomePageProps) {
   }, [list]);
 
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'hogar', count: 5, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     const n = exact ? list.filter(same).length : 0;
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct), count: n };
@@ -142,7 +143,7 @@ function HeroBento({ t, diseno, tienda, slug, featured, rating, services, catego
 
   // Categoría del mosaico chico: la elegida en el editor o la segunda de la tienda.
   const spotName = String(d.hogarSpotCat || '').trim() || cat2;
-  const spotImg = d.hogarSpotImage || withImg.find((p) => getName(p?.categoria).toLowerCase() === spotName.toLowerCase())?.imagenUrl || '';
+  const spotImg = d.hogarSpotImage || withImg.find((p) => productoEnCategoria(p, spotName))?.imagenUrl || '';
   const spotCount = spotName && countIn ? countIn(spotName) : 0;
 
   return (
@@ -360,10 +361,10 @@ function Favorites({ t, diseno, list, slug, onOpen, onAdd, onMore }: { t: Theme;
   const ordered = useMemo(() => [...list.filter((p) => p?.destacado && hasImage(p)), ...list.filter((p) => !(p?.destacado && hasImage(p)))], [list]);
   const filters = useMemo(() => {
     const counts = new Map<string, number>();
-    ordered.forEach((p) => { const c = getName(p?.categoria); if (c) counts.set(c, (counts.get(c) || 0) + 1); });
+    ordered.forEach((p) => categoriasDeProducto(p).forEach((c) => counts.set(c, (counts.get(c) || 0) + 1)));
     return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([c]) => c);
   }, [ordered]);
-  const shown = (active ? ordered.filter((p) => getName(p?.categoria) === active) : ordered).slice(0, 8);
+  const shown = (active ? ordered.filter((p) => productoEnCategoria(p, active)) : ordered).slice(0, 8);
 
   const pills = filters.length > 1 && (
     <div className="-mx-3 flex max-w-[calc(100%+1.5rem)] gap-1 overflow-x-auto px-3 [scrollbar-width:none] sm:mx-0 sm:max-w-full sm:px-0 [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Filtrar por categoría"><div className="flex shrink-0 gap-1 rounded-full p-1" style={{ background: t.surface }}>

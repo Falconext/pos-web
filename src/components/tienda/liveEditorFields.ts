@@ -1568,11 +1568,14 @@ const FARMACIA_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'farmaciaRecommendedTitle', label: 'Título recomendados', placeholder: 'Recomendado para ti', group: 'Secciones' },
   { key: 'farmaciaNewsletterTitle', label: 'Ofertas WhatsApp: título', placeholder: 'Recibe ofertas exclusivas', group: 'Newsletter' },
   { key: 'farmaciaNewsletterText', label: 'Ofertas WhatsApp: texto', placeholder: 'Únete a nuestra lista de WhatsApp…', group: 'Newsletter' },
+  { key: 'farmaciaNavHome', label: 'Menú: enlace de inicio', placeholder: 'Inicio', group: 'Header' },
+  { key: 'farmaciaNavShop', label: 'Menú: enlace del catálogo', placeholder: 'Catálogo', group: 'Header' },
   { key: 'farmaciaNavContact', label: 'Menú: enlace de contacto', placeholder: 'Contacto', group: 'Header' },
   { key: 'farmaciaCatalogTitle', label: 'Catálogo: título', placeholder: 'Nuestro catálogo', group: 'Catálogo' },
   { key: 'farmaciaContactTitle', label: 'Contacto: título', placeholder: 'Estamos para cuidarte', group: 'Contacto' },
   { key: 'farmaciaContactSubtitle', label: 'Contacto: subtítulo', placeholder: 'Resolvemos tus dudas sobre medicamentos, pedidos y entregas…', group: 'Contacto' },
   { key: 'farmaciaFooterText', label: 'Footer: descripción', placeholder: 'Tu farmacia de confianza…', group: 'Footer' },
+  { key: 'farmaciaCheckoutConfirmLabel', label: 'Checkout: botón confirmar', placeholder: 'Confirmar pedido', group: 'Checkout' },
 ];
 const FARMACIA_IMAGE_FIELDS: ImageFieldDef[] = [
   { key: 'farmaciaPromoOneImageUrl', label: 'Banner grande: imagen', hint: 'Foto que cubre toda la tarjeta grande (izquierda). Mín. 1200×900 px. El texto va encima con un velo oscuro, elige fotos con zonas tranquilas.', fallback: 'https://images.unsplash.com/photo-1576602976047-174e57a47881?auto=format&fit=crop&w=1400&q=75' },
@@ -1956,7 +1959,7 @@ const MODA_ELEGANTE_TEXT_FIELDS: TextFieldDef[] = [
   { key: 'modaEleganteSlide3Subtitle', label: 'Slide 3: subtítulo', placeholder: 'Tacones, sandalias y zapatillas…', group: 'Hero · Slide 3', hint: 'Déjalo vacío para ocultarlo.' },
   { key: 'modaEleganteSlide3Button', label: 'Slide 3: botón', placeholder: 'Ver calzado', group: 'Hero · Slide 3' },
   { key: 'modaEleganteNewHidden', label: 'Ocultar círculo "Novedades"', placeholder: '', group: 'Círculos de categoría', type: 'toggle' },
-  { key: 'modaEleganteNewLabel', label: 'Círculo "Novedades": texto', placeholder: 'Novedades', group: 'Círculos de categoría', hint: 'Lleva al catálogo completo.' },
+  { key: 'modaEleganteNewLabel', label: 'Círculo "Novedades": texto', placeholder: 'Novedades', group: 'Círculos de categoría', hint: 'Lleva al catálogo ordenado por lo más nuevo.' },
   { key: 'modaEleganteNewBadge', label: 'Círculo "Novedades": etiqueta', placeholder: 'Nuevo', group: 'Círculos de categoría' },
   ...categoryTileTextFields('modaElegante', 7, 'Círculos de categoría'),
   { key: 'modaEleganteColsHidden', label: 'Ocultar colecciones', placeholder: '', group: 'Colecciones', type: 'toggle' },

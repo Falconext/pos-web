@@ -20,6 +20,7 @@ import {
   storeChannels, soonestOfferEnd, getName, hasImage, type OpenFn, type AddFn, type Channels,
 } from './AmoraSections';
 import { amEase, amHeroText, amItem, amReveal, amStagger, amViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -105,7 +106,7 @@ export default function AmoraHomePage(props: TemplateHomePageProps) {
   }, [list, picks, offers]);
 
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'amora', count: 4, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);

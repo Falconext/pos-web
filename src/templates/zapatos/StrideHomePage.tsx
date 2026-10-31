@@ -20,6 +20,7 @@ import {
   type OpenFn, type AddFn,
 } from './StrideSections';
 import { mix, stEase, stHeroText, stItem, stReveal, stStagger, stViewport } from './motion';
+import { categoriasDeProducto } from '@/components/tienda/navTienda';
 
 const HOME_PAGE_SIZE = 30; // límite de productos que carga [slug].tsx para el home
 
@@ -71,7 +72,7 @@ export default function StrideHomePage(props: TemplateHomePageProps) {
   const countByCat = useMemo(() => {
     const m = new Map<string, number>();
     if (list.length >= HOME_PAGE_SIZE) return m;
-    list.forEach((p) => { const c = getName(p?.categoria).toLowerCase(); if (c) m.set(c, (m.get(c) || 0) + 1); });
+    list.forEach((p) => new Set(categoriasDeProducto(p).map((c) => c.toLowerCase())).forEach((c) => m.set(c, (m.get(c) || 0) + 1)));
     return m;
   }, [list]);
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'zapatos', count: 4, fallbackImages: ZAPATOS_TILE_FALLBACKS }), [allCategories, diseno]);

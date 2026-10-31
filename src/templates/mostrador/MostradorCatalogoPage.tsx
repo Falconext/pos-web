@@ -12,6 +12,8 @@ import {
 import { MostradorQuickView, type CartLine } from './MostradorQuickView';
 import { useStoreTotal } from './MostradorExtras';
 import { moCardIn, moEase } from './motion';
+import { useEditorEnVivo } from './MostradorEditorEnVivo';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 // Valores que entiende Catalogo.tsx (el ordenamiento se hace allí).
 const SORTS = [
@@ -28,13 +30,15 @@ const getName = (item: any) => (typeof item === 'string' ? item : item?.nombre |
  */
 export default function MostradorCatalogoPage(props: TemplateCatalogoPageProps) {
   const {
-    tienda, slug, diseno, sortedProductos, productos: allLoaded, loading, total, page, cargarProductos,
+    tienda, slug, diseno: disenoTienda, sortedProductos, productos: allLoaded, loading, total, page, cargarProductos,
     allCategorías, selectedCategorías, setSelectedCategorías, sortBy, setSortBy, search, setSearch,
     carrito, setCarrito, mostrarCarrito, setMostrarCarrito, actualizarCantidad, irACheckout,
     handleAgregarProducto, agregarAlCarritoDirecto,
     showPersonalizarModal, setShowPersonalizarModal, productoAPersonalizar, setProductoAPersonalizar, modificadoresProducto,
   } = props as any;
 
+  // Mostrador no tiene portada: el editor en vivo del dueño vive en el catálogo.
+  const { diseno, editor } = useEditorEnVivo(slug, disenoTienda);
   useMostradorFont();
   const t = mostradorTheme(diseno);
   const routerNavigate = useNavigate();
@@ -194,6 +198,7 @@ export default function MostradorCatalogoPage(props: TemplateCatalogoPageProps) 
             onConfirm={(producto: any, mods: any[]) => { agregarAlCarritoDirecto(producto, mods); setShowPersonalizarModal(false); setProductoAPersonalizar(null); }}
           />
         )}
+        {editor}
       </div>
     </MotionConfig>
   );
@@ -213,7 +218,7 @@ function CatItem({ t, label, count, active, onClick }: { t: Theme; label: string
 /** Conteo real de la categoría: API (total) en la tienda; en el preview, los productos de ejemplo. Aislado por fila. */
 function CatCount({ t, slug, category, products }: { t: Theme; slug: string; category: string; products: any[] }) {
   const n = useStoreTotal(slug, category);
-  const local = isLive(slug) ? null : (products || []).filter((p) => getName(p?.categoria).toLowerCase() === category.toLowerCase()).length;
+  const local = isLive(slug) ? null : (products || []).filter((p) => productoEnCategoria(p, category)).length;
   const v = n ?? local;
   return v === null || v === undefined ? <span className="inline-block h-3 w-6 animate-pulse rounded" style={{ background: t.card }} /> : <>{v.toLocaleString('es-PE')}</>;
 }

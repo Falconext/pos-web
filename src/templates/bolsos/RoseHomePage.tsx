@@ -19,6 +19,7 @@ import {
   categoryIcon, soonestOfferEnd, instagramHandle, type OpenFn, type AddFn, type Channels,
 } from './RoseSections';
 import { mix, rsEase, rsHeroText, rsItem, rsReveal, rsStagger, rsViewport } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
@@ -51,7 +52,7 @@ export default function RoseHomePage(props: TemplateHomePageProps) {
   const maxDiscount = useMemo(() => offers.reduce((m, p) => Math.max(m, Number(getProductPricing(p).porcentajeDescuento) || 0), 0), [offers]);
   const offerEnd = useMemo(() => soonestOfferEnd(offers), [offers]);
   const circles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'bolsos', count: 7, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);

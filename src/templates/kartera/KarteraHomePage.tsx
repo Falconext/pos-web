@@ -18,6 +18,7 @@ import {
 } from './KarteraParts';
 import { SectionHeader, GridSkeleton, OfferCountdown, Confetti, storeChannels, soonestOfferEnd, getName, hasImage, categoryIcon, type OpenFn, type AddFn, type Channels } from './KarteraSections';
 import { ktEase, ktHeroText, ktItem, ktReveal, ktStagger, ktViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -66,7 +67,7 @@ export default function KarteraHomePage(props: TemplateHomePageProps) {
     || withImg.find((p) => !(Array.isArray(p?.variantes) && p.variantes.length) && !sinStock(Number(p?.stock ?? 1))) || null, [withImg]);
 
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'kartera', count: 8, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);

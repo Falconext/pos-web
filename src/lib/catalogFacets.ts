@@ -8,6 +8,7 @@
  * en buckets legibles (i3/i5/i7, Ryzen 3/5/7, Celeron, Atom...) y el resto de
  * atributos usa sus valores distintos tal cual.
  */
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 export interface FacetOption {
   /** Etiqueta visible (ej. "Intel Core i5"). */
@@ -156,10 +157,6 @@ const KEY_BUCKETS: Record<string, (raw: string) => FacetOption | null> = {
   almacenamiento: bucketAlmacenamiento,
 };
 
-function normalizeCategoria(p: any): string {
-  return String(p?.categoria?.nombre ?? p?.categoria ?? '').trim().toLowerCase();
-}
-
 /**
  * Deriva las facetas de atributos a partir de los productos, contextualizadas a
  * las categorías seleccionadas (si hay). Solo incluye facetas con ≥2 opciones.
@@ -172,7 +169,8 @@ export function deriveAtributoFacets(
 
   const cats = selectedCategorias.map((c) => c.trim().toLowerCase()).filter(Boolean);
   const scoped = cats.length
-    ? productos.filter((p) => cats.includes(normalizeCategoria(p)))
+    // Cuenta también las categorías adicionales del producto (`categoriasExtra`).
+    ? productos.filter((p) => cats.some((c) => productoEnCategoria(p, c)))
     : productos;
 
   // key -> (value -> FacetOption)

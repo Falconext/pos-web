@@ -18,6 +18,7 @@ import {
 } from './OlmoParts';
 import { SectionHeader, ProductRail, RailEndCard, GridSkeleton, OfferCountdown, storeChannels, soonestOfferEnd, getName, hasImage, categoryIcon, useCategoryCounts, type OpenFn, type AddFn, type Channels } from './OlmoSections';
 import { olEase, olHeroText, olItem, olPop, olReveal, olStagger, olViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -67,7 +68,7 @@ export default function OlmoHomePage(props: TemplateHomePageProps) {
   }, [withImg, offers]);
 
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'olmo', count: 7, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);

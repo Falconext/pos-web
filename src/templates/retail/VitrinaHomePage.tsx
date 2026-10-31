@@ -18,6 +18,7 @@ import {
 import { ProductRail, ProductGrid, GridSkeleton, SectionHeader, OfferCountdown, StatBlock, Swoosh, soonestOfferEnd, storeChannels, getName, hasImage, type OpenFn, type AddFn } from './VitrinaSections';
 import { vtEase, vtHeroText, vtItem, vtReveal, vtStagger, vtViewport, mix } from './motion';
 import { CategoryCount, useStoreTotal, useViewedProducts } from './VitrinaExtras';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const HOME_PAGE_SIZE = 30; // límite de productos que carga [slug].tsx para el home
@@ -50,7 +51,7 @@ export default function VitrinaHomePage(props: TemplateHomePageProps) {
     return (rest.length >= 6 ? rest : [...rest, ...picks.slice().reverse()].filter((p, i, a) => a.findIndex((x) => x.id === p.id) === i)).slice(0, 6);
   }, [list, withImg, offers, picks]);
   const tiles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'retail', count: 6, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     return { ...tile, imagenUrl: tile.imagenUrl || fromProduct, isProduct: Boolean(fromProduct) };
   }), [allCategories, diseno, withImg]);

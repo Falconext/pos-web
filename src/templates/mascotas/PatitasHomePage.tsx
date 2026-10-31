@@ -18,6 +18,7 @@ import { SectionHeader, ProductRail, GridSkeleton, RealReviews, storeChannels, g
 import { mix, ptEase, ptHeroText, ptItem, ptReveal, ptStagger, ptViewport } from './motion';
 
 import { sinStock } from '@/templates/shared/ventaSinStock';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 const HOME_PAGE_SIZE = 30; // límite de productos que carga [slug].tsx para el home
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
@@ -56,7 +57,7 @@ export default function PatitasHomePage(props: TemplateHomePageProps) {
   // El home trae como máximo 30 productos: solo si llegaron menos, los conteos por categoría son exactos.
   const exact = list.length < HOME_PAGE_SIZE;
   const circles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'mascotas', count: 6, fallbackImages: [] }).map((tile, i) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     const fromProduct = tile.imagenUrl ? '' : withImg.find(same)?.imagenUrl || '';
     const count = exact ? list.filter(same).length : 0;
     const sub = String(diseno?.[`mascotasTile${i + 1}Text`] ?? '').trim() || (count > 0 ? `${count} ${count === 1 ? 'producto' : 'productos'}` : '');

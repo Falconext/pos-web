@@ -19,6 +19,7 @@ import {
   type OpenFn, type AddFn, type Benefit,
 } from './VerenaSections';
 import { mix, vrEase, vrHeroText, vrItem, vrReveal, vrStagger, vrViewport } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const u = (id: string, w = 1400) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
@@ -61,7 +62,7 @@ export default function VerenaHomePage(props: TemplateHomePageProps) {
     const base = buildCategoryTiles({ allCategories, diseno, prefix: VR, count: showOffersTile ? 6 : 7, fallbackImages: [] });
     return base.map((tile) => {
       if (tile.imagenUrl) return { ...tile, img: tile.imagenUrl, fromProduct: false };
-      const p = list.find((x) => hasImage(x) && getName(x?.categoria) === tile.nombre);
+      const p = list.find((x) => hasImage(x) && productoEnCategoria(x, tile.nombre));
       return { ...tile, img: p?.imagenUrl || '', fromProduct: Boolean(p) };
     });
   }, [allCategories, diseno, list, showOffersTile]);

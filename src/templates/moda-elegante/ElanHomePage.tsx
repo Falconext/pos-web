@@ -16,6 +16,7 @@ import {
 } from './ElanParts';
 import { SectionHeader, ProductGrid, GridSkeleton, OfferCountdown, soonestOfferEnd, storeChannels, instagramHandle, photoFit, getName, hasImage, type OpenFn, type AddFn, type Channels } from './ElanSections';
 import { mix, elEase, elHeroText, elItem, elReveal, elStagger, elViewport } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const u = (id: string, w = 1600) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&q=80`;
 
@@ -50,7 +51,7 @@ export default function ElanHomePage(props: TemplateHomePageProps) {
   }, [list, withImg]);
   const offers = useMemo(() => list.filter((p) => getProductPricing(p).enOferta), [list]);
   const circles = useMemo(() => buildCategoryTiles({ allCategories, diseno, prefix: 'modaElegante', count: 7, fallbackImages: [] }).map((tile) => {
-    const same = (p: any) => getName(p?.categoria).toLowerCase() === tile.nombre.toLowerCase();
+    const same = (p: any) => productoEnCategoria(p, tile.nombre);
     return { ...tile, imagenUrl: tile.imagenUrl || withImg.find(same)?.imagenUrl || '' };
   }), [allCategories, diseno, withImg]);
   const ch = storeChannels(tienda, diseno);
@@ -73,7 +74,7 @@ export default function ElanHomePage(props: TemplateHomePageProps) {
         <ElanHeader tienda={tienda} slug={slug} diseno={diseno} categories={categories} t={t} cartCount={cartCount} favCount={favoritos.length} onOpenCart={() => setMostrarCarrito(true)} onOpenFav={() => setShowFav(true)} navigate={navigate} />
 
         <HeroSlider t={t} diseno={diseno} goAction={goAction} />
-        {(circles.length > 0 || list.length > 0) && <CategoryCircles t={t} diseno={diseno} circles={circles} newImage={picks.find(hasImage)?.imagenUrl || ''} onAll={goCatalog} onPick={goCategory} />}
+        {(circles.length > 0 || list.length > 0) && <CategoryCircles t={t} diseno={diseno} circles={circles} newImage={picks.find(hasImage)?.imagenUrl || ''} onAll={() => navigate(`/tienda/${slug}/catalogo?sort=new`)} onPick={goCategory} />}
         <Collections t={t} diseno={diseno} categories={categories} products={withImg} goAction={goAction} />
 
         <section className="mx-auto max-w-[1440px] px-4 py-12 lg:px-10">
@@ -220,7 +221,7 @@ function Collections({ t, diseno, categories, products, goAction }: { t: Theme; 
       key: `modaEleganteCol${n}Action`,
       cat: isLinkActionConfigured(diseno, `modaEleganteCol${n}Action`) ? undefined : cat,
       // Foto: la del editor; si la tarjeta es una categoría real, la de un producto de esa categoría; si no, el ejemplo.
-      img: diseno?.[`modaEleganteCol${n}Image`] || (cat && products.find((p) => getName(p?.categoria).toLowerCase() === cat.toLowerCase())?.imagenUrl) || ELAN_IMG.collections[i],
+      img: diseno?.[`modaEleganteCol${n}Image`] || (cat && products.find((p) => productoEnCategoria(p, cat))?.imagenUrl) || ELAN_IMG.collections[i],
       title: editable(diseno?.[`modaEleganteCol${n}Title`], cat || fallback),
     };
   });

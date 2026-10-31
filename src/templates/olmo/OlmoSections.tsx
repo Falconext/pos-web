@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { OlmoProductCard, type Theme } from './OlmoParts';
 import { olEase, olItem, olReveal, olStagger, olViewport, mix } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
@@ -257,7 +258,7 @@ export function useCategoryCounts(slug: string, names: string[], localList: any[
     if (!names.length) { setCounts({}); return; }
     if (!slug || slug === 'preview') {
       const local: Record<string, number> = {};
-      names.forEach((n) => { local[n] = localList.filter((p) => getName(p?.categoria).toLowerCase() === n.toLowerCase()).length; });
+      names.forEach((n) => { local[n] = localList.filter((p) => productoEnCategoria(p, n)).length; });
       setCounts(local);
       return;
     }
