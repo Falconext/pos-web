@@ -4,6 +4,7 @@ import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { FOOD, FoodProductImage, FoodShell, FoodSubHeader, foodPrimary } from './CrispyParts';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 import { foodPage, foodTap } from './motion';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
@@ -20,6 +21,7 @@ export default function CrispyCheckoutPage(props: TemplateCheckoutPageProps) {
     showConfirmModal, setShowConfirmModal, showPaymentModal, setShowPaymentModal, pedidoCreado, enviarPedido,
   } = props;
 
+  const ir = useIrEnTienda(slug, diseno);
   const primary = foodPrimary(cp);
   const canSubmit = !enviando && carritoState.length > 0;
   const deliveryType = formData.tipoEntrega || 'RECOJO';
@@ -27,10 +29,10 @@ export default function CrispyCheckoutPage(props: TemplateCheckoutPageProps) {
   const inputCls = 'mt-1.5 h-12 w-full rounded-2xl border-0 bg-white px-4 text-sm font-medium shadow-sm outline-none focus:ring-2';
 
   return (
-    <FoodShell slug={slug} active="orders" cp={primary} diseno={diseno} tienda={tienda} carrito={carritoState} onOpenCart={() => (window.location.href = `/tienda/${slug}/catalogo`)}>
+    <FoodShell slug={slug} active="orders" cp={primary} diseno={diseno} tienda={tienda} carrito={carritoState} onOpenCart={() => ir(`/tienda/${slug}/catalogo`)}>
       <motion.div initial="hidden" animate="show" variants={foodPage}>
         <div className="lg:hidden">
-          <FoodSubHeader title="Finalizar pedido" slug={slug} cp={primary} carrito={carritoState} />
+          <FoodSubHeader diseno={diseno} title="Finalizar pedido" slug={slug} cp={primary} carrito={carritoState} />
         </div>
         <h1 className="hidden pb-2 pt-8 text-[30px] font-extrabold lg:block" style={{ color: FOOD.ink }}>Finalizar pedido</h1>
 
@@ -42,7 +44,7 @@ export default function CrispyCheckoutPage(props: TemplateCheckoutPageProps) {
             {carritoState.length === 0 ? (
               <div className="py-6 text-center">
                 <p className="text-sm font-semibold" style={{ color: FOOD.soft }}>Tu carrito está vacío.</p>
-                <a href={`/tienda/${slug}/catalogo`} className="mt-3 inline-flex rounded-full px-5 py-2.5 text-[12px] font-extrabold text-white" style={{ backgroundColor: primary }}>Ver menú</a>
+                <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="mt-3 inline-flex rounded-full px-5 py-2.5 text-[12px] font-extrabold text-white" style={{ backgroundColor: primary }} slug={slug} diseno={diseno}>Ver menú</EnlaceTienda>
               </div>
             ) : carritoState.map((item) => {
               const itemId = item.cartId || item.id;

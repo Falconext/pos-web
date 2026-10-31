@@ -4,6 +4,7 @@ import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { VELO, VeloFooter, VeloHeader, VeloProductImage, VeloWhatsAppFab, veloFont, veloPrimary } from './BicicletasParts';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 import { veloCard, veloPage, veloSection, veloStagger, veloTap, veloViewport } from './motion';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
@@ -49,6 +50,7 @@ export default function BicicletasCheckoutPage(props: TemplateCheckoutPageProps)
     enviarPedido,
   } = props;
 
+  const ir = useIrEnTienda(slug, diseno);
   const primary = veloPrimary(cp);
   const font = veloFont(diseno);
   const cartCount = carritoState.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
@@ -70,20 +72,20 @@ export default function BicicletasCheckoutPage(props: TemplateCheckoutPageProps)
         cp={primary}
         diseno={diseno}
         carritoSize={cartCount}
-        onOpenCart={() => (window.location.href = `/tienda/${slug}/catalogo`)}
+        onOpenCart={() => ir(`/tienda/${slug}/catalogo`)}
         searchQuery={search}
         setSearchQuery={setSearch}
         allCategories={[]}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          if (value?.trim()) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`;
+          if (value?.trim()) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`);
         }}
       />
 
       <section className="relative overflow-hidden border-b" style={{ borderColor: VELO.line, background: `linear-gradient(120% 120% at 80% 0%, #FFFFFF, ${VELO.mist} 65%)` }}>
         <div className="mx-auto max-w-7xl px-6 py-12 md:py-14">
           <div className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-400">
-            <a href={`/tienda/${slug}`} className="hover:text-neutral-900">Inicio</a>
+            <EnlaceTienda href={`/tienda/${slug}`} className="hover:text-neutral-900" slug={slug} diseno={diseno}>Inicio</EnlaceTienda>
             <span className="mx-2">/</span>
             <span className="text-neutral-700">Finalizar compra</span>
           </div>
@@ -181,7 +183,7 @@ export default function BicicletasCheckoutPage(props: TemplateCheckoutPageProps)
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em]" style={{ color: primary }}>Completa tu equipo</p>
                     <h2 className="text-2xl font-bold uppercase" style={{ fontFamily: VELO.display, color: VELO.ink }}>También te servirá</h2>
                   </div>
-                  <a href={`/tienda/${slug}/catalogo`} className="text-xs font-bold uppercase tracking-[0.14em] hover:opacity-70" style={{ color: VELO.ink }}>Ver todo</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="text-xs font-bold uppercase tracking-[0.14em] hover:opacity-70" style={{ color: VELO.ink }} slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {suggestedProducts.slice(0, 3).map((producto) => (
@@ -219,7 +221,7 @@ export default function BicicletasCheckoutPage(props: TemplateCheckoutPageProps)
                 <div className="my-6 bg-neutral-50 p-8 text-center">
                   <Icon icon="solar:cart-cross-linear" className="mx-auto text-4xl text-neutral-300" />
                   <p className="mt-3 text-sm font-medium text-neutral-500">Tu carrito está vacío.</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex px-5 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-white" style={{ backgroundColor: primary }}>Ver tienda</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex px-5 py-3 text-[11px] font-bold uppercase tracking-[0.14em] text-white" style={{ backgroundColor: primary }} slug={slug} diseno={diseno}>Ver tienda</EnlaceTienda>
                 </div>
               ) : (
                 carritoState.map((item) => {

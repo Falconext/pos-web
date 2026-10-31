@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { VELO, VeloCartModal, VeloFooter, VeloHeader, VeloWhatsAppFab, veloFont, veloPrimary, waLink, withAlpha } from './BicicletasParts';
+import { useIrEnTienda } from '@/components/tienda/navTienda';
 import { veloCard, veloPage, veloSection, veloStagger, veloTap, veloViewport } from './motion';
 
 function pickContact(tienda: any, diseno: any) {
@@ -38,6 +39,7 @@ export default function BicicletasContactPage({
   actualizarCantidad?: (id: any, cantidad: number) => void;
   onNavigate?: (page: 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto') => void;
 }) {
+  const ir = useIrEnTienda(slug, diseno);
   const primary = veloPrimary(cp);
   const font = veloFont(diseno);
   const [sent, setSent] = useState(false);
@@ -50,7 +52,7 @@ export default function BicicletasContactPage({
 
   const go = (page: 'home' | 'catalogo' | 'checkout' | 'contacto') => {
     if (onNavigate) { onNavigate(page); return; }
-    window.location.href = page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`;
+    ir(page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`);
   };
 
   const inputCls = 'mt-2 h-12 w-full border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--velo-cp)]';
@@ -68,7 +70,7 @@ export default function BicicletasContactPage({
         onSearchSubmit={(event, value) => {
           event.preventDefault();
           const term = value?.trim();
-          if (term) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(term)}`;
+          if (term) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(term)}`);
         }}
       />
 

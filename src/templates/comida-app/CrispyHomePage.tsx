@@ -5,10 +5,10 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { hrefDeBloque, useIrADestino } from '@/templates/shared/enlacesTienda';
 import { FOOD, FoodCartModal, FoodHomeTopBar, FoodProductCard, FoodSearchBar, FoodShell, foodPrimary, storeName, withAlpha } from './CrispyParts';
 import { foodCard, foodEase, foodPage, foodSection, foodStagger, foodTap, foodViewport } from './motion';
-
-const navigate = (to: string) => { window.location.href = to; };
 
 const HERO_FALLBACKS = [
   'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
@@ -113,12 +113,16 @@ export default function CrispyHomePage({
 }: TemplateHomePageProps) {
   const primary = foodPrimary(cp);
   const combos = productos.slice(0, 8);
+  const ir = useIrEnTienda(slug, diseno);
+  const irADestino = useIrADestino(slug, diseno);
+  // Banner "Ofertas": destino elegido; sin elegir, la categoría de ofertas si existe o el menú completo.
+  const promoHref = hrefDeBloque(diseno, 'comidaAppPromoAction', { slug, categorias: allCategories, pistas: [String(diseno?.comidaAppPromoEyebrow || '').replace(/[^\p{L}\p{N} ]/gu, '').trim(), 'Ofertas', 'Combos'] });
 
   const cats = (allCategories || []).map((c: any) => (typeof c === 'string' ? { nombre: c } : c)).filter((c: any) => c?.nombre).slice(0, 8);
   const catFallback = ['Todo', 'Entradas', 'Platos', 'Parrillas', 'Bebidas', 'Postres'];
   const catList = cats.length ? cats : catFallback.map((n) => ({ nombre: n }));
 
-  const goCat = (nombre: string) => navigate(`/tienda/${slug}/catalogo${nombre && nombre !== 'Todo' ? `?category=${encodeURIComponent(nombre)}` : ''}`);
+  const goCat = (nombre: string) => ir(`/tienda/${slug}/catalogo${nombre && nombre !== 'Todo' ? `?category=${encodeURIComponent(nombre)}` : ''}`);
 
   return (
     <FoodShell slug={slug} active="home" cp={primary} diseno={diseno} tienda={tienda} carrito={carrito} onOpenCart={() => setMostrarCarrito(true)} categories={allCategories}>
@@ -127,7 +131,7 @@ export default function CrispyHomePage({
           <FoodHomeTopBar tienda={tienda} slug={slug} diseno={diseno} cp={primary} carrito={carrito} onOpenCart={() => setMostrarCarrito(true)} />
           <FoodSearchBar
             placeholder={diseno?.comidaAppSearchPlaceholder || 'Busca tu antojo...'}
-            onSubmit={(e, v) => { e.preventDefault(); navigate(`/tienda/${slug}/catalogo${v ? `?search=${encodeURIComponent(v)}` : ''}`); }}
+            onSubmit={(e, v) => { e.preventDefault(); ir(`/tienda/${slug}/catalogo${v ? `?search=${encodeURIComponent(v)}` : ''}`); }}
           />
         </div>
 
@@ -158,7 +162,7 @@ export default function CrispyHomePage({
         <section className="mt-5 px-4 lg:mt-10 lg:px-0">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-[18px] font-extrabold" style={{ color: FOOD.ink }}>{diseno?.comidaAppCombosTitle || 'Combos populares'}</h2>
-            <a href={`/tienda/${slug}/catalogo`} className="flex items-center gap-1 text-[12px] font-bold" style={{ color: primary }}>Ver todo <Icon icon="solar:arrow-right-linear" width={14} /></a>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="flex items-center gap-1 text-[12px] font-bold" style={{ color: primary }} slug={slug} diseno={diseno}>Ver todo <Icon icon="solar:arrow-right-linear" width={14} /></EnlaceTienda>
           </div>
           {loading ? (
             <div className="flex gap-3 overflow-hidden">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-64 w-44 shrink-0 animate-pulse rounded-3xl" style={{ backgroundColor: '#00000008' }} />)}</div>
@@ -168,7 +172,7 @@ export default function CrispyHomePage({
             <motion.div variants={foodStagger} initial="hidden" whileInView="show" viewport={foodViewport} className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-5 lg:overflow-visible lg:px-0">
               {combos.map((p) => (
                 <motion.div key={p.id} variants={foodCard} className="w-44 shrink-0 lg:w-auto">
-                  <FoodProductCard producto={p} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${p.id}`)} />
+                  <FoodProductCard producto={p} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${p.id}`)} />
                 </motion.div>
               ))}
             </motion.div>
@@ -186,10 +190,10 @@ export default function CrispyHomePage({
               <p className="text-[12px] font-extrabold" style={{ color: primary }}>{diseno?.comidaAppPromoEyebrow || 'Ofertas 🔥'}</p>
               <h3 className="mt-1 text-[24px] font-extrabold leading-tight lg:text-[40px]">{diseno?.comidaAppPromoTitle || 'Hasta 30% OFF'}</h3>
               <p className="mt-1 text-[12px] font-medium text-white/85 lg:text-[15px]">{diseno?.comidaAppPromoSubtitle || 'En combos seleccionados'}</p>
-              <motion.button whileTap={foodTap} type="button" onClick={() => navigate(`/tienda/${slug}/catalogo`)} className="mt-4 flex w-fit items-center gap-2 rounded-full py-2.5 pl-5 pr-2.5 text-[12px] font-extrabold shadow-lg lg:mt-6 lg:py-3.5 lg:pl-7 lg:pr-3.5 lg:text-[14px]" style={{ backgroundColor: '#fff', color: FOOD.ink, textShadow: 'none' }}>
+              {promoHref && <motion.button whileTap={foodTap} type="button" onClick={() => irADestino(promoHref)} className="mt-4 flex w-fit items-center gap-2 rounded-full py-2.5 pl-5 pr-2.5 text-[12px] font-extrabold shadow-lg lg:mt-6 lg:py-3.5 lg:pl-7 lg:pr-3.5 lg:text-[14px]" style={{ backgroundColor: '#fff', color: FOOD.ink, textShadow: 'none' }}>
                 {diseno?.comidaAppPromoButton || 'Pedir ahora'}
                 <span className="flex h-6 w-6 items-center justify-center rounded-full text-white lg:h-7 lg:w-7" style={{ backgroundColor: primary }}><Icon icon="solar:arrow-right-linear" width={13} /></span>
-              </motion.button>
+              </motion.button>}
             </div>
             <span className="absolute right-4 top-4 z-10 flex h-14 w-14 flex-col items-center justify-center rounded-full text-center text-white shadow-lg lg:h-20 lg:w-20" style={{ backgroundColor: primary }}>
               <span className="text-[15px] font-extrabold leading-none lg:text-[24px]">30%</span>
@@ -205,7 +209,7 @@ export default function CrispyHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

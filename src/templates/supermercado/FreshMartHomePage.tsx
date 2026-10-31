@@ -6,10 +6,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { hrefDeBloque, pistaDeBoton, useIrADestino } from '@/templates/shared/enlacesTienda';
+import { BloqueEnlace } from '@/templates/shared/BloqueEnlace';
 import { FM, FmCartModal, FmFooter, FmHeader, FmProductCard, FmWhatsAppFab, fmFont, fmPrimary } from './FreshMartParts';
 import { fmCard, fmEase, fmPage, fmSection, fmStagger, fmTap, fmViewport } from './motion';
 
-const navigate = (to: string) => { window.location.href = to; };
+const MotionEnlace = motion.create(EnlaceTienda);
 
 const HERO_FALLBACKS = [
   'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1000&q=80',
@@ -48,19 +51,19 @@ const TESTIMONIALS = [
 ];
 
 interface HeroSlide {
-  image: string; eyebrow: string; title: string; title2: string; subtitle: string; badge: string; button: string; button2: string; onlyImage: boolean; actionKey: string;
+  image: string; eyebrow: string; title: string; title2: string; subtitle: string; badge: string; button: string; button2: string; onlyImage: boolean; actionKey: string; action2Key: string;
 }
 
 function buildHeroSlides(diseno: any): HeroSlide[] {
   const raw: HeroSlide[] = slidesVisibles(diseno, 'supermercado', [
-    { image: diseno?.supermercadoHeroImage || '', eyebrow: diseno?.supermercadoHeroEyebrow || 'Frescura en la que puedes confiar', title: diseno?.supermercadoHeroTitle || 'Abarrotes frescos,', title2: diseno?.supermercadoHeroTitle2 || 'mejor vida', subtitle: diseno?.supermercadoHeroSubtitle || 'Recibe las frutas, verduras y esenciales más frescos directo en tu puerta.', badge: diseno?.supermercadoHeroBadge || 'Hasta 30% OFF', button: diseno?.supermercadoHeroButton || 'Comprar ahora', button2: diseno?.supermercadoHeroButton2 || 'Ver ofertas', onlyImage: Boolean(diseno?.supermercadoHeroOnlyImage), actionKey: 'supermercadoHeroAction' },
-    { image: diseno?.supermercadoSlide2Image || '', eyebrow: diseno?.supermercadoSlide2Eyebrow || 'Directo del campo', title: diseno?.supermercadoSlide2Title || 'Frutas y verduras', title2: diseno?.supermercadoSlide2Title2 || 'del día', subtitle: diseno?.supermercadoSlide2Subtitle || 'Seleccionamos lo mejor de cada cosecha para tu mesa.', badge: diseno?.supermercadoSlide2Badge || 'Nuevo ingreso', button: diseno?.supermercadoSlide2Button || 'Descubrir', button2: diseno?.supermercadoSlide2Button2 || 'Ver todo', onlyImage: Boolean(diseno?.supermercadoSlide2OnlyImage), actionKey: 'supermercadoSlide2Action' },
-    { image: diseno?.supermercadoSlide3Image || '', eyebrow: diseno?.supermercadoSlide3Eyebrow || 'Entrega en 30 minutos', title: diseno?.supermercadoSlide3Title || 'Tu despensa llena,', title2: diseno?.supermercadoSlide3Title2 || 'sin salir de casa', subtitle: diseno?.supermercadoSlide3Subtitle || 'Haz tu pedido y recíbelo el mismo día. Rápido y seguro.', badge: diseno?.supermercadoSlide3Badge || 'Envío gratis', button: diseno?.supermercadoSlide3Button || 'Pedir ahora', button2: diseno?.supermercadoSlide3Button2 || 'Ver ofertas', onlyImage: Boolean(diseno?.supermercadoSlide3OnlyImage), actionKey: 'supermercadoSlide3Action' },
+    { image: diseno?.supermercadoHeroImage || '', eyebrow: diseno?.supermercadoHeroEyebrow || 'Frescura en la que puedes confiar', title: diseno?.supermercadoHeroTitle || 'Abarrotes frescos,', title2: diseno?.supermercadoHeroTitle2 || 'mejor vida', subtitle: diseno?.supermercadoHeroSubtitle || 'Recibe las frutas, verduras y esenciales más frescos directo en tu puerta.', badge: diseno?.supermercadoHeroBadge || 'Hasta 30% OFF', button: diseno?.supermercadoHeroButton || 'Comprar ahora', button2: diseno?.supermercadoHeroButton2 || 'Ver ofertas', onlyImage: Boolean(diseno?.supermercadoHeroOnlyImage), actionKey: 'supermercadoHeroAction', action2Key: 'supermercadoHeroButton2Action' },
+    { image: diseno?.supermercadoSlide2Image || '', eyebrow: diseno?.supermercadoSlide2Eyebrow || 'Directo del campo', title: diseno?.supermercadoSlide2Title || 'Frutas y verduras', title2: diseno?.supermercadoSlide2Title2 || 'del día', subtitle: diseno?.supermercadoSlide2Subtitle || 'Seleccionamos lo mejor de cada cosecha para tu mesa.', badge: diseno?.supermercadoSlide2Badge || 'Nuevo ingreso', button: diseno?.supermercadoSlide2Button || 'Descubrir', button2: diseno?.supermercadoSlide2Button2 || 'Ver todo', onlyImage: Boolean(diseno?.supermercadoSlide2OnlyImage), actionKey: 'supermercadoSlide2Action', action2Key: 'supermercadoSlide2Button2Action' },
+    { image: diseno?.supermercadoSlide3Image || '', eyebrow: diseno?.supermercadoSlide3Eyebrow || 'Entrega en 30 minutos', title: diseno?.supermercadoSlide3Title || 'Tu despensa llena,', title2: diseno?.supermercadoSlide3Title2 || 'sin salir de casa', subtitle: diseno?.supermercadoSlide3Subtitle || 'Haz tu pedido y recíbelo el mismo día. Rápido y seguro.', badge: diseno?.supermercadoSlide3Badge || 'Envío gratis', button: diseno?.supermercadoSlide3Button || 'Pedir ahora', button2: diseno?.supermercadoSlide3Button2 || 'Ver ofertas', onlyImage: Boolean(diseno?.supermercadoSlide3OnlyImage), actionKey: 'supermercadoSlide3Action', action2Key: 'supermercadoSlide3Button2Action' },
   ]);
   return raw.map((s, i) => ({ ...s, image: s.image || HERO_FALLBACKS[i % HERO_FALLBACKS.length] }));
 }
 
-function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; slug: string; primary: string; diseno: any }) {
+function HeroSlider({ slides, slug, primary, diseno, categorias }: { slides: HeroSlide[]; slug: string; primary: string; diseno: any; categorias: any[] }) {
   const navigateRouter = useNavigate();
   const [index, setIndex] = useState(0);
   const count = slides.length;
@@ -74,7 +77,9 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
     return () => clearInterval(timer);
   }, [count, intervalMs]);
   const goAction = (key: string) => runStoreLinkAction(getStoreLinkAction(diseno, key, { defaultType: 'catalog' }), { slug, navigate: navigateRouter });
-  const goCatalog = () => { if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; } navigateRouter(`/tienda/${slug}/catalogo`); };
+  const irADestino = useIrADestino(slug, diseno);
+  // Botón 2: destino elegido; sin elegir, la categoría que nombra ("Ver ofertas" → Ofertas) o el catálogo.
+  const href2 = (s: HeroSlide) => hrefDeBloque(diseno, s.action2Key, { slug, categorias, pistas: [pistaDeBoton(s.button2)] });
   const slide = slides[index];
 
   return (
@@ -99,7 +104,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
                   <motion.button type="button" onClick={() => goAction(slide.actionKey)} whileHover={{ scale: 1.03, y: -2 }} whileTap={fmTap} className="inline-flex items-center gap-2 rounded-lg px-7 py-3.5 text-sm font-bold text-white shadow-lg" style={{ backgroundColor: primary }}>
                     {slide.button} <Icon icon="solar:arrow-right-linear" width={16} />
                   </motion.button>
-                  <button type="button" onClick={goCatalog} className="inline-flex items-center gap-2 rounded-lg border px-6 py-3.5 text-sm font-bold transition-colors" style={{ borderColor: primary, color: primary }}>{slide.button2}</button>
+                  {slide.button2 && href2(slide) && <button type="button" onClick={() => irADestino(href2(slide))} className="inline-flex items-center gap-2 rounded-lg border px-6 py-3.5 text-sm font-bold transition-colors" style={{ borderColor: primary, color: primary }}>{slide.button2}</button>}
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -145,7 +150,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
   );
 }
 
-function SectionHead({ title, sub, slug, center }: { title: string; sub?: string; slug?: string; center?: boolean }) {
+function SectionHead({ title, sub, slug, center, diseno }: { title: string; sub?: string; slug?: string; center?: boolean; diseno?: any }) {
   return (
     <div className={`mb-7 flex flex-wrap items-end gap-2 ${center ? 'flex-col items-center text-center' : 'justify-between'}`}>
       <div>
@@ -153,7 +158,7 @@ function SectionHead({ title, sub, slug, center }: { title: string; sub?: string
         {sub && <p className="mt-1 text-sm" style={{ color: FM.inkSoft }}>{sub}</p>}
         {center && <span className="mx-auto mt-3 block h-1 w-16 rounded-full" style={{ backgroundColor: FM.green }} />}
       </div>
-      {slug && !center && <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1 text-[13px] font-bold" style={{ color: FM.green }}>Ver todo <Icon icon="solar:arrow-right-linear" width={14} /></a>}
+      {slug && !center && <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1 text-[13px] font-bold" style={{ color: FM.green }} slug={slug} diseno={diseno}>Ver todo <Icon icon="solar:arrow-right-linear" width={14} /></EnlaceTienda>}
     </div>
   );
 }
@@ -163,6 +168,10 @@ export default function FreshMartHomePage({
 }: TemplateHomePageProps) {
   const primary = fmPrimary(cp);
   const font = fmFont(diseno);
+  const ir = useIrEnTienda(slug, diseno);
+  // Promo "Súper ahorro" y "Pedir ahora": destino elegido; sin elegir, categoría parecida o catálogo.
+  const saverHref = hrefDeBloque(diseno, 'supermercadoSaverAction', { slug, categorias: allCategories, pistas: ['Ofertas'] });
+  const deliveryHref = hrefDeBloque(diseno, 'supermercadoDeliveryAction', { slug, categorias: allCategories });
   const deals = productos.slice(0, 12);
   const cartTotal = carrito.reduce((s, i) => s + Number(i.precioUnitario || 0) * Number(i.cantidad || 1), 0);
 
@@ -173,17 +182,17 @@ export default function FreshMartHomePage({
   const renderRow = (items: any[], key: string) => (
     <motion.div variants={fmStagger} className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
       {items.map((p, i) => (
-        <FmProductCard key={`${key}-${p.id ?? i}`} producto={p} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${p.id}`)} />
+        <FmProductCard key={`${key}-${p.id ?? i}`} producto={p} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${p.id}`)} />
       ))}
     </motion.div>
   );
 
   return (
     <motion.div initial="hidden" animate="show" variants={fmPage} className="min-h-screen" style={{ backgroundColor: FM.cream, fontFamily: font }}>
-      <FmHeader tienda={tienda} slug={slug} cp={primary} diseno={diseno} carritoSize={carrito.reduce((s, i) => s + Number(i.cantidad || 1), 0)} cartTotal={cartTotal} onOpenCart={() => setMostrarCarrito(true)} allCategories={allCategories} onSearchSubmit={(e, v) => { e.preventDefault(); navigate(`/tienda/${slug}/catalogo${v ? `?search=${encodeURIComponent(v)}` : ''}`); }} />
+      <FmHeader tienda={tienda} slug={slug} cp={primary} diseno={diseno} carritoSize={carrito.reduce((s, i) => s + Number(i.cantidad || 1), 0)} cartTotal={cartTotal} onOpenCart={() => setMostrarCarrito(true)} allCategories={allCategories} onSearchSubmit={(e, v) => { e.preventDefault(); ir(`/tienda/${slug}/catalogo${v ? `?search=${encodeURIComponent(v)}` : ''}`); }} />
 
       <main>
-        <HeroSlider slides={buildHeroSlides(diseno)} slug={slug} primary={primary} diseno={diseno} />
+        <HeroSlider slides={buildHeroSlides(diseno)} slug={slug} primary={primary} diseno={diseno} categorias={allCategories} />
 
         {/* Shop by Category */}
         {categoryCards.length > 0 && (
@@ -191,12 +200,12 @@ export default function FreshMartHomePage({
             <SectionHead title={diseno?.supermercadoCategoriesTitle || 'Compra por categoría'} center />
             <motion.div variants={fmStagger} className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-8">
               {categoryCards.map((cat: any, i: number) => (
-                <motion.a key={`cat-${i}`} variants={fmCard} whileHover={{ y: -5 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group flex flex-col items-center gap-2.5 rounded-xl border bg-white p-4 text-center transition-shadow hover:shadow-[0_16px_30px_-20px_rgba(31,42,26,0.4)]" style={{ borderColor: FM.line }}>
+                <MotionEnlace key={`cat-${i}`} variants={fmCard} whileHover={{ y: -5 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} slug={slug} diseno={diseno} className="group flex flex-col items-center gap-2.5 rounded-xl border bg-white p-4 text-center transition-shadow hover:shadow-[0_16px_30px_-20px_rgba(31,42,26,0.4)]" style={{ borderColor: FM.line }}>
                   <span className="grid h-16 w-16 place-items-center overflow-hidden rounded-full p-1" style={{ backgroundColor: FM.greenSoft }}>
                     <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full rounded-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   </span>
                   <span className="line-clamp-2 text-[12px] font-bold leading-tight" style={{ fontFamily: FM.display, color: FM.ink }}>{cat.label}</span>
-                </motion.a>
+                </MotionEnlace>
               ))}
             </motion.div>
           </motion.section>
@@ -212,7 +221,7 @@ export default function FreshMartHomePage({
                 <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: FM.greenSoft }}>{diseno?.supermercadoSaverLabel || 'Oferta por tiempo limitado'}</p>
                 <h3 className="mt-2 text-3xl font-extrabold leading-tight md:text-4xl" style={{ fontFamily: FM.display }}>{diseno?.supermercadoSaverTitle || 'Súper ahorro del fin de semana'}</h3>
                 <p className="mt-2 text-sm text-white/70">{diseno?.supermercadoSaverSubtitle || 'Hasta 30% de descuento en productos seleccionados. ¡Solo hasta el domingo!'}</p>
-                <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex rounded-lg px-6 py-3 text-[12px] font-bold text-white transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary }}>{diseno?.supermercadoSaverButton || 'Comprar ahora'}</a>
+                {saverHref && <BloqueEnlace href={saverHref} slug={slug} diseno={diseno} className="mt-5 inline-flex rounded-lg px-6 py-3 text-[12px] font-bold text-white transition-transform hover:-translate-y-0.5" style={{ backgroundColor: primary }}>{diseno?.supermercadoSaverButton || 'Comprar ahora'}</BloqueEnlace>}
               </div>
               <span className="absolute right-6 top-1/2 z-10 hidden h-20 w-20 -translate-y-1/2 place-items-center rounded-full text-center text-[13px] font-extrabold text-white shadow-lg md:grid" style={{ backgroundColor: FM.orange }}>30%<br />OFF</span>
             </div>
@@ -225,14 +234,14 @@ export default function FreshMartHomePage({
                 </div>
               </div>
               <p className="mt-3 text-sm" style={{ color: FM.inkSoft }}>Entrega rápida a la puerta de tu casa.</p>
-              <a href={`/tienda/${slug}/catalogo`} className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-lg px-5 py-2.5 text-[12px] font-bold text-white" style={{ backgroundColor: FM.greenDark }}>Pedir ahora <Icon icon="solar:arrow-right-linear" width={13} /></a>
+              {deliveryHref && <BloqueEnlace href={deliveryHref} slug={slug} diseno={diseno} className="mt-4 inline-flex w-fit items-center gap-1.5 rounded-lg px-5 py-2.5 text-[12px] font-bold text-white" style={{ backgroundColor: FM.greenDark }}>Pedir ahora <Icon icon="solar:arrow-right-linear" width={13} /></BloqueEnlace>}
             </div>
           </div>
         </motion.section>
 
         {/* Deal of the Day */}
         <motion.section variants={fmSection} initial="hidden" whileInView="show" viewport={fmViewport} className="mx-auto max-w-7xl px-5 pb-12 md:px-6">
-          <SectionHead title={diseno?.supermercadoDealsTitle || 'Ofertas del día'} sub="Los mejores precios, solo por hoy" slug={slug} />
+          <SectionHead title={diseno?.supermercadoDealsTitle || 'Ofertas del día'} sub="Los mejores precios, solo por hoy" slug={slug} diseno={diseno} />
           {loading ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
               {Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-black/[0.04]" />)}
@@ -294,7 +303,7 @@ export default function FreshMartHomePage({
       <FmFooter tienda={tienda} slug={slug} diseno={diseno} cp={primary} categories={allCategories} />
       <FmWhatsAppFab tienda={tienda} />
 
-      <FmCartModal isOpen={mostrarCarrito} onClose={() => setMostrarCarrito(false)} carrito={carrito} setCarrito={setCarrito} actualizarCantidad={actualizarCantidad} onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }} cp={primary} tienda={tienda} />
+      <FmCartModal isOpen={mostrarCarrito} onClose={() => setMostrarCarrito(false)} carrito={carrito} setCarrito={setCarrito} actualizarCantidad={actualizarCantidad} onCheckout={() => ir(`/tienda/${slug}/checkout`)} cp={primary} tienda={tienda} />
     </motion.div>
   );
 }

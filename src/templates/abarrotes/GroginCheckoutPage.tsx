@@ -4,6 +4,7 @@ import type { TemplateCheckoutPageProps } from '@/templates/shared/types';
 import ConfirmOrderModal from '@/components/tienda/ConfirmOrderModal';
 import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationModal';
 import { GRO, GroFooter, GroHeader, GroProductImage, GroWhatsAppFab, groFont, groPrimary } from './GroginParts';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 import { groCard, groPage, groSection, groStagger, groTap, groViewport } from './motion';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
@@ -31,6 +32,7 @@ export default function GroginCheckoutPage(props: TemplateCheckoutPageProps) {
     pedidoCreado, enviarPedido,
   } = props;
 
+  const ir = useIrEnTienda(slug, diseno);
   const primary = groPrimary(cp);
   const font = groFont(diseno);
   const cartCount = carritoState.reduce((sum, item) => sum + Number(item.cantidad || 1), 0);
@@ -46,17 +48,17 @@ export default function GroginCheckoutPage(props: TemplateCheckoutPageProps) {
         cp={primary}
         diseno={diseno}
         carritoSize={cartCount}
-        onOpenCart={() => (window.location.href = `/tienda/${slug}/catalogo`)}
+        onOpenCart={() => ir(`/tienda/${slug}/catalogo`)}
         searchQuery={search}
         setSearchQuery={setSearch}
         allCategories={[]}
-        onSearchSubmit={(event, value) => { event.preventDefault(); if (value?.trim()) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`; }}
+        onSearchSubmit={(event, value) => { event.preventDefault(); if (value?.trim()) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`); }}
       />
 
       <div className="border-b bg-white" style={{ borderColor: GRO.line }}>
         <div className="mx-auto max-w-7xl px-5 py-5 md:px-6">
           <div className="text-xs font-medium" style={{ color: GRO.inkSoft }}>
-            <a href={`/tienda/${slug}`} className="hover:text-neutral-900">Inicio</a>
+            <EnlaceTienda href={`/tienda/${slug}`} className="hover:text-neutral-900" slug={slug} diseno={diseno}>Inicio</EnlaceTienda>
             <span className="mx-2">/</span>
             <span style={{ color: GRO.ink }}>Finalizar compra</span>
           </div>
@@ -133,7 +135,7 @@ export default function GroginCheckoutPage(props: TemplateCheckoutPageProps) {
                     <p className="text-[11px] font-bold" style={{ color: GRO.green }}>No olvides</p>
                     <h2 className="text-xl font-bold" style={{ fontFamily: GRO.display, color: GRO.ink }}>También te puede faltar</h2>
                   </div>
-                  <a href={`/tienda/${slug}/catalogo`} className="text-xs font-bold" style={{ color: GRO.green }}>Ver todo</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="text-xs font-bold" style={{ color: GRO.green }} slug={slug} diseno={diseno}>Ver todo</EnlaceTienda>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                   {suggestedProducts.slice(0, 3).map((producto) => (
@@ -162,7 +164,7 @@ export default function GroginCheckoutPage(props: TemplateCheckoutPageProps) {
                 <div className="my-6 rounded-2xl bg-neutral-50 p-8 text-center">
                   <Icon icon="solar:cart-cross-linear" className="mx-auto text-4xl text-neutral-300" />
                   <p className="mt-3 text-sm font-medium text-neutral-500">Tu carrito está vacío.</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-4 inline-flex rounded-full px-5 py-2.5 text-[12px] font-bold text-white" style={{ backgroundColor: primary }}>Ver productos</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="mt-4 inline-flex rounded-full px-5 py-2.5 text-[12px] font-bold text-white" style={{ backgroundColor: primary }} slug={slug} diseno={diseno}>Ver productos</EnlaceTienda>
                 </div>
               ) : (
                 carritoState.map((item) => {

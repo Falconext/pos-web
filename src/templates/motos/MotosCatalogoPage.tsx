@@ -5,12 +5,15 @@ import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { MOTO, MotoCartModal, MotoFooter, MotoHeader, MotoProductCard, MotoWhatsAppFab, motoFont, motoPrimary, withAlpha } from './MotosParts';
 import { motoCard, motoPage, motoSection, motoStagger } from './motion';
+import { productoEnCategoria } from '@/components/tienda/navTienda';
 
 function getName(item: any) {
   return typeof item === 'string' ? item : item?.nombre;
 }
 
 function filterCount(products: any[], key: 'categoria' | 'marca', name: string) {
+  // Categoría: cuenta también los productos que la tienen como adicional.
+  if (key === 'categoria') return products.filter((product) => productoEnCategoria(product, name)).length;
   return products.filter((product) => {
     const value = product?.[key];
     const current = typeof value === 'object' ? value?.nombre : value;

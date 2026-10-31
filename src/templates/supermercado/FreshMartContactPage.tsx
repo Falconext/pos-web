@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { FM, FmCartModal, FmFooter, FmHeader, FmWhatsAppFab, fmFont, fmPrimary, waLink, withAlpha } from './FreshMartParts';
+import { useIrEnTienda } from '@/components/tienda/navTienda';
 import { fmCard, fmPage, fmSection, fmStagger, fmTap, fmViewport } from './motion';
 
 function pickContact(tienda: any, diseno: any) {
@@ -21,6 +22,7 @@ export default function FreshMartContactPage({
   actualizarCantidad?: (id: any, cantidad: number) => void;
   onNavigate?: (page: 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto') => void;
 }) {
+  const ir = useIrEnTienda(slug, diseno);
   const primary = fmPrimary(cp);
   const font = fmFont(diseno);
   const [sent, setSent] = useState(false);
@@ -32,12 +34,12 @@ export default function FreshMartContactPage({
   const displayHours = contact.hours || 'Lun a Dom · 8:00 – 22:00';
   const cartTotal = carrito.reduce((s, i) => s + Number(i.precioUnitario || 0) * Number(i.cantidad || 1), 0);
 
-  const go = (page: 'home' | 'catalogo' | 'checkout' | 'contacto') => { if (onNavigate) { onNavigate(page); return; } window.location.href = page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`; };
+  const go = (page: 'home' | 'catalogo' | 'checkout' | 'contacto') => { if (onNavigate) { onNavigate(page); return; } ir(page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`); };
   const inputCls = 'mt-2 h-12 w-full rounded-lg border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--fm-cp)]';
 
   return (
     <motion.div initial="hidden" animate="show" variants={fmPage} className="min-h-screen" style={{ backgroundColor: FM.soft, fontFamily: font, ['--fm-cp' as any]: primary }}>
-      <FmHeader tienda={tienda} slug={slug} cp={primary} diseno={diseno} carritoSize={carrito.reduce((s, i) => s + Number(i.cantidad || 1), 0)} cartTotal={cartTotal} onOpenCart={() => setMostrarCarrito?.(true)} allCategories={allCategories} onSearchSubmit={(e, v) => { e.preventDefault(); const t = v?.trim(); if (t) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(t)}`; }} />
+      <FmHeader tienda={tienda} slug={slug} cp={primary} diseno={diseno} carritoSize={carrito.reduce((s, i) => s + Number(i.cantidad || 1), 0)} cartTotal={cartTotal} onOpenCart={() => setMostrarCarrito?.(true)} allCategories={allCategories} onSearchSubmit={(e, v) => { e.preventDefault(); const t = v?.trim(); if (t) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(t)}`); }} />
 
       <div className="border-b bg-white" style={{ borderColor: FM.line }}>
         <div className="mx-auto max-w-7xl px-5 py-8 text-center md:px-6 md:py-12">

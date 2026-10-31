@@ -6,10 +6,13 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import type { TemplateHomePageProps } from '@/templates/shared/types';
 import { getStoreLinkAction, runStoreLinkAction } from '@/components/tienda/storeLinkActions';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { hrefDeBloque } from '@/templates/shared/enlacesTienda';
+import { BloqueEnlace } from '@/templates/shared/BloqueEnlace';
 import { GRO, GroCartModal, GroFooter, GroHeader, GroProductCard, GroWhatsAppFab, groFont, groPrimary, titleCase } from './GroginParts';
 import { groCard, groEase, groPage, groSection, groStagger, groTap, groViewport } from './motion';
 
-const navigate = (to: string) => { window.location.href = to; };
+const MotionEnlace = motion.create(EnlaceTienda);
 
 const HERO_FALLBACKS = [
   'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=1600&q=80',
@@ -175,7 +178,7 @@ function HeroSlider({ slides, slug, primary, diseno }: { slides: HeroSlide[]; sl
 
 /* ─────────────────────────────── Sección título ──────────────────────────── */
 
-function SectionHead({ title, sub, slug }: { title: string; sub?: string; slug?: string }) {
+function SectionHead({ title, sub, slug, diseno }: { title: string; sub?: string; slug?: string; diseno?: any }) {
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-2">
       <div>
@@ -183,9 +186,9 @@ function SectionHead({ title, sub, slug }: { title: string; sub?: string; slug?:
         {sub && <p className="mt-1 text-sm" style={{ color: GRO.inkSoft }}>{sub}</p>}
       </div>
       {slug && (
-        <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1 text-[13px] font-bold" style={{ color: GRO.green }}>
+        <EnlaceTienda href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1 text-[13px] font-bold" style={{ color: GRO.green }} slug={slug} diseno={diseno}>
           Ver todo <Icon icon="solar:arrow-right-linear" width={14} />
-        </a>
+        </EnlaceTienda>
       )}
     </div>
   );
@@ -210,6 +213,9 @@ export default function GroginHomePage({
 }: TemplateHomePageProps) {
   const primary = groPrimary(cp);
   const font = groFont(diseno);
+  const ir = useIrEnTienda(slug, diseno);
+  // Banners y tarjetas: destino elegido en el editor; sin elegir, el catálogo (como antes).
+  const destino = (key: string) => hrefDeBloque(diseno, key, { slug, categorias: allCategories });
   const editorsPick = productos.slice(0, 10);
   const categoryProducts = productos.slice(10, 16).length >= 3 ? productos.slice(10, 16) : productos.slice(0, 6);
   const bestSellers = productos.slice(0, 8);
@@ -221,7 +227,7 @@ export default function GroginHomePage({
   const renderRow = (items: any[], key: string) => (
     <motion.div variants={groStagger} className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
       {items.map((p, i) => (
-        <GroProductCard key={`${key}-${p.id ?? i}`} producto={p} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${p.id}`)} />
+        <GroProductCard key={`${key}-${p.id ?? i}`} producto={p} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${p.id}`)} />
       ))}
     </motion.div>
   );
@@ -231,9 +237,9 @@ export default function GroginHomePage({
     { img: diseno?.abarrotesPromoTwoImage || PROMO_FALLBACKS[1], eyebrow: diseno?.abarrotesPromoTwoLabel || 'Esta semana', title: diseno?.abarrotesPromoTwoTitle || 'Todo lo que tu hogar necesita', button: diseno?.abarrotesPromoTwoButton || 'Comprar ahora', key: 'abarrotesPromoTwoAction' },
   ];
   const CARDS = [
-    { img: diseno?.abarrotesCardOneImage || CARD_FALLBACKS[0], eyebrow: diseno?.abarrotesCardOneLabel || 'Solo por hoy', title: diseno?.abarrotesCardOneTitle || 'Te damos los productos de mejor calidad', button: diseno?.abarrotesCardOneButton || 'Comprar ahora' },
-    { img: diseno?.abarrotesCardTwoImage || CARD_FALLBACKS[1], eyebrow: diseno?.abarrotesCardTwoLabel || 'Esta semana', title: diseno?.abarrotesCardTwoTitle || 'Hacemos tu compra más entretenida', button: diseno?.abarrotesCardTwoButton || 'Comprar ahora' },
-    { img: diseno?.abarrotesCardThreeImage || CARD_FALLBACKS[2], eyebrow: diseno?.abarrotesCardThreeLabel || 'Solo por hoy', title: diseno?.abarrotesCardThreeTitle || 'El supermercado que te hace ahorrar', button: diseno?.abarrotesCardThreeButton || 'Comprar ahora' },
+    { img: diseno?.abarrotesCardOneImage || CARD_FALLBACKS[0], eyebrow: diseno?.abarrotesCardOneLabel || 'Solo por hoy', title: diseno?.abarrotesCardOneTitle || 'Te damos los productos de mejor calidad', button: diseno?.abarrotesCardOneButton || 'Comprar ahora', key: 'abarrotesCardOneAction' },
+    { img: diseno?.abarrotesCardTwoImage || CARD_FALLBACKS[1], eyebrow: diseno?.abarrotesCardTwoLabel || 'Esta semana', title: diseno?.abarrotesCardTwoTitle || 'Hacemos tu compra más entretenida', button: diseno?.abarrotesCardTwoButton || 'Comprar ahora', key: 'abarrotesCardTwoAction' },
+    { img: diseno?.abarrotesCardThreeImage || CARD_FALLBACKS[2], eyebrow: diseno?.abarrotesCardThreeLabel || 'Solo por hoy', title: diseno?.abarrotesCardThreeTitle || 'El supermercado que te hace ahorrar', button: diseno?.abarrotesCardThreeButton || 'Comprar ahora', key: 'abarrotesCardThreeAction' },
   ];
 
   return (
@@ -246,7 +252,7 @@ export default function GroginHomePage({
         carritoSize={carrito.reduce((s, i) => s + Number(i.cantidad || 1), 0)}
         onOpenCart={() => setMostrarCarrito(true)}
         allCategories={allCategories}
-        onSearchSubmit={(event, value) => { event.preventDefault(); navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`); }}
+        onSearchSubmit={(event, value) => { event.preventDefault(); ir(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`); }}
       />
 
       <main>
@@ -258,12 +264,12 @@ export default function GroginHomePage({
           <motion.section variants={groSection} initial="hidden" whileInView="show" viewport={groViewport} className="mx-auto max-w-7xl px-5 py-10 md:px-6">
             <motion.div variants={groStagger} className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-8">
               {categoryCards.map((cat: any, i: number) => (
-                <motion.a key={`cat-${i}`} variants={groCard} whileHover={{ y: -4 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} className="group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center transition-colors hover:border-[var(--gro-cp)]" style={{ borderColor: GRO.line, ['--gro-cp' as any]: primary }}>
+                <MotionEnlace key={`cat-${i}`} variants={groCard} whileHover={{ y: -4 }} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`} slug={slug} diseno={diseno} className="group flex flex-col items-center gap-2 rounded-2xl border p-3 text-center transition-colors hover:border-[var(--gro-cp)]" style={{ borderColor: GRO.line, ['--gro-cp' as any]: primary }}>
                   <span className="grid h-16 w-16 place-items-center overflow-hidden rounded-full" style={{ backgroundColor: CATEGORY_TINTS[i % CATEGORY_TINTS.length] }}>
                     <img src={cat.imagenUrl || cat.imagen || CATEGORY_FALLBACKS[i % CATEGORY_FALLBACKS.length]} alt={cat.nombre} loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
                   </span>
                   <span className="line-clamp-2 text-[11.5px] font-bold leading-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{titleCase(cat.label)}</span>
-                </motion.a>
+                </MotionEnlace>
               ))}
             </motion.div>
           </motion.section>
@@ -271,7 +277,7 @@ export default function GroginHomePage({
 
         {/* Editor's Pick */}
         <motion.section variants={groSection} initial="hidden" whileInView="show" viewport={groViewport} className="mx-auto max-w-7xl px-5 pb-4 md:px-6">
-          <SectionHead title={diseno?.abarrotesEditorsTitle || 'Selección destacada'} sub="Los productos con las mejores reseñas" slug={slug} />
+          <SectionHead title={diseno?.abarrotesEditorsTitle || 'Selección destacada'} sub="Los productos con las mejores reseñas" slug={slug} diseno={diseno} />
           {loading ? (
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               {Array.from({ length: 5 }).map((_, i) => <div key={i} className="aspect-[3/4] animate-pulse rounded-2xl bg-black/[0.04]" />)}
@@ -285,7 +291,7 @@ export default function GroginHomePage({
         <motion.section variants={groSection} initial="hidden" whileInView="show" viewport={groViewport} className="mx-auto max-w-7xl px-5 py-10 md:px-6">
           <div className="mb-6 grid gap-4 md:grid-cols-2">
             {PROMOS.map((p) => (
-              <a key={p.key} href={`/tienda/${slug}/catalogo`} className="group relative flex min-h-[150px] items-center overflow-hidden rounded-2xl">
+              <BloqueEnlace key={p.key} href={destino(p.key)} slug={slug} diseno={diseno} className="group relative flex min-h-[150px] items-center overflow-hidden rounded-2xl">
                 <img src={p.img} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
                 <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.94) 0%, rgba(255,255,255,0.75) 45%, rgba(255,255,255,0.05) 100%)' }} />
                 <div className="relative z-10 max-w-[62%] p-6">
@@ -293,7 +299,7 @@ export default function GroginHomePage({
                   <h3 className="mt-1.5 text-xl font-bold leading-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{p.title}</h3>
                   <span className="mt-4 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[12px] font-bold text-white" style={{ backgroundColor: primary }}>{p.button} <Icon icon="solar:arrow-right-linear" width={13} /></span>
                 </div>
-              </a>
+              </BloqueEnlace>
             ))}
           </div>
           {renderRow(categoryProducts, 'catprod')}
@@ -312,7 +318,7 @@ export default function GroginHomePage({
 
         {/* Best Sellers */}
         <motion.section variants={groSection} initial="hidden" whileInView="show" viewport={groViewport} className="mx-auto max-w-7xl px-5 pb-12 md:px-6">
-          <SectionHead title={diseno?.abarrotesBestsellersTitle || 'Los más vendidos'} sub="Lo que más piden nuestros clientes" slug={slug} />
+          <SectionHead title={diseno?.abarrotesBestsellersTitle || 'Los más vendidos'} sub="Lo que más piden nuestros clientes" slug={slug} diseno={diseno} />
           {!loading && bestSellers.length > 0 && renderRow(bestSellers, 'best')}
         </motion.section>
 
@@ -326,7 +332,7 @@ export default function GroginHomePage({
                 <div className="relative z-10 max-w-[70%] p-6">
                   <p className="text-[11px] font-bold" style={{ color: GRO.pink }}>{c.eyebrow}</p>
                   <h3 className="mt-1.5 text-lg font-bold leading-tight" style={{ fontFamily: GRO.display, color: GRO.ink }}>{c.title}</h3>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[12px] font-bold transition-colors hover:text-white" style={{ borderColor: primary, color: GRO.greenDark }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = primary; e.currentTarget.style.color = '#fff'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = GRO.greenDark; }}>{c.button}</a>
+                  {destino(c.key) && <BloqueEnlace href={destino(c.key)} slug={slug} diseno={diseno} className="mt-4 inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[12px] font-bold transition-colors hover:text-white" style={{ borderColor: primary, color: GRO.greenDark }} onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = primary; e.currentTarget.style.color = '#fff'; }} onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = GRO.greenDark; }}>{c.button}</BloqueEnlace>}
                 </div>
               </div>
             ))}
@@ -343,7 +349,7 @@ export default function GroginHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

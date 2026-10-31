@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { FOOD, FoodCartModal, FoodShell, FoodSubHeader, foodPrimary, storeName, waLink } from './CrispyParts';
+import { useIrEnTienda } from '@/components/tienda/navTienda';
 import { foodPage, foodTap } from './motion';
 
 function pickContact(tienda: any, diseno: any) {
@@ -23,6 +24,7 @@ export default function CrispyContactPage({
   actualizarCantidad?: (id: any, cantidad: number) => void;
   onNavigate?: (page: 'home' | 'catalogo' | 'producto' | 'checkout' | 'contacto') => void;
 }) {
+  const ir = useIrEnTienda(slug, diseno);
   const primary = foodPrimary(cp);
   const [sent, setSent] = useState(false);
   const c = pickContact(tienda, diseno);
@@ -31,14 +33,14 @@ export default function CrispyContactPage({
 
   const go = (page: 'home' | 'checkout') => {
     if (onNavigate) { onNavigate(page); return; }
-    window.location.href = page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`;
+    ir(page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`);
   };
 
   return (
     <FoodShell slug={slug} active="profile" cp={primary} diseno={diseno} tienda={tienda} carrito={carrito} onOpenCart={() => setMostrarCarrito?.(true)}>
       <motion.div initial="hidden" animate="show" variants={foodPage}>
         <div className="lg:hidden">
-          <FoodSubHeader title={diseno?.comidaAppContactHeading || 'Contáctanos'} slug={slug} cp={primary} carrito={carrito} onOpenCart={() => setMostrarCarrito?.(true)} onBack={() => go('home')} />
+          <FoodSubHeader diseno={diseno} title={diseno?.comidaAppContactHeading || 'Contáctanos'} slug={slug} cp={primary} carrito={carrito} onOpenCart={() => setMostrarCarrito?.(true)} onBack={() => go('home')} />
         </div>
         <h1 className="hidden pb-2 pt-8 text-[30px] font-extrabold lg:block" style={{ color: FOOD.ink }}>{diseno?.comidaAppContactHeading || 'Contáctanos'}</h1>
 

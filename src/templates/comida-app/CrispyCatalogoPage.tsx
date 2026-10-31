@@ -26,7 +26,7 @@ export default function CrispyCatalogoPage({
     <FoodShell slug={slug} active="menu" cp={primary} diseno={diseno} tienda={tienda} carrito={carrito} onOpenCart={() => setMostrarCarrito(true)} categories={allCategorías}>
       <motion.div initial="hidden" animate="show" variants={foodPage}>
         <div className="lg:hidden">
-          <FoodSubHeader title={diseno?.comidaAppMenuTitle || 'Menú'} slug={slug} cp={primary} carrito={carrito} onOpenCart={() => setMostrarCarrito(true)} />
+          <FoodSubHeader diseno={diseno} title={diseno?.comidaAppMenuTitle || 'Menú'} slug={slug} cp={primary} carrito={carrito} onOpenCart={() => setMostrarCarrito(true)} />
         </div>
         <h1 className="hidden pt-8 text-[30px] font-extrabold lg:block" style={{ color: FOOD.ink }}>{diseno?.comidaAppMenuTitle || 'Menú'}</h1>
         <FoodSearchBar
