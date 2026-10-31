@@ -1,13 +1,26 @@
-import { useCallback, useEffect, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { get, put, patch } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import { BRAND } from '@/lib/branding';
 import Select from '@/components/Select';
+import {
+    type CampoProvincia,
+    type ProvinciaActiva,
+    MENSAJES_PROVINCIA_DEFAULT,
+    VARIABLES_PROVINCIA,
+    errorProvincia,
+    payloadProvincia,
+    provinciaActivaDesde,
+} from './despachoMensajes';
 
 interface DespachoConfig {
     mensajeEnCamino: string;
+    /** Opcional: "en camino" para provincia (agencia). Vacío = el general. */
+    mensajeEnCaminoAgencia: string;
     mensajeEntregado: string;
+    /** Opcional: "entregado" para provincia (recogió en agencia). */
+    mensajeEntregadoAgencia: string;
     /** Llegó a la agencia. Solo sale tal cual cuando el aviso va por Takiy. */
     mensajeEnAgencia: string;
     notificarEnCamino: boolean;
@@ -22,7 +35,9 @@ interface DespachoConfig {
 
 const DEFAULTS: DespachoConfig = {
     mensajeEnCamino: 'Hola {{nombre}}, tu pedido {{pedido}} ya está en camino 🚚. Repartidor: {{repartidor}}.',
+    mensajeEnCaminoAgencia: '',
     mensajeEntregado: 'Hola {{nombre}}, tu pedido {{pedido}} fue entregado exitosamente ✅. ¡Gracias por preferir {{empresa}}!',
+    mensajeEntregadoAgencia: '',
     mensajeEnAgencia: 'Hola {{nombre}}, tu pedido {{pedido}} ya llegó a {{agencia}} 📦. Ya puedes acercarte a recogerlo.',
     notificarEnCamino: true,
     notificarEntregado: true,
@@ -52,11 +67,14 @@ function interpolar(template: string) {
     return template.replace(/\{\{(\w+)\}\}/g, (m, clave: string) => EJEMPLO[clave] ?? m);
 }
 
-function Switch({ activo, onChange, color = 'emerald', disabled }: { activo: boolean; onChange: (v: boolean) => void; color?: 'emerald' | 'amber'; disabled?: boolean }) {
+function Switch({ activo, onChange, color = 'emerald', disabled, etiqueta }: { activo: boolean; onChange: (v: boolean) => void; color?: 'emerald' | 'amber'; disabled?: boolean; etiqueta?: string }) {
     const on = color === 'amber' ? 'bg-amber-500' : 'bg-emerald-500';
     return (
         <button
             type="button"
+            role="switch"
+            aria-checked={activo}
+            aria-label={etiqueta}
             disabled={disabled}
             onClick={() => onChange(!activo)}
             className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'} ${activo ? on : 'bg-slate-300 dark:bg-slate-600'}`}
@@ -66,10 +84,53 @@ function Switch({ activo, onChange, color = 'emerald', disabled }: { activo: boo
     );
 }
 
-function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, placeholder, onToggle, onMensaje, bloqueado, variables = VARIABLES_BASE }: {
+function EditorMensaje({ etiqueta, mensaje, placeholder, onMensaje, bloqueado, variables, maxLength }: {
+    etiqueta?: string; mensaje: string; placeholder: string; onMensaje: (v: string) => void;
+    bloqueado?: boolean; variables: string[]; maxLength?: number;
+}) {
+    return (
+        <div className="space-y-2.5">
+            {etiqueta && <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">{etiqueta}</p>}
+            <textarea
+                value={mensaje}
+                onChange={e => onMensaje(e.target.value)}
+                placeholder={placeholder}
+                aria-label={etiqueta}
+                maxLength={maxLength}
+                rows={3}
+                disabled={bloqueado}
+                className={`w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 ${bloqueado ? 'cursor-not-allowed opacity-60' : ''}`}
+            />
+            <p className="text-[11px] text-slate-400">
+                Variables:{' '}
+                {variables.map((v) => (
+                    <code key={v} className="mr-1 rounded bg-slate-100 px-1 dark:bg-slate-800">{`{{${v}}}`}</code>
+                ))}
+            </p>
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/40 dark:bg-emerald-900/20">
+                <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    <Icon icon="mdi:whatsapp" /> Vista previa
+                </p>
+                <p className="whitespace-pre-line text-xs text-slate-700 dark:text-slate-300">{interpolar(mensaje || placeholder)}</p>
+            </div>
+        </div>
+    );
+}
+
+/** Variante opcional del aviso para envíos a provincia (agencia Shalom/Olva). */
+interface VarianteProvincia {
+    activa: boolean;
+    onActiva: (v: boolean) => void;
+    mensaje: string;
+    onMensaje: (v: string) => void;
+    placeholder: string;
+    variables: string[];
+}
+
+function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, placeholder, onToggle, onMensaje, bloqueado, variables = VARIABLES_BASE, provincia, nota }: {
     title: string; icon: string; color: string; estadoLabel: string; habilitado: boolean;
     mensaje: string; placeholder: string; onToggle?: (v: boolean) => void; onMensaje: (v: string) => void;
-    bloqueado?: boolean; variables?: string[];
+    bloqueado?: boolean; variables?: string[]; provincia?: VarianteProvincia; nota?: ReactNode;
 }) {
     return (
         <div className="rounded-xl border border-slate-200 dark:border-slate-800 p-4">
@@ -83,31 +144,47 @@ function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, place
                         <p className="text-[11px] text-slate-500">Se envía al pasar a <span className="font-semibold">{estadoLabel}</span></p>
                     </div>
                 </div>
-                {onToggle && <Switch activo={habilitado} onChange={onToggle} disabled={bloqueado} />}
+                {onToggle && <Switch activo={habilitado} onChange={onToggle} disabled={bloqueado} etiqueta={`Avisar: ${title}`} />}
             </div>
 
             {habilitado ? (
-                <div className="space-y-2.5">
-                    <textarea
-                        value={mensaje}
-                        onChange={e => onMensaje(e.target.value)}
+                <div className="space-y-3">
+                    <EditorMensaje
+                        etiqueta={provincia?.activa ? 'Delivery local (Lima)' : undefined}
+                        mensaje={mensaje}
                         placeholder={placeholder}
-                        rows={3}
-                        disabled={bloqueado}
-                        className={`w-full resize-none rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3 py-2.5 text-sm text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 ${bloqueado ? 'cursor-not-allowed opacity-60' : ''}`}
+                        onMensaje={onMensaje}
+                        bloqueado={bloqueado}
+                        variables={variables}
                     />
-                    <p className="text-[11px] text-slate-400">
-                        Variables:{' '}
-                        {variables.map((v) => (
-                            <code key={v} className="mr-1 rounded bg-slate-100 px-1 dark:bg-slate-800">{`{{${v}}}`}</code>
-                        ))}
-                    </p>
-                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800/40 dark:bg-emerald-900/20">
-                        <p className="mb-1 flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                            <Icon icon="mdi:whatsapp" /> Vista previa
-                        </p>
-                        <p className="text-xs text-slate-700 dark:text-slate-300">{interpolar(mensaje || placeholder)}</p>
-                    </div>
+                    {nota && <p className="text-[11px] leading-4 text-slate-500">{nota}</p>}
+                    {provincia && (
+                        <div className="space-y-3 border-t border-dashed border-slate-200 pt-3 dark:border-slate-700">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Mensaje distinto para envíos a provincia (agencia)</p>
+                                    <p className="text-[11px] text-slate-500">Shalom, Olva u otra agencia. Apagado: provincia recibe el mismo texto.</p>
+                                </div>
+                                <Switch
+                                    activo={provincia.activa}
+                                    onChange={provincia.onActiva}
+                                    disabled={bloqueado}
+                                    etiqueta={`Mensaje para provincia: ${title}`}
+                                />
+                            </div>
+                            {provincia.activa && (
+                                <EditorMensaje
+                                    etiqueta="Provincia (agencia)"
+                                    mensaje={provincia.mensaje}
+                                    placeholder={provincia.placeholder}
+                                    onMensaje={provincia.onMensaje}
+                                    bloqueado={bloqueado}
+                                    variables={provincia.variables}
+                                    maxLength={1000}
+                                />
+                            )}
+                        </div>
+                    )}
                 </div>
             ) : (
                 <p className="text-sm italic text-slate-400">Notificación desactivada para este estado.</p>
@@ -130,6 +207,8 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
     const [habilitado, setHabilitado] = useState(true);
     // Con Takiy los textos por estado se editan sin el plan (el resto no).
     const [mensajesEditables, setMensajesEditables] = useState(true);
+    // Qué avisos tienen un texto aparte para provincia (agencia).
+    const [provincia, setProvincia] = useState<ProvinciaActiva>(() => provinciaActivaDesde({}));
     const [cargando, setCargando] = useState(true);
     const [guardando, setGuardando] = useState(false);
 
@@ -139,7 +218,9 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
             if (res.data) {
                 setConfig({
                     mensajeEnCamino: res.data.mensajeEnCamino ?? DEFAULTS.mensajeEnCamino,
+                    mensajeEnCaminoAgencia: res.data.mensajeEnCaminoAgencia ?? '',
                     mensajeEntregado: res.data.mensajeEntregado ?? DEFAULTS.mensajeEntregado,
+                    mensajeEntregadoAgencia: res.data.mensajeEntregadoAgencia ?? '',
                     mensajeEnAgencia: res.data.mensajeEnAgencia ?? DEFAULTS.mensajeEnAgencia,
                     notificarEnCamino: res.data.notificarEnCamino ?? true,
                     notificarEntregado: res.data.notificarEntregado ?? true,
@@ -147,6 +228,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                     pagoRepartidorPropio: res.data.pagoRepartidorPropio ?? '',
                     pagoRepartidorContratado: res.data.pagoRepartidorContratado ?? '',
                 });
+                setProvincia(provinciaActivaDesde(res.data));
                 setAutoTracking(res.data.shalomAutoTrackingActivo ?? false);
                 setHabilitado(res.data.habilitadoPorPlan ?? false);
                 setMensajesEditables(res.data.mensajesEditables ?? res.data.habilitadoPorPlan ?? false);
@@ -179,9 +261,21 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
     };
 
     const guardar = async () => {
+        // Con el aviso apagado su cuadro no se ve: no se puede exigir que lo llenen.
+        const error = errorProvincia(config, {
+            mensajeEnCaminoAgencia: provincia.mensajeEnCaminoAgencia && config.notificarEnCamino,
+            mensajeEntregadoAgencia: provincia.mensajeEntregadoAgencia && config.notificarEntregado,
+        });
+        if (error) {
+            alert(error, 'warning');
+            return;
+        }
         setGuardando(true);
         try {
-            const res = await put<{ plantillas?: { errores?: string[] } }>('/envio-despacho/config', config);
+            const res = await put<{ plantillas?: { errores?: string[] } }>('/envio-despacho/config', {
+                ...config,
+                ...payloadProvincia(config, provincia),
+            });
             const errores = res?.data?.plantillas?.errores ?? [];
             alert(
                 errores.length
@@ -198,6 +292,19 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
 
     const set = <K extends keyof DespachoConfig>(key: K, value: DespachoConfig[K]) =>
         setConfig(prev => ({ ...prev, [key]: value }));
+
+    // Al prenderla por primera vez arranca con un texto de ejemplo editable.
+    const varianteProvincia = (campo: CampoProvincia): VarianteProvincia => ({
+        activa: provincia[campo],
+        onActiva: (v) => {
+            setProvincia(prev => ({ ...prev, [campo]: v }));
+            if (v) setConfig(prev => (prev[campo].trim() ? prev : { ...prev, [campo]: MENSAJES_PROVINCIA_DEFAULT[campo] }));
+        },
+        mensaje: config[campo],
+        onMensaje: (v) => set(campo, v),
+        placeholder: MENSAJES_PROVINCIA_DEFAULT[campo],
+        variables: VARIABLES_PROVINCIA[campo],
+    });
 
     return (
         <div className={`lg:order-2 rounded-2xl border border-gray-200/60 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-[#111827] ${className ?? ''}`}>
@@ -304,6 +411,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 onToggle={v => set('notificarEnCamino', v)}
                                 onMensaje={v => set('mensajeEnCamino', v)}
                                 bloqueado={!mensajesEditables}
+                                provincia={varianteProvincia('mensajeEnCaminoAgencia')}
                             />
                             <Plantilla
                                 title="Estado: Llegó a la agencia"
@@ -316,6 +424,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 onMensaje={v => set('mensajeEnAgencia', v)}
                                 variables={['nombre', 'pedido', 'agencia', 'clave', 'saldo', 'empresa']}
                                 bloqueado={!mensajesEditables}
+                                nota={<>Si no usas <code>{'{{clave}}'}</code> o <code>{'{{saldo}}'}</code>, los agregamos al final para que el cliente no llegue a la agencia sin ellos.</>}
                             />
                             <Plantilla
                                 title="Estado: Entregado"
@@ -328,6 +437,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                                 onToggle={v => set('notificarEntregado', v)}
                                 onMensaje={v => set('mensajeEntregado', v)}
                                 bloqueado={!mensajesEditables}
+                                provincia={varianteProvincia('mensajeEntregadoAgencia')}
                             />
                             <div className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                                 <div className="flex items-start gap-2.5">
