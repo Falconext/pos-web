@@ -42,10 +42,10 @@ export function payloadProvincia(textos: TextosProvincia, activa: ProvinciaActiv
 /** Prendida pero vacía: no se guarda en silencio un "no cambia nada". */
 export function errorProvincia(textos: TextosProvincia, activa: ProvinciaActiva): string | null {
     if (activa.mensajeEnCaminoAgencia && !textos.mensajeEnCaminoAgencia.trim()) {
-        return 'Escribe el mensaje "En camino" para provincia o desactívalo.';
+        return 'Escribe el mensaje "En camino" para recojo en agencia o desactívalo.';
     }
     if (activa.mensajeEntregadoAgencia && !textos.mensajeEntregadoAgencia.trim()) {
-        return 'Escribe el mensaje "Entregado" para provincia o desactívalo.';
+        return 'Escribe el mensaje "Entregado" para recojo en agencia o desactívalo.';
     }
     return null;
 }

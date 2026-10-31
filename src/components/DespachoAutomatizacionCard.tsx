@@ -150,7 +150,7 @@ function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, place
             {habilitado ? (
                 <div className="space-y-3">
                     <EditorMensaje
-                        etiqueta={provincia?.activa ? 'Delivery local (Lima)' : undefined}
+                        etiqueta={provincia?.activa ? 'A domicilio (motorizado o courier)' : undefined}
                         mensaje={mensaje}
                         placeholder={placeholder}
                         onMensaje={onMensaje}
@@ -162,19 +162,19 @@ function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, place
                         <div className="space-y-3 border-t border-dashed border-slate-200 pt-3 dark:border-slate-700">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
-                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Mensaje distinto para envíos a provincia (agencia)</p>
-                                    <p className="text-[11px] text-slate-500">Shalom, Olva u otra agencia. Apagado: provincia recibe el mismo texto.</p>
+                                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">Mensaje distinto cuando recoge en agencia</p>
+                                    <p className="text-[11px] text-slate-500">Envíos marcados «Para agencia» (Shalom, Olva, Marvisur…). Apagado: se manda el mismo texto.</p>
                                 </div>
                                 <Switch
                                     activo={provincia.activa}
                                     onChange={provincia.onActiva}
                                     disabled={bloqueado}
-                                    etiqueta={`Mensaje para provincia: ${title}`}
+                                    etiqueta={`Mensaje para recojo en agencia: ${title}`}
                                 />
                             </div>
                             {provincia.activa && (
                                 <EditorMensaje
-                                    etiqueta="Provincia (agencia)"
+                                    etiqueta="Recojo en agencia"
                                     mensaje={provincia.mensaje}
                                     placeholder={provincia.placeholder}
                                     onMensaje={provincia.onMensaje}

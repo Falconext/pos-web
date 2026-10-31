@@ -73,24 +73,24 @@ describe('despachoMensajes (puro)', () => {
 describe('DespachoAutomatizacionCard: provincia', () => {
     it('sin texto de provincia: no hay segundo cuadro ni etiqueta "Lima"', async () => {
         await montar({});
-        expect(screen.queryByLabelText('Provincia (agencia)')).toBeNull();
-        expect(screen.queryByText('Delivery local (Lima)')).toBeNull();
-        expect(screen.getAllByRole('switch', { name: /Mensaje para provincia/ })).toHaveLength(2);
+        expect(screen.queryByLabelText('Recojo en agencia')).toBeNull();
+        expect(screen.queryByText('A domicilio (motorizado o courier)')).toBeNull();
+        expect(screen.getAllByRole('switch', { name: /Mensaje para recojo en agencia/ })).toHaveLength(2);
     });
 
     it('al prenderla aparece el cuadro con texto de ejemplo y su vista previa', async () => {
         await montar({});
-        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para provincia: Estado: En Camino' }));
-        const cuadro = screen.getByLabelText('Provincia (agencia)') as HTMLTextAreaElement;
+        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para recojo en agencia: Estado: En Camino' }));
+        const cuadro = screen.getByLabelText('Recojo en agencia') as HTMLTextAreaElement;
         expect(cuadro.value).toMatch(/\{\{agencia\}\}/);
-        expect(screen.getByText('Delivery local (Lima)')).toBeTruthy();
+        expect(screen.getByText('A domicilio (motorizado o courier)')).toBeTruthy();
         expect(screen.getByText(/Lo recogerás en Shalom Cusco Centro/)).toBeTruthy();
     });
 
     it('guarda el texto de provincia junto con lo demás', async () => {
         await montar({});
-        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para provincia: Estado: Entregado' }));
-        fireEvent.change(screen.getByLabelText('Provincia (agencia)'), { target: { value: 'Recogiste en {{agencia}}' } });
+        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para recojo en agencia: Estado: Entregado' }));
+        fireEvent.change(screen.getByLabelText('Recojo en agencia'), { target: { value: 'Recogiste en {{agencia}}' } });
         fireEvent.click(screen.getByText('Guardar cambios'));
         await waitFor(() => expect(mockPut).toHaveBeenCalled());
         expect(mockPut.mock.calls[0][1]).toMatchObject({
@@ -102,8 +102,8 @@ describe('DespachoAutomatizacionCard: provincia', () => {
 
     it('llega guardada: arranca prendida; al apagarla se manda null', async () => {
         await montar({ mensajeEnCaminoAgencia: 'Provincia {{agencia}}' });
-        expect((screen.getByLabelText('Provincia (agencia)') as HTMLTextAreaElement).value).toBe('Provincia {{agencia}}');
-        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para provincia: Estado: En Camino' }));
+        expect((screen.getByLabelText('Recojo en agencia') as HTMLTextAreaElement).value).toBe('Provincia {{agencia}}');
+        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para recojo en agencia: Estado: En Camino' }));
         fireEvent.click(screen.getByText('Guardar cambios'));
         await waitFor(() => expect(mockPut).toHaveBeenCalled());
         expect(mockPut.mock.calls[0][1].mensajeEnCaminoAgencia).toBeNull();
@@ -111,8 +111,8 @@ describe('DespachoAutomatizacionCard: provincia', () => {
 
     it('prendida y vacía: avisa y no guarda', async () => {
         await montar({});
-        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para provincia: Estado: En Camino' }));
-        fireEvent.change(screen.getByLabelText('Provincia (agencia)'), { target: { value: '   ' } });
+        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para recojo en agencia: Estado: En Camino' }));
+        fireEvent.change(screen.getByLabelText('Recojo en agencia'), { target: { value: '   ' } });
         fireEvent.click(screen.getByText('Guardar cambios'));
         expect(mockAlert).toHaveBeenCalledWith(expect.stringMatching(/En camino/), 'warning');
         expect(mockPut).not.toHaveBeenCalled();
@@ -120,8 +120,8 @@ describe('DespachoAutomatizacionCard: provincia', () => {
 
     it('prendida y vacía pero con el aviso apagado: guarda null, no bloquea', async () => {
         await montar({});
-        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para provincia: Estado: Entregado' }));
-        fireEvent.change(screen.getByLabelText('Provincia (agencia)'), { target: { value: '' } });
+        fireEvent.click(screen.getByRole('switch', { name: 'Mensaje para recojo en agencia: Estado: Entregado' }));
+        fireEvent.change(screen.getByLabelText('Recojo en agencia'), { target: { value: '' } });
         fireEvent.click(screen.getByRole('switch', { name: 'Avisar: Estado: Entregado' }));
         fireEvent.click(screen.getByText('Guardar cambios'));
         await waitFor(() => expect(mockPut).toHaveBeenCalled());
