@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { obtenerTiendaPublica } from '@/lib/tiendaPublica'
 import { Icon } from '@iconify/react'
 import {
   type MensajeChat,
@@ -42,8 +43,8 @@ function tiendaDelChat(slug: string): Promise<TiendaChat | null> {
   if (!cacheTiendas.has(slug)) {
     cacheTiendas.set(
       slug,
-      axios
-        .get(`${BASE_URL}/public/store/${encodeURIComponent(slug)}`)
+      // La misma ficha que ya pidió la página: no se vuelve a pedir.
+      obtenerTiendaPublica(slug)
         .then((r) => {
           const t = datos<any>(r)
           if (!t?.chatIa?.activo) return null
