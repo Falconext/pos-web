@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { obtenerTiendaPublica } from '@/lib/tiendaPublica';
 import { getProductPricing, withPricing, withPricingList } from '@/templates/shared/pricing';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { MOTO, MotoCartModal, MotoFooter, MotoHeader, MotoProductCard, MotoProductImage, MotoWhatsAppFab, money, motoFont, motoPrimary, waLink, withAlpha } from '@/templates/motos/MotosParts';
@@ -506,7 +507,7 @@ export default function MotosProductoDetalle() {
       setLoading(true);
       try {
         const [storeRes, catRes, productRes] = await Promise.all([
-          axios.get(`${BASE_URL}/public/store/${slug}`),
+          obtenerTiendaPublica(slug),
           axios.get(`${BASE_URL}/public/store/${slug}/categories`),
           axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`),
         ]);

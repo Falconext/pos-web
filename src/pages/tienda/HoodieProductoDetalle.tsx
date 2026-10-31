@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
+import { obtenerTiendaPublica } from '@/lib/tiendaPublica';
 import { AnimatePresence, MotionConfig, motion } from 'framer-motion';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { getProductPricing, withPricing, withPricingList } from '@/templates/shared/pricing';
@@ -454,7 +455,7 @@ export default function HoodieProductoDetalle() {
       setLoading(true);
       try {
         const [storeRes, catRes, productRes] = await Promise.all([
-          axios.get(`${BASE_URL}/public/store/${slug}`),
+          obtenerTiendaPublica(slug),
           axios.get(`${BASE_URL}/public/store/${slug}/categories`),
           axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`),
         ]);

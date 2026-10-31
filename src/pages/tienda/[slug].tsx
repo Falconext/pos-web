@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
+import { obtenerTiendaPublica, tiendaPublicaEnCache } from '@/lib/tiendaPublica';
 import SliderBanners from '@/components/tienda/SliderBanners';
 import CarouselBanners from '@/components/tienda/CarouselBanners';
 import Footer from '@/components/tienda/Footer';
@@ -41,7 +42,12 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 export default function TiendaPublica() {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const [tienda, setTienda] = useState<any>(null);
+// Si la tienda ya se cargó en otra página, se arranca con ella: navegar
+  // dentro de la tienda no vuelve a mostrar la pantalla de carga.
+  const [tienda, setTienda] = useState<any>(() => {
+    const t = tiendaPublicaEnCache(slug);
+    return t ? recordarVentaSinStock(withStorePurchaseWhatsapp(t)) : null;
+  });
   const [productos, setProductos] = useState<any[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -239,7 +245,7 @@ export default function TiendaPublica() {
   const cargarTienda = async () => {
     setEstadoTienda('cargando');
     try {
-      const { data } = await axios.get(`${BASE_URL}/public/store/${slug}`);
+      const { data } = await obtenerTiendaPublica(slug);
       const info = data.data || data;
       setTienda(recordarVentaSinStock(withStorePurchaseWhatsapp(info)));
       // El pixel se monta con los datos de la tienda, no en el index.html:

@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
 import axios from 'axios';
+import { obtenerTiendaPublica } from '@/lib/tiendaPublica';
 import { getProductPricing, withPricing, withPricingList } from '@/templates/shared/pricing';
 import { onTiendaCartCleared } from '@/utils/tiendaCart';
 import { TN, TnCartModal, TnFooter, TnHeader, TnProductCard, TnProductImage, TnSwatches, TnWhatsAppFab, tnFont, tnPrimary, waLink, withAlpha } from '@/templates/tones/TonesParts';
@@ -327,7 +328,7 @@ export default function TonesProductoDetalle() {
       setLoading(true);
       try {
         const [storeRes, catRes, productRes] = await Promise.all([
-          axios.get(`${BASE_URL}/public/store/${slug}`),
+          obtenerTiendaPublica(slug),
           axios.get(`${BASE_URL}/public/store/${slug}/categories`),
           axios.get(`${BASE_URL}/public/store/${slug}/products/${id}`),
         ]);

@@ -127,6 +127,7 @@ const EntregaRepartidorPage = cargaPerezosa(() => import('./pages/entrega/Entreg
 const EliminarDatosPage = cargaPerezosa(() => import('./pages/legal/EliminarDatosPage'))
 import SeoTienda from './components/tienda/SeoTienda'
 import ChatTiendaIa from './components/tienda/ChatTiendaIa'
+import PorTienda from './components/tienda/PorTienda'
 
 function App() {
   console.log('App initialized - Checkpoint')
@@ -400,19 +401,19 @@ function App() {
             si no cae en la tienda pública con slug "preview" y muestra "Producto no encontrado". */}
         <Route path="/tienda/preview/producto/:previewProductId" element={<StorePreviewPage />} />
         {/* Rutas públicas de tienda para clientes finales */}
-        <Route path="/tienda/:slug" element={<TiendaPublica />} />
-        <Route path="/tienda/:slug/catalogo" element={<Catalogo />} />
-        <Route path="/tienda/:slug/producto/:id" element={<ProductoDetalleRouter />} />
+        <Route path="/tienda/:slug" element={<PorTienda><TiendaPublica /></PorTienda>} />
+        <Route path="/tienda/:slug/catalogo" element={<PorTienda><Catalogo /></PorTienda>} />
+        <Route path="/tienda/:slug/producto/:id" element={<PorTienda><ProductoDetalleRouter /></PorTienda>} />
         {/* URL canónica del producto para Google: el nombre va en su propio segmento
             y la ficha sigue leyendo :id como siempre (ver pos-bd src/seo/seo-texto.ts). */}
-        <Route path="/tienda/:slug/producto/:id/:nombre" element={<ProductoDetalleRouter />} />
-        <Route path="/tienda/:slug/checkout" element={<Checkout />} />
-        <Route path="/tienda/:slug/seguimiento" element={<SeguimientoPedido />} />
-        <Route path="/tienda/:slug/contacto" element={<ContactoRouter />} />
-        <Route path="/tienda/:slug/blog" element={<BlogRouter />} />
-        <Route path="/tienda/:slug/blog/:blogId" element={<BlogRouter />} />
+        <Route path="/tienda/:slug/producto/:id/:nombre" element={<PorTienda><ProductoDetalleRouter /></PorTienda>} />
+        <Route path="/tienda/:slug/checkout" element={<PorTienda><Checkout /></PorTienda>} />
+        <Route path="/tienda/:slug/seguimiento" element={<PorTienda><SeguimientoPedido /></PorTienda>} />
+        <Route path="/tienda/:slug/contacto" element={<PorTienda><ContactoRouter /></PorTienda>} />
+        <Route path="/tienda/:slug/blog" element={<PorTienda><BlogRouter /></PorTienda>} />
+        <Route path="/tienda/:slug/blog/:blogId" element={<PorTienda><BlogRouter /></PorTienda>} />
         {/* Catch-all para tienda pública: Evita que links rotos en banners manden al login/admin */}
-        <Route path="/tienda/:slug/*" element={<TiendaPublica />} />
+        <Route path="/tienda/:slug/*" element={<PorTienda><TiendaPublica /></PorTienda>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
