@@ -6,6 +6,7 @@ import PaymentConfirmationModal from '@/components/tienda/PaymentConfirmationMod
 import { ANTOJO, AntojoFooter, AntojoHeader, AntojoProductCard, AntojoProductImage, antojoDots } from './AntojoParts';
 import { antojoCard, antojoHover, antojoPage, antojoSection, antojoStagger, antojoTap, antojoViewport } from './motion';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
 
 function money(value: number) {
   return `S/ ${Number(value || 0).toFixed(2)}`;
@@ -54,6 +55,7 @@ export default function AntojoCheckoutPage(props: TemplateCheckoutPageProps) {
   const canSubmit = !enviando && carritoState.length > 0;
   const deliveryType = formData.tipoEntrega || 'RECOJO';
   const ocultarEnvio = Boolean(diseno?.antojoOcultarEnvio);
+  const ir = useIrEnTienda(slug, diseno);
 
   return (
     <motion.div
@@ -76,7 +78,7 @@ export default function AntojoCheckoutPage(props: TemplateCheckoutPageProps) {
           allCategories={[]}
           onSearchSubmit={(event, value) => {
             event.preventDefault();
-            if (value?.trim()) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`;
+            if (value?.trim()) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(value.trim())}`);
           }}
           overlay
         />
@@ -84,7 +86,7 @@ export default function AntojoCheckoutPage(props: TemplateCheckoutPageProps) {
           <div className="absolute inset-0 opacity-25" style={antojoDots} aria-hidden />
           <div className="relative z-10 mx-auto max-w-7xl">
             <div className="text-sm font-black text-white/80">
-              <a href={`/tienda/${slug}`} className="hover:text-white">Inicio</a>
+              <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="hover:text-white">Inicio</EnlaceTienda>
               <span className="mx-1">/</span>
               <span>Finalizar pedido</span>
             </div>
@@ -181,11 +183,11 @@ export default function AntojoCheckoutPage(props: TemplateCheckoutPageProps) {
                     <p className="text-sm font-black uppercase tracking-[0.2em]" style={{ color: ANTOJO.orange }}>¿Un antojo más?</p>
                     <h2 className="text-2xl font-black text-neutral-900">Súmalo a tu pedido</h2>
                   </div>
-                  <a href={`/tienda/${slug}/catalogo`} className="text-sm font-black text-neutral-900 hover:opacity-70">Ver carta</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="text-sm font-black text-neutral-900 hover:opacity-70">Ver carta</EnlaceTienda>
                 </div>
                 <motion.div variants={antojoStagger} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                   {suggestedProducts.slice(0, 3).map((producto) => (
-                    <AntojoProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={onAddToCart} onClick={() => { window.location.href = `/tienda/${slug}/producto/${producto.id}`; }} />
+                    <AntojoProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={onAddToCart} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
                   ))}
                 </motion.div>
               </motion.div>
@@ -203,7 +205,7 @@ export default function AntojoCheckoutPage(props: TemplateCheckoutPageProps) {
                 <div className="my-6 rounded-2xl bg-neutral-50 p-8 text-center">
                   <Icon icon="solar:bag-cross-bold" className="mx-auto text-4xl text-neutral-300" />
                   <p className="mt-3 text-sm font-bold text-neutral-500">Tu carrito está vacío.</p>
-                  <a href={`/tienda/${slug}/catalogo`} className="mt-5 inline-flex rounded-full px-5 py-3 text-xs font-black uppercase text-white" style={{ backgroundColor: primary }}>Ver la carta</a>
+                  <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="mt-5 inline-flex rounded-full px-5 py-3 text-xs font-black uppercase text-white" style={{ backgroundColor: primary }}>Ver la carta</EnlaceTienda>
                 </div>
               ) : (
                 carritoState.map((item) => {

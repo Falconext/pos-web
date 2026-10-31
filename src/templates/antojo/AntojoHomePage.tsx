@@ -4,10 +4,14 @@ import type { TemplateHomePageProps } from '@/templates/shared/types';
 import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import { ANTOJO, AntojoFooter, AntojoHeader, AntojoProductCard, antojoAction, antojoDots } from './AntojoParts';
 import { antojoCard, antojoPage, antojoPop, antojoSection, antojoStagger, antojoTap, antojoViewport } from './motion';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+
+const MotionEnlace = motion.create(EnlaceTienda);
 
 const pickSelected = (productos: any[], ids?: any[]) => {
   if (!Array.isArray(ids) || ids.length === 0) return productos;
-  const wanted = new Set(ids.map((id) => String(id)));
+  // El editor guarda objetos `{ id, … }`; versiones viejas, solo ids.
+  const wanted = new Set(ids.map((id) => String(id && typeof id === 'object' ? id.id : id)));
   const selected = productos.filter((p) => wanted.has(String(p.id)));
   return selected.length ? selected : productos;
 };
@@ -51,9 +55,7 @@ export default function AntojoHomePage({
     icon: CATEGORY_FALLBACK[i % CATEGORY_FALLBACK.length].icon,
     tint: CATEGORY_FALLBACK[i % CATEGORY_FALLBACK.length].tint,
   }));
-  const navigate = (to: string) => {
-    window.location.href = to;
-  };
+  const navigate = useIrEnTienda(slug, diseno);
 
   return (
     <motion.div initial="hidden" animate="show" variants={antojoPage} className="min-h-screen" style={{ backgroundColor: ANTOJO.cream, fontFamily: `'${diseno?.tipografia || 'Poppins'}', sans-serif` }}>
@@ -104,7 +106,7 @@ export default function AntojoHomePage({
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <motion.button
               type="button"
-              onClick={() => antojoAction(diseno?.antojoHeroAction, slug, navigate)}
+              onClick={() => antojoAction(diseno, 'antojoHeroAction', slug, navigate)}
               className="inline-flex h-13 items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-black uppercase tracking-wide shadow-lg"
               style={{ color: primary }}
               whileHover={{ scale: 1.05, y: -2 }}
@@ -112,9 +114,9 @@ export default function AntojoHomePage({
             >
               <Icon icon="solar:bag-4-bold" /> {diseno?.antojoHeroButton || 'Ver la carta'}
             </motion.button>
-            <a href={`/tienda/${slug}/seguimiento`} className="inline-flex h-13 items-center gap-2 rounded-full bg-black/25 px-7 py-3.5 text-sm font-black uppercase tracking-wide text-white backdrop-blur transition-transform hover:scale-105">
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="inline-flex h-13 items-center gap-2 rounded-full bg-black/25 px-7 py-3.5 text-sm font-black uppercase tracking-wide text-white backdrop-blur transition-transform hover:scale-105">
               <Icon icon="solar:map-point-bold" /> Seguir pedido
-            </a>
+            </EnlaceTienda>
           </div>
         </div>
         {/* Onda inferior */}
@@ -130,18 +132,20 @@ export default function AntojoHomePage({
         <motion.section variants={antojoSection} initial="hidden" whileInView="show" viewport={antojoViewport} className="mx-auto max-w-7xl px-5 pt-14 pb-6">
           <motion.div variants={antojoStagger} className="grid grid-cols-2 gap-5 sm:grid-cols-4">
             {categoryItems.map((cat, index) => (
-              <motion.a
+              <MotionEnlace
                 key={`${cat.nombre}-${index}`}
                 variants={antojoCard}
                 whileHover={{ y: -6 }}
                 href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat.nombre)}`}
+                slug={slug}
+                diseno={diseno}
                 className="group flex flex-col items-center rounded-[26px] bg-white p-6 text-center shadow-md shadow-black/5 ring-1 ring-black/5 transition-shadow hover:shadow-xl"
               >
                 <span className="flex h-20 w-20 items-center justify-center rounded-full text-white shadow-inner transition-transform group-hover:scale-110" style={{ backgroundColor: cat.tint }}>
                   <Icon icon={cat.icon} width={38} />
                 </span>
                 <h3 className="mt-4 text-base font-black text-neutral-900">{cat.nombre}</h3>
-              </motion.a>
+              </MotionEnlace>
             ))}
           </motion.div>
         </motion.section>
@@ -167,7 +171,7 @@ export default function AntojoHomePage({
           <div className="grid gap-6 md:grid-cols-2">
             <motion.button
               type="button"
-              onClick={() => antojoAction(diseno?.antojoPromoHotAction, slug, navigate, `/tienda/${slug}/catalogo?search=pizza`)}
+              onClick={() => antojoAction(diseno, 'antojoPromoHotAction', slug, navigate, `/tienda/${slug}/catalogo?search=pizza`)}
               whileHover={{ y: -5, scale: 1.01 }}
               whileTap={antojoTap}
               className="relative flex min-h-[190px] items-center overflow-hidden rounded-[28px] p-8 text-left text-white shadow-lg"
@@ -182,7 +186,7 @@ export default function AntojoHomePage({
             </motion.button>
             <motion.button
               type="button"
-              onClick={() => antojoAction(diseno?.antojoPromoColdAction, slug, navigate, `/tienda/${slug}/catalogo?search=frappe`)}
+              onClick={() => antojoAction(diseno, 'antojoPromoColdAction', slug, navigate, `/tienda/${slug}/catalogo?search=frappe`)}
               whileHover={{ y: -5, scale: 1.01 }}
               whileTap={antojoTap}
               className="relative flex min-h-[190px] items-center overflow-hidden rounded-[28px] p-8 text-left text-white shadow-lg"
@@ -230,9 +234,9 @@ export default function AntojoHomePage({
               ))}
             </motion.div>
             <div className="mt-10 text-center">
-              <a href={`/tienda/${slug}/catalogo`} className="inline-flex h-13 items-center gap-2 rounded-full px-8 py-3.5 text-sm font-black uppercase tracking-wide text-white shadow-lg transition-transform hover:scale-105" style={{ backgroundColor: primary }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex h-13 items-center gap-2 rounded-full px-8 py-3.5 text-sm font-black uppercase tracking-wide text-white shadow-lg transition-transform hover:scale-105" style={{ backgroundColor: primary }}>
                 Ver la carta completa <Icon icon="solar:arrow-right-bold" />
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.section>
         )}
@@ -246,7 +250,7 @@ export default function AntojoHomePage({
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
         onCheckout={() => {
-          window.location.href = `/tienda/${slug}/checkout`;
+          navigate(`/tienda/${slug}/checkout`);
         }}
         cp={primary}
         tienda={tienda}
