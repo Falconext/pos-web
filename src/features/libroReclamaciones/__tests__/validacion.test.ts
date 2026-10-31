@@ -34,7 +34,11 @@ describe('validarHoja', () => {
     ['DNI', '12345678', null],
     ['RUC', '2012345678', 'El RUC tiene 11 dígitos.'],
     ['RUC', '20123456789', null],
-    ['CE', 'X12', 'Documento no válido (solo letras y números).'],
+    ['CE', 'X12', 'El carné de extranjería tiene de 6 a 12 letras o números.'],
+    ['CE', 'ab 12345', null], // como el servidor: sin espacios y en mayúsculas
+    ['CE', '0012-3456', 'El carné de extranjería tiene de 6 a 12 letras o números.'],
+    ['PASAPORTE', 'AB1', 'El pasaporte tiene de 5 a 15 letras o números.'],
+    ['PASAPORTE', 'AB1234567890123X', 'El pasaporte tiene de 5 a 15 letras o números.'],
     ['CE', '001234567', null],
     ['PASAPORTE', 'AB123456', null],
     ['DNI', '   ', 'Ingresa tu número de documento.'],

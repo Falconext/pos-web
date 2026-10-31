@@ -42,13 +42,14 @@ export const FORMULARIO_VACIO: FormularioHoja = {
 
 /** Error del número de documento según su tipo, o `null`. */
 export function errorDocumento(tipo: string, numero: string): string | null {
-  const n = numero.trim();
+  // Igual que el servidor: sin espacios y en mayúsculas.
+  const n = numero.replace(/\s/g, '').toUpperCase();
   if (!n) return 'Ingresa tu número de documento.';
   switch (tipo) {
     case 'DNI': return /^\d{8}$/.test(n) ? null : 'El DNI tiene 8 dígitos.';
     case 'RUC': return /^\d{11}$/.test(n) ? null : 'El RUC tiene 11 dígitos.';
-    case 'CE':
-    case 'PASAPORTE': return /^[A-Za-z0-9-]{4,20}$/.test(n) ? null : 'Documento no válido (solo letras y números).';
+    case 'CE': return /^[A-Z0-9]{6,12}$/.test(n) ? null : 'El carné de extranjería tiene de 6 a 12 letras o números.';
+    case 'PASAPORTE': return /^[A-Z0-9]{5,15}$/.test(n) ? null : 'El pasaporte tiene de 5 a 15 letras o números.';
     default: return 'Elige el tipo de documento.';
   }
 }
