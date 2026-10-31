@@ -38,6 +38,10 @@ export interface LinkFieldDef {
   label: string;
   group?: string;
   defaultType?: LinkFieldTarget;
+  /** Ofrece "Automático" (sin destino guardado): la plantilla decide, p. ej. la categoría con el mismo nombre del botón. */
+  permiteAuto?: boolean;
+  /** Qué pasa al elegir "Sin enlace" (por defecto: el bloque no navega). */
+  textoSinEnlace?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
