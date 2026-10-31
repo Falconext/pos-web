@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -410,6 +411,7 @@ export function OlmoFooter({ tienda, slug, diseno, t, categories, navigate }: an
 
         <div className="mt-12 flex flex-col gap-2 border-t py-6 text-[12.5px] sm:flex-row sm:items-center sm:justify-between" style={{ color: t.muted, borderColor: t.line }}>
           <p>© {new Date().getFullYear()} {storeName}. {optional(diseno?.olmoFooterTagline, 'Todos los derechos reservados.')}</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
         </div>
       </div>
     </footer>

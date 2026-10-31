@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -477,6 +478,7 @@ export function MaisonFooter({ tienda, slug, diseno, t, categories, navigate }: 
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1320px] flex-col items-center justify-between gap-4 px-4 py-5 text-[12px] text-white/55 lg:flex-row lg:px-8">
           <p>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           {medios.length > 0 && <div className="flex flex-wrap items-center justify-center gap-3"><span className="inline-flex items-center gap-1.5"><Icon icon="solar:lock-keyhole-minimalistic-linear" width={15} />Pago seguro con</span><PaymentMethods slug={slug} t={t} dark /></div>}
         </div>
       </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { sinStock, pocasUnidades } from '@/templates/shared/ventaSinStock';
@@ -9,6 +9,7 @@ import { mediosDisponibles, type MedioPagoValue } from '@/components/tienda/Medi
 import { buildStorePurchaseWhatsappUrl } from '@/utils/storeWhatsapp';
 import { AddedToast, FreeShippingProgress, announceAdded } from './MostradorExtras';
 import { mix } from './motion';
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 
 /**
  * Piezas base de la plantilla Mostrador: tienda de UNA página que arranca en el catálogo.
@@ -204,6 +205,20 @@ function PaymentChips({ slug, t }: { slug: string; t: Theme }) {
  * seguimiento y carrito. La tienda es de una sola página: no hay menú de secciones.
  * Estado propio (panel de información) aislado aquí.
  */
+/** Pie mínimo de Mostrador: nombre, seguimiento y el Libro de Reclamaciones. */
+export function MostradorFooter({ tienda, slug, diseno, t }: { tienda: any; slug: string; diseno: any; t: Theme }) {
+  const navigate = useNavigate();
+  const live = isLive(slug);
+  return (
+    <footer className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 pb-8 text-center text-[12px]" style={{ color: t.muted }}>
+      <span>© {new Date().getFullYear()} {storeNameOf(tienda)}</span>
+      {live && <> · <button type="button" onClick={() => navigate(`/tienda/${slug}/seguimiento`)} className="underline underline-offset-2">Seguir mi pedido</button></>}
+      <span aria-hidden="true"> · </span>
+      <EnlaceLibroReclamaciones slug={slug} diseno={diseno} iconSize={16} />
+    </footer>
+  );
+}
+
 export function MostradorHeader({ tienda, slug, diseno, t, cartCount, onOpenCart, navigate }: any) {
   const [info, setInfo] = useState(false);
   const ch = storeChannels(tienda, diseno);

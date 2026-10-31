@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -397,7 +398,7 @@ export function VitrinaFooter({ tienda, slug, diseno, t, categories, navigate }:
         <PaymentMethods slug={slug} t={t} />
       </div>
       <div className="border-t" style={{ borderColor: t.line }}>
-        <p className="mx-auto max-w-[1280px] px-4 py-5 text-center text-[12px] lg:px-8" style={{ color: t.muted }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+        <p className="mx-auto max-w-[1280px] px-4 py-5 text-center text-[12px] lg:px-8" style={{ color: t.muted }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados. <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></p>
       </div>
     </footer>
   );

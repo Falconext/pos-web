@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -280,7 +281,7 @@ export function StrideFooter({ tienda, slug, diseno, t, categories, navigate }: 
         )}
       </div>
       <div className="border-t" style={{ borderColor: t.line }}>
-        <p className="mx-auto max-w-[1320px] px-4 py-5 text-[12px] lg:px-8" style={{ color: t.muted }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+        <p className="mx-auto max-w-[1320px] px-4 py-5 text-[12px] lg:px-8" style={{ color: t.muted }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados. <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></p>
       </div>
     </footer>
   );

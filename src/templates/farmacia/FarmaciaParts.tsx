@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -205,6 +206,7 @@ export function FarmaciaFooter({ tienda, slug, diseno, t, categories }: any) {
       <div className="border-t border-white/15">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-5 text-[12.5px] opacity-80 sm:flex-row lg:px-6">
           <p>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <div className="flex items-center gap-2">
             {['logos:visa', 'logos:mastercard', 'simple-icons:mercadopago'].map((ic) => (
               <span key={ic} className="flex h-7 w-11 items-center justify-center rounded bg-white/90 px-1"><Icon icon={ic} width={30} /></span>

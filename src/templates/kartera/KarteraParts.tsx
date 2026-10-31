@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -402,6 +403,7 @@ export function KtFooter({ tienda, slug, diseno, t, categories, navigate }: any)
 
         <div className="mt-12 flex flex-col gap-3 border-t py-6 text-[12.5px] sm:flex-row sm:items-center sm:justify-between" style={{ color: sub, borderColor: rule }}>
           <p>© {new Date().getFullYear()} {storeName}. {optional(diseno?.karteraFooterTagline, 'Todos los derechos reservados.')}</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <PaymentBadges slug={slug} fg="rgba(255,255,255,.8)" line={rule} />
         </div>
       </div>

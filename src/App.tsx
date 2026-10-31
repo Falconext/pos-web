@@ -48,6 +48,7 @@ const ConfiguracionTienda = cargaPerezosa(() => import('./pages/admin/tienda/Con
 const TemplateTienda = cargaPerezosa(() => import('./pages/admin/tienda/Template'))
 const PedidosTienda = cargaPerezosa(() => import('./pages/admin/tienda/Pedidos'))
 const ReviewsTienda = cargaPerezosa(() => import('./pages/admin/tienda/Reviews'))
+const LibroReclamacionesPanel = cargaPerezosa(() => import('./pages/admin/tienda/LibroReclamaciones'))
 const BlogTienda = cargaPerezosa(() => import('./pages/admin/tienda/Blog'))
 const PanelVentasView = cargaPerezosa(() => import('./pages/admin/despacho/PanelVentasView'))
 const CouriersView = cargaPerezosa(() => import('./features/admin/despacho/couriers/CouriersView'))
@@ -61,6 +62,7 @@ const Checkout = cargaPerezosa(() => import('./pages/tienda/Checkout'))
 const Catalogo = cargaPerezosa(() => import('./pages/tienda/Catalogo'))
 const SeguimientoPedido = cargaPerezosa(() => import('./pages/tienda/SeguimientoPedido'))
 const ContactoRouter = cargaPerezosa(() => import('./pages/tienda/ContactoRouter'))
+const LibroReclamacionesTienda = cargaPerezosa(() => import('./pages/tienda/LibroReclamaciones'))
 const BlogRouter = cargaPerezosa(() => import('./pages/tienda/BlogRouter'))
 const TiendaLogin = cargaPerezosa(() => import('./pages/TiendaLogin'))
 const TiendaHome = cargaPerezosa(() => import('./pages/TiendaHome'))
@@ -274,6 +276,7 @@ function App() {
           <Route path="tienda/configuracion" element={<ConfiguracionTienda />} />
           <Route path="tienda/template" element={<TemplateTienda />} />
           <Route path="tienda/pedidos" element={<PedidosTienda />} />
+          <Route path="tienda/libro-reclamaciones" element={<LibroReclamacionesPanel />} />
           <Route path="tienda/reviews" element={<ReviewsTienda />} />
           <Route path="tienda/blog" element={<BlogTienda />} />
           <Route path="ventas" element={<PanelVentasView />} />
@@ -410,6 +413,7 @@ function App() {
         <Route path="/tienda/:slug/checkout" element={<PorTienda><Checkout /></PorTienda>} />
         <Route path="/tienda/:slug/seguimiento" element={<PorTienda><SeguimientoPedido /></PorTienda>} />
         <Route path="/tienda/:slug/contacto" element={<PorTienda><ContactoRouter /></PorTienda>} />
+        <Route path="/tienda/:slug/libro-reclamaciones" element={<PorTienda><LibroReclamacionesTienda /></PorTienda>} />
         <Route path="/tienda/:slug/blog" element={<PorTienda><BlogRouter /></PorTienda>} />
         <Route path="/tienda/:slug/blog/:blogId" element={<PorTienda><BlogRouter /></PorTienda>} />
         {/* Catch-all para tienda pública: Evita que links rotos en banners manden al login/admin */}

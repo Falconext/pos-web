@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
 import { useMemo, useState } from 'react';
@@ -323,7 +324,7 @@ export function SpaFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           </span>
         </div>
       </div>
-      <div className="border-t border-white/10 px-6 py-5 text-center text-xs text-white/40">© 2026 {name}. Powered by {BRAND.name}.</div>
+      <div className="border-t border-white/10 px-6 py-5 text-center text-xs text-white/40">© 2026 {name}. Powered by {BRAND.name}. <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></div>
     </motion.footer>
   );
 }

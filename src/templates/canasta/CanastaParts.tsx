@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -504,6 +505,7 @@ export function CanastaFooter({ tienda, slug, diseno, t, categories, navigate }:
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 px-4 py-5 text-[12px] lg:px-8" style={{ color: sub }}>
           <p>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           {closing && <p className="flex items-center gap-1.5 font-semibold text-white">{closing}<Icon icon="ph:leaf-fill" width={14} style={{ color: t.accent }} /></p>}
         </div>
       </div>

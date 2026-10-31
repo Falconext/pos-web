@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -334,6 +335,7 @@ export function EsenciaFooter({ tienda, slug, diseno, t, categories, navigate }:
       <div className="border-t" style={{ borderColor: t.line }}>
         <div className="mx-auto flex max-w-[1400px] flex-col gap-2 px-4 py-5 text-[11.5px] sm:flex-row sm:items-center sm:justify-between lg:px-8" style={{ color: t.muted }}>
           <p>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <PaymentBadges slug={slug} t={t} />
         </div>
       </div>
