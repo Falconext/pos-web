@@ -209,7 +209,7 @@ export const useCombosViewModel = () => {
         combos, loading, products, t,
         showModal, editingCombo, form, setForm, uploading, fileInputRef,
         abrirModal, cerrarModal, agregarProducto, actualizarItem, eliminarItem,
-        getProductOptionLabel,
+        getProductOptionLabel, buscarEnCatalogo,
         opcionesProducto, buscarProductos,
         calcularPrecioRegular, calcularDescuento, calcularCosto, guardarCombo, onFileSelect,
         handleEliminarCombo, toggleComboActivo, refreshCombos,
