@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useState, useMemo, useRef } from "react";
-import { afectacionPorDefecto } from '@/utils/afectacionIgv';
+import { afectacionPorDefecto, afectacionConCandado } from '@/utils/afectacionIgv';
 import { heredaCredito } from './conversionPago';
 import { armarPagoEdicion, calcularCobro, pagoPrevioDeNota, type PagoPrevio } from './utils/cobroEdicion';
 import { guardarObservacionesRecordadas, leerObservacionesRecordadas } from '@/utils/observacionesVenta';
@@ -472,7 +472,9 @@ export const useFacturacionViewModel = () => {
     }
 
     const initialFormProduct: IFormProduct = {
-        productoId: 0, descripcion: "", categoriaId: 0, precioUnitario: 0, categoriaNombre: "", afectacionNombre: "Gravado – Operación Onerosa", tipoAfectacionIGV: "10", stock: 50, codigo: "", unidadMedidaId: 1, unidadMedidaNombre: "UNIDAD", estado: "", codigoBarras: "", disponibleParaVenta: true
+        productoId: 0, descripcion: "", categoriaId: 0, precioUnitario: 0, categoriaNombre: "",
+        // Producto creado desde el POS: nace con el default de la empresa (exonerado con Ley de Amazonía).
+        afectacionNombre: NOMBRE_AFECTACION[afectacionPorDefecto(auth?.empresa as any)] || "Gravado – Operación Onerosa", tipoAfectacionIGV: afectacionPorDefecto(auth?.empresa as any), stock: 50, codigo: "", unidadMedidaId: 1, unidadMedidaNombre: "UNIDAD", estado: "", codigoBarras: "", disponibleParaVenta: true
     }
 
     const [formValuesProduct, setFormValuesProduct] = useState<IFormProduct>(initialFormProduct);
@@ -1117,7 +1119,10 @@ export const useFacturacionViewModel = () => {
                         const categoriaNombre = productoEnCatalogo
                             ? (categories?.find((c: any) => c.id === productoEnCatalogo.categoriaId)?.nombre || "General")
                             : "General";
-                        const tipoAfectacionIGV = productoEnCatalogo?.tipoAfectacionIGV || "10";
+                        // `products` es la página del catálogo: el producto de la guía puede no
+                        // estar ahí. Antes caía a "10" y, con Ley de Amazonía, la factura salía
+                        // gravada; el producto de la guía o el default de la empresa va primero.
+                        const tipoAfectacionIGV = String(d.producto?.tipoAfectacionIGV || productoEnCatalogo?.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any));
                         addProductsInvoice({
                             productoId: d.productoId || 0,
                             descripcion: d.descripcion,
@@ -1408,7 +1413,8 @@ export const useFacturacionViewModel = () => {
             if (productos && Array.isArray(productos) && productos.length > 0) {
                 resetProductInvoice();
                 productos.forEach((d: any) => {
-                    const mapped = mapDetalleToInvoiceProduct(d);
+                    const mapped: any = mapDetalleToInvoiceProduct(d);
+                    const afectacionLinea = afectacionConCandado(mapped.tipoAfectacionIGV, mapped.afectacionProducto, auth?.empresa as any) || afectacionPorDefecto(auth?.empresa as any);
                     addProductsInvoice({
                         ...mapped,
                         productoId: d.productoId || mapped.productoId || 0,
@@ -1419,8 +1425,10 @@ export const useFacturacionViewModel = () => {
                         unidadMedidaNombre: d.unidad || mapped.unidadMedidaNombre || 'NIU',
                         // La de la nota de venta, no '10' fijo: FRUTA PURA (Amazonía)
                         // convertía notas exoneradas en boletas con IGV.
-                        tipoAfectacionIGV: mapped.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any),
-                        afectacionNombre: nombreAfectacion(mapped.tipoAfectacionIGV || afectacionPorDefecto(auth?.empresa as any)),
+                        // Con Ley de Amazonía, una línea gravada de un producto exonerado
+                        // vuelve a exonerada (afectacionConCandado).
+                        tipoAfectacionIGV: afectacionLinea,
+                        afectacionNombre: nombreAfectacion(afectacionLinea),
                         stock: mapped.stock || 999,
                         estado: 'ACTIVO',
                         atributosTecnicos: mapped.atributosTecnicos || d.producto?.atributosTecnicos || undefined,

@@ -2,6 +2,7 @@ import { Icon } from "@iconify/react";
 import { useState } from "react";
 import useAlertStore from "@/zustand/alert";
 import { DetalleAdicionalLinea } from './DetalleAdicionalLinea';
+import { NOMBRE_AFECTACION } from '@/utils/afectacionIgv';
 
 // Línea de PAQUETE (ej. six-pack escaneado): el vendedor piensa en packs, no en
 // unidades — el carrito muestra/edita PACKS y por dentro la cantidad sigue en
@@ -428,7 +429,15 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                                     <button
                                                         type="button"
                                                         onClick={() => {
-                                                            vm.updateProductInvoice(index, { tipoAfectacionIGV: '10', afectacionNombre: 'Gravado – Operación Onerosa' });
+                                                            // Vuelve a la afectación que tenía antes del regalo (la del
+                                                            // producto). Con '10' fijo, en FRUTA PURA (Ley de Amazonía)
+                                                            // "Onerosa" convertía un exonerado en gravado.
+                                                            const actual = Number(item.tipoAfectacionIGV);
+                                                            // Sin la guardada (línea que llegó ya gratuita): la familia del código
+                                                            // gratuito — 21 exonerado, 31-37 inafecto, 11-16 gravado.
+                                                            const deLaFamilia = actual === 21 ? '20' : actual >= 31 && actual <= 37 ? '30' : '10';
+                                                            const onerosa = String((item as any).afectacionOnerosa ?? (esAfectacionGratuitaCode(item.tipoAfectacionIGV) ? deLaFamilia : (item.tipoAfectacionIGV ?? '10')));
+                                                            vm.updateProductInvoice(index, { tipoAfectacionIGV: onerosa, afectacionNombre: NOMBRE_AFECTACION[onerosa] ?? 'Gravado – Operación Onerosa' });
                                                             setAfectPickerIndex(null);
                                                         }}
                                                         className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700"
@@ -442,7 +451,12 @@ export const POSCartLayout = ({ vm }: { vm: any }) => {
                                                             key={a.value}
                                                             type="button"
                                                             onClick={() => {
-                                                                vm.updateProductInvoice(index, { tipoAfectacionIGV: a.value, afectacionNombre: a.label });
+                                                                vm.updateProductInvoice(index, {
+                                                                    tipoAfectacionIGV: a.value,
+                                                                    afectacionNombre: a.label,
+                                                                    // Para "Onerosa": a qué volver.
+                                                                    afectacionOnerosa: (item as any).afectacionOnerosa ?? (esAfectacionGratuitaCode(item.tipoAfectacionIGV) ? undefined : item.tipoAfectacionIGV),
+                                                                } as any);
                                                                 setAfectPickerIndex(null);
                                                             }}
                                                             className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-left text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
