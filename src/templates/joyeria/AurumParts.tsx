@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
 import { useEffect, useMemo, useState } from 'react';
@@ -380,7 +381,7 @@ export function AurFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           {diseno?.joyeriaFooterTagline || 'convierte tus ideas en joyas'}
         </p>
       </div>
-      <div className="border-t border-white/10 px-6 py-5 text-center text-xs text-white/40">© 2026 {name}. Powered by {BRAND.name}.</div>
+      <div className="border-t border-white/10 px-6 py-5 text-center text-xs text-white/40">© 2026 {name}. Powered by {BRAND.name}. <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></div>
     </motion.footer>
   );
 }

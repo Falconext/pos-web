@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
 import { useEffect, useMemo, useState } from 'react';
@@ -392,6 +393,7 @@ export function FmFooter({ tienda, slug, diseno, cp, categories = [] }: { tienda
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-5 text-center text-xs text-white/50 md:flex-row md:text-left">
           <span>© 2026 {name}. Powered by {BRAND.name}.</span>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <div className="flex items-center gap-2">
             <span className="mr-1 text-white/40">Aceptamos:</span>
             {PAYMENTS.map((p) => (

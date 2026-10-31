@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -293,7 +294,7 @@ export function UrbFooter({ tienda, slug, diseno, t, categories, navigate }: any
         <p aria-hidden className="select-none whitespace-nowrap text-center font-medium uppercase leading-[0.8] tracking-[0.06em]" style={serif(t, { fontSize: 'clamp(56px, 13vw, 210px)', color: mix(t.onPrimary, 14, t.primary) })}>{storeName}</p>
       </div>
       <div className="border-t" style={{ borderColor: mix(t.onPrimary, 14, t.primary) }}>
-        <p className="mx-auto max-w-[1440px] px-5 py-6 text-[11px] uppercase tracking-[0.2em] lg:px-10" style={{ color: sub }}>© {new Date().getFullYear()} {storeName}</p>
+        <p className="mx-auto max-w-[1440px] px-5 py-6 text-[11px] uppercase tracking-[0.2em] lg:px-10" style={{ color: sub }}>© {new Date().getFullYear()} {storeName} <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></p>
       </div>
     </footer>
   );

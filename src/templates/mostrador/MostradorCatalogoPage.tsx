@@ -6,8 +6,8 @@ import type { TemplateCatalogoPageProps } from '@/templates/shared/types';
 import ProductCustomizationModal from '@/components/tienda/ProductCustomizationModal';
 import { persistTiendaCart } from '@/utils/tiendaCart';
 import {
-  MostradorHeader, MostradorCartModal, MostradorProductCard, mostradorTheme, useMostradorFont,
-  editable, isOn, isLive, storeNameOf, btnCls, primaryBtn, type Theme,
+  MostradorHeader, MostradorFooter, MostradorCartModal, MostradorProductCard, mostradorTheme, useMostradorFont,
+  editable, isOn, isLive, btnCls, primaryBtn, type Theme,
 } from './MostradorParts';
 import { MostradorQuickView, type CartLine } from './MostradorQuickView';
 import { useStoreTotal } from './MostradorExtras';
@@ -181,10 +181,7 @@ export default function MostradorCatalogoPage(props: TemplateCatalogoPageProps) 
           </section>
         </main>
 
-        <footer className="pb-8 text-center text-[12px]" style={{ color: t.muted }}>
-          © {new Date().getFullYear()} {storeNameOf(tienda)}
-          {live && <> · <button type="button" onClick={() => routerNavigate(`/tienda/${slug}/seguimiento`)} className="underline underline-offset-2">Seguir mi pedido</button></>}
-        </footer>
+        <MostradorFooter tienda={tienda} slug={slug} diseno={diseno} t={t} />
 
         <MostradorCartModal isOpen={mostrarCarrito} onClose={() => setMostrarCarrito(false)} carrito={carrito} setCarrito={setCarrito} actualizarCantidad={actualizarCantidad} onCheckout={irACheckout} t={t} tienda={tienda} diseno={diseno} />
         <MostradorQuickView t={t} slug={slug} producto={quick} tienda={tienda} diseno={diseno} onClose={closeQuick} onAddLine={addLine} onBuyNow={buyNow} />

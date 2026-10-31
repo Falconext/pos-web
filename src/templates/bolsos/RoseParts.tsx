@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -357,6 +358,7 @@ export function RoseFooter({ tienda, slug, diseno, t, categories, navigate }: an
       <div style={{ background: t.primary, color: t.onPrimary }}>
         <div className="mx-auto flex max-w-[1320px] flex-col gap-3 px-4 py-4 text-[12px] sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <p className="opacity-85">© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <PaymentBadges slug={slug} />
         </div>
       </div>

@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type FormEvent } from 'react';
 import axios from 'axios';
 import { Icon } from '@iconify/react';
@@ -419,6 +420,7 @@ export function VerenaFooter({ tienda, slug, diseno, t, categories, navigate }: 
       <div style={{ background: t.primary, color: t.onPrimary }}>
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-4 py-4 text-[12.5px] sm:flex-row lg:px-6">
           <p className="opacity-85">© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <PaymentBadges methods={methods} dark />
         </div>
       </div>

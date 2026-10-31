@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
 import { motion } from 'framer-motion';
@@ -264,7 +265,7 @@ export function AntojoFooter({ tienda, slug, diseno, cp, categories = [] }: { ti
           <p className="mt-3 text-sm font-semibold text-white/60">{diseno?.antojoFooterEmail || tienda?.email || tienda?.correo || 'hola@antojeria.com'}</p>
         </div>
       </div>
-      <div className="border-t border-white/10 px-5 py-5 text-center text-xs font-semibold text-white/40">© 2026 {name}. Powered by {BRAND.name}.</div>
+      <div className="border-t border-white/10 px-5 py-5 text-center text-xs font-semibold text-white/40">© 2026 {name}. Powered by {BRAND.name}. <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></div>
     </motion.footer>
   );
 }

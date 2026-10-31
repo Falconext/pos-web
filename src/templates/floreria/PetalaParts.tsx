@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -408,7 +409,7 @@ export function PetalaFooter({ tienda, slug, diseno, t, categories, navigate }: 
         <PaymentMethods slug={slug} t={t} dark />
       </div>
       <div className="border-t border-white/10">
-        <p className="mx-auto max-w-[1320px] px-4 py-5 text-center text-[12px] lg:px-8" style={{ color: sub }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+        <p className="mx-auto max-w-[1320px] px-4 py-5 text-center text-[12px] lg:px-8" style={{ color: sub }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados. <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></p>
       </div>
     </footer>
   );

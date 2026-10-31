@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -308,6 +309,7 @@ export function NordicaFooter({ tienda, slug, diseno, t, categories, navigate }:
       <div className="border-t" style={{ borderColor: t.line }}>
         <div className="mx-auto flex max-w-[1280px] flex-col justify-between gap-2 px-4 py-5 text-[12px] sm:flex-row lg:px-8" style={{ color: t.muted }}>
           <p>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           {closing && <p>{closing}</p>}
         </div>
       </div>

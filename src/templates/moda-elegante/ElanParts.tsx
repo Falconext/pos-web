@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -349,6 +350,7 @@ export function ElanFooter({ tienda, slug, diseno, t, categories, navigate }: an
       <div className="border-t" style={{ borderColor: t.line }}>
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-5 text-[11.5px] lg:px-10" style={{ color: t.muted }}>
           <p>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <button type="button" onClick={() => navigate(`/tienda/${slug}/seguimiento`)} className="hover:text-stone-900">Seguimiento de pedido</button>
         </div>
       </div>

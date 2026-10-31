@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -415,6 +416,7 @@ export function AmFooter({ tienda, slug, diseno, t, categories, navigate }: any)
 
         <div className="flex flex-col gap-3 py-6 text-[12.5px] sm:flex-row sm:items-center sm:justify-between" style={{ color: sub }}>
           <p>© {new Date().getFullYear()} {String(storeName).replace(/\.+$/, '')}. {optional(diseno?.amoraFooterTagline, 'Todos los derechos reservados.')}</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           {socials.length > 0 && (
             <div className="flex gap-1.5">
               {socials.map((s) => (

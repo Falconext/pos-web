@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -288,6 +289,7 @@ export function HdFooter({ tienda, slug, diseno, t, categories, navigate }: any)
       </div>
       <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-4 lg:px-8" style={mono(t, { color: sub, fontSize: 11 })}>
         <span>© {new Date().getFullYear()} {storeName.toUpperCase()}</span>
+        <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
         <span>{String(tienda?.distrito || '').toUpperCase()}</span>
       </div>
     </footer>

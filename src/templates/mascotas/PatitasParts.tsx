@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -320,7 +321,7 @@ export function PatitasFooter({ tienda, slug, diseno, t, categories, navigate }:
         </div>
       </div>
       <div className="border-t border-white/15">
-        <p className="mx-auto max-w-[1280px] px-4 py-5 text-[12px] lg:px-8" style={{ color: sub }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+        <p className="mx-auto max-w-[1280px] px-4 py-5 text-[12px] lg:px-8" style={{ color: sub }}>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados. <EnlaceLibroReclamaciones slug={slug} diseno={diseno} className="ml-3 font-semibold" /></p>
       </div>
     </footer>
   );

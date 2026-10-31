@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -330,6 +331,7 @@ export function CalmaFooter({ tienda, slug, diseno, t, categories, navigate }: a
 
         <div className="flex flex-col gap-3 border-t py-5 text-[12px] sm:flex-row sm:items-center sm:justify-between" style={{ color: sub, borderColor: rule }}>
           <p>© {new Date().getFullYear()} {storeName}</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <PaymentBadges slug={slug} fg={sub} line={rule} />
         </div>
       </div>

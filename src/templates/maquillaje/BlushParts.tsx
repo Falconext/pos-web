@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon } from '@iconify/react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -309,6 +310,7 @@ export function BlushFooter({ tienda, slug, diseno, t, categories, navigate }: a
       <div className="border-t" style={{ borderColor: t.line }}>
         <div className="mx-auto flex max-w-[1280px] flex-wrap items-center justify-between gap-2 px-4 py-5 text-[11px] uppercase tracking-[0.12em] lg:px-8" style={{ color: t.muted }}>
           <span>© {new Date().getFullYear()} {storeName}</span>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <span>Todos los derechos reservados</span>
         </div>
       </div>

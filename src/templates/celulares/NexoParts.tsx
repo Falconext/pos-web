@@ -1,3 +1,4 @@
+import EnlaceLibroReclamaciones from '@/components/tienda/EnlaceLibroReclamaciones';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Icon } from '@iconify/react';
 import axios from 'axios';
@@ -339,6 +340,7 @@ export function NexoFooter({ tienda, slug, diseno, t, categories, navigate }: an
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1320px] flex-col gap-3 px-4 py-5 text-[12px] sm:flex-row sm:items-center sm:justify-between lg:px-8" style={{ color: sub }}>
           <p>© {new Date().getFullYear()} {storeName}. Todos los derechos reservados.</p>
+          <EnlaceLibroReclamaciones slug={slug} diseno={diseno} />
           <PaymentBadges slug={slug} />
         </div>
       </div>
