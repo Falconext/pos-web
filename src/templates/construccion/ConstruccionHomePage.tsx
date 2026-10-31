@@ -392,9 +392,10 @@ export function ConstruccionFooter({ tienda, slug, cp, categories, diseno: disen
         <div>
           <p className="mb-7 text-2xl font-black" style={{ color: cp }}>{editable(diseno?.construccionFooterPoliciesTitle, 'Políticas')}</p>
           <div className="space-y-5 text-base font-semibold text-white/75">
-            {enlace(`/tienda/${slug}/politicas/devoluciones`, 'Cambios y devoluciones')}
-            {enlace(`/tienda/${slug}/terminos`, 'Términos de uso')}
-            {enlace(`/tienda/${slug}/privacidad`, 'Privacidad')}
+            {/* Aún no hay páginas de políticas: se consultan por contacto en vez de caer en una ruta vacía. */}
+            {enlace(`/tienda/${slug}/contacto`, 'Cambios y devoluciones')}
+            {enlace(`/tienda/${slug}/contacto`, 'Términos de uso')}
+            {enlace(`/tienda/${slug}/contacto`, 'Privacidad')}
             {enlace(`/tienda/${slug}/catalogo`, 'Mapa del sitio')}
           </div>
         </div>

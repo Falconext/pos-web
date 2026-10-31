@@ -7,7 +7,7 @@ import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { motoCard, motoEase, motoHover, motoSection, motoViewport } from './motion';
-import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda, whatsappDeTienda } from '@/components/tienda/navTienda';
 import { useCategoriasTienda } from '@/templates/shared/enlacesTienda';
 import { MOTOS_FOOTER_MENU, MOTOS_MENU } from './menu';
 
@@ -251,7 +251,7 @@ export function MotoHeader({
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
   // El checkout no recibe categorías: se piden para que el menú filtre igual en todas las páginas.
   const categoriasMenu = useCategoriasTienda(slug, allCategories);
-  const menu = useMemo(() => itemsDeMenu(MOTOS_MENU, { diseno, slug, categorias: categoriasMenu }), [diseno, slug, categoriasMenu]);
+  const menu = useMemo(() => itemsDeMenu(MOTOS_MENU, { diseno, slug, categorias: categoriasMenu, whatsapp: whatsappDeTienda(tienda) }), [diseno, slug, categoriasMenu, tienda]);
   const ir = useIrEnTienda(slug, diseno);
   const phoneStore = diseno?.motosHeaderPhone || tienda?.whatsappTienda || tienda?.telefono || '+51 999 955 41 43';
   const phoneService = diseno?.motosHeaderPhoneService || tienda?.celular || '+51 999 938 47 39';

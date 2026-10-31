@@ -151,6 +151,12 @@ export interface DefItemMenu {
   destinoPorDefecto?: LinkFieldTarget;
   /** Ruta fija por defecto (ej. contacto) cuando el destino no se configuró. */
   rutaPorDefecto?: string;
+  /**
+   * Mensaje con el que abre WhatsApp por defecto (antes que `rutaPorDefecto`)
+   * si la tienda tiene número: servicio técnico, envíos o garantía se
+   * consultan por WhatsApp, no navegando la tienda.
+   */
+  whatsappTexto?: string;
 }
 
 export interface ItemMenu {
@@ -168,7 +174,14 @@ export interface ItemMenu {
  * destino elegido; si no hay destino elegido, la categoría real de nombre
  * parecido; si tampoco, el destino por defecto. Los ocultos (`none`) no salen.
  */
-export function itemsDeMenu(defs: DefItemMenu[], { diseno, slug, categorias }: { diseno: any; slug: string | undefined; categorias: any[] | undefined }): ItemMenu[] {
+/** Solo dígitos del WhatsApp de la tienda (con 51 si viene sin código de país), o null. */
+export function whatsappDeTienda(tienda: any): string | null {
+  const d = String(tienda?.whatsappTienda || tienda?.whatsapp || tienda?.telefono || '').replace(/\D/g, '');
+  if (d.length === 9) return `51${d}`;
+  return d.length >= 10 ? d : null;
+}
+
+export function itemsDeMenu(defs: DefItemMenu[], { diseno, slug, categorias, whatsapp }: { diseno: any; slug: string | undefined; categorias: any[] | undefined; whatsapp?: string | null }): ItemMenu[] {
   return defs.flatMap((d): ItemMenu[] => {
     const label = String(diseno?.[d.textoKey] ?? '').trim() || d.textoPorDefecto;
     const configurado = !!diseno?.[`${d.accionKey}Type`];
@@ -178,6 +191,7 @@ export function itemsDeMenu(defs: DefItemMenu[], { diseno, slug, categorias }: {
     } else {
       const parecida = categoriaParecida(label, categorias);
       if (parecida) action = { type: 'category', value: parecida };
+      else if (d.whatsappTexto && whatsapp) return [{ key: d.accionKey, label, href: `https://wa.me/${whatsapp}?text=${encodeURIComponent(d.whatsappTexto)}`, externo: true, categoria: null }];
       else if (d.rutaPorDefecto) return [{ key: d.accionKey, label, href: `/tienda/${slug}${d.rutaPorDefecto}`, externo: false, categoria: null }];
       else action = { type: d.destinoPorDefecto || 'catalog' };
     }

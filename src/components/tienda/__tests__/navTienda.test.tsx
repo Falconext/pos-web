@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import {
-  EnlaceTienda, camposDeMenu, categoriaParecida, conVistaPrevia, hrefDeAccion, itemsDeMenu, productoEnCategoria,
+  EnlaceTienda, camposDeMenu, whatsappDeTienda, categoriaParecida, conVistaPrevia, hrefDeAccion, itemsDeMenu, productoEnCategoria,
 } from '../navTienda';
 
 const MENU = [
@@ -61,6 +61,25 @@ describe('itemsDeMenu', () => {
   it('"Automático" guardado como null vuelve a la categoría parecida', () => {
     const items = itemsDeMenu(MENU, { ...base, diseno: { mMenu1ActionType: null, mMenu1ActionValue: 'Cascos' } });
     expect(items[0].href).toBe('/tienda/bbs/catalogo?category=REPUESTOS');
+  });
+});
+
+describe('WhatsApp por defecto (servicio, envíos)', () => {
+  const DEF = [{ textoKey: 'sT', accionKey: 'sA', textoPorDefecto: 'Servicio', rutaPorDefecto: '/contacto', whatsappTexto: 'Hola, quiero agendar un servicio.' }];
+  it('con número: abre WhatsApp con el mensaje listo', () => {
+    const [i] = itemsDeMenu(DEF, { diseno: {}, slug: 'm', categorias: [], whatsapp: '51965274360' });
+    expect(i).toMatchObject({ externo: true, href: 'https://wa.me/51965274360?text=Hola%2C%20quiero%20agendar%20un%20servicio.' });
+  });
+  it('sin número: contacto; con categoría parecida o destino elegido, eso manda', () => {
+    expect(itemsDeMenu(DEF, { diseno: {}, slug: 'm', categorias: [] })[0].href).toBe('/tienda/m/contacto');
+    expect(itemsDeMenu(DEF, { diseno: {}, slug: 'm', categorias: [{ nombre: 'Servicios' }], whatsapp: '51999' + '888777' })[0].href).toBe('/tienda/m/catalogo?category=Servicios');
+    expect(itemsDeMenu(DEF, { diseno: { sAType: 'catalog' }, slug: 'm', categorias: [], whatsapp: '51999888777' })[0].href).toBe('/tienda/m/catalogo');
+  });
+  it('número de la tienda: agrega 51 a celulares de 9 dígitos y descarta basura', () => {
+    expect(whatsappDeTienda({ whatsappTienda: '965 274 360' })).toBe('51965274360');
+    expect(whatsappDeTienda({ telefono: '+51 965-274-360' })).toBe('51965274360');
+    expect(whatsappDeTienda({ telefono: '123' })).toBeNull();
+    expect(whatsappDeTienda(null)).toBeNull();
   });
 });
 
