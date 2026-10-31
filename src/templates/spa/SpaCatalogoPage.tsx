@@ -198,7 +198,7 @@ export default function SpaCatalogoPage({
           <section className="min-w-0">
             <div className="mb-8 flex flex-col justify-between gap-4 rounded-3xl border border-black/[0.05] bg-white p-4 md:flex-row md:items-center">
               <p className="px-2 text-sm text-neutral-500">
-                <span className="font-semibold" style={{ color: SPA.ink }}>{sortedProductos.length}</span> de <span className="font-semibold" style={{ color: SPA.ink }}>{totalLabel}</span> productos
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-semibold" style={{ color: SPA.ink }}>{sortedProductos.length}</span> de <span className="font-semibold" style={{ color: SPA.ink }}>{totalLabel}</span> productos</>}
               </p>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 min-w-[210px] rounded-full border border-neutral-200 bg-neutral-50 px-5 text-sm font-medium text-neutral-600 outline-none">
                 <option value="relevance">Orden recomendado</option>

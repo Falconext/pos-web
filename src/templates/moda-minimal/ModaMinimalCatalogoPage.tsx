@@ -247,7 +247,7 @@ export default function ModaMinimalCatalogoPage({
           </button>
 
           <p className="hidden text-sm sm:block" style={{ color: MIN.soft }}>
-            <span className="font-semibold" style={{ color: MIN.ink }}>{sortedProductos.length}</span> de {totalLabel} productos
+            {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-semibold" style={{ color: MIN.ink }}>{sortedProductos.length}</span> de {totalLabel} productos</>}
           </p>
 
           <div className="flex items-center gap-2">

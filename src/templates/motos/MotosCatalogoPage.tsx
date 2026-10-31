@@ -286,7 +286,7 @@ export default function MotosCatalogoPage({
                   <Icon icon="solar:filter-linear" width={16} /> Filtros{activeChips.length ? ` (${activeChips.length})` : ''}
                 </button>
                 <p className="px-1 text-sm" style={{ color: MOTO.muted }}>
-                  <span className="font-bold" style={{ color: MOTO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: MOTO.ink }}>{totalLabel}</span> productos
+                  {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-bold" style={{ color: MOTO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: MOTO.ink }}>{totalLabel}</span> productos</>}
                 </p>
               </div>
               <div className="flex items-center gap-2">

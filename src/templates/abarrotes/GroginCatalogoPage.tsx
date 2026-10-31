@@ -172,7 +172,7 @@ export default function GroginCatalogoPage({
           <section className="min-w-0">
             <div className="mb-6 flex flex-col justify-between gap-3 rounded-2xl border bg-white p-4 md:flex-row md:items-center" style={{ borderColor: GRO.line }}>
               <p className="px-1 text-sm" style={{ color: GRO.inkSoft }}>
-                <span className="font-bold" style={{ color: GRO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: GRO.ink }}>{totalLabel}</span> productos
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-bold" style={{ color: GRO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: GRO.ink }}>{totalLabel}</span> productos</>}
               </p>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="h-10 min-w-[210px] rounded-full border bg-neutral-50 px-5 text-sm font-medium outline-none" style={{ borderColor: GRO.line, color: GRO.ink }}>
                 <option value="relevance">Orden recomendado</option>

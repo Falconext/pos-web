@@ -315,7 +315,7 @@ export default function BicicletasCatalogoPage({
           <section className="min-w-0">
             <div className="mb-8 flex flex-col justify-between gap-4 border bg-white p-4 md:flex-row md:items-center" style={{ borderColor: VELO.line }}>
               <p className="px-2 text-sm text-neutral-500">
-                <span className="font-bold" style={{ color: VELO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: VELO.ink }}>{totalLabel}</span> productos
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-bold" style={{ color: VELO.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: VELO.ink }}>{totalLabel}</span> productos</>}
               </p>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 min-w-[210px] border bg-neutral-50 px-5 text-sm font-semibold text-neutral-600 outline-none" style={{ borderColor: VELO.line }}>
                 <option value="relevance">Orden recomendado</option>

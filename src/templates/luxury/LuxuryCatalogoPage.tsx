@@ -212,7 +212,7 @@ export default function LuxuryCatalogoPage({
           <section className="min-w-0">
             <div className="mb-8 flex flex-col justify-between gap-4 rounded-2xl border border-black/[0.06] bg-white p-4 md:flex-row md:items-center">
               <p className="px-2 text-sm text-neutral-500">
-                <span className="font-semibold text-neutral-900">{sortedProductos.length}</span> de <span className="font-semibold text-neutral-900">{totalLabel}</span> fragancias
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-semibold text-neutral-900">{sortedProductos.length}</span> de <span className="font-semibold text-neutral-900">{totalLabel}</span> fragancias</>}
               </p>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 min-w-[210px] rounded-full border border-neutral-200 bg-neutral-50 px-5 text-sm font-medium text-neutral-600 outline-none">
                 <option value="relevance">Orden recomendado</option>

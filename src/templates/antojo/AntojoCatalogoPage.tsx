@@ -209,7 +209,7 @@ export default function AntojoCatalogoPage({
           <section className="min-w-0">
             <div className="mb-8 flex flex-col justify-between gap-4 rounded-[22px] bg-white p-4 shadow-sm ring-1 ring-black/5 md:flex-row md:items-center">
               <p className="px-2 text-sm font-bold text-neutral-500">
-                <span className="text-neutral-900">{sortedProductos.length}</span> de <span className="text-neutral-900">{totalLabel}</span> antojos
+                {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="text-neutral-900">{sortedProductos.length}</span> de <span className="text-neutral-900">{totalLabel}</span> antojos</>}
               </p>
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="h-11 min-w-[200px] rounded-full border border-neutral-100 bg-neutral-50 px-5 text-sm font-bold text-neutral-600 outline-none">
                 <option value="relevance">Orden recomendado</option>

@@ -83,7 +83,7 @@ export default function FreshMartCatalogoPage({
 
           <section className="min-w-0">
             <div className="mb-6 flex flex-col justify-between gap-3 rounded-xl border bg-white p-4 md:flex-row md:items-center" style={{ borderColor: FM.line }}>
-              <p className="px-1 text-sm" style={{ color: FM.inkSoft }}><span className="font-bold" style={{ color: FM.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: FM.ink }}>{totalLabel}</span> productos</p>
+              <p className="px-1 text-sm" style={{ color: FM.inkSoft }}>{loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-bold" style={{ color: FM.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: FM.ink }}>{totalLabel}</span> productos</>}</p>
               <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="h-10 min-w-[210px] rounded-lg border bg-neutral-50 px-5 text-sm font-medium outline-none" style={{ borderColor: FM.line, color: FM.ink }}>
                 <option value="relevance">Orden recomendado</option><option value="price-asc">Precio: menor a mayor</option><option value="price-desc">Precio: mayor a menor</option><option value="name-asc">Nombre A-Z</option>
               </select>

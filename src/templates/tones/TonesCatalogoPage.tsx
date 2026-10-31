@@ -130,7 +130,7 @@ export default function TonesCatalogoPage({
         {/* Barra de orden */}
         <div className="mb-8 flex flex-col justify-between gap-4 rounded-[20px] border p-4 md:flex-row md:items-center" style={{ backgroundColor: TN.panel, borderColor: TN.line }}>
           <p className="px-2 text-sm text-neutral-500">
-            <span className="font-bold" style={{ color: TN.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: TN.ink }}>{totalLabel}</span> prendas
+            {loading && sortedProductos.length === 0 ? 'Cargando productos…' : <><span className="font-bold" style={{ color: TN.ink }}>{sortedProductos.length}</span> de <span className="font-bold" style={{ color: TN.ink }}>{totalLabel}</span> prendas</>}
           </p>
           <div className="flex items-center gap-3">
             {hasActiveFilters && (
