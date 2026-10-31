@@ -13,7 +13,7 @@ import { MonoSparkline, MonoAreaChart, MonoDonutChart, MonoGauge, MONO_SEGMENTS 
 import { WelcomeModal, TourSpotlight, useWelcomeTour } from '@/components/WelcomeTour'
 
 export default function AdminIndex() {
-  const { overviewData, getOverview, topPorCategoria, getTopPorCategoria }: IDashboardState = useDashboardStore()
+  const { overviewData, overviewError, getOverview, topPorCategoria, getTopPorCategoria }: IDashboardState = useDashboardStore()
   const navigate = useNavigate()
   const { auth, sedeActiva } = useAuthStore()
   const { showModal, tourStep, startTour, skipTour, nextStep, prevStep, endTour } = useWelcomeTour(auth)
@@ -161,6 +161,23 @@ export default function AdminIndex() {
     setPeriod('personalizado')
     if (name === 'fechaInicio') setFechaInicio(parsed)
     if (name === 'fechaFin') setFechaFin(parsed)
+  }
+
+  if (!overviewData && overviewError) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center gap-3 p-6 text-center text-gray-500">
+        <Icon icon="solar:cloud-cross-bold-duotone" className="text-5xl text-gray-400" />
+        <p className="font-semibold text-gray-700 dark:text-gray-200">No se pudo cargar el resumen del negocio</p>
+        <p className="max-w-sm text-sm">Revisa tu conexión a internet e inténtalo de nuevo.</p>
+        <button
+          type="button"
+          onClick={() => getOverview(fechaInicio, fechaFin, effectiveSedeId)}
+          className="mt-1 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700"
+        >
+          Reintentar
+        </button>
+      </div>
+    )
   }
 
   if (!overviewData) {
