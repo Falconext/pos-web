@@ -19,6 +19,7 @@ import {
   IWholesaleOption,
 } from "./ProductModalModel";
 import { diasRecompraParaGuardar } from "./diasRecompra";
+import { payloadCategoriasExtra } from "./categoriasExtra";
 
 
 export const useProductModalViewModel = (props: IPropsProducts) => {
@@ -1635,6 +1636,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
             formValues?.categoriaId === ""
               ? null
               : Number(formValues?.categoriaId),
+          ...payloadCategoriasExtra(formValues),
           precioUnitario: Number(formValues?.precioUnitario),
           costoUnitario: formValues?.costoUnitario
             ? Number(formValues?.costoUnitario)
@@ -2030,6 +2032,7 @@ export const useProductModalViewModel = (props: IPropsProducts) => {
               formValues?.categoriaId === ""
                 ? null
                 : Number(formValues?.categoriaId),
+            ...payloadCategoriasExtra(formValues),
             precioUnitario: Number(formValues?.precioUnitario),
             costoUnitario: formValues?.costoUnitario
               ? Number(formValues?.costoUnitario)

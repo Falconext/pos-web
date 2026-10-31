@@ -53,6 +53,8 @@ export const initialProductForm: IFormProduct = {
     productoId: 0,
     descripcion: "",
     categoriaId: "",
+    // Producto nuevo: sin categorías adicionales (el campo se muestra vacío).
+    categoriasExtraIds: [],
     precioUnitario: 0,
     categoriaNombre: "",
     afectacionNombre: "Gravado – Operación Onerosa",
