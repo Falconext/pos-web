@@ -5,26 +5,23 @@ import type { TemplateHomePageProps } from '@/templates/shared/types';
 import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import { LUX, LuxuryFooter, LuxuryHeader, LuxuryProductCard, LuxuryProductImage, luxFont, luxPrimary, storeName, withAlpha } from './LuxuryParts';
 import { luxCard, luxFade, luxPage, luxSection, luxStagger, luxTap, luxViewport } from './motion';
+import { EnlaceTienda, useIrEnTienda } from '@/components/tienda/navTienda';
+import { bloquesConDestino } from '@/templates/shared/destinoBloque';
+import { LUXURY_COLECCIONES, LUXURY_FAMILIAS, LUXURY_HERO_BOTONES } from './menuLuxury';
 
-const navigate = (to: string) => { window.location.href = to; };
+/** Tarjeta animada que navega sin recargar la página. */
+const MotionEnlace = motion.create(EnlaceTienda);
 
-/** Colecciones por género/segmento (lo que pidió el cliente). */
+/** Colecciones por género/segmento: íconos y descripción (texto y destino en `LUXURY_COLECCIONES`). */
 const COLLECTIONS = [
-  { label: 'Para ella', cat: 'Mujer', icon: 'solar:hearts-bold', desc: 'Florales y sofisticados' },
-  { label: 'Para él', cat: 'Hombre', icon: 'mdi:account-tie', desc: 'Amaderados e intensos' },
-  { label: 'Unisex', cat: 'Unisex', icon: 'solar:users-group-rounded-bold', desc: 'Sin etiquetas' },
-  { label: 'Nicho selecto', cat: 'Nicho', icon: 'solar:crown-bold', desc: 'Ediciones exclusivas' },
+  { icon: 'solar:hearts-bold', desc: 'Florales y sofisticados' },
+  { icon: 'mdi:account-tie', desc: 'Amaderados e intensos' },
+  { icon: 'solar:users-group-rounded-bold', desc: 'Sin etiquetas' },
+  { icon: 'solar:crown-bold', desc: 'Ediciones exclusivas' },
 ];
 
-/** Familias olfativas para "Encuentra tu fragancia". */
-const OLFACTIVE = [
-  { label: 'Floral', icon: 'solar:flower-bold', q: 'floral' },
-  { label: 'Amaderado', icon: 'solar:tree-bold', q: 'amaderado' },
-  { label: 'Cítrico', icon: 'solar:citrus-bold', q: 'citrico' },
-  { label: 'Oriental', icon: 'solar:fire-bold', q: 'oriental' },
-  { label: 'Fresco', icon: 'solar:waterdrops-bold', q: 'fresco' },
-  { label: 'Dulce', icon: 'solar:donut-bold', q: 'dulce' },
-];
+/** Íconos de las familias olfativas de "Encuentra tu fragancia" (texto y destino en `LUXURY_FAMILIAS`). */
+const OLFACTIVE_ICONS = ['solar:flower-bold', 'solar:tree-bold', 'solar:citrus-bold', 'solar:fire-bold', 'solar:waterdrops-bold', 'solar:donut-bold'];
 
 const BRANDS = ['CHANEL', 'DIOR', 'TOM FORD', 'CREED', 'JO MALONE', 'VERSACE', 'YVES SAINT LAURENT', 'ARMANI', 'GIVENCHY', 'CAROLINA HERRERA'];
 
@@ -59,6 +56,11 @@ export default function LuxuryHomePage({
   const featured = productos.slice(0, 8);
   const heroProduct = productos[0];
   const cupon = diseno?.luxuryCupon || 'WELCOME15';
+  const ir = useIrEnTienda(slug, diseno);
+  const destinos = { diseno, slug, categorias: allCategories };
+  const heroBotones = bloquesConDestino(LUXURY_HERO_BOTONES, destinos);
+  const colecciones = bloquesConDestino(LUXURY_COLECCIONES, destinos);
+  const familias = bloquesConDestino(LUXURY_FAMILIAS, destinos);
 
   return (
     <motion.div initial="hidden" animate="show" variants={luxPage} className="min-h-screen" style={{ backgroundColor: LUX.porcelain, fontFamily: font }}>
@@ -81,7 +83,7 @@ export default function LuxuryHomePage({
         allCategories={allCategories}
         onSearchSubmit={(event, value) => {
           event.preventDefault();
-          navigate(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
+          ir(`/tienda/${slug}/catalogo${value ? `?search=${encodeURIComponent(value)}` : ''}`);
         }}
       />
 
@@ -103,18 +105,25 @@ export default function LuxuryHomePage({
                 {diseno?.luxuryHeroSubtitle || 'Perfumes de autor y fragancias nicho, seleccionados para dejar una huella que perdura. Descubre la tuya.'}
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-3">
-                <motion.a
-                  href={`/tienda/${slug}/catalogo`}
-                  className="inline-flex h-13 items-center gap-2 rounded-full px-8 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-lg"
-                  style={{ backgroundColor: primary, boxShadow: `0 20px 40px -18px ${withAlpha(primary, 'cc')}` }}
-                  whileHover={{ scale: 1.03, y: -2 }}
-                  whileTap={luxTap}
-                >
-                  Explorar colección <Icon icon="solar:arrow-right-linear" width={16} />
-                </motion.a>
-                <a href={`/tienda/${slug}/catalogo?search=oferta`} className="inline-flex h-13 items-center gap-2 rounded-full border border-neutral-300 px-7 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-800 transition-colors hover:border-neutral-900">
-                  <Icon icon="solar:tag-price-linear" width={16} /> Ver ofertas
-                </a>
+                {heroBotones.map((b) => (b.indice === 0 ? (
+                  <MotionEnlace
+                    key={b.key}
+                    href={b.href}
+                    slug={slug}
+                    diseno={diseno}
+                    {...(b.externo ? { target: '_blank', rel: 'noreferrer' } : {})}
+                    className="inline-flex h-13 items-center gap-2 rounded-full px-8 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-white shadow-lg"
+                    style={{ backgroundColor: primary, boxShadow: `0 20px 40px -18px ${withAlpha(primary, 'cc')}` }}
+                    whileHover={{ scale: 1.03, y: -2 }}
+                    whileTap={luxTap}
+                  >
+                    {b.label} <Icon icon="solar:arrow-right-linear" width={16} />
+                  </MotionEnlace>
+                ) : (
+                  <EnlaceTienda key={b.key} href={b.href} slug={slug} diseno={diseno} {...(b.externo ? { target: '_blank', rel: 'noreferrer' } : {})} className="inline-flex h-13 items-center gap-2 rounded-full border border-neutral-300 px-7 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-800 transition-colors hover:border-neutral-900">
+                    <Icon icon="solar:tag-price-linear" width={16} /> {b.label}
+                  </EnlaceTienda>
+                )))}
               </div>
               <div className="mt-10 flex items-center gap-8">
                 {[['solar:star-bold', '4.9/5', 'Valoración'], ['solar:box-minimalistic-bold', '+3,000', 'Clientes'], ['solar:verified-check-bold', '100%', 'Originales']].map(([icon, big, small]) => (
@@ -134,7 +143,7 @@ export default function LuxuryHomePage({
               <div className="relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-[2rem] border border-white/60 bg-white/60 shadow-[0_40px_90px_-40px_rgba(21,17,28,0.5)] backdrop-blur">
                 <div className="absolute inset-0" style={{ background: `linear-gradient(160deg, ${withAlpha(primary, '1f')}, transparent)` }} />
                 {heroProduct ? (
-                  <button type="button" onClick={() => navigate(`/tienda/${slug}/producto/${heroProduct.id}`)} className="block h-full w-full">
+                  <button type="button" onClick={() => ir(`/tienda/${slug}/producto/${heroProduct.id}`)} className="block h-full w-full">
                     <LuxuryProductImage producto={heroProduct} imgClassName="transition-transform duration-[1200ms] ease-out hover:scale-105" />
                   </button>
                 ) : (
@@ -170,24 +179,27 @@ export default function LuxuryHomePage({
             <h2 className="mt-2 text-3xl text-neutral-900 md:text-4xl" style={{ fontFamily: LUX.serif }}>Nuestras colecciones</h2>
           </div>
           <motion.div variants={luxStagger} className="grid grid-cols-2 gap-5 lg:grid-cols-4">
-            {COLLECTIONS.map((c) => (
-              <motion.a
-                key={c.label}
+            {colecciones.map((c) => (
+              <MotionEnlace
+                key={c.key}
                 variants={luxCard}
                 whileHover={{ y: -6 }}
-                href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(c.cat)}`}
+                href={c.href}
+                slug={slug}
+                diseno={diseno}
+                {...(c.externo ? { target: '_blank', rel: 'noreferrer' } : {})}
                 className="group relative flex flex-col items-start overflow-hidden rounded-2xl border border-black/[0.06] bg-white p-6 transition-shadow hover:shadow-[0_30px_60px_-35px_rgba(21,17,28,0.5)]"
               >
                 <span className="absolute -right-6 -top-6 h-24 w-24 rounded-full opacity-10 transition-transform duration-500 group-hover:scale-125" style={{ backgroundColor: primary }} />
                 <span className="relative flex h-12 w-12 items-center justify-center rounded-full text-white" style={{ background: `linear-gradient(135deg, ${primary}, ${LUX.ink})` }}>
-                  <Icon icon={c.icon} width={22} />
+                  <Icon icon={COLLECTIONS[c.indice].icon} width={22} />
                 </span>
                 <h3 className="relative mt-5 text-xl text-neutral-900" style={{ fontFamily: LUX.serif }}>{c.label}</h3>
-                <p className="relative mt-1 text-xs text-neutral-500">{c.desc}</p>
+                <p className="relative mt-1 text-xs text-neutral-500">{String(diseno?.[`luxuryCollection${c.indice + 1}Desc`] || '').trim() || COLLECTIONS[c.indice].desc}</p>
                 <span className="relative mt-4 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: primary }}>
                   Descubrir <Icon icon="solar:arrow-right-linear" width={13} />
                 </span>
-              </motion.a>
+              </MotionEnlace>
             ))}
           </motion.div>
         </motion.section>
@@ -200,19 +212,22 @@ export default function LuxuryHomePage({
             <h2 className="mt-2 text-3xl md:text-4xl" style={{ fontFamily: LUX.serif }}>Encuentra tu fragancia</h2>
             <p className="mx-auto mt-3 max-w-md text-sm text-white/55">Elige tu familia olfativa favorita y te mostramos las fragancias que van contigo.</p>
             <motion.div variants={luxStagger} className="mx-auto mt-10 grid max-w-4xl grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-6">
-              {OLFACTIVE.map((o) => (
-                <motion.a
-                  key={o.label}
+              {familias.map((o) => (
+                <MotionEnlace
+                  key={o.key}
                   variants={luxCard}
                   whileHover={{ y: -5 }}
-                  href={`/tienda/${slug}/catalogo?search=${encodeURIComponent(o.q)}`}
+                  href={o.href}
+                  slug={slug}
+                  diseno={diseno}
+                  {...(o.externo ? { target: '_blank', rel: 'noreferrer' } : {})}
                   className="flex flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-5 transition-colors hover:border-white/25 hover:bg-white/[0.08]"
                 >
                   <span className="flex h-12 w-12 items-center justify-center rounded-full" style={{ backgroundColor: withAlpha(primary, '33') }}>
-                    <Icon icon={o.icon} width={22} style={{ color: LUX.goldSoft }} />
+                    <Icon icon={OLFACTIVE_ICONS[o.indice]} width={22} style={{ color: LUX.goldSoft }} />
                   </span>
                   <span className="text-xs font-medium uppercase tracking-[0.14em] text-white/85">{o.label}</span>
-                </motion.a>
+                </MotionEnlace>
               ))}
             </motion.div>
           </div>
@@ -225,9 +240,9 @@ export default function LuxuryHomePage({
               <Eyebrow color={LUX.gold}>Selección de la casa</Eyebrow>
               <h2 className="mt-2 text-3xl text-neutral-900 md:text-4xl" style={{ fontFamily: LUX.serif }}>Las más deseadas</h2>
             </div>
-            <a href={`/tienda/${slug}/catalogo`} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-900 hover:opacity-70">
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-900 hover:opacity-70">
               Ver todo <Icon icon="solar:arrow-right-linear" width={15} />
-            </a>
+            </EnlaceTienda>
           </div>
           {loading ? (
             <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
@@ -238,7 +253,7 @@ export default function LuxuryHomePage({
           ) : (
             <motion.div variants={luxStagger} className="grid gap-6 grid-cols-2 lg:grid-cols-4">
               {featured.map((producto) => (
-                <LuxuryProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => navigate(`/tienda/${slug}/producto/${producto.id}`)} />
+                <LuxuryProductCard key={producto.id} producto={producto} slug={slug} cp={primary} onAddToCart={agregarAlCarrito} onClick={() => ir(`/tienda/${slug}/producto/${producto.id}`)} />
               ))}
             </motion.div>
           )}
@@ -266,9 +281,9 @@ export default function LuxuryHomePage({
               <p className="mt-4 text-sm text-white/70">Usa el código al finalizar tu pedido y estrena tu fragancia favorita.</p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
                 <span className="rounded-full border border-dashed border-white/40 px-8 py-3.5 text-lg font-semibold uppercase tracking-[0.3em] text-white">{cupon}</span>
-                <a href={`/tienda/${slug}/catalogo`} className="inline-flex h-13 items-center gap-2 rounded-full bg-white px-8 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-900 transition-transform hover:scale-105">
+                <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="inline-flex h-13 items-center gap-2 rounded-full bg-white px-8 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-neutral-900 transition-transform hover:scale-105">
                   Comprar ahora <Icon icon="solar:arrow-right-linear" width={16} />
-                </a>
+                </EnlaceTienda>
               </div>
             </div>
           </div>
@@ -321,7 +336,7 @@ export default function LuxuryHomePage({
         carrito={carrito}
         setCarrito={setCarrito}
         actualizarCantidad={actualizarCantidad}
-        onCheckout={() => { window.location.href = `/tienda/${slug}/checkout`; }}
+        onCheckout={() => ir(`/tienda/${slug}/checkout`)}
         cp={primary}
         tienda={tienda}
       />

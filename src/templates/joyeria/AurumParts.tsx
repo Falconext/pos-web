@@ -1,12 +1,14 @@
 import type React from 'react';
 import { BRAND } from '@/lib/branding';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
 import { useFavoritosStore } from '@/zustand/favoritos';
 import { aurCard, aurEase, aurHover, aurSection, aurTap, aurViewport } from './motion';
+import { EnlaceTienda, itemsDeMenu, useIrEnTienda } from '@/components/tienda/navTienda';
+import { JOYERIA_MENU } from './menuJoyeria';
 
 /**
  * Identidad visual de la plantilla "Aurum" (joyería) — estilo marketplace cálido
@@ -189,9 +191,11 @@ export function AurHeader({
   const { getFavoritosBySlug, removeFavorito } = useFavoritosStore();
   const favoritos = getFavoritosBySlug(slug);
   const categories = allCategories.map((cat) => (typeof cat === 'string' ? cat : cat?.nombre)).filter(Boolean).slice(0, 4);
+  const ir = useIrEnTienda(slug, diseno);
+  const menu = useMemo(() => itemsDeMenu(JOYERIA_MENU, { diseno, slug, categorias: allCategories }), [diseno, slug, allCategories]);
   const goProduct = (id: any) => {
     if (slug === 'preview') { window.dispatchEvent(new CustomEvent('preview-nav', { detail: 'catalogo' })); return; }
-    window.location.href = `/tienda/${slug}/producto/${id}`;
+    ir(`/tienda/${slug}/producto/${id}`);
   };
 
   return (
@@ -204,7 +208,7 @@ export function AurHeader({
         style={{ borderColor: AUR.line, backgroundColor: withAlpha(AUR.cream, 'e6') }}
       >
         <div className="mx-auto flex h-[68px] max-w-7xl items-center gap-4 px-5 md:px-6">
-          <a href={`/tienda/${slug}`} className="flex shrink-0 items-center gap-2 leading-none">
+          <EnlaceTienda href={`/tienda/${slug}`} slug={slug} diseno={diseno} className="flex shrink-0 items-center gap-2 leading-none">
             {tienda?.logo ? (
               <img src={tienda.logo} alt={name} className="h-9 object-contain" />
             ) : (
@@ -215,15 +219,16 @@ export function AurHeader({
                 <span className="text-[22px] font-bold tracking-tight" style={{ fontFamily: AUR.serif, color: AUR.ink }}>{name}</span>
               </>
             )}
-          </a>
+          </EnlaceTienda>
 
           <nav className="ml-5 hidden items-center gap-1 lg:flex">
-            <a href={`/tienda/${slug}/catalogo`} className="rounded-full px-3 py-2 text-[13px] font-medium text-neutral-600 transition-colors hover:text-neutral-950">novedades</a>
-            <a href={`/tienda/${slug}/catalogo`} className="rounded-full px-3 py-2 text-[13px] font-medium text-neutral-600 transition-colors hover:text-neutral-950">colección</a>
-            {categories.map((category) => (
-              <a key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} className="rounded-full px-3 py-2 text-[13px] font-medium capitalize text-neutral-500 transition-colors hover:text-neutral-950">{category}</a>
+            {menu.map((it) => (
+              <EnlaceTienda key={it.key} href={it.href!} slug={slug} diseno={diseno} target={it.externo ? '_blank' : undefined} rel={it.externo ? 'noreferrer' : undefined} className="rounded-full px-3 py-2 text-[13px] font-medium text-neutral-600 transition-colors hover:text-neutral-950">{it.label}</EnlaceTienda>
             ))}
-            <a href={`/tienda/${slug}/contacto`} className="rounded-full px-3 py-2 text-[13px] font-medium text-neutral-600 transition-colors hover:text-neutral-950">contacto</a>
+            {categories.map((category) => (
+              <EnlaceTienda key={category} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(category)}`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-[13px] font-medium capitalize text-neutral-500 transition-colors hover:text-neutral-950">{category}</EnlaceTienda>
+            ))}
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="rounded-full px-3 py-2 text-[13px] font-medium text-neutral-600 transition-colors hover:text-neutral-950">contacto</EnlaceTienda>
           </nav>
 
           <div className="ml-auto flex items-center gap-1.5">
@@ -247,9 +252,9 @@ export function AurHeader({
                 <Icon icon="solar:magnifer-linear" width={20} />
               </button>
             )}
-            <a href={`/tienda/${slug}/seguimiento`} className="hidden rounded-full p-2.5 text-neutral-700 transition-colors hover:bg-black/5 sm:block" title="Seguir pedido">
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="hidden rounded-full p-2.5 text-neutral-700 transition-colors hover:bg-black/5 sm:block" title="Seguir pedido">
               <Icon icon="solar:user-linear" width={20} />
-            </a>
+            </EnlaceTienda>
             <button type="button" onClick={() => setOpenFavs(true)} className="relative rounded-full p-2.5 text-neutral-800 transition-colors hover:bg-black/5" title="Favoritos">
               <Icon icon="solar:heart-linear" width={21} />
               {favoritos.length > 0 && (
@@ -280,6 +285,7 @@ export function AurHeader({
         favoritos={favoritos}
         onRemove={removeFavorito}
         onProduct={goProduct}
+        diseno={diseno}
       />
     </>
   );
@@ -328,8 +334,13 @@ export function AurFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
             {diseno?.joyeriaFooterText || tienda?.descripcionTienda || 'Joyería fina hecha a mano con metales nobles y piedras seleccionadas. Piezas para acompañar tus momentos más valiosos.'}
           </p>
           <div className="mt-6 flex gap-3">
-            {['mdi:instagram', 'mdi:facebook', 'ic:baseline-tiktok', 'mdi:whatsapp'].map((icon) => (
-              <a key={icon} href={icon === 'mdi:whatsapp' ? waLink(tienda) : '#'} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/75 transition-colors hover:bg-white/20">
+            {[
+              { icon: 'mdi:instagram', url: tienda?.instagramUrl },
+              { icon: 'mdi:facebook', url: tienda?.facebookUrl },
+              { icon: 'ic:baseline-tiktok', url: tienda?.tiktokUrl },
+              { icon: 'mdi:whatsapp', url: waLink(tienda) },
+            ].filter((r) => typeof r.url === 'string' && r.url.trim()).map(({ icon, url }) => (
+              <a key={icon} href={url} target="_blank" rel="noreferrer" className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/75 transition-colors hover:bg-white/20">
                 <Icon icon={icon} width={19} />
               </a>
             ))}
@@ -340,19 +351,19 @@ export function AurFooter({ tienda, slug, diseno, cp, categories = [] }: { tiend
           <div className="space-y-3 text-sm text-white/55">
             {cats.length ? (
               cats.map((cat) => (
-                <a key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} className="block capitalize transition-colors hover:text-white">{cat}</a>
+                <EnlaceTienda key={cat} href={`/tienda/${slug}/catalogo?category=${encodeURIComponent(cat)}`} slug={slug} diseno={diseno} className="block capitalize transition-colors hover:text-white">{cat}</EnlaceTienda>
               ))
             ) : (
-              <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Ver todo</a>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Ver todo</EnlaceTienda>
             )}
           </div>
         </div>
         <div>
           <h4 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: primary }}>Ayuda</h4>
           <div className="space-y-3 text-sm text-white/55">
-            <a href={`/tienda/${slug}/seguimiento`} className="block transition-colors hover:text-white">Seguir mi pedido</a>
-            <a href={`/tienda/${slug}/catalogo`} className="block transition-colors hover:text-white">Colección completa</a>
-            <a href={`/tienda/${slug}/contacto`} className="block transition-colors hover:text-white">Contacto</a>
+            <EnlaceTienda href={`/tienda/${slug}/seguimiento`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Seguir mi pedido</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Colección completa</EnlaceTienda>
+            <EnlaceTienda href={`/tienda/${slug}/contacto`} slug={slug} diseno={diseno} className="block transition-colors hover:text-white">Contacto</EnlaceTienda>
           </div>
         </div>
         <div>
@@ -511,6 +522,7 @@ export function AurFavoritesModal({
   favoritos,
   onRemove,
   onProduct,
+  diseno,
 }: {
   open: boolean;
   onClose: () => void;
@@ -519,6 +531,7 @@ export function AurFavoritesModal({
   favoritos: any[];
   onRemove: (id: number, slug: string) => void;
   onProduct: (id: number | string) => void;
+  diseno?: any;
 }) {
   const primary = aurPrimary(cp);
   const money = (v: number) => `S/ ${Number(v || 0).toFixed(2)}`;
@@ -593,9 +606,9 @@ export function AurFavoritesModal({
             </div>
 
             <div className="border-t px-6 py-5" style={{ borderColor: AUR.line }}>
-              <a href={`/tienda/${slug}/catalogo`} className="flex w-full items-center justify-center gap-2 rounded-full border py-3.5 text-xs font-semibold uppercase tracking-[0.1em] transition-colors" style={{ borderColor: AUR.ink, color: AUR.ink }}>
+              <EnlaceTienda href={`/tienda/${slug}/catalogo`} slug={slug} diseno={diseno} className="flex w-full items-center justify-center gap-2 rounded-full border py-3.5 text-xs font-semibold uppercase tracking-[0.1em] transition-colors" style={{ borderColor: AUR.ink, color: AUR.ink }}>
                 Seguir explorando
-              </a>
+              </EnlaceTienda>
             </div>
           </motion.aside>
         </div>

@@ -4,6 +4,7 @@ import { Icon } from '@iconify/react';
 import TecnologiaCartModal from '@/components/tienda/TecnologiaCartModal';
 import { SPA, SpaFooter, SpaHeader, SpaWhatsAppFab, spaFont, spaPrimary, waLink, withAlpha } from './SpaParts';
 import { spaCard, spaPage, spaSection, spaStagger, spaTap, spaViewport } from './motion';
+import { useIrEnTienda } from '@/components/tienda/navTienda';
 
 function pickContact(tienda: any, diseno: any) {
   return {
@@ -49,9 +50,10 @@ export default function SpaContactPage({
   const displayEmail = contact.email || 'Correo no configurado';
   const displayHours = contact.hours || 'Lun a Sáb · 9:00 – 20:00';
 
+  const ir = useIrEnTienda(slug, diseno);
   const go = (page: 'home' | 'catalogo' | 'checkout' | 'contacto') => {
     if (onNavigate) { onNavigate(page); return; }
-    window.location.href = page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`;
+    ir(page === 'home' ? `/tienda/${slug}` : `/tienda/${slug}/${page}`);
   };
 
   const inputCls = 'mt-2 h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 outline-none transition-colors focus:border-[var(--spa-cp)]';
@@ -69,7 +71,7 @@ export default function SpaContactPage({
         onSearchSubmit={(event, value) => {
           event.preventDefault();
           const term = value?.trim();
-          if (term) window.location.href = `/tienda/${slug}/catalogo?search=${encodeURIComponent(term)}`;
+          if (term) ir(`/tienda/${slug}/catalogo?search=${encodeURIComponent(term)}`);
         }}
       />
 
