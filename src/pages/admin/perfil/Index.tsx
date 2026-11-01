@@ -14,6 +14,7 @@ import NumerosWhatsapp from '@/components/NumerosWhatsapp';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import WhatsappTakiyCard from '@/components/WhatsappTakiyCard';
 import ConectarInstagramButton from '@/components/ConectarInstagramButton';
+import ConectarTiktokButton from '@/components/ConectarTiktokButton';
 import ConectarMessengerButton from '@/components/ConectarMessengerButton';
 import ShalomProConexion from '@/components/ShalomProConexion';
 import OlvaConfiguracion from '@/components/OlvaConfiguracion';
@@ -602,6 +603,28 @@ export default function PerfilIndex() {
                         </div>
                         <div className="p-5">
                             <ConectarInstagramButton />
+                        </div>
+                    </div>
+                    )}
+
+                    {/* ── Conectar TikTok: la IA responde los comentarios de los videos ── */}
+                    {tieneVentas && (
+                    <div className={`lg:col-span-2 lg:order-3 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-slate-800 dark:bg-[#111827] ${configTab}`}>
+                        <div className="relative border-b border-gray-100 bg-gradient-to-br from-gray-50 via-white to-cyan-50 p-5 dark:border-slate-800 dark:from-slate-900 dark:via-[#111827] dark:to-cyan-950/20">
+                            <div className="flex items-start gap-3">
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gray-950 text-white shadow-lg shadow-gray-900/20">
+                                    <Icon icon="ic:baseline-tiktok" width={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-gray-950 dark:text-white">Conectar mi TikTok</h2>
+                                    <p className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-400">
+                                        Conecta tu cuenta de <strong>TikTok</strong> y la <strong>IA de Ventas</strong> responderá los comentarios de tus videos —"¿precio?", "¿hacen envíos?"— y llevará a cada interesado a tu WhatsApp.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-5">
+                            <ConectarTiktokButton />
                         </div>
                     </div>
                     )}
