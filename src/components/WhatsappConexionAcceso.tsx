@@ -42,7 +42,7 @@ export default function WhatsappConexionAcceso({ onAbrir, onConexion, className 
         : caido
           ? 'Tu WhatsApp se desconectó: vuelve a escanear el QR'
           : 'Envía estos mensajes desde tu propio número';
-    const accion = conectado ? 'Ver' : caido ? 'Reconectar' : 'Conectar mi WhatsApp';
+    const accion = conectado ? 'Ver' : caido ? 'Reconectar' : 'Vincular por QR';
     const tono = conectado
         ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/40 dark:bg-emerald-900/20 dark:text-emerald-200'
         : caido

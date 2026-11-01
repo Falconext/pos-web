@@ -1439,15 +1439,16 @@ export default function PerfilIndex() {
                             </div>
                         </SeccionConfig>
                     )}
-                    {/* WhatsApp del negocio: "Conectar mi WhatsApp" por QR (Evolution, si
-                        está habilitado para la empresa) y Takiy, que queda de respaldo. */}
-                    <SeccionConfig id="whatsapp-qr" icono="mdi:whatsapp" titulo={waQrPropio ? 'Conectar mi WhatsApp' : 'WhatsApp por QR (Takiy)'} resumen="Avisos y comprobantes desde tu propio número, sin conectar Meta" abierta={seccionAbierta === 'whatsapp-qr'} onToggle={toggleSeccion} className={configTab}>
+                    {/* WhatsApp del negocio por QR: Evolution (si está habilitado para la
+                        empresa) y Takiy, los dos disponibles. */}
+                    <SeccionConfig id="whatsapp-qr" icono="mdi:whatsapp" titulo={waQrPropio ? 'WhatsApp por QR' : 'WhatsApp por QR (Takiy)'} resumen="Avisos y comprobantes desde tu propio número, sin conectar Meta" abierta={seccionAbierta === 'whatsapp-qr'} onToggle={toggleSeccion} className={configTab}>
                         <WhatsappConexionCard esAdmin={esAdminEmpresa} onDisponible={setWaQrPropio} activa={seccionAbierta === 'whatsapp-qr'} />
+                        {/* Takiy sigue disponible tal cual: cada empresa usa el que prefiera. */}
                         {waQrPropio ? (
-                            <details className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
-                                <summary className="cursor-pointer select-none text-sm font-bold text-slate-700 dark:text-slate-200">Takiy (opcional, como respaldo)</summary>
-                                <div className="mt-4"><WhatsappTakiyCard /></div>
-                            </details>
+                            <div className="mt-5 border-t border-slate-200 pt-5 dark:border-slate-800">
+                                <p className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-200">O con Takiy</p>
+                                <WhatsappTakiyCard />
+                            </div>
                         ) : (
                             <WhatsappTakiyCard />
                         )}

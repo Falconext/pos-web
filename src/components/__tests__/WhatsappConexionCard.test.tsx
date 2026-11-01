@@ -1,5 +1,5 @@
 /**
- * "Conectar mi WhatsApp" (Evolution): estados de la tarjeta, refresco del QR
+ * "WhatsApp por QR" (Evolution): estados de la tarjeta, refresco del QR
  * (temporizador y socket), código de emparejamiento, prueba, envío del
  * comprobante, desconexión con confirmación y errores del backend.
  */
@@ -136,7 +136,7 @@ describe('WhatsappConexionCard', () => {
     it('NO_CONECTADO: explica qué se envía, botón Conectar y aviso de Evolution', async () => {
         rutasGet([BASE]);
         render(<WhatsappConexionCard />);
-        expect(await screen.findByRole('button', { name: /Conectar mi WhatsApp/ })).toBeInTheDocument();
+        expect(await screen.findByRole('button', { name: /Vincular mi WhatsApp/ })).toBeInTheDocument();
         expect(screen.getByText(/Avisos de despacho/)).toBeInTheDocument();
         expect(screen.getByText(/comprobante en PDF/)).toBeInTheDocument();
         expect(screen.getByText('Conexión con tecnología Evolution API')).toBeInTheDocument();
@@ -147,7 +147,7 @@ describe('WhatsappConexionCard', () => {
         rutasGet([BASE]);
         render(<WhatsappConexionCard esAdmin={false} />);
         expect(await screen.findByText(/Solo el administrador/)).toBeInTheDocument();
-        expect(screen.queryByRole('button', { name: /Conectar mi WhatsApp/ })).toBeNull();
+        expect(screen.queryByRole('button', { name: /Vincular mi WhatsApp/ })).toBeNull();
     });
 
     it('Conectar → muestra el QR y los pasos; el QR se refresca con expiraEnSeg', async () => {
@@ -155,7 +155,7 @@ describe('WhatsappConexionCard', () => {
         rutasGet([BASE], [{ estado: 'CONECTANDO', qr: QR2, codigoEmparejamiento: null, expiraEnSeg: 20 }]);
         mockPost.mockReturnValue(ok({ estado: 'CONECTANDO', qr: QR1, codigoEmparejamiento: null, expiraEnSeg: 20 }));
         render(<WhatsappConexionCard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Conectar mi WhatsApp/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Vincular mi WhatsApp/ }));
         const img = await screen.findByAltText(/Código QR/);
         expect(mockPost).toHaveBeenCalledWith('/whatsapp/conexion', {});
         expect(img).toHaveAttribute('src', QR1);
@@ -178,7 +178,7 @@ describe('WhatsappConexionCard', () => {
         rutasGet([BASE, CONECTADO], [{ estado: 'CONECTADO', qr: null, codigoEmparejamiento: null, expiraEnSeg: 20 }]);
         mockPost.mockReturnValue(ok({ estado: 'CONECTANDO', qr: QR1, codigoEmparejamiento: null, expiraEnSeg: 20 }));
         render(<WhatsappConexionCard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Conectar mi WhatsApp/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Vincular mi WhatsApp/ }));
         await screen.findByAltText(/Código QR/);
         await act(async () => {
             jest.advanceTimersByTime(20_000);
@@ -249,7 +249,7 @@ describe('WhatsappConexionCard', () => {
         rutasGet([BASE]);
         mockPost.mockReturnValue(falla('La conexión de WhatsApp por QR aún no está habilitada para tu empresa.'));
         render(<WhatsappConexionCard />);
-        fireEvent.click(await screen.findByRole('button', { name: /Conectar mi WhatsApp/ }));
+        fireEvent.click(await screen.findByRole('button', { name: /Vincular mi WhatsApp/ }));
         await waitFor(() => expect(mockAlert).toHaveBeenCalledWith('La conexión de WhatsApp por QR aún no está habilitada para tu empresa.', 'error'));
         expect(screen.getByTestId('wa-estado')).toHaveTextContent('Sin conectar');
     });
@@ -330,7 +330,7 @@ describe('WhatsappConexionCard', () => {
         fireEvent.click(screen.getByRole('button', { name: /^Desconectar$/ }));
         fireEvent.click(screen.getByRole('button', { name: /Sí, desconectar/ }));
         await waitFor(() => expect(mockDel).toHaveBeenCalledWith('/whatsapp/conexion'));
-        expect(await screen.findByRole('button', { name: /Conectar mi WhatsApp/ })).toBeInTheDocument();
+        expect(await screen.findByRole('button', { name: /Vincular mi WhatsApp/ })).toBeInTheDocument();
         expect(mockAlert).toHaveBeenCalledWith(expect.stringMatching(/se desconectó/), 'success');
     });
 
@@ -361,7 +361,7 @@ describe('WhatsappConexionCard', () => {
         render(<WhatsappConexionCard />);
         await screen.findByAltText(/Código QR/);
         fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-        expect(await screen.findByRole('button', { name: /Conectar mi WhatsApp/ })).toBeInTheDocument();
+        expect(await screen.findByRole('button', { name: /Vincular mi WhatsApp/ })).toBeInTheDocument();
     });
 });
 
@@ -384,7 +384,7 @@ describe('WhatsappConexionAcceso', () => {
 
     it('sin conectar: enlace a Configuración', async () => {
         montar(BASE);
-        const link = await screen.findByRole('link', { name: /Conectar mi WhatsApp/ });
+        const link = await screen.findByRole('link', { name: /Vincular por QR/ });
         expect(link).toHaveAttribute('href', '/administrador/perfil?tab=configuracion&seccion=whatsapp-qr');
     });
 

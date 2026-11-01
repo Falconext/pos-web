@@ -318,7 +318,7 @@ export default function WhatsappConexionCard({ esAdmin = true, onDisponible, act
                         <Icon icon="mdi:whatsapp" className="text-xl" />
                     </div>
                     <div>
-                        <h3 id="wa-conexion-titulo" className="font-bold text-slate-900 dark:text-white">Conectar mi WhatsApp</h3>
+                        <h3 id="wa-conexion-titulo" className="font-bold text-slate-900 dark:text-white">WhatsApp por QR</h3>
                         <p className="text-xs text-slate-500 dark:text-slate-400">Envía desde tu propio número, sin costo por mensaje y sin plantillas.</p>
                     </div>
                 </div>
@@ -341,7 +341,7 @@ export default function WhatsappConexionCard({ esAdmin = true, onDisponible, act
                                 {!modoCodigo && (
                                     <button type="button" className={`${btnPrimario} w-full sm:w-auto`} disabled={ocupado} onClick={() => void conectar(false)}>
                                         <Icon icon={accion === 'conectar' ? 'svg-spinners:180-ring' : 'mdi:whatsapp'} className="text-lg" />
-                                        {accion === 'conectar' ? 'Preparando tu QR…' : 'Conectar mi WhatsApp'}
+                                        {accion === 'conectar' ? 'Preparando tu QR…' : 'Vincular mi WhatsApp'}
                                     </button>
                                 )}
                                 {modoCodigo && formCodigo}
