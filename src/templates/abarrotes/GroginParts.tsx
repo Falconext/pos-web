@@ -3,6 +3,7 @@ import type React from 'react';
 import { BRAND } from '@/lib/branding';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import axios from 'axios';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { getProductPricing } from '@/templates/shared/pricing';
@@ -202,8 +203,8 @@ function GroSearchBox({ slug, primary, diseno, initial = '', setValue, onSubmit,
     setLoading(true);
     const t = setTimeout(async () => {
       try {
-        const res = await fetch(`${BASE_URL}/public/store/${slug}/products?search=${encodeURIComponent(term)}&limit=6`);
-        const json = await res.json();
+        // axios (no fetch): así la búsqueda también lleva la sede elegida (?sede=).
+        const { data: json } = await axios.get(`${BASE_URL}/public/store/${slug}/products`, { params: { search: term, limit: 6 } });
         const arr = json?.data?.data ?? json?.data ?? [];
         setResults(Array.isArray(arr) ? arr.slice(0, 6) : []);
       } catch { setResults([]); } finally { setLoading(false); }

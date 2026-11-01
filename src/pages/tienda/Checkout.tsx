@@ -1,4 +1,4 @@
-import { useState, useEffect, type ChangeEvent } from 'react';
+import { useState, useEffect, useRef, type ChangeEvent } from 'react';
 import { iniciarPixel, rastrear } from '@/utils/metaPixel';
 import { BRAND } from '@/lib/branding';
 import { useParams, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
@@ -28,6 +28,9 @@ import { useStorePreviewNavigation } from '@/utils/useStorePreviewNavigation';
 import MedioPagoSelector from '@/components/tienda/MedioPagoSelector';
 
 import { recordarVentaSinStock } from '@/templates/shared/ventaSinStock';
+import { direccionDeSede, sedePorId, sedeParaPedido, useSedeTiendaStore } from '@/features/tiendaSede/sedeTienda';
+import { leerCarrito } from '@/features/tiendaSede/carritoSede';
+import { accionParaErrorDePedido } from '@/features/tiendaSede/erroresPedido';
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4001/api';
 
 const CLIENTE_STORAGE_KEY = (slug: string) => `tienda:${slug}:cliente`;
@@ -134,6 +137,22 @@ export default function Checkout() {
 
     const [search, setSearch] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
+
+    // Stock por sede: en modo CLIENTE el pedido va a la sede elegida y el recojo
+    // es en esa sede; en SEDE, en la sede de la tienda.
+    const stockTienda = useSedeTiendaStore((s) => (s.slug === slug ? s.stockTienda : null));
+    const sedeElegidaId = useSedeTiendaStore((s) => s.sedeId);
+    const versionCarrito = useSedeTiendaStore((s) => s.versionCarrito);
+    const sedeRecojo = stockTienda && stockTienda.modo !== 'TODAS' ? sedePorId(stockTienda, sedeElegidaId) : null;
+    // El carrito se quitó o ajustó desde la revisión por sede: se relee.
+    const versionCarritoVista = useRef(versionCarrito);
+    useEffect(() => {
+        if (versionCarritoVista.current === versionCarrito || !slug) return;
+        versionCarritoVista.current = versionCarrito;
+        const nuevo = leerCarrito(slug);
+        setCarritoState(nuevo);
+        if (nuevo.length === 0) navigate(`/tienda/${slug}`);
+    }, [versionCarrito, slug, navigate]);
     // Envío por agencia: se elige en el modal de confirmación (EnvioAgencia.tsx).
     const [envioAgencia, setEnvioAgencia] = useState<EnvioAgenciaValor>(ENVIO_AGENCIA_INICIAL);
     const [agenciasCache] = useState(() => new Map<CourierTienda, Promise<AgenciaTienda[]>>());
@@ -388,6 +407,14 @@ export default function Checkout() {
     const configPagoVisible = configPago && configPago.aceptaMercadoPago && calcularTotal() < MP_MINIMO_SOLES
         ? { ...configPago, aceptaMercadoPago: false }
         : configPago;
+    // "Recojo en tienda": la dirección de la sede (si la tiene) en vez del texto libre.
+    const direccionSede = direccionDeSede(sedeRecojo);
+    const configEnvioVisible = configEnvio && sedeRecojo?.direccion && direccionSede
+        ? {
+            ...configEnvio,
+            direccionRecojo: stockTienda?.modo === 'CLIENTE' ? `${sedeRecojo.nombre} · ${direccionSede}` : direccionSede,
+        }
+        : configEnvio;
     const freeDeliveryProgress = freeDeliveryThreshold > 0 ? Math.min((subtotal / freeDeliveryThreshold) * 100, 100) : 100;
     const freeDeliveryRemaining = freeDeliveryThreshold > 0 ? Math.max(freeDeliveryThreshold - subtotal, 0) : 0;
 
@@ -422,8 +449,10 @@ export default function Checkout() {
                 presentacionCodigo: item.presentacionCodigo,
                 modificadores: item.modificadores,
             }));
+            const sedePedido = sedeParaPedido(slug || '');
             const { data } = await axios.post(`${BASE_URL}/public/store/${slug}/orders`, {
                 ...formData,
+                ...(sedePedido ? { sedeId: sedePedido } : {}),
                 ...payloadEnvioAgencia(envioAgencia, formData.tipoEntrega),
                 items,
                 total: totalPedido,
@@ -467,7 +496,24 @@ export default function Checkout() {
             setCarritoState([]);
             clearTiendaCart(slug || '');
         } catch (error: any) {
-            alert(error.response?.data?.message || 'Error al crear pedido');
+            const mensaje: string = error.response?.data?.message || error.message || 'Error al crear pedido';
+            // Los 400 de la sede (elegir, sede no habilitada, stock en la sede)
+            // abren el selector o la revisión del carrito en vez de un alert suelto.
+            const accion = error.response?.status === 400 ? accionParaErrorDePedido(mensaje) : null;
+            const sede = useSedeTiendaStore.getState();
+            if (accion === 'ELEGIR_SEDE') {
+                setShowConfirmModal(false);
+                sede.abrirSelector(mensaje);
+            } else if (accion === 'SEDE_INVALIDA') {
+                setShowConfirmModal(false);
+                sede.olvidarSede();
+                sede.abrirSelector(`${mensaje} Elige otra para continuar.`);
+            } else if (accion === 'REVISAR_CARRITO') {
+                setShowConfirmModal(false);
+                sede.pedirRevisionCarrito(mensaje);
+            } else {
+                alert(mensaje);
+            }
         } finally { setEnviando(false); }
     };
 
@@ -664,7 +710,7 @@ export default function Checkout() {
                 formData={formData}
                 erroresForm={erroresForm}
                 configPago={configPagoVisible}
-                configEnvio={configEnvio}
+                configEnvio={configEnvioVisible}
                 enviando={enviando}
                 suggestedProducts={suggestedProducts}
                 search={search}
@@ -858,10 +904,10 @@ export default function Checkout() {
                                                 className="w-full bg-[#F5F5F5] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-[#FF9500]/20" />
                                         </div>
                                     </>
-                                ) : configEnvio?.direccionRecojo ? (
+                                ) : configEnvioVisible?.direccionRecojo ? (
                                     <div className="md:col-span-2 p-3 bg-[#FFF3E0] rounded-xl text-sm flex items-center gap-2 text-[#FF9500]">
                                         <Icon icon="solar:shop-bold" width={16} />
-                                        <span className="text-[#1A1A1A]">Recojo en: <strong>{configEnvio.direccionRecojo}</strong></span>
+                                        <span className="text-[#1A1A1A]">Recojo en: <strong>{configEnvioVisible.direccionRecojo}</strong></span>
                                     </div>
                                 ) : null}
 
