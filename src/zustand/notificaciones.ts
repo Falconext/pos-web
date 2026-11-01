@@ -71,6 +71,20 @@ interface NotificacionesState {
 
 let pollingInterval: NodeJS.Timeout | null = null;
 let socket: Socket | null = null;
+
+/**
+ * Oyentes del evento `whatsapp-conexion` (QR nuevo o cambio de estado del
+ * WhatsApp del negocio). Viven fuera del socket para que la tarjeta pueda
+ * suscribirse aunque el socket todavía no haya conectado.
+ */
+type OyenteWhatsappConexion = (payload: unknown) => void;
+const oyentesWhatsappConexion = new Set<OyenteWhatsappConexion>();
+export function suscribirWhatsappConexion(oyente: OyenteWhatsappConexion): () => void {
+  oyentesWhatsappConexion.add(oyente);
+  return () => {
+    oyentesWhatsappConexion.delete(oyente);
+  };
+}
 let audioContext: AudioContext | null = null;
 
 // Función para reproducir sonido de notificación
@@ -270,6 +284,10 @@ export const useNotificacionesStore = create<NotificacionesState>((set, get) => 
     socket.on('soporte-leido', (lectura: any) => {
       useSoporteStore.getState().recibirLectura(lectura);
       useSoporteSistemaStore.getState().recibirLectura(lectura);
+    });
+
+    socket.on('whatsapp-conexion', (payload: unknown) => {
+      oyentesWhatsappConexion.forEach((oyente) => oyente(payload));
     });
 
     socket.on('disconnect', () => {
