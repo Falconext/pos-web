@@ -25,6 +25,8 @@ type Estado = {
     motivoReconectar?: string | null;
     comentarios?: boolean;
     comentariosClave?: string;
+    /** El WhatsApp que la IA da en la respuesta (dígitos), o null si no hay ninguno. */
+    whatsapp?: string | null;
     ultimas?: Respondido[];
 };
 
@@ -37,6 +39,7 @@ export default function ConectarTiktokButton() {
     const [estado, setEstado] = useState<Estado | null>(null);
     const [cargando, setCargando] = useState(false);
     const [clave, setClave] = useState('');
+    const [whatsapp, setWhatsapp] = useState('');
     const [guardando, setGuardando] = useState(false);
 
     const cargar = async () => {
@@ -45,6 +48,7 @@ export default function ConectarTiktokButton() {
             const e: Estado = data?.data ?? data;
             setEstado(e);
             setClave(e?.comentariosClave ?? '');
+            setWhatsapp(e?.whatsapp ?? '');
         } catch {
             setEstado({ disponible: false, conectado: false, usuario: null });
         }
@@ -84,10 +88,11 @@ export default function ConectarTiktokButton() {
     const guardarComentarios = async (activo: boolean) => {
         setGuardando(true);
         try {
-            const { data } = await apiClient.put('/tiktok/comentarios', { activo, clave });
+            const { data } = await apiClient.put('/tiktok/comentarios', { activo, clave, whatsapp });
             const e: Estado = data?.data ?? data;
             setEstado(e);
             setClave(e?.comentariosClave ?? '');
+            setWhatsapp(e?.whatsapp ?? '');
             useAlertStore
                 .getState()
                 .alert(activo ? 'Listo: la IA responderá los comentarios nuevos de tus videos.' : 'La IA ya no responde los comentarios.', 'success');
@@ -183,13 +188,30 @@ export default function ConectarTiktokButton() {
                             <button
                                 type="button"
                                 onClick={() => void guardarComentarios(Boolean(estado.comentarios))}
-                                disabled={guardando || clave === (estado.comentariosClave ?? '')}
+                                disabled={guardando || (clave === (estado.comentariosClave ?? '') && whatsapp === (estado.whatsapp ?? ''))}
                                 className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-bold text-white disabled:opacity-40 dark:bg-slate-700"
                             >
                                 Guardar
                             </button>
                         </div>
                         <span className="text-[11px] text-gray-400">Separa las palabras con comas. Vacío = responde todos los comentarios.</span>
+                        <label htmlFor="tt-whatsapp" className="mt-2 text-[12px] font-semibold text-gray-700 dark:text-gray-300">
+                            Tu WhatsApp (la IA lo da en la respuesta)
+                        </label>
+                        <input
+                            id="tt-whatsapp"
+                            value={whatsapp}
+                            inputMode="tel"
+                            onChange={(e) => setWhatsapp(e.target.value)}
+                            placeholder="991 065 217"
+                            data-testid="tiktok-whatsapp"
+                            className="min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                        />
+                        {!estado.whatsapp && (
+                            <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400">
+                                Sin número, la IA manda a escribir al WhatsApp del enlace de tu perfil de TikTok. Ponlo aquí y pulsa Guardar.
+                            </span>
+                        )}
                     </div>
                     {ultimas.length > 0 && (
                         <div className="mt-4 pl-7">
