@@ -257,10 +257,10 @@ function FilaConversacion({
             {p.anuncio && (
               <span
                 className="inline-flex min-w-0 items-center gap-1 truncate rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
-                title={p.anuncio.titulo || 'Llegó por un anuncio'}
+                title={p.anuncio.tipo === 'tiktok' ? 'Llegó desde TikTok' : p.anuncio.titulo || 'Llegó por un anuncio'}
               >
-                <Icon icon="mdi:bullhorn" width={10} className="flex-none" />
-                Anuncio
+                <Icon icon={p.anuncio.tipo === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:bullhorn'} width={10} className="flex-none" />
+                {p.anuncio.tipo === 'tiktok' ? 'TikTok' : 'Anuncio'}
               </span>
             )}
             {p.etiquetas?.slice(0, ETIQUETAS_EN_FILA).map((e) => (
@@ -412,12 +412,17 @@ function FichaLateral({
           data-testid="ficha-anuncio"
         >
           <p className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-            <Icon icon="mdi:bullhorn" width={12} />
-            Llegó por {p.anuncio.tipo === 'post' ? 'una publicación' : 'un anuncio'}
+            <Icon icon={p.anuncio.tipo === 'tiktok' ? 'ic:baseline-tiktok' : 'mdi:bullhorn'} width={12} />
+            {p.anuncio.tipo === 'tiktok'
+              ? 'Llegó desde TikTok'
+              : `Llegó por ${p.anuncio.tipo === 'post' ? 'una publicación' : 'un anuncio'}`}
           </p>
-          <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900 dark:text-amber-100">
-            {p.anuncio.titulo || 'Sin título'}
-          </p>
+          {/* TikTok no manda título: lo que se ve es lo que escribió el cliente. */}
+          {p.anuncio.tipo !== 'tiktok' && (
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-amber-900 dark:text-amber-100">
+              {p.anuncio.titulo || 'Sin título'}
+            </p>
+          )}
           {p.anuncio.texto && (
             <p className="mt-0.5 line-clamp-2 text-[11px] text-amber-800/80 dark:text-amber-200/80">{p.anuncio.texto}</p>
           )}

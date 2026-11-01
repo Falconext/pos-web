@@ -268,7 +268,9 @@ function TarjetaAnuncios({ anuncios }: { anuncios: NonNullable<ReporteBi['anunci
                             Ver {f.tipo === 'post' ? 'publicación' : 'anuncio'}
                           </a>
                         ) : (
-                          <p className="truncate text-[10px] text-gray-400">{f.anuncioId}</p>
+                          <p className="truncate text-[10px] text-gray-400">
+                            {f.tipo === 'tiktok' ? 'Anuncios, videos y perfil de TikTok' : f.anuncioId}
+                          </p>
                         )}
                       </div>
                     </div>

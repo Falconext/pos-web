@@ -72,6 +72,26 @@ describe('qué anuncio te trajo ventas', () => {
     expect(screen.getByText('11 conversaciones llegaron por un anuncio · 1 escribieron directo')).toBeInTheDocument()
   })
 
+  it('TikTok sale como una fila más', async () => {
+    getMock.mockResolvedValue({
+      data: {
+        data: {
+          ...BI,
+          anuncios: {
+            filas: [{ anuncioId: 'tiktok', tipo: 'tiktok', titulo: 'TikTok', url: null, imagenUrl: null, conversaciones: 4, pedidos: 1, vendido: 99, conversion: 25 }],
+            conversacionesPorAnuncio: 4,
+            conversacionesSinAnuncio: 8,
+          },
+        },
+      },
+    })
+    render(<BiPanel />)
+    const fila = await screen.findByTestId('anuncio-tiktok')
+    expect(fila).toHaveTextContent('TikTok')
+    expect(fila).toHaveTextContent('Anuncios, videos y perfil de TikTok')
+    expect(fila).toHaveTextContent('S/ 99.00')
+  })
+
   it('sin anuncios todavía, explica desde cuándo se cuenta', async () => {
     getMock.mockResolvedValue({
       data: { data: { ...BI, anuncios: { filas: [], conversacionesPorAnuncio: 0, conversacionesSinAnuncio: 12 } } },
@@ -143,6 +163,18 @@ describe('en la bandeja de chats', () => {
     expect(screen.getByTestId('ficha-anuncio')).toHaveTextContent('Zapatillas rojas 2x1')
     expect(screen.getByTestId('ficha-anuncio')).toHaveTextContent('Solo esta semana')
     expect(screen.getByTitle('Zapatillas rojas 2x1')).toHaveTextContent('Anuncio')
+  })
+
+  it('el que llegó desde TikTok se ve como TikTok, con lo que escribió', () => {
+    render(
+      bandeja({
+        ...PROSPECTO,
+        anuncio: { anuncioId: 'tiktok', tipo: 'tiktok', titulo: 'TikTok', texto: 'Hola, vengo de TikTok', url: null, creadoEn: new Date().toISOString() },
+      }),
+    )
+    expect(screen.getByTestId('ficha-anuncio')).toHaveTextContent('Llegó desde TikTok')
+    expect(screen.getByTestId('ficha-anuncio')).toHaveTextContent('Hola, vengo de TikTok')
+    expect(screen.getByTitle('Llegó desde TikTok')).toHaveTextContent('TikTok')
   })
 
   it('si escribió directo, no aparece nada', () => {
