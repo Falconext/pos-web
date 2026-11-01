@@ -410,12 +410,12 @@ function App() {
         {/* URL canónica del producto para Google: el nombre va en su propio segmento
             y la ficha sigue leyendo :id como siempre (ver pos-bd src/seo/seo-texto.ts). */}
         <Route path="/tienda/:slug/producto/:id/:nombre" element={<PorTienda><ProductoDetalleRouter /></PorTienda>} />
-        <Route path="/tienda/:slug/checkout" element={<PorTienda><Checkout /></PorTienda>} />
-        <Route path="/tienda/:slug/seguimiento" element={<PorTienda><SeguimientoPedido /></PorTienda>} />
+        <Route path="/tienda/:slug/checkout" element={<PorTienda recargarAlCambiarSede={false}><Checkout /></PorTienda>} />
+        <Route path="/tienda/:slug/seguimiento" element={<PorTienda conSede={false}><SeguimientoPedido /></PorTienda>} />
         <Route path="/tienda/:slug/contacto" element={<PorTienda><ContactoRouter /></PorTienda>} />
-        <Route path="/tienda/:slug/libro-reclamaciones" element={<PorTienda><LibroReclamacionesTienda /></PorTienda>} />
-        <Route path="/tienda/:slug/blog" element={<PorTienda><BlogRouter /></PorTienda>} />
-        <Route path="/tienda/:slug/blog/:blogId" element={<PorTienda><BlogRouter /></PorTienda>} />
+        <Route path="/tienda/:slug/libro-reclamaciones" element={<PorTienda conSede={false}><LibroReclamacionesTienda /></PorTienda>} />
+        <Route path="/tienda/:slug/blog" element={<PorTienda conSede={false}><BlogRouter /></PorTienda>} />
+        <Route path="/tienda/:slug/blog/:blogId" element={<PorTienda conSede={false}><BlogRouter /></PorTienda>} />
         {/* Catch-all para tienda pública: Evita que links rotos en banners manden al login/admin */}
         <Route path="/tienda/:slug/*" element={<PorTienda><TiendaPublica /></PorTienda>} />
         <Route path="/" element={<Navigate to="/login" replace />} />
