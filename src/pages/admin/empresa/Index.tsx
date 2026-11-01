@@ -67,6 +67,7 @@ const GRUPO_OPTIONS = [
   { id: 'MENSUAL', value: 'Mensuales' },
   { id: 'ANUAL', value: 'Anuales' },
   { id: 'DEMO', value: 'Demo' },
+  { id: 'NUEVOS', value: 'Nuevos (sin demo)' },
 ];
 
 const EmpresasIndex = () => {
@@ -307,7 +308,7 @@ const EmpresasIndex = () => {
 
   const totalVisible = vm.grupos.DEMO.length + vm.grupos.MENSUAL.length + vm.grupos.ANUAL.length;
   const gruposVisibles = (Object.keys(GRUPO_META) as GrupoCliente[]).filter(
-    (g) => vm.grupoFiltro === '' || vm.grupoFiltro === g,
+    (g) => vm.grupoFiltro === '' || vm.grupoFiltro === g || (vm.grupoFiltro === 'NUEVOS' && g !== 'DEMO'),
   );
 
   // RUC va dentro de 'Razon Social' y el plan dentro de 'Rubro': dos columnas
