@@ -4,6 +4,7 @@ import InputPro from '@/components/InputPro';
 import Button from '@/components/Button';
 import useAlertStore from '@/zustand/alert';
 import { get, post } from '@/utils/fetch';
+import WhatsappConexionAcceso from '@/components/WhatsappConexionAcceso';
 
 interface ModalEnviarWhatsAppProps {
     isOpen: boolean;
@@ -34,8 +35,11 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
     const [generando, setGenerando] = useState(false);
     const [enviandoWhatsApp, setEnviandoWhatsApp] = useState(false);
     const [enviandoEmail, setEnviandoEmail] = useState(false);
-    // Con Takiy (WhatsApp por QR) el PDF sale solo desde el número del negocio.
+    // Con WhatsApp por QR (propio conectado o Takiy) el PDF sale solo desde el
+    // número del negocio.
     const [takiyActivo, setTakiyActivo] = useState(false);
+    const [qrPropioConectado, setQrPropioConectado] = useState(false);
+    const numeroNegocioListo = takiyActivo || qrPropioConectado;
     // Texto que acompaña al PDF: viene armado y el negocio lo puede cambiar.
     const [mensaje, setMensaje] = useState('');
 
@@ -259,6 +263,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                     El PDF del comprobante se enviará directamente al WhatsApp del cliente como documento adjunto.
                                 </p>
                             </div>
+                            <WhatsappConexionAcceso onConexion={(c) => setQrPropioConectado(c.estado === 'CONECTADO')} />
 
                             <div className="flex flex-col gap-2 pt-1">
                                 <div className="flex gap-3">
@@ -267,7 +272,7 @@ const ModalEnviarWhatsApp = ({ isOpen, onClose, defaultTab = 'whatsapp', comprob
                                     </Button>
                                     {/* "Enviar (API)" solo con Takiy activo: Zavu sigue sin setup
                                         de producción (número + plantilla + key zv_live_). */}
-                                    {takiyActivo && (
+                                    {numeroNegocioListo && (
                                     <Button
                                         onClick={handleEnviarWhatsApp}
                                         disabled={enviandoWhatsApp || generando || !numeroDestino.trim()}

@@ -13,6 +13,7 @@ import Button from '@/components/Button';
 import NumerosWhatsapp from '@/components/NumerosWhatsapp';
 import ConectarWhatsAppButton from '@/components/ConectarWhatsAppButton';
 import WhatsappTakiyCard from '@/components/WhatsappTakiyCard';
+import WhatsappConexionCard from '@/components/WhatsappConexionCard';
 import ConectarInstagramButton from '@/components/ConectarInstagramButton';
 import ConectarTiktokButton from '@/components/ConectarTiktokButton';
 import ConectarMessengerButton from '@/components/ConectarMessengerButton';
@@ -145,6 +146,10 @@ export default function PerfilIndex() {
     const marcarShalomPro = useCallback(marcar('shalom-pro'), []);
     const marcarOlva = useCallback(marcar('olva'), []);
     const ocultoSiVacio = (id: string) => (disponibles[id] === false ? 'hidden' : '');
+    // "Conectar mi WhatsApp" (QR propio) solo si está habilitado para la empresa;
+    // si no, la sección sigue siendo la de Takiy, como siempre.
+    const [waQrPropio, setWaQrPropio] = useState(false);
+    const abrirWhatsappQr = useCallback(() => setSeccionAbierta('whatsapp-qr'), []);
 
     // Escape cierra el modal, como en el resto del panel.
     useEffect(() => {
@@ -185,6 +190,12 @@ export default function PerfilIndex() {
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab: 'perfil' | 'configuracion' = searchParams.get('tab') === 'configuracion' ? 'configuracion' : 'perfil';
     const goTab = (t: 'perfil' | 'configuracion') => setSearchParams(t === 'configuracion' ? { tab: 'configuracion' } : {}, { replace: true });
+    // Acceso directo estando ya en la página (p. ej. la campana "Tu WhatsApp se
+    // desconectó"): el estado inicial solo lee la URL al montar.
+    const seccionUrl = searchParams.get('seccion');
+    useEffect(() => {
+        if (seccionUrl) setSeccionAbierta(seccionUrl);
+    }, [seccionUrl]);
 
     if (loading) return <div className="flex justify-center items-center h-96"><Loading /></div>;
     if (!perfil) return <div className="text-center text-gray-500 py-8">No se pudo cargar la información del perfil</div>;
@@ -1428,14 +1439,23 @@ export default function PerfilIndex() {
                             </div>
                         </SeccionConfig>
                     )}
-                    {/* WhatsApp por QR (Takiy): avisos desde el número del negocio sin Meta */}
-                    <SeccionConfig id="whatsapp-qr" icono="mdi:whatsapp" titulo="WhatsApp por QR (Takiy)" resumen="Avisos y comprobantes desde tu propio número, sin conectar Meta" abierta={seccionAbierta === 'whatsapp-qr'} onToggle={toggleSeccion} className={configTab}>
-                        <WhatsappTakiyCard />
+                    {/* WhatsApp del negocio: "Conectar mi WhatsApp" por QR (Evolution, si
+                        está habilitado para la empresa) y Takiy, que queda de respaldo. */}
+                    <SeccionConfig id="whatsapp-qr" icono="mdi:whatsapp" titulo={waQrPropio ? 'Conectar mi WhatsApp' : 'WhatsApp por QR (Takiy)'} resumen="Avisos y comprobantes desde tu propio número, sin conectar Meta" abierta={seccionAbierta === 'whatsapp-qr'} onToggle={toggleSeccion} className={configTab}>
+                        <WhatsappConexionCard esAdmin={esAdminEmpresa} onDisponible={setWaQrPropio} activa={seccionAbierta === 'whatsapp-qr'} />
+                        {waQrPropio ? (
+                            <details className="mt-5 rounded-xl border border-slate-200 p-4 dark:border-slate-800">
+                                <summary className="cursor-pointer select-none text-sm font-bold text-slate-700 dark:text-slate-200">Takiy (opcional, como respaldo)</summary>
+                                <div className="mt-4"><WhatsappTakiyCard /></div>
+                            </details>
+                        ) : (
+                            <WhatsappTakiyCard />
+                        )}
                     </SeccionConfig>
                     {/* Automatización de despacho: rastreo automático + plantillas WhatsApp
                         (antes vivía en /administrador/despacho/config, sin enlace desde el menú) */}
                     <SeccionConfig id="despacho" icono="solar:routing-2-bold-duotone" titulo="Automatización de despacho" resumen="Rastreo automático y avisos por WhatsApp al cliente" abierta={seccionAbierta === 'despacho'} onToggle={toggleSeccion} className={configTab}>
-                        <DespachoAutomatizacionCard sinTitulo />
+                        <DespachoAutomatizacionCard sinTitulo onConectarWhatsapp={abrirWhatsappQr} />
                     </SeccionConfig>
                     {perfil.empresa.tipoEmpresa === 'FORMAL' && usageStats && (
                         <div className={`lg:order-4 bg-white dark:bg-[#111827] rounded-2xl shadow-sm border ${usageStats.limiteAlcanzado ? 'border-red-200 dark:border-red-900/50' : usageStats.alerta80 ? 'border-orange-200 dark:border-orange-900/50' : 'border-gray-100 dark:border-slate-800'} p-5 ${configTab}`}>

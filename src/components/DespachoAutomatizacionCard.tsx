@@ -4,6 +4,7 @@ import { get, put, patch } from '@/utils/fetch';
 import useAlertStore from '@/zustand/alert';
 import { BRAND } from '@/lib/branding';
 import Select from '@/components/Select';
+import WhatsappConexionAcceso from '@/components/WhatsappConexionAcceso';
 import {
     type CampoProvincia,
     type ProvinciaActiva,
@@ -198,14 +199,14 @@ function Plantilla({ title, icon, color, estadoLabel, habilitado, mensaje, place
  * Shalom (interruptor maestro) + plantillas de WhatsApp por estado. Reemplaza a la
  * antigua página `/administrador/despacho/config`, a la que no se llegaba desde el menú.
  */
-export default function DespachoAutomatizacionCard({ className, sinTitulo }: { className?: string; sinTitulo?: boolean }) {
+export default function DespachoAutomatizacionCard({ className, sinTitulo, onConectarWhatsapp }: { className?: string; sinTitulo?: boolean; onConectarWhatsapp?: () => void }) {
     const { alert } = useAlertStore();
     const [config, setConfig] = useState<DespachoConfig>(DEFAULTS);
     const [autoTracking, setAutoTracking] = useState(false);
     // El plan habilita editar esta configuración (solo Corporativo). Lo decide el
     // backend, que además rechaza los cambios: acá solo se refleja.
     const [habilitado, setHabilitado] = useState(true);
-    // Con Takiy los textos por estado se editan sin el plan (el resto no).
+    // Con WhatsApp por QR (propio o Takiy) los textos por estado se editan sin el plan (el resto no).
     const [mensajesEditables, setMensajesEditables] = useState(true);
     // Qué avisos tienen un texto aparte para provincia (agencia).
     const [provincia, setProvincia] = useState<ProvinciaActiva>(() => provinciaActivaDesde({}));
@@ -340,7 +341,7 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                             <p className="text-xs leading-5 text-violet-800 dark:text-violet-200">
                                 <b>Solo en el plan Corporativo.</b> Puedes ver cómo funciona, pero para activar el
                                 rastreo automático y editar las plantillas necesitas actualizar tu plan.
-                                {mensajesEditables && ' Como envías por WhatsApp por QR (Takiy), sí puedes escribir tus mensajes por estado.'}
+                                {mensajesEditables && ' Como envías por WhatsApp desde tu número (QR), sí puedes escribir tus mensajes por estado.'}
                             </p>
                         </div>
                     )}
@@ -383,9 +384,10 @@ export default function DespachoAutomatizacionCard({ className, sinTitulo }: { c
                             <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">Avisos por WhatsApp al cliente</p>
                             <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">Plan aparte</span>
                         </div>
+                        <WhatsappConexionAcceso onAbrir={onConectarWhatsapp} className="mb-3" />
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Si envías por <strong>WhatsApp por QR (Takiy)</strong>, estos textos salen tal cual desde tu número.
+                                Si envías por <strong>WhatsApp desde tu número (QR o Takiy)</strong>, estos textos salen tal cual.
                                 Con la API de Meta sale la plantilla aprobada.
                             </p>
                             <a

@@ -8,6 +8,7 @@ import { useAuthStore } from '@/zustand/auth';
 import { useRubroFeatures } from '@/utils/rubro-features';
 import apiClient from '@/utils/apiClient';
 import { linkAlChat } from '@/features/admin/leads/LeadsModel';
+import { RUTA_CONEXION_WHATSAPP } from '@/components/whatsappConexion';
 
 interface LoteAlerta {
   id: number;
@@ -315,7 +316,10 @@ const NotificacionesCampana: React.FC = () => {
                 // Los avisos de IA de Ventas (lead caliente, alto riesgo, pedido,
                 // visita…) llevan al chat de ese cliente, antes que al comprobante.
                 const chatLink = linkAlChat(meta);
+                // "Tu WhatsApp se desconectó": lleva a la tarjeta para volver a escanear.
+                const whatsappLink = meta?.tipo === 'WHATSAPP_DESCONECTADO' ? RUTA_CONEXION_WHATSAPP : null;
                 const sunatLink = chatLink
+                  ?? whatsappLink
                   ?? (meta?.comprobanteId
                   ? `/administrador/facturacion/comprobantes`
                   : meta?.guiaId
@@ -341,7 +345,7 @@ const NotificacionesCampana: React.FC = () => {
                       </p>
                       {sunatLink && (
                         <span className="text-[11px] font-semibold mt-1 inline-block" style={{ color: styles.color.includes('red') ? '#dc2626' : styles.color.includes('orange') ? '#ea580c' : '#2563eb' }}>
-                          {chatLink ? 'Abrir chat →' : 'Ver comprobante →'}
+                          {chatLink ? 'Abrir chat →' : whatsappLink ? 'Volver a conectar →' : 'Ver comprobante →'}
                         </span>
                       )}
                     </div>
