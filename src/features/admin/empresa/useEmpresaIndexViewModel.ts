@@ -103,7 +103,7 @@ export const useEmpresaIndexViewModel = (): any => {
     );
     const [tipoFiltro, setTipoFiltro] = useState<'FORMAL' | 'INFORMAL' | ''>('');
     const [estadoFiltro, setEstadoFiltro] = useState<'ACTIVO' | 'INACTIVO' | 'TODOS'>('TODOS');
-    const [grupoFiltro, setGrupoFiltro] = useState<GrupoCliente | ''>('');
+    const [grupoFiltro, setGrupoFiltro] = useState<GrupoCliente | 'NUEVOS' | ''>('');
     const [vencimientoFiltro, setVencimientoFiltro] = useState<'' | 'VENCIDOS' | 'POR_VENCER_7' | 'POR_VENCER_30'>('');
     const [saludFiltro, setSaludFiltro] = useState<'' | 'EN_RIESGO'>('');
     // Por defecto solo las vigentes: las vencidas se acumulan y tapaban a las
@@ -433,7 +433,9 @@ export const useEmpresaIndexViewModel = (): any => {
     const filasVisibles = empresasTable
         .filter((e: any) => pasaVista(e, vistaEfectiva) && pasaVencimiento(e) && pasaSalud(e))
         .filter((e: any) => !soloNuevosMes || esClienteNuevoDelMes(e, nuevos.mes))
-        .map((e: any) => ({ ...e, esNueva: esEmpresaNueva(e) }));
+        // Una demo no es un cliente nuevo: no lleva la etiqueta ni entra en el filtro "Nuevos".
+        .map((e: any) => ({ ...e, esNueva: e.grupo !== 'DEMO' && esEmpresaNueva(e) }))
+        .filter((e: any) => grupoFiltro !== 'NUEVOS' || e.esNueva);
 
     // Agrupa por tipo de cliente y ordena cada grupo por proximidad de vencimiento (lo que vence primero, arriba)
     const grupos: Record<GrupoCliente, any[]> = { DEMO: [], MENSUAL: [], ANUAL: [] };
