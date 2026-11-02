@@ -1,5 +1,6 @@
 import { usePerfilViewModel } from '@/features/admin/perfil/usePerfilViewModel';
 import AlertasStockConfig from '@/features/admin/perfil/AlertasStockConfig';
+import MayoristaMezclaConfig from '@/features/admin/perfil/MayoristaMezclaConfig';
 import { BRAND } from '@/lib/branding';
 import { Icon } from '@iconify/react';
 import Loading from '@/components/Loading';
@@ -1000,6 +1001,13 @@ export default function PerfilIndex() {
                     {esAdminEmpresa && (
                     <SeccionConfig id="alertas-stock" icono="solar:bell-bing-bold-duotone" titulo="Alertas de stock bajo" resumen="Lista diaria de productos por reponer, en tu correo" abierta={seccionAbierta === 'alertas-stock'} onToggle={toggleSeccion} className={configTab}>
                         <AlertasStockConfig />
+                    </SeccionConfig>
+                    )}
+
+                    {/* ── Precio por mayor sumando productos distintos (solo administradores) ── */}
+                    {esAdminEmpresa && (
+                    <SeccionConfig id="mayorista-mezcla" icono="solar:tag-price-bold-duotone" titulo="Precio por mayor mezclando" resumen="Juntar productos distintos para llegar al precio por mayor" abierta={seccionAbierta === 'mayorista-mezcla'} onToggle={toggleSeccion} className={configTab}>
+                        <MayoristaMezclaConfig />
                     </SeccionConfig>
                     )}
 
